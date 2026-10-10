@@ -84,9 +84,11 @@
       $$('tr', tbody).forEach((tr) => {
         const q = parseFloat(($('[data-q]', tr) || {}).value || '0') || 0;
         const c = parseFloat(($('[data-c]', tr) || {}).value || '0') || 0;
+        const d = parseFloat(($('[data-d]', tr) || {}).value || '0') || 0;
+        const line = q * c - d;
         const cell = $('[data-line-total]', tr);
-        if (cell) cell.textContent = window.PWMoney ? PWMoney.plain(q * c) : (q * c).toLocaleString('fr-FR');
-        tot += q * c;
+        if (cell) cell.textContent = window.PWMoney ? PWMoney.plain(line) : line.toLocaleString('fr-FR');
+        tot += line;
       });
       const t = $('[data-grand-total]', wrap); if (t) t.textContent = window.PWMoney ? PWMoney.fmt(tot) : tot.toLocaleString('fr-FR');
     };
@@ -97,14 +99,16 @@
       const tr = tmp.firstElementChild;
       $('[data-pid]', tr).value = p.id;
       $('[data-name]', tr).textContent = p.name + (p.reference ? ' (' + p.reference + ')' : '');
-      const c = $('[data-c]', tr); if (c && p.cost_price !== undefined) c.value = p.cost_price;
+      const c = $('[data-c]', tr);
+      const price = wrap.dataset.price === 'sale' ? p.sale_price : p.cost_price;
+      if (c && price !== undefined) c.value = price;
       const lotBox = $('[data-lot-fields]', tr); if (lotBox && !p.track_lots) lotBox.classList.add('d-none');
       const stk = $('[data-stock]', tr); if (stk && p.stock !== undefined) stk.textContent = p.stock;
       tbody.appendChild(tr);
       const q = $('[data-q]', tr); if (q) q.focus();
       recalc();
     };
-    wrap.addEventListener('input', (e) => { if (e.target.matches('[data-q],[data-c]')) recalc(); });
+    wrap.addEventListener('input', (e) => { if (e.target.matches('[data-q],[data-c],[data-d]')) recalc(); });
     wrap.addEventListener('click', (e) => { const b = e.target.closest('[data-remove-line]'); if (b) { b.closest('tr').remove(); recalc(); } });
     if (search) {
       let timer;
@@ -182,4 +186,12 @@ document.querySelectorAll('[data-gen-barcode]').forEach((b) => b.addEventListene
     if (d.ok) { field.value = d.barcode; field.classList.add('is-valid'); }
   } catch (e) { alert('Génération impossible (connexion au serveur).'); }
   b.disabled = false;
+}));
+
+// Devis : le choix d'une fiche client remplit le nom et le téléphone
+document.querySelectorAll('select[data-customer-fill]').forEach((sel) => sel.addEventListener('change', () => {
+  const o = sel.selectedOptions[0]; const f = sel.form;
+  if (!o || !o.value) return;
+  f.querySelector('[name="customer_name"]').value = o.dataset.name || '';
+  f.querySelector('[name="customer_phone"]').value = o.dataset.phone || '';
 }));

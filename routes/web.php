@@ -48,6 +48,17 @@ $router->get('/sales/{id}/ticket', [C\SaleController::class, 'ticket'], 'sales.v
 $router->get('/sales/{id}/invoice', [C\SaleController::class, 'invoice'], 'sales.view');
 $router->get('/sales/{id}/delivery', [C\SaleController::class, 'delivery'], 'sales.view');
 $router->post('/sales/{id}/print', [C\SaleController::class, 'printServer'], 'sales.view');
+$router->get('/quotes', [C\QuoteController::class, 'index'], 'quotes.manage');
+$router->get('/quotes/create', [C\QuoteController::class, 'create'], 'quotes.manage');
+$router->post('/quotes', [C\QuoteController::class, 'store'], 'quotes.manage');
+$router->get('/quotes/{id}', [C\QuoteController::class, 'show'], 'quotes.manage');
+$router->get('/quotes/{id}/edit', [C\QuoteController::class, 'edit'], 'quotes.manage');
+$router->post('/quotes/{id}', [C\QuoteController::class, 'update'], 'quotes.manage');
+$router->post('/quotes/{id}/status', [C\QuoteController::class, 'status'], 'quotes.manage');
+$router->post('/quotes/{id}/duplicate', [C\QuoteController::class, 'duplicate'], 'quotes.manage');
+$router->get('/quotes/{id}/print', [C\QuoteController::class, 'print'], 'quotes.manage');
+$router->get('/quotes/{id}/convert', [C\QuoteController::class, 'convertForm'], 'quotes.manage');
+$router->post('/quotes/{id}/convert', [C\QuoteController::class, 'convert'], 'quotes.manage');
 $router->get('/verify', [C\SaleController::class, 'verify'], 'sales.view');
 $router->post('/sales/{id}/cancel', [C\SaleController::class, 'cancel'], 'pos.cancel_sale');
 $router->get('/sales/{id}/return', [C\SaleController::class, 'returnForm'], 'returns.create');

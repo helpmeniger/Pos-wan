@@ -23,6 +23,7 @@ final class Catalog
             'sales.view' => 'Voir ses ventes',
             'sales.view_all' => 'Voir toutes les ventes',
             'returns.create' => 'Enregistrer un retour / remboursement',
+            'quotes.manage' => 'Créer les devis et bons de livraison',
         ],
         'Articles' => [
             'products.view' => 'Voir les articles',
@@ -88,12 +89,12 @@ final class Catalog
         'owner' => ['Propriétaire / gérant', 'Pilotage complet de l\'activité', '*except:roles.manage,backup.manage'],
         'store_manager' => ['Responsable de magasin', 'Gestion quotidienne de la boutique', [
             'dashboard.view', 'pos.sell', 'pos.discount', 'pos.discount_high', 'pos.price_override', 'pos.credit_sale', 'pos.cancel_sale', 'pos.reprint', 'pos.wholesale',
-            'sales.view', 'sales.view_all', 'returns.create', 'products.view', 'products.manage', 'products.cost_view', 'products.price_edit', 'products.import', 'categories.manage',
+            'sales.view', 'sales.view_all', 'returns.create', 'quotes.manage', 'products.view', 'products.manage', 'products.cost_view', 'products.price_edit', 'products.import', 'categories.manage',
             'stock.view', 'stock.adjust', 'stock.transfer', 'stock.inventory', 'stock.inventory_validate', 'purchases.view', 'purchases.manage', 'suppliers.manage',
             'customers.view', 'customers.manage', 'customers.payments', 'cash.open_close', 'cash.view_all', 'cash.movements', 'expenses.manage', 'reports.view', 'reports.financial', 'reports.export',
             'restaurant.order', 'restaurant.kitchen', 'restaurant.cancel_item', 'restaurant.transfer', 'restaurant.manage',
         ]],
-        'cashier' => ['Caissier', 'Ventes à la caisse', ['pos.sell', 'pos.discount', 'pos.reprint', 'sales.view', 'products.view', 'customers.view', 'customers.manage', 'customers.payments', 'cash.open_close', 'restaurant.order', 'restaurant.transfer']],
+        'cashier' => ['Caissier', 'Ventes à la caisse', ['pos.sell', 'pos.discount', 'pos.reprint', 'sales.view', 'quotes.manage', 'products.view', 'customers.view', 'customers.manage', 'customers.payments', 'cash.open_close', 'restaurant.order', 'restaurant.transfer']],
         'stock_manager' => ['Gestionnaire de stock', 'Stocks, réceptions, inventaires', ['dashboard.view', 'products.view', 'products.manage', 'products.import', 'categories.manage', 'stock.view', 'stock.adjust', 'stock.transfer', 'stock.inventory', 'purchases.view', 'pharmacy.manage']],
         'buyer' => ['Acheteur', 'Commandes et fournisseurs', ['dashboard.view', 'products.view', 'products.cost_view', 'stock.view', 'purchases.view', 'purchases.manage', 'suppliers.manage']],
         'accountant' => ['Comptable', 'Finances et rapports', ['dashboard.view', 'sales.view', 'sales.view_all', 'products.view', 'products.cost_view', 'stock.view', 'purchases.view', 'suppliers.pay', 'customers.view', 'customers.payments', 'cash.view_all', 'expenses.manage', 'expenses.reverse', 'reports.view', 'reports.financial', 'reports.export']],

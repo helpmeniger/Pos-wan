@@ -12,6 +12,15 @@ use App\Core\Session;
 
 abstract class Controller
 {
+    /** UUID v4 : identifiant d'idempotence d'un formulaire d'encaissement. */
+    protected function uuid(): string
+    {
+        $b = random_bytes(16);
+        $b[6] = chr((ord($b[6]) & 0x0f) | 0x40);
+        $b[8] = chr((ord($b[8]) & 0x3f) | 0x80);
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($b), 4));
+    }
+
     protected function user(): array
     {
         return Auth::user() ?? throw new HttpException(401);
@@ -47,7 +56,7 @@ abstract class Controller
         try {
             return $fn();
         } catch (BusinessException $e) {
-            $this->fail($e->getMessage(), $onErrorRedirect);
+            $this->fail(preg_replace('/^(AUTH_REQUIRED|PRESCRIPTION_REQUIRED):/', '', $e->getMessage()), $onErrorRedirect);
         }
     }
 

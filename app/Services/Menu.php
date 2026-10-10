@@ -13,6 +13,7 @@ final class Menu
                 ['Caisse', 'bi-cart3', '/pos', 'pos.sell', '#27ae60'],
                 ['Historique des ventes', 'bi-receipt', '/sales', 'sales.view', '#e84393'],
                 ['Retours & avoirs', 'bi-arrow-counterclockwise', '/returns', 'sales.view', '#00897b'],
+                ['Devis', 'bi-file-earmark-ruled', '/quotes', 'quotes.manage', '#3949ab'],
                 ['Vérifier un QR code', 'bi-qr-code-scan', '/verify', 'sales.view', '#455a64'],
                 ['Ma caisse (ouverture / clôture)', 'bi-safe2', '/cash', 'cash.open_close', '#5dade2'],
                 ['Sessions de caisse', 'bi-clock-history', '/cash/sessions', 'cash.view_all', '#8e44ad'],

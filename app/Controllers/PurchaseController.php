@@ -20,7 +20,7 @@ final class PurchaseController extends Controller
         }
         $wh = (int) Request::query('wh', 0);
         $like = '%' . str_replace(['%', '_'], ['\%', '\_'], $q) . '%';
-        $rows = DB::all("SELECT p.id, p.name, p.reference, p.barcode, p.cost_price, p.track_lots" . ($wh ? ', COALESCE(sl.quantity,0) AS stock' : '') . "
+        $rows = DB::all("SELECT p.id, p.name, p.reference, p.barcode, p.cost_price, p.sale_price, p.track_lots" . ($wh ? ', COALESCE(sl.quantity,0) AS stock' : '') . "
                 FROM products p" . ($wh ? ' LEFT JOIN stock_levels sl ON sl.product_id = p.id AND sl.warehouse_id = ' . $wh : '') . "
                 WHERE p.status = 'active' AND (p.barcode = ? OR p.reference = ? OR p.name LIKE ?) ORDER BY (p.barcode = ?) DESC, p.name LIMIT 15", [$q, $q, $like, $q]);
         if (!can('products.cost_view')) {
