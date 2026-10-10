@@ -96,7 +96,7 @@ final class PurchaseController extends Controller
             $this->fail('Cette commande ne peut plus être réceptionnée.', '/purchases/' . $id);
         }
         view('purchases/receive', ['title' => 'Réception de la commande ' . $po['number'], 'po' => $po,
-            'items' => DB::all('SELECT i.*, p.name, p.reference, p.track_lots FROM purchase_order_items i JOIN products p ON p.id = i.product_id WHERE i.purchase_order_id = ?', [$id])]);
+            'items' => DB::all('SELECT i.*, p.name, p.reference, p.track_lots, p.cost_price, p.sale_price FROM purchase_order_items i JOIN products p ON p.id = i.product_id WHERE i.purchase_order_id = ?', [$id])]);
     }
 
     public function receiveDirectForm(): void

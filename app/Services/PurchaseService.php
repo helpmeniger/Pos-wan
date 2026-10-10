@@ -107,10 +107,12 @@ final class PurchaseService
                     $poItemId = (int) $poi['id'];
                     DB::run('UPDATE purchase_order_items SET received_qty = received_qty + ? WHERE id = ?', [$q, $poItemId]);
                 }
-                $lotId = StockService::receive($pid, $warehouseId, $q, $landed, 'reception', 'reception', $recId, $number, $lotNumber ?: null, Validator::isDate($expiry) ? $expiry : null);
+                $mode = isset(StockService::COST_MODES[$i['cost_mode'] ?? '']) ? $i['cost_mode'] : 'average';
+                $lotId = StockService::receive($pid, $warehouseId, $q, $landed, 'reception', 'reception', $recId, $number, $lotNumber ?: null, Validator::isDate($expiry) ? $expiry : null, $mode);
+                $newSale = self::applySalePrice($pid, $i['new_sale_price'] ?? null, $number);
                 DB::insert('reception_items', [
                     'reception_id' => $recId, 'po_item_id' => $poItemId, 'product_id' => $pid, 'quantity' => $q, 'unit_cost' => $cost,
-                    'landed_unit_cost' => $landed, 'lot_number' => $lotNumber ?: null, 'expiry_date' => Validator::isDate($expiry) ? $expiry : null, 'lot_id' => $lotId,
+                    'landed_unit_cost' => $landed, 'cost_mode' => $mode, 'new_sale_price' => $newSale, 'lot_number' => $lotNumber ?: null, 'expiry_date' => Validator::isDate($expiry) ? $expiry : null, 'lot_id' => $lotId,
                 ]);
             }
             if ($poId) {
@@ -124,6 +126,29 @@ final class PurchaseService
     }
 
     /** Retour fournisseur : sortie de stock + diminution de la dette. */
+    /** Nouveau prix de vente saisi à la réception (droit products.price_edit), historisé. */
+    private static function applySalePrice(int $pid, mixed $raw, string $number): ?float
+    {
+        $raw = is_string($raw) ? trim(str_replace([' ', ','], ['', '.'], $raw)) : $raw;
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+        if (!is_numeric($raw) || (float) $raw < 0 || (float) $raw > 1000000000) {
+            throw new BusinessException('Nouveau prix de vente invalide.');
+        }
+        $price = round((float) $raw, 2);
+        $old = (float) DB::value('SELECT sale_price FROM products WHERE id = ?', [$pid]);
+        if (abs($price - $old) < 0.01) {
+            return null;
+        }
+        if (!Auth::can('products.price_edit')) {
+            throw new BusinessException('Vous n\'êtes pas autorisé à modifier les prix de vente.');
+        }
+        DB::run('UPDATE products SET sale_price = ? WHERE id = ?', [$price, $pid]);
+        DB::insert('price_history', ['product_id' => $pid, 'field' => 'sale_price', 'old_value' => $old, 'new_value' => $price, 'source' => 'reception:' . $number, 'user_id' => Auth::id()]);
+        return $price;
+    }
+
     public static function supplierReturn(int $supplierId, int $warehouseId, array $items, string $reason): int
     {
         if (trim($reason) === '') {

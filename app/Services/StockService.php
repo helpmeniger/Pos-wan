@@ -102,14 +102,21 @@ final class StockService
         return DB::insert('stock_lots', ['product_id' => $productId, 'warehouse_id' => $warehouseId, 'lot_number' => $lotNumber, 'expiry_date' => $expiry ?: null, 'quantity' => 0, 'unit_cost' => $unitCost]);
     }
 
-    /** Entrée valorisée : met à jour le CMP puis ajoute le stock. */
-    public static function receive(int $productId, int $warehouseId, float $qty, float $unitCost, string $type, ?string $refType, ?int $refId, ?string $reason = null, ?string $lotNumber = null, ?string $expiry = null): ?int
+    public const COST_MODES = ['average' => 'Prix moyen pondéré', 'new' => 'Nouveau prix', 'old' => 'Ancien prix'];
+
+    /**
+     * Entrée valorisée : met à jour le coût de l'article puis ajoute le stock.
+     * $costMode : 'average' = coût moyen pondéré (ancien stock + entrée) ;
+     *             'new'     = tout le stock est revalorisé au nouveau coût ;
+     *             'old'     = le coût actuel est conservé (sauf s'il est nul).
+     */
+    public static function receive(int $productId, int $warehouseId, float $qty, float $unitCost, string $type, ?string $refType, ?int $refId, ?string $reason = null, ?string $lotNumber = null, ?string $expiry = null, string $costMode = 'average'): ?int
     {
         if ($qty <= 0) {
             throw new BusinessException('La quantité reçue doit être positive.');
         }
         $p = DB::one('SELECT id, track_lots, cost_price FROM products WHERE id = ? FOR UPDATE', [$productId]);
-        self::updateCmp($productId, $qty, $unitCost, (string) $type);
+        self::updateCmp($productId, $qty, $unitCost, (string) $type, $costMode);
         $lotId = null;
         if ((int) $p['track_lots'] === 1) {
             $lotId = self::lot($productId, $warehouseId, (string) $lotNumber, $expiry, $unitCost);
@@ -118,15 +125,19 @@ final class StockService
         return $lotId;
     }
 
-    public static function updateCmp(int $productId, float $qtyIn, float $unitCost, string $source): void
+    public static function updateCmp(int $productId, float $qtyIn, float $unitCost, string $source, string $mode = 'average'): void
     {
         $p = DB::one('SELECT cost_price FROM products WHERE id = ?', [$productId]);
         $old = (float) $p['cost_price'];
         $stock = max(0.0, self::totalQty($productId));
-        $new = $stock + $qtyIn > 0 ? round(($stock * $old + $qtyIn * $unitCost) / ($stock + $qtyIn), 2) : $unitCost;
+        $new = match ($mode) {
+            'new' => round($unitCost, 2),
+            'old' => $old > 0 ? $old : round($unitCost, 2),
+            default => $stock + $qtyIn > 0 ? round(($stock * $old + $qtyIn * $unitCost) / ($stock + $qtyIn), 2) : $unitCost,
+        };
         if (abs($new - $old) >= 0.01) {
             DB::run('UPDATE products SET cost_price = ? WHERE id = ?', [$new, $productId]);
-            DB::insert('price_history', ['product_id' => $productId, 'field' => 'cost_price', 'old_value' => $old, 'new_value' => $new, 'source' => 'cmp:' . $source, 'user_id' => Auth::id()]);
+            DB::insert('price_history', ['product_id' => $productId, 'field' => 'cost_price', 'old_value' => $old, 'new_value' => $new, 'source' => ($mode === 'average' ? 'cmp:' : 'cout_' . $mode . ':') . $source, 'user_id' => Auth::id()]);
         }
     }
 

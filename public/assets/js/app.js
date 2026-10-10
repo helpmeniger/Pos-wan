@@ -104,6 +104,11 @@
       if (c && price !== undefined) c.value = price;
       const lotBox = $('[data-lot-fields]', tr); if (lotBox && !p.track_lots) lotBox.classList.add('d-none');
       const stk = $('[data-stock]', tr); if (stk && p.stock !== undefined) stk.textContent = p.stock;
+      const fm = (v) => (window.PWMoney ? PWMoney.fmt(v) : v);
+      const oc = $('[data-oldcost]', tr); if (oc && p.cost_price !== undefined) oc.textContent = 'actuel : ' + fm(p.cost_price);
+      const os = $('[data-oldsale]', tr); if (os && p.sale_price !== undefined) os.textContent = 'actuel : ' + fm(p.sale_price);
+      const sp = $('[data-sale]', tr); if (sp && p.sale_price !== undefined) sp.placeholder = p.sale_price;
+      const gm = document.querySelector('[data-cost-mode-all]'); const cm = $('[data-cost-mode]', tr); if (gm && cm) cm.value = gm.value;
       tbody.appendChild(tr);
       const q = $('[data-q]', tr); if (q) q.focus();
       recalc();
@@ -194,4 +199,9 @@ document.querySelectorAll('select[data-customer-fill]').forEach((sel) => sel.add
   if (!o || !o.value) return;
   f.querySelector('[name="customer_name"]').value = o.dataset.name || '';
   f.querySelector('[name="customer_phone"]').value = o.dataset.phone || '';
+}));
+
+// Réception : mode de coût appliqué à toutes les lignes
+document.querySelectorAll('[data-cost-mode-all]').forEach((g) => g.addEventListener('change', () => {
+  document.querySelectorAll('[data-cost-mode]').forEach((s) => { s.value = g.value; });
 }));

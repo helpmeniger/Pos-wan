@@ -27,6 +27,9 @@ ALTER TABLE categories ADD COLUMN sales_channel ENUM('all','shop','restaurant') 
 -- Opérateur de mobile money utilisé (Airtel Money, Moov Money, Zamani Cash…)
 ALTER TABLE sale_payments ADD COLUMN provider VARCHAR(50) NULL AFTER method;
 
+-- Réception : mode de calcul du coût (moyen pondéré, nouveau prix, ancien prix) et nouveau prix de vente
+ALTER TABLE reception_items ADD COLUMN cost_mode ENUM('average','new','old') NOT NULL DEFAULT 'average' AFTER landed_unit_cost, ADD COLUMN new_sale_price DECIMAL(15,2) NULL AFTER cost_mode;
+
 -- Langue préférée de l'utilisateur (NULL = langue par défaut)
 ALTER TABLE users ADD COLUMN locale VARCHAR(5) NULL AFTER phone;
 
