@@ -104,7 +104,7 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
 
 Exécutées réellement dans l'environnement de développement (PHP 8.3, MariaDB 10.11) :
 
-1. **`php tests/run.php` : 82 tests, 0 échec**, dont :
+1. **`php tests/run.php` : 88 tests, 0 échec**, dont :
    CSRF (formulaire, API JSON), connexion/échec/verrouillage/PIN, régénération de session,
    en-têtes HTTP, redirection des pages protégées, contrôle d'accès par rôle (403),
    accès aux ventes d'autrui (IDOR), injections SQL dans la recherche, les filtres et le tri,
@@ -113,7 +113,9 @@ Exécutées réellement dans l'environnement de développement (PHP 8.3, MariaDB
    et pour la v1.2 : impression ESC/POS vers un serveur TCP local de test (octets, QR, tiroir,
    coupe), imprimante injoignable sans perte de vente, adresses d'imprimante publiques refusées,
    QR authentique / falsifié, devis (prix protégés, conversion idempotente), modes de coût,
-   canaux de vente, traductions et affichage arabe (RTL).
+   canaux de vente, traductions et affichage arabe (RTL) ; v1.3 : calcul de TVA (générale,
+   exonération, sans TVA), rapport TVA net des retours, validité des PDF générés, accès
+   au rapport TVA réservé (403), envoi en cuisine à l'encaissement.
 2. **Apache 2.4 + mod_php (configuration type WampServer, projet dans un sous-dossier)** :
    `/.env`, `/.env.example`, `/app/…`, `/config/…`, `/storage/…`, `/database/schema.sql`,
    `/routes/…`, `/tests/…`, `/bin/…`, `/README.md`, `/public/.htaccess`, `/public/uploads/` → **403** ;

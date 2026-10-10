@@ -160,6 +160,17 @@ les vues/services concernés.
 - **Coût d'achat** : `StockService::receive(..., $costMode)` — `average` (CMP), `new`, `old` ;
   mémorisé dans `reception_items.cost_mode`.
 
+### Version 1.3
+- **TVA** : `Tax::rate($produit)` selon `vat_mode` (`none`, `general` + `products.vat_exempt`,
+  `product` = `products.tax_rate`) ; `SaleService` mémorise `tax_rate` / `tax_amount` par
+  ligne ; `ReportService::vat()` agrège par taux et par mois (retours au prorata du taux de
+  la ligne d'origine).
+- **Export** : `App\Core\Export::download()` sert CSV ou PDF (`?export=csv|pdf`) à partir
+  des mêmes lignes ; `Pdf` écrit un PDF 1.4 (Helvetica, WinAnsi, tableau paginé).
+- **Cuisine** : `RestaurantService::stationFor()` (poste de la catégorie, sinon poste par
+  défaut, `aucun` = sans ticket) ; `pay()` envoie d'abord les lignes `new` si
+  `restaurant_send_on_pay`.
+
 ## 7. Rôles par défaut
 
 | Rôle | Périmètre |

@@ -1,4 +1,4 @@
-# État du projet — version 1.2.0
+# État du projet — version 1.3.0
 
 ## Terminé et vérifié
 
@@ -32,9 +32,13 @@
 | **v1.2** Articles réservés restaurant / boutique, bon cuisine à la demande | ✅ | Tests |
 | **v1.2** Réception : prix moyen / nouveau / ancien, nouveau prix de vente | ✅ | Tests + scénario Chromium |
 | Migration d'une installation 1.1.0 (0003) | ✅ | Exécutée sur une base 1.1.0 avec données de démonstration |
+| **v1.3** TVA (aucune / générale / par article, exonération), détail sur tickets et factures | ✅ | Tests + scénario Chromium |
+| **v1.3** Rapport TVA par taux et par mois, net des retours | ✅ | Tests + PDF contrôlé (pdftotext) |
+| **v1.3** Export PDF de tous les rapports et listes exportables | ✅ | Tests HTTP (8 exports) + rendu |
+| **v1.3** Écran cuisine : poste par défaut, envoi à l'encaissement, réimpression du bon | ✅ | Tests + scénario Chromium (catégorie sans poste → écran cuisine) |
 | Protections Apache (.htaccess) en sous-dossier | ✅ | Testé sous Apache 2.4 + mod_php |
 
-**Résultat de la suite de tests : 82 réussis, 0 échec** (`php tests/run.php`).
+**Résultat de la suite de tests : 88 réussis, 0 échec** (`php tests/run.php`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 
@@ -45,7 +49,8 @@
 | Lecture automatique d'une balance électronique | Saisie manuelle du poids (quantités décimales) ; pas de lecture des étiquettes code-barres « prix/poids » | Prise en charge des codes EAN à poids variable (préfixe 2x) |
 | Afficheur client (second écran) | Non disponible | Page « afficheur » synchronisée |
 | Utilisation des points de fidélité (conversion en remise) | Les points sont cumulés ; leur utilisation se fait par une remise manuelle | Bon de réduction automatique |
-| Export Excel natif (.xlsx) et PDF généré par le serveur | CSV compatible Excel ; PDF via « Imprimer → Enregistrer en PDF » | Bibliothèque XLSX / PDF |
+| Export Excel natif (.xlsx) | CSV compatible Excel ; PDF généré par POS Wan (polices latines : pas d'arabe dans les PDF) | Bibliothèque XLSX |
+| Prix saisis hors taxe (TVA ajoutée au total) | Prix toujours TTC, TVA extraite | Mode HT si besoin |
 | Conversion d'unités générique (kg ↔ g, etc.) | Conditionnements (N unités de base) uniquement | Table de conversions |
 | Génération automatique de la grille de variantes | Chaque variante est un article lié à son parent (création par « Dupliquer / variante ») | Assistant taille × couleur |
 | Mode hors ligne (coupure du serveur local) | Le panier en cours est conservé dans le navigateur, mais la vente nécessite le serveur | File d'attente locale synchronisée |

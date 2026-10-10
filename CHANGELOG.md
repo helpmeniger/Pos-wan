@@ -2,6 +2,34 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [1.3.0] — 2026-10-10
+
+### Ajouté
+- **TVA** (Paramètres → TVA) : pas de TVA, **TVA générale** au taux choisi (19 %, 18 %… ou
+  libre) avec case « Exonéré » par article, ou taux article par article. Prix saisis TTC ;
+  TVA détaillée par taux sur les tickets, factures, devis et tickets ESC/POS.
+- **Rapport TVA** (Rapports → TVA) : ventes TTC, retours, base HT et TVA collectée nettes,
+  par taux et par mois, avec export CSV et PDF.
+- **Export PDF** de tous les rapports et listes exportables (ventes, articles, bénéfices,
+  stock, mouvements, péremptions, créances, dépenses, ordonnancier, TVA) : PDF généré par
+  POS Wan lui-même, sans Internet ni logiciel supplémentaire (en-tête, totaux, pagination).
+
+### Corrigé — restaurant / écran cuisine
+- Les articles d'une catégorie **sans poste de préparation** étaient marqués « servis » et
+  n'apparaissaient jamais sur l'écran cuisine : ils vont désormais au **poste par défaut**
+  (« cuisine », réglable). Saisir `aucun` comme poste d'une catégorie pour servir sans ticket
+  (boissons en bouteille…).
+- Une commande **encaissée sans avoir été envoyée** (vente à emporter…) n'arrivait pas en
+  cuisine : les articles non envoyés partent maintenant en cuisine à l'encaissement
+  (paramètre, activé par défaut) ; un avertissement s'affiche sur l'écran d'encaissement.
+- Le bouton **Bon cuisine** réimprime les derniers bons de la commande même s'ils sont déjà
+  prêts ou servis (auparavant : message d'erreur).
+- Tests automatisés : le serveur PHP de test est arrêté proprement en fin de suite.
+
+### Migration
+- `0004_tva_cuisine` (colonne `products.vat_exempt`, paramètres TVA et restaurant). Les
+  installations existantes gardent le mode « taux par article » (comportement inchangé).
+
 ## [1.2.0] — 2026-10-10
 
 ### Ajouté

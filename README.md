@@ -36,6 +36,9 @@ ajustements, pertes, périmés ; transferts ; inventaires physiques ; lots et p�
 (**FEFO**), alertes, rappels de lots et traçabilité des délivrances ; valorisation au
 **coût moyen pondéré** ; stock négatif bloqué.
 
+**TVA** — sans TVA, TVA générale au choix (articles exonérés) ou taux par article ; TVA
+détaillée sur tickets et factures ; **rapport de TVA collectée** par taux et par mois.
+
 **Achats** — fournisseurs ; bons de commande ; réceptions partielles/complètes avec frais
 d'approche et choix du coût (**prix moyen, nouveau prix ou ancien prix**) et du nouveau prix de vente ; bons de réception ; retours fournisseurs ; dettes et paiements fournisseurs.
 
@@ -48,7 +51,7 @@ dépenses et recettes diverses (contrepassation, pas de suppression) ; créances
 **Rapports & tableau de bord** — ventes du jour, tickets, panier moyen, marge, dépenses,
 créances, dettes, espèces en caisse, valeur du stock, meilleures ventes, ruptures,
 péremptions, graphiques ; rapports par période, boutique, catégorie, vendeur, caisse,
-mode de paiement, heure ; bénéfice estimé ; stock dormant ; export CSV et impression PDF.
+mode de paiement, heure ; bénéfice estimé ; stock dormant ; **export CSV et PDF** (PDF généré hors ligne).
 
 **Restaurant** — plan de salle (tables, salles, terrasse), commandes sur place / à emporter /
 livraison, envoi en cuisine avec bons par poste (cuisine, grill, bar), **écran cuisine**
@@ -96,7 +99,7 @@ PHP 8.1+ (testé en 8.3), MySQL 8 / MariaDB 10.4+ (testé en 10.11), Apache 2.4 
 Bootstrap 5.3, Chart.js 4.4 — aucune dépendance à télécharger, aucun appel réseau externe.
 
 ```
-php tests/run.php     # 82 tests automatisés (base de test dédiée, voir INSTALLATION § 13)
+php tests/run.php     # 88 tests automatisés (base de test dédiée, voir INSTALLATION § 13)
 php bin/backup.php    # sauvegarde en ligne de commande (planifiable)
 php bin/migrate.php   # mise à jour du schéma sans perte de données
 ```
@@ -130,3 +133,7 @@ php bin/migrate.php   # mise à jour du schéma sans perte de données
 | Imprimantes | Caisse en arabe |
 |---|---|
 | ![Imprimantes](docs/captures/imprimantes.png) | ![Arabe](docs/captures/caisse-arabe.png) |
+
+| Rapport TVA (CSV / PDF) | Écran cuisine |
+|---|---|
+| ![Rapport TVA](docs/captures/rapport-tva.png) | ![Écran cuisine](docs/captures/ecran-cuisine-v13.png) |

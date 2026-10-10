@@ -870,6 +870,65 @@ test('Réception : coût nouveau prix / ancien prix / moyen et nouveau prix de v
     eq(400.0, (float) DB::value('SELECT sale_price FROM products WHERE id = ?', [$savon]), 'transaction annulée');
 });
 
+echo "\n== Version 1.3 : TVA, PDF, cuisine ==\n";
+test('TVA générale : taux appliqué, article exonéré, sans TVA', function () use ($savon) {
+    actingAs('caissier');
+    $price = (float) DB::value('SELECT sale_price FROM products WHERE id = ?', [$savon]);
+    setting_set('vat_mode', 'general');
+    setting_set('vat_rate', '19');
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 2]], 'payments' => [['method' => 'cash', 'amount' => 2 * $price]]]);
+    eq(round(2 * $price * 19 / 119, 2), (float) DB::value('SELECT tax_total FROM sales WHERE id = ?', [$r['sale_id']]), 'TVA extraite du TTC');
+    eq(19.0, (float) DB::value('SELECT tax_rate FROM sale_items WHERE sale_id = ?', [$r['sale_id']]), 'taux mémorisé sur la ligne');
+    eq(2 * $price, $r['total'], 'prix TTC inchangés');
+    DB::update('products', ['vat_exempt' => 1], 'id = ?', [$savon]);
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => $price]]]);
+    eq(0.0, (float) DB::value('SELECT tax_total FROM sales WHERE id = ?', [$r['sale_id']]), 'article exonéré');
+    DB::update('products', ['vat_exempt' => 0], 'id = ?', [$savon]);
+    setting_set('vat_mode', 'none');
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => $price]]]);
+    eq(0.0, (float) DB::value('SELECT tax_total FROM sales WHERE id = ?', [$r['sale_id']]), 'non assujetti');
+    setting_set('vat_mode', 'general');
+});
+test('Rapport TVA : par taux, net des retours', function () use ($savon) {
+    actingAs('gerant');
+    $before = S\ReportService::vat(date('Y-m-d'), date('Y-m-d'));
+    $price = (float) DB::value('SELECT sale_price FROM products WHERE id = ?', [$savon]);
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 3]], 'payments' => [['method' => 'cash', 'amount' => 3 * $price]]]);
+    $item = DB::one('SELECT * FROM sale_items WHERE sale_id = ?', [$r['sale_id']]);
+    S\SaleService::createReturn($r['sale_id'], [$item['id'] => 1], 'cash', 'Test TVA', true);
+    $after = S\ReportService::vat(date('Y-m-d'), date('Y-m-d'));
+    $ret = (float) DB::value('SELECT SUM(amount) FROM sale_return_items WHERE sale_item_id = ?', [$item['id']]);
+    $expected = (float) $item['tax_amount'] - round($ret * 19 / 119, 2);
+    eq(round($before['total']['net_tax'] + $expected, 2), $after['total']['net_tax'], 'TVA nette');
+    $rate19 = array_values(array_filter($after['rates'], fn($x) => $x['rate'] == 19))[0];
+    eq(round($rate19['net_ttc'] - $rate19['net_tax'], 2), $rate19['net_ht'], 'base HT = TTC − TVA');
+    eq(date('Y-m'), end($after['months'])['m']);
+    setting_set('vat_mode', 'product');
+});
+test('PDF : document valide, pagination, accents', function () {
+    $rows = [];
+    for ($i = 1; $i <= 120; $i++) {
+        $rows[] = ['Article é ' . $i, '9000000' . $i, $i, $i * 1250.5];
+    }
+    $pdf = S\Pdf::table('Ventes par article — été', ['Article', 'Téléphone', 'Quantité', 'Montant'], $rows, ['subtitle' => 'Du 01/10 au 10/10', 'footer' => ['TOTAL', '', 7260, 9075630.0]]);
+    ok(str_starts_with($pdf, '%PDF-1.4') && str_ends_with(rtrim($pdf), '%%EOF'), 'en-tête / fin');
+    ok(substr_count($pdf, '/Type /Page ') >= 3, 'plusieurs pages');
+    ok(str_contains($pdf, 'Page 1 / ' . substr_count($pdf, '/Type /Page ')), 'numérotation');
+    ok(str_contains($pdf, "\xE9t\xE9"), 'accents encodés (WinAnsi)');
+    preg_match('/startxref\n(\d+)/', $pdf, $m);
+    ok(substr($pdf, (int) $m[1], 4) === 'xref', 'table de références exacte');
+});
+test('Restaurant : articles non envoyés partent en cuisine à l\'encaissement', function () use (&$R) {
+    actingAs('gerant');
+    $o = S\RestaurantService::open(null, 'takeaway', 1, ['name' => 'Emporter direct']);
+    S\RestaurantService::addItem($o, (int) $R['plat'], 1);
+    $line = (int) DB::value('SELECT id FROM restaurant_order_items WHERE order_id = ?', [$o]);
+    $r = S\RestaurantService::pay($o, [$line => 1], ['client_uuid' => uuid(), 'payments' => [['method' => 'cash', 'amount' => 10000]]]);
+    ok($r['order_closed'] && count($r['sent_tickets']) === 1, 'ticket cuisine créé au paiement');
+    eq('sent', DB::value('SELECT status FROM restaurant_order_items WHERE id = ?', [$line]));
+    ok(count(array_filter(S\RestaurantService::kitchenFeed('cuisine'), fn($t) => (int) $t['order_id'] === $o)) === 1, 'visible sur l\'écran cuisine');
+});
+
 echo "\n== Sauvegarde & restauration ==\n";
 test('Sauvegarde vérifiée, altération détectée, restauration fidèle', function () {
     actingAs('admin');
@@ -902,7 +961,7 @@ if ($busy = @fsockopen('127.0.0.1', $port, $errno, $errstr, 0.5)) {
     fwrite(STDERR, "Le port $port est déjà utilisé (autre serveur PHP ?) : arrêtez-le ou définissez TEST_PORT.\n");
     exit(1);
 }
-$cmd = sprintf('php -S 127.0.0.1:%d -t %s %s', $port, escapeshellarg(PUBLIC_PATH), escapeshellarg(__DIR__ . '/server-router.php'));
+$cmd = sprintf((PHP_OS_FAMILY === 'Windows' ? '' : 'exec ') . 'php -S 127.0.0.1:%d -t %s %s', $port, escapeshellarg(PUBLIC_PATH), escapeshellarg(__DIR__ . '/server-router.php'));
 $proc = proc_open($cmd, [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $pipes, BASE_PATH, array_merge(getenv(), $env));
 usleep(700000);
 $B = "http://127.0.0.1:$port";
@@ -1100,7 +1159,7 @@ test('Toutes les pages principales répondent sans erreur (admin)', function () 
     $h = new Http();
     $h->login($B, 'admin', 'Essai-Niamey-2026');
     $sale = (int) DB::value('SELECT MAX(id) FROM sales');
-    $pages = ['/dashboard', '/menu', '/pos', '/sales', "/sales/$sale", "/sales/$sale/invoice", '/returns', '/cash', '/cash/sessions', '/products', '/products/create', '/products/1', '/products/1/edit', '/products/import', '/products/labels', '/products/duplicates', '/categories', '/stock', '/stock/movements', '/stock/adjust?product=1', '/stock/transfers', '/stock/transfers/create', '/stock/expiry', '/stock/lots?q=L', '/inventories', '/suppliers', '/suppliers/1', '/purchases', '/purchases/create', '/receptions', '/receptions/create', '/supplier-returns', '/customers', '/customers/1', '/customers/1/statement', '/expenses', '/reports/sales', '/reports/products', '/reports/profit', '/reports/stock', '/reports/debts', '/reports/prescriptions', '/users', '/roles', '/settings', '/stores', '/audit', '/backups', '/account/password', '/printers', '/quotes', '/quotes/create', '/verify', "/sales/$sale/delivery"];
+    $pages = ['/dashboard', '/menu', '/pos', '/sales', "/sales/$sale", "/sales/$sale/invoice", '/returns', '/cash', '/cash/sessions', '/products', '/products/create', '/products/1', '/products/1/edit', '/products/import', '/products/labels', '/products/duplicates', '/categories', '/stock', '/stock/movements', '/stock/adjust?product=1', '/stock/transfers', '/stock/transfers/create', '/stock/expiry', '/stock/lots?q=L', '/inventories', '/suppliers', '/suppliers/1', '/purchases', '/purchases/create', '/receptions', '/receptions/create', '/supplier-returns', '/customers', '/customers/1', '/customers/1/statement', '/expenses', '/reports/sales', '/reports/products', '/reports/profit', '/reports/stock', '/reports/debts', '/reports/prescriptions', '/users', '/roles', '/settings', '/stores', '/audit', '/backups', '/account/password', '/printers', '/quotes', '/quotes/create', '/verify', '/reports/vat', "/sales/$sale/delivery"];
     $bad = [];
     foreach ($pages as $p) {
         $r = $h->req('GET', $B . $p);
@@ -1236,6 +1295,37 @@ test('v1.2 (HTTP) : devis, code-barres généré, langue de l\'interface', funct
     ok(str_contains($d['body'], 'dir="rtl"') && str_contains($d['body'], 'bootstrap.rtl.min.css'), 'arabe de droite à gauche');
     $a->req('POST', "$B/account/locale", http_build_query(['_csrf' => $tp, 'locale' => 'fr']));
     ok(str_contains($a->req('GET', "$B/dashboard")['body'], 'lang="fr"'), 'retour au français');
+});
+test('v1.3 (HTTP) : paramètres TVA, rapport TVA, exports PDF, bon cuisine réimprimable', function () use ($B, &$R) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $t = $a->token("$B/settings");
+    $a->req('POST', "$B/settings/vat", http_build_query(['_csrf' => $t, 'vat_mode' => 'general', 'vat_rate' => '18', 'vat_label' => 'TVA']));
+    eq('general', setting('vat_mode'));
+    eq('18', setting('vat_rate'));
+    $a->req('POST', "$B/settings/vat", http_build_query(['_csrf' => $t, 'vat_mode' => 'general', 'vat_rate' => '150']));
+    eq('18', setting('vat_rate'), 'taux invalide refusé');
+    $page = $a->req('GET', "$B/reports/vat");
+    ok($page['code'] === 200 && str_contains($page['body'], 'Par taux'), 'rapport TVA');
+    foreach (['/reports/vat?export=pdf', '/reports/vat?export=pdf&by=month', '/reports/sales?export=pdf', '/reports/products?export=pdf', '/reports/debts?export=pdf', '/sales?export=pdf', '/stock?export=pdf', '/expenses?export=pdf'] as $u) {
+        $r = $a->req('GET', $B . $u);
+        ok($r['code'] === 200 && str_starts_with($r['body'], '%PDF') && str_contains($r['headers'], 'application/pdf'), "PDF $u ({$r['code']})");
+    }
+    $csv = $a->req('GET', "$B/reports/vat?export=csv");
+    ok(str_contains($csv['body'], 'Base HT nette'), 'CSV TVA');
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(403, $c->req('GET', "$B/reports/vat")['code'], 'rapport TVA réservé');
+    setting_set('vat_mode', 'product');
+    // Bon cuisine : réimpression d'une commande dont les bons sont déjà servis
+    $w = new Http();
+    $w->login($B, 'serveur', 'Mot-de-passe-2026');
+    $pg = $w->req('GET', "$B/restaurant");
+    preg_match('/name="csrf-token" content="([^"]+)"/', $pg['body'], $m);
+    $oid = (int) DB::value("SELECT order_id FROM kitchen_tickets WHERE type = 'order' AND status = 'served' ORDER BY id DESC LIMIT 1");
+    $r = $w->req('POST', "$B/restaurant/orders/$oid/print-kitchen", '{}', ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]]);
+    $d = json_decode($r['body'], true);
+    ok(($d['ok'] ?? false) && count($d['print']) >= 1, 'réimpression du bon : ' . $r['body']);
 });
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);

@@ -90,6 +90,22 @@ Le menu en haut du tableau applique le même choix à toutes les lignes. La colo
 **Nouveau prix de vente** (droit « Modifier les prix de vente ») met à jour le prix en caisse ;
 le changement est historisé.
 
+## TVA et rapport de TVA
+- **Paramètres → TVA** : choisir *Pas de TVA*, *TVA générale* (taux au choix : 19 %, 18 %…,
+  boutons rapides) ou *Taux défini article par article*. Les prix de vente restent saisis
+  **TVA comprise (TTC)** : la TVA de chaque ligne est calculée à la vente et indiquée sur
+  le ticket (« dont TVA 19 % »), la facture et le devis (Total HT, TVA, TTC).
+- En TVA générale, cocher **Exonéré de TVA** dans la fiche des articles non taxés.
+- Changer de taux ne modifie pas les ventes passées (leur TVA est mémorisée).
+- **Rapports → TVA** : ventes TTC, retours, base HT et TVA nettes par taux et par mois,
+  boutons **CSV** et **PDF**. C'est une aide à la déclaration, à rapprocher de la comptabilité.
+
+## Export PDF
+Chaque rapport et chaque liste exportable (ventes, stock, mouvements, péremptions,
+créances, dépenses…) a un bouton **PDF** à côté du bouton CSV : le fichier est créé par
+POS Wan, sans Internet. (L'arabe ne s'imprime pas dans ces PDF : les en-têtes restent en
+français ; utiliser « Imprimer / PDF » du navigateur pour un document en arabe.)
+
 ## Paramètres utiles (v1.2)
 - **Langue** : langue par défaut du logiciel ; chacun peut choisir la sienne dans *Mon
   compte* ou sur l'écran de connexion (français, anglais, arabe, haoussa, espagnol,
@@ -127,6 +143,16 @@ et au rouge après 20 min. Les tickets rouges sont des **annulations**.
 
 **Gestion** — *Salles & tables*, *Fiches techniques* (ingrédients par portion : le stock
 d'ingrédients baisse à chaque vente), *Rapport restaurant*.
+
+### Pourquoi une commande n'apparaît pas en cuisine ?
+- Un article part sur l'écran du **poste** de sa catégorie (cuisine, bar, grill…). Une
+  catégorie sans poste utilise le **poste par défaut** (Paramètres, « cuisine » par défaut).
+  Une catégorie au poste `aucun` est servie directement, sans ticket.
+- Les articles s'affichent en cuisine après **Envoyer en cuisine** ; s'ils sont encaissés
+  sans avoir été envoyés, ils partent en cuisine au moment de l'encaissement.
+- Sur l'écran cuisine, vérifier l'onglet du poste (Cuisine, Bar…) en haut de l'écran.
+- **Bon cuisine** (commande) ou l'icône imprimante d'un ticket (écran cuisine) imprime le
+  bon à tout moment, même déjà préparé.
 
 ### Alimentation + restaurant dans le même établissement
 - Par défaut un article est vendu « en boutique et au restaurant ». Pour qu'un plat
