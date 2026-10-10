@@ -54,9 +54,13 @@ final class SaleController extends Controller
             $where[] = 's.credit_amount > 0';
         }
         $from_ = 'FROM sales s JOIN users u ON u.id = s.user_id LEFT JOIN customers c ON c.id = s.customer_id WHERE ' . implode(' AND ', $where);
-        if (Request::query('export') === 'csv' && can('reports.export')) {
+        if (\App\Core\Export::requested() && can('reports.export')) {
             $rows = DB::all("SELECT s.number, s.created_at, u.full_name, c.name, s.subtotal, s.discount_total, s.tax_total, s.total, s.paid_total, s.credit_amount, s.status $from_ ORDER BY s.id", $params);
-            \App\Core\Csv::download("ventes_{$from}_{$to}.csv", ['N°', 'Date', 'Vendeur', 'Client', 'Sous-total', 'Remise', 'Taxe incluse', 'Total', 'Payé', 'Crédit', 'Statut'], $rows);
+            $valid = array_filter($rows, fn($r) => $r['status'] !== 'cancelled');
+            \App\Core\Export::download("ventes_{$from}_{$to}.csv", 'Historique des ventes', ['N°', 'Date', 'Vendeur', 'Client', 'Sous-total', 'Remise', 'TVA incluse', 'Total', 'Payé', 'Crédit', 'Statut'], $rows, [
+                'subtitle' => \App\Core\Export::period($from, $to),
+                'footer' => ['TOTAL (hors annulées)', '', '', '', array_sum(array_column($valid, 'subtotal')), array_sum(array_column($valid, 'discount_total')), array_sum(array_column($valid, 'tax_total')), array_sum(array_column($valid, 'total')), array_sum(array_column($valid, 'paid_total')), array_sum(array_column($valid, 'credit_amount')), ''],
+            ]);
         }
         $p = paginate($from_, $params, 's.*, u.full_name AS cashier, c.name AS customer', 's.id DESC', 30);
         $tot = DB::one("SELECT COUNT(*) n, COALESCE(SUM(CASE WHEN s.status <> 'cancelled' THEN s.total END),0) t $from_", $params);

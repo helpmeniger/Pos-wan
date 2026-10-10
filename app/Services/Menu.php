@@ -50,6 +50,7 @@ final class Menu
                 ['Dépenses & recettes', 'bi-wallet2', '/expenses', 'expenses.manage', '#d35400'],
                 ['Rapports des ventes', 'bi-bar-chart-line', '/reports/sales', 'reports.view', '#e91e63'],
                 ['Bénéfices & marges', 'bi-graph-up-arrow', '/reports/profit', 'reports.financial', '#c2185b'],
+                ['Rapport TVA', 'bi-percent', '/reports/vat', 'reports.financial', '#5e35b1'],
                 ['Valeur du stock', 'bi-cash-stack', '/reports/stock', 'reports.financial', '#455a64'],
                 ['Créances & dettes', 'bi-journal-text', '/reports/debts', 'reports.financial', '#6d4c41'],
                 ['Registre des ordonnances', 'bi-file-medical', '/reports/prescriptions', 'reports.view', '#00838f', 'pharmacy'],

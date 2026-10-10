@@ -1,6 +1,8 @@
 <?php $old = fn($k, $d = '') => e(App\Core\Session::old($k, (string) $d)); ?>
 <form method="post" action="<?= e(url('/restaurant/orders/' . $o['id'] . '/pay')) ?>" id="payForm"><?= csrf_field() ?>
 <input type="hidden" name="client_uuid" value="<?= e($uuid) ?>">
+<?php $unsent = count(array_filter($o['items'], fn($i) => $i['status'] === 'new')); ?>
+<?php if ($unsent && setting('restaurant_send_on_pay', '1') === '1'): ?><div class="alert alert-warning py-2"><i class="bi bi-fire"></i> <?= (int) $unsent ?> <?= e(t('article(s) pas encore envoyé(s) en cuisine : ils seront envoyés à l\'écran cuisine au moment de l\'encaissement.')) ?></div><?php endif; ?>
 <div class="row g-3">
   <div class="col-xl-7">
     <div class="card"><div class="card-header d-flex align-items-center"><span><i class="bi bi-list-check"></i> Articles à encaisser</span>

@@ -205,3 +205,9 @@ document.querySelectorAll('select[data-customer-fill]').forEach((sel) => sel.add
 document.querySelectorAll('[data-cost-mode-all]').forEach((g) => g.addEventListener('change', () => {
   document.querySelectorAll('[data-cost-mode]').forEach((s) => { s.value = g.value; });
 }));
+
+// Boutons de valeur rapide : <button data-set-value="#champ" data-value="19">
+document.querySelectorAll('[data-set-value]').forEach((b) => b.addEventListener('click', () => {
+  const f = document.querySelector(b.dataset.setValue);
+  if (f) { f.value = b.dataset.value; f.dispatchEvent(new Event('input', { bubbles: true })); }
+}));

@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Core\Csv;
 use App\Core\DB;
+use App\Core\Export;
 use App\Core\Request;
 use App\Core\Validator;
 use App\Services\ExpenseService;
@@ -27,8 +28,8 @@ final class ExpenseController extends Controller
             $params[] = $c;
         }
         $from_ = "FROM expenses e JOIN expense_categories c ON c.id = e.category_id JOIN users u ON u.id = e.user_id WHERE $where";
-        if (Request::query('export') === 'csv') {
-            Csv::download("depenses_{$from}_{$to}.csv", ['N°', 'Date', 'Type', 'Catégorie', 'Description', 'Mode', 'Montant', 'Statut', 'Saisi par'],
+        if (Export::requested()) {
+            Export::download("depenses_{$from}_{$to}.csv", 'Dépenses et recettes', ['N°', 'Date', 'Type', 'Catégorie', 'Description', 'Mode', 'Montant', 'Statut', 'Saisi par'],
                 DB::all("SELECT e.number, e.expense_date, e.type, c.name, e.description, e.method, e.amount, e.status, u.full_name $from_ ORDER BY e.expense_date", $params));
         }
         $p = paginate($from_, $params, 'e.*, c.name AS category, u.full_name', 'e.expense_date DESC, e.id DESC');

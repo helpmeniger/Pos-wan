@@ -50,6 +50,30 @@ final class Documents
         return t(method_label($p['method'])) . (!empty($p['provider']) ? ' ' . $p['provider'] : '') . (!empty($p['reference']) ? ' (' . $p['reference'] . ')' : '');
     }
 
+    /**
+     * Détail de la TVA par taux à partir des lignes (tax_rate, tax_amount ou line_total TTC).
+     * @return array<int, array{rate:float, base:float, tax:float, ttc:float}>
+     */
+    public static function vatBreakdown(array $items): array
+    {
+        $by = [];
+        foreach ($items as $i) {
+            $rate = (float) ($i['tax_rate'] ?? 0);
+            if ($rate <= 0) {
+                continue;
+            }
+            $ttc = (float) $i['line_total'];
+            $tax = isset($i['tax_amount']) ? (float) $i['tax_amount'] : Tax::included($ttc, $rate);
+            $k = (string) $rate;
+            $by[$k] ??= ['rate' => $rate, 'base' => 0.0, 'tax' => 0.0, 'ttc' => 0.0];
+            $by[$k]['tax'] += $tax;
+            $by[$k]['ttc'] += $ttc;
+            $by[$k]['base'] += $ttc - $tax;
+        }
+        ksort($by, SORT_NUMERIC);
+        return array_values($by);
+    }
+
     public static function saleTicket(array $s, array $items, array $payments, bool $dup): array
     {
         $totals = [];
@@ -58,8 +82,8 @@ final class Documents
             $totals[] = [t('Remise'), '-' . money($s['discount_total'])];
         }
         $totals[] = ['TOTAL', money($s['total']), true];
-        if ((float) $s['tax_total'] > 0) {
-            $totals[] = [t('dont taxes'), money($s['tax_total'])];
+        foreach (self::vatBreakdown($items) as $v) {
+            $totals[] = [t('dont') . ' ' . Tax::rateLabel($v['rate']), money($v['tax'])];
         }
         $pay = array_map(fn($p) => [self::paymentLabel($p), money($p['amount'])], $payments);
         $pay[] = [t('Montant remis'), money($s['tendered'])];
@@ -96,7 +120,9 @@ final class Documents
             }
             if ((float) $s['tax_total'] > 0) {
                 $totals[] = [t('Total HT'), money((float) $s['total'] - (float) $s['tax_total'])];
-                $totals[] = [t('Taxes (incluses)'), money($s['tax_total'])];
+                foreach (self::vatBreakdown($items) as $v) {
+                    $totals[] = [Tax::rateLabel($v['rate']) . ' (' . t('base') . ' ' . money($v['base']) . ')', money($v['tax'])];
+                }
             }
             $totals[] = [t('TOTAL TTC'), money($s['total']), true];
             if ($isInvoice) {
@@ -126,6 +152,14 @@ final class Documents
         $totals = [[t('Sous-total'), money($q['subtotal'])]];
         if ((float) $q['discount_total'] > 0) {
             $totals[] = [t('Remises'), '− ' . money($q['discount_total'])];
+        }
+        $qItems = array_map(fn($i) => ['line_total' => $i['line_total'], 'tax_rate' => Tax::rate($i)], $items);
+        $vat = self::vatBreakdown($qItems);
+        if ($vat) {
+            $totals[] = [t('Total HT'), money((float) $q['total'] - array_sum(array_column($vat, 'tax')))];
+            foreach ($vat as $v) {
+                $totals[] = [Tax::rateLabel($v['rate']), money($v['tax'])];
+            }
         }
         $totals[] = [t('TOTAL TTC'), money($q['total']), true];
         $banner = match ($q['status']) {

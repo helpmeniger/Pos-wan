@@ -166,4 +166,58 @@ final class ReportService
                 JOIN products p ON p.id = l.product_id JOIN warehouses w ON w.id = l.warehouse_id
                 WHERE l.quantity > 0 AND l.expiry_date IS NOT NULL AND l.expiry_date <= CURDATE() + INTERVAL ? DAY ORDER BY l.expiry_date LIMIT ' . max(1, $limit), [$days]);
     }
+
+    /**
+     * TVA collectée sur la période, par taux et par mois : ventes validées (date de vente)
+     * moins retours (date du retour). Les ventes annulées sont exclues.
+     * @return array{rates: array, months: array, total: array}
+     */
+    public static function vat(string $from, string $to, ?int $storeId = null): array
+    {
+        [$sc, $sp] = self::storeCond($storeId);
+        $p = array_merge([$from . ' 00:00:00', $to . ' 23:59:59'], $sp);
+        $sales = DB::all("SELECT DATE_FORMAT(s.created_at, '%Y-%m') AS m, si.tax_rate AS rate, SUM(si.line_total) AS ttc, SUM(si.tax_amount) AS tax, COUNT(DISTINCT s.id) AS n
+                FROM sale_items si JOIN sales s ON s.id = si.sale_id WHERE s.status <> 'cancelled' AND s.created_at BETWEEN ? AND ? $sc GROUP BY m, si.tax_rate", $p);
+        $returns = DB::all("SELECT DATE_FORMAT(r.created_at, '%Y-%m') AS m, si.tax_rate AS rate, SUM(ri.amount) AS ttc
+                FROM sale_return_items ri JOIN sale_returns r ON r.id = ri.return_id JOIN sale_items si ON si.id = ri.sale_item_id JOIN sales s ON s.id = r.sale_id
+                WHERE r.created_at BETWEEN ? AND ? $sc GROUP BY m, si.tax_rate", $p);
+        $rates = [];
+        $months = [];
+        $add = static function (array &$bucket, string $key, array $init, float $ttc, float $tax, float $retTtc, float $retTax, int $n): void {
+            $bucket[$key] ??= $init + ['ttc' => 0.0, 'tax' => 0.0, 'ret_ttc' => 0.0, 'ret_tax' => 0.0, 'n' => 0];
+            $bucket[$key]['ttc'] += $ttc;
+            $bucket[$key]['tax'] += $tax;
+            $bucket[$key]['ret_ttc'] += $retTtc;
+            $bucket[$key]['ret_tax'] += $retTax;
+            $bucket[$key]['n'] += $n;
+        };
+        foreach ($sales as $r) {
+            $rate = (float) $r['rate'];
+            $add($rates, (string) $rate, ['rate' => $rate], (float) $r['ttc'], (float) $r['tax'], 0, 0, (int) $r['n']);
+            $add($months, $r['m'], ['m' => $r['m']], (float) $r['ttc'], (float) $r['tax'], 0, 0, 0);
+        }
+        foreach ($returns as $r) {
+            $rate = (float) $r['rate'];
+            $rt = Tax::included((float) $r['ttc'], $rate);
+            $add($rates, (string) $rate, ['rate' => $rate], 0, 0, (float) $r['ttc'], $rt, 0);
+            $add($months, $r['m'], ['m' => $r['m']], 0, 0, (float) $r['ttc'], $rt, 0);
+        }
+        $finish = static function (array $b): array {
+            $b['net_ttc'] = round($b['ttc'] - $b['ret_ttc'], 2);
+            $b['net_tax'] = round($b['tax'] - $b['ret_tax'], 2);
+            $b['net_ht'] = round($b['net_ttc'] - $b['net_tax'], 2);
+            return $b;
+        };
+        $rates = array_map($finish, $rates);
+        ksort($rates, SORT_NUMERIC);
+        $months = array_map($finish, $months);
+        ksort($months);
+        $total = ['ttc' => 0.0, 'ret_ttc' => 0.0, 'net_ttc' => 0.0, 'net_tax' => 0.0, 'net_ht' => 0.0, 'tax' => 0.0, 'ret_tax' => 0.0];
+        foreach ($rates as $r) {
+            foreach ($total as $k => $_) {
+                $total[$k] += $r[$k];
+            }
+        }
+        return ['rates' => array_values($rates), 'months' => array_values($months), 'total' => array_map(fn($v) => round($v, 2), $total)];
+    }
 }

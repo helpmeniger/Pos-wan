@@ -25,8 +25,24 @@ final class RestaurantService
     /** Postes de préparation configurés sur les catégories (+ cuisine par défaut). */
     public static function stations(): array
     {
-        $s = array_column(DB::all("SELECT DISTINCT kitchen_station FROM categories WHERE kitchen_station IS NOT NULL AND kitchen_station <> ''"), 'kitchen_station');
-        return array_values(array_unique(array_merge(['cuisine'], $s)));
+        $s = array_column(DB::all("SELECT DISTINCT kitchen_station FROM categories WHERE kitchen_station IS NOT NULL AND kitchen_station NOT IN ('', ?)", [self::NO_STATION]), 'kitchen_station');
+        $default = (string) setting('restaurant_default_station', 'cuisine');
+        $first = $default !== '' && $default !== self::NO_STATION ? [$default] : [];
+        return array_values(array_unique(array_merge($first, ['cuisine'], $s)));
+    }
+
+    /** Valeur de poste qui signifie « servi directement, sans ticket cuisine ». */
+    public const NO_STATION = 'aucun';
+
+    /**
+     * Poste de préparation d'un article : celui de sa catégorie (ou de la catégorie
+     * parente), sinon le poste par défaut des paramètres (« cuisine »). Le poste « aucun »
+     * (ex. boissons en bouteille) n'envoie pas de ticket : l'article est servi directement.
+     */
+    public static function stationFor(?string $categoryStation): ?string
+    {
+        $s = $categoryStation ?: (string) setting('restaurant_default_station', 'cuisine');
+        return $s === '' || $s === self::NO_STATION ? null : $s;
     }
 
     private static function lockOrder(int $orderId, bool $mustBeOpen = true): array
@@ -97,7 +113,7 @@ final class RestaurantService
             if ((int) $p['sold_by_weight'] !== 1 && (int) $p['allow_decimal'] !== 1 && abs($qty - round($qty)) > 0.0001) {
                 throw new BusinessException('Quantité entière obligatoire pour « ' . $p['name'] . ' ».');
             }
-            $station = $p['kitchen_station'] ?: ($p['parent_station'] ?: null);
+            $station = self::stationFor($p['kitchen_station'] ?: ($p['parent_station'] ?: null));
             $note = $note !== null ? mb_substr(trim($note), 0, 255) : null;
             // Regroupement avec une ligne identique non encore envoyée
             $same = DB::one("SELECT id FROM restaurant_order_items WHERE order_id = ? AND product_id = ? AND status = 'new' AND COALESCE(note,'') = ? FOR UPDATE", [$orderId, $productId, (string) $note]);
@@ -369,6 +385,12 @@ final class RestaurantService
     {
         return DB::transaction(function () use ($orderId, $quantities, $payment) {
             $o = self::lockOrder($orderId);
+            // Articles saisis mais pas encore envoyés (vente à emporter encaissée tout de suite…) :
+            // ils partent en cuisine avec l'encaissement, sinon la cuisine ne les verrait jamais.
+            $sentTickets = [];
+            if (setting('restaurant_send_on_pay', '1') === '1' && DB::value("SELECT 1 FROM restaurant_order_items WHERE order_id = ? AND status = 'new' LIMIT 1", [$orderId])) {
+                $sentTickets = self::send($orderId);
+            }
             $lines = [];
             $selected = [];
             foreach (DB::all("SELECT * FROM restaurant_order_items WHERE order_id = ? AND status <> 'cancelled' FOR UPDATE", [$orderId]) as $it) {
@@ -401,7 +423,7 @@ final class RestaurantService
             if ($remaining <= 0.0005) {
                 DB::update('restaurant_orders', ['status' => 'paid', 'closed_at' => date('Y-m-d H:i:s')], 'id = ?', [$orderId]);
             }
-            return $r + ['order_closed' => $remaining <= 0.0005];
+            return $r + ['order_closed' => $remaining <= 0.0005, 'sent_tickets' => $sentTickets];
         });
     }
 

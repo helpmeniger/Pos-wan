@@ -172,6 +172,9 @@ final class PrintService
             $d->pair(t('Sous-total'), money($s['subtotal']))->pair(t('Remise'), '-' . money($s['discount_total']));
         }
         $d->bold()->size(1, 2)->pair('TOTAL', money($s['total']))->size()->bold(false);
+        foreach (Documents::vatBreakdown($items) as $v) {
+            $d->pair(t('dont') . ' ' . Tax::rateLabel($v['rate']), money($v['tax']));
+        }
         foreach ($payments as $p) {
             $d->pair(method_label($p['method']) . ($p['provider'] ? ' ' . $p['provider'] : ''), money($p['amount']));
         }

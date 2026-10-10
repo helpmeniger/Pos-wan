@@ -192,8 +192,8 @@ final class SaleService
             $allocated += $share;
             $l['disc_total'] = round($l['disc'] + $share, 2);
             $l['total'] = round($l['gross'] - $l['disc_total'], 2);
-            $rate = (float) $l['p']['tax_rate'];
-            $l['tax'] = $rate > 0 ? round($l['total'] * $rate / (100 + $rate), 2) : 0.0;
+            $l['rate'] = Tax::rate($l['p']);
+            $l['tax'] = Tax::included($l['total'], $l['rate']);
         }
         unset($l);
         $total = round(array_sum(array_column($lines, 'total')), 2);
@@ -300,7 +300,7 @@ final class SaleService
                     'sale_id' => $saleId, 'product_id' => (int) $p['id'], 'packaging_id' => $l['pack']['id'] ?? null,
                     'product_name' => mb_substr($name, 0, 200), 'quantity' => $l['qty'], 'base_quantity' => $l['base_qty'],
                     'unit_price' => $l['price'], 'list_price' => $l['list'], 'discount' => $l['disc_total'],
-                    'tax_rate' => (float) $p['tax_rate'], 'tax_amount' => $l['tax'], 'line_total' => $l['total'],
+                    'tax_rate' => $l['rate'], 'tax_amount' => $l['tax'], 'line_total' => $l['total'],
                     'unit_cost' => (float) $p['cost_price'],
                 ]);
                 $lineCost = 0.0;

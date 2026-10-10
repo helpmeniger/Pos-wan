@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Core\Csv;
 use App\Core\DB;
+use App\Core\Export;
 use App\Core\Request;
 use App\Services\ReportService;
 
@@ -28,7 +29,7 @@ final class ReportController extends Controller
 
     private function exportAllowed(): bool
     {
-        return Request::query('export') === 'csv' && can('reports.export');
+        return Export::requested() !== null && can('reports.export');
     }
 
     public function index(): void
@@ -50,7 +51,7 @@ final class ReportController extends Controller
             'hours' => ReportService::byHour($from, $to, $s),
         ];
         if ($this->exportAllowed()) {
-            Csv::download("rapport_ventes_{$from}_{$to}.csv", ['Date', 'Tickets', 'Chiffre d\'affaires', 'Marge brute'], array_map(fn($r) => [$r['d'], $r['n'], $r['total'], can('reports.financial') ? round($r['margin']) : ''], $d['daily']));
+            Export::download("rapport_ventes_{$from}_{$to}.csv", 'Rapport des ventes', ['Date', 'Tickets', 'Chiffre d\'affaires', 'Marge brute'], array_map(fn($r) => [$r['d'], $r['n'], $r['total'], can('reports.financial') ? round($r['margin']) : ''], $d['daily']), ['subtitle' => Export::period($from, $to)]);
         }
         view('reports/sales', $d);
     }
@@ -60,7 +61,7 @@ final class ReportController extends Controller
         $d = $this->common('Ventes par article');
         $d['rows'] = ReportService::topProducts($d['from'], $d['to'], $d['storeId'], 500, Request::query('order') === 'qty' ? 'qty' : 'revenue');
         if ($this->exportAllowed()) {
-            Csv::download("ventes_articles_{$d['from']}_{$d['to']}.csv", ['Référence', 'Article', 'Catégorie', 'Quantité', 'CA', 'Marge'], array_map(fn($r) => [$r['reference'], $r['name'], $r['category'], round((float) $r['qty'], 3), round((float) $r['revenue']), can('reports.financial') ? round((float) $r['margin']) : ''], $d['rows']));
+            Export::download("ventes_articles_{$d['from']}_{$d['to']}.csv", 'Ventes par article', ['Référence', 'Article', 'Catégorie', 'Quantité', 'CA', 'Marge'], array_map(fn($r) => [$r['reference'], $r['name'], $r['category'], round((float) $r['qty'], 3), round((float) $r['revenue']), can('reports.financial') ? round((float) $r['margin']) : ''], $d['rows']), ['subtitle' => Export::period($d['from'], $d['to'])]);
         }
         view('reports/products', $d);
     }
@@ -81,7 +82,7 @@ final class ReportController extends Controller
         }
         $d['months'] = $months;
         if ($this->exportAllowed()) {
-            Csv::download('evolution_benefices.csv', ['Mois', 'CA net', 'Marge brute', 'Dépenses', 'Bénéfice estimé'], array_map(fn($m) => [substr($m['m'], 0, 7), round($m['net']), round($m['margin']), round($m['expenses']), round($m['profit'])], $months));
+            Export::download('evolution_benefices.csv', 'Évolution des bénéfices', ['Mois', 'CA net', 'Marge brute', 'Dépenses', 'Bénéfice estimé'], array_map(fn($m) => [substr($m['m'], 0, 7), round($m['net']), round($m['margin']), round($m['expenses']), round($m['profit'])], $months));
         }
         view('reports/profit', $d);
     }
@@ -95,7 +96,7 @@ final class ReportController extends Controller
         $d['dormant'] = DB::all("SELECT p.id, p.name, SUM(sl.quantity) AS qty, SUM(sl.quantity) * p.cost_price AS value, (SELECT MAX(s.created_at) FROM sale_items si JOIN sales s ON s.id = si.sale_id WHERE si.product_id = p.id) AS last_sale
                 FROM products p JOIN stock_levels sl ON sl.product_id = p.id WHERE p.status = 'active' GROUP BY p.id, p.name, p.cost_price HAVING qty > 0 AND (last_sale IS NULL OR last_sale < NOW() - INTERVAL 90 DAY) ORDER BY value DESC LIMIT 50");
         if ($this->exportAllowed()) {
-            Csv::download('valeur_stock_' . date('Ymd') . '.csv', ['Catégorie', 'Valeur au coût', 'Valeur de vente'], array_map(fn($r) => [$r['name'], round((float) $r['cost_value']), round((float) $r['sale_value'])], $d['byCategory']));
+            Export::download('valeur_stock_' . date('Ymd') . '.csv', 'Valeur du stock par catégorie', ['Catégorie', 'Valeur au coût', 'Valeur de vente'], array_map(fn($r) => [$r['name'], round((float) $r['cost_value']), round((float) $r['sale_value'])], $d['byCategory']));
         }
         view('reports/stock', $d);
     }
@@ -109,9 +110,29 @@ final class ReportController extends Controller
                 FROM customers c WHERE c.balance > 0 ORDER BY c.balance DESC");
         $d['suppliers'] = DB::all("SELECT s.id, s.name, s.phone, s.balance, (SELECT MIN(due_date) FROM supplier_transactions st WHERE st.supplier_id = s.id AND st.type = 'invoice' AND st.due_date IS NOT NULL AND st.created_at >= COALESCE((SELECT MAX(created_at) FROM supplier_transactions z WHERE z.supplier_id = s.id AND z.balance_after <= 0), '1970-01-01')) AS oldest_due FROM suppliers s WHERE s.balance > 0 ORDER BY s.balance DESC");
         if ($this->exportAllowed()) {
-            Csv::download('creances_' . date('Ymd') . '.csv', ['Client', 'Téléphone', 'Solde dû', 'Plafond', 'Échéance la plus ancienne'], array_map(fn($r) => [$r['name'], $r['phone'], $r['balance'], $r['credit_limit'], $r['oldest_due']], $d['customers']));
+            Export::download('creances_' . date('Ymd') . '.csv', 'Créances clients', ['Client', 'Téléphone', 'Solde dû', 'Plafond', 'Échéance la plus ancienne'], array_map(fn($r) => [$r['name'], $r['phone'], $r['balance'], $r['credit_limit'], $r['oldest_due']], $d['customers']));
         }
         view('reports/debts', $d);
+    }
+
+    /** TVA collectée (par taux et par mois), nette des retours. */
+    public function vat(): void
+    {
+        $d = $this->common('Rapport TVA');
+        $d['vat'] = ReportService::vat($d['from'], $d['to'], $d['storeId']);
+        if ($this->exportAllowed()) {
+            $lbl = \App\Services\Tax::label();
+            $t = $d['vat']['total'];
+            $byMonth = Request::query('by') === 'month';
+            $rows = $byMonth
+                ? array_map(fn($r) => [substr($r['m'], 5, 2) . '/' . substr($r['m'], 0, 4), round($r['ttc'], 2), round($r['ret_ttc'], 2), $r['net_ht'], $r['net_tax'], $r['net_ttc']], $d['vat']['months'])
+                : array_map(fn($r) => [$r['rate'] > 0 ? \App\Services\Tax::rateLabel($r['rate']) : 'Exonéré / 0 %', round($r['ttc'], 2), round($r['ret_ttc'], 2), $r['net_ht'], $r['net_tax'], $r['net_ttc']], $d['vat']['rates']);
+            Export::download('tva_' . ($byMonth ? 'mois_' : '') . "{$d['from']}_{$d['to']}.csv", 'Rapport ' . $lbl . ' collectée', [$byMonth ? 'Mois' : 'Taux', 'Ventes TTC', 'Retours TTC', 'Base HT nette', $lbl . ' nette', 'TTC net'], $rows, [
+                'subtitle' => Export::period($d['from'], $d['to']) . ' — ' . t('prix TTC, TVA extraite par ligne ; ventes annulées exclues'),
+                'footer' => ['TOTAL', $t['ttc'], $t['ret_ttc'], $t['net_ht'], $t['net_tax'], $t['net_ttc']],
+            ]);
+        }
+        view('reports/vat', $d);
     }
 
     public function cash(): void
@@ -126,7 +147,7 @@ final class ReportController extends Controller
                 (SELECT GROUP_CONCAT(CONCAT(si.product_name, \' x\', TRIM(TRAILING \'.\' FROM TRIM(TRAILING \'0\' FROM si.quantity))) SEPARATOR \', \') FROM sale_items si JOIN products p ON p.id = si.product_id WHERE si.sale_id = s.id AND p.requires_prescription = 1) AS products
                 FROM prescriptions pr JOIN sales s ON s.id = pr.sale_id JOIN users u ON u.id = pr.validated_by WHERE pr.created_at BETWEEN ? AND ? ORDER BY pr.id DESC', [$from . ' 00:00:00', $to . ' 23:59:59']);
         if ($this->exportAllowed()) {
-            Csv::download("ordonnancier_{$from}_{$to}.csv", ['Date', 'Vente', 'Prescripteur', 'Patient', 'Réf. ordonnance', 'Date ordonnance', 'Produits', 'Validé par'], array_map(fn($r) => [$r['sale_date'], $r['number'], $r['prescriber'], $r['patient_name'], $r['prescription_ref'], $r['prescription_date'], $r['products'], $r['validator']], $rows));
+            Export::download("ordonnancier_{$from}_{$to}.csv", 'Ordonnancier', ['Date', 'Vente', 'Prescripteur', 'Patient', 'Réf. ordonnance', 'Date ordonnance', 'Produits', 'Validé par'], array_map(fn($r) => [$r['sale_date'], $r['number'], $r['prescriber'], $r['patient_name'], $r['prescription_ref'], $r['prescription_date'], $r['products'], $r['validator']], $rows), ['subtitle' => Export::period($from, $to), 'landscape' => true]);
         }
         view('reports/prescriptions', ['title' => 'Registre des délivrances sur ordonnance', 'rows' => $rows, 'from' => $from, 'to' => $to]);
     }

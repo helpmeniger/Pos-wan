@@ -30,7 +30,9 @@ final class SettingsController extends Controller
         'quote_validity_days' => ['Validité des devis (jours)', 'number'],
         'default_locale' => ['Langue par défaut', 'select', 'LANG'],
         'pos_auto_print' => ['Impression automatique du ticket après vente', 'bool'],
-        'restaurant_print_kitchen' => ['Restaurant : impression automatique des bons cuisine', 'bool'],
+        'restaurant_print_kitchen' => ['Restaurant : impression automatique des bons cuisine (navigateur)', 'bool'],
+        'restaurant_default_station' => ['Restaurant : poste par défaut des catégories sans poste (« aucun » = servi sans ticket)', 'text'],
+        'restaurant_send_on_pay' => ['Restaurant : envoyer en cuisine les articles non envoyés au moment de l\'encaissement', 'bool'],
         'max_discount_percent' => ['Seuil de remise sans autorisation (%)', 'number'],
         'default_tax_rate' => ['Taux de taxe par défaut des nouveaux articles (%)', 'number'],
         'allow_negative_stock' => ['Autoriser la vente en stock négatif (déconseillé)', 'bool'],
@@ -79,6 +81,11 @@ final class SettingsController extends Controller
                 setting_set($key, $val);
             }
         }
+        $st = mb_strtolower(trim((string) setting('restaurant_default_station', 'cuisine')));
+        if (!preg_match('/^[a-z0-9_-]{1,30}$/', $st)) {
+            $st = 'cuisine';
+        }
+        setting_set('restaurant_default_station', $st);
         if ((float) setting('max_discount_percent') > 100) {
             setting_set('max_discount_percent', '100');
         }
@@ -119,6 +126,29 @@ final class SettingsController extends Controller
         }
         Audit::log('settings.currency', null, null, ['code' => $code, 'symbol' => $symbol]);
         flash('success', 'Devise enregistrée. Les montants déjà enregistrés ne sont pas convertis.');
+        redirect('/settings');
+    }
+
+    /** TVA : mode (aucune, générale, par article), taux général, libellé. */
+    public function vat(): void
+    {
+        $mode = Request::str('vat_mode');
+        if (!isset(\App\Services\Tax::MODES[$mode])) {
+            $this->fail('Mode de TVA invalide.', '/settings');
+        }
+        $raw = str_replace(',', '.', Request::str('vat_rate'));
+        if ($mode === 'general' && (!is_numeric($raw) || (float) $raw <= 0 || (float) $raw > 100)) {
+            $this->fail('Indiquez un taux de TVA général entre 0 et 100 %.', '/settings');
+        }
+        $label = mb_substr(trim(Request::str('vat_label')), 0, 15) ?: 'TVA';
+        $old = ['mode' => setting('vat_mode'), 'rate' => setting('vat_rate')];
+        setting_set('vat_mode', $mode);
+        if (is_numeric($raw)) {
+            setting_set('vat_rate', (string) round((float) $raw, 2));
+        }
+        setting_set('vat_label', $label);
+        Audit::log('settings.vat', null, null, ['from' => $old, 'mode' => $mode, 'rate' => setting('vat_rate')]);
+        flash('success', 'TVA enregistrée. Elle s\'applique aux nouvelles ventes ; les ventes passées gardent leur TVA d\'origine.');
         redirect('/settings');
     }
 

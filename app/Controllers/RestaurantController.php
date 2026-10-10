@@ -210,9 +210,16 @@ final class RestaurantController extends Controller
     {
         $this->orderOr404($id);
         $this->jsonAttempt(function () use ($id) {
+            // Bons en cours ; sinon réimpression des derniers bons de la commande (déjà prêts / servis)
             $tickets = array_map('intval', array_column(DB::all("SELECT id FROM kitchen_tickets WHERE order_id = ? AND status IN ('pending','preparing') ORDER BY id", [$id]), 'id'));
             if (!$tickets) {
-                throw new BusinessException('Aucun bon en préparation pour cette commande.');
+                $last = DB::value("SELECT MAX(created_at) FROM kitchen_tickets WHERE order_id = ? AND type = 'order'", [$id]);
+                $tickets = $last ? array_map('intval', array_column(DB::all("SELECT id FROM kitchen_tickets WHERE order_id = ? AND type = 'order' AND created_at = ? ORDER BY id", [$id, $last]), 'id')) : [];
+            }
+            if (!$tickets) {
+                throw new BusinessException(DB::value("SELECT 1 FROM restaurant_order_items WHERE order_id = ? AND status = 'new' LIMIT 1", [$id])
+                    ? 'Envoyez d\'abord la commande en cuisine (bouton « Envoyer en cuisine »), puis imprimez le bon.'
+                    : 'Aucun article de cette commande ne passe par la cuisine (postes « aucun »).');
             }
             $p = $this->printTickets($tickets, true);
             return ['print' => $p['urls'], 'printed_server' => $p['printed'], 'print_errors' => $p['errors'], 'count' => count($tickets)];
@@ -325,6 +332,11 @@ final class RestaurantController extends Controller
             $this->fail($msg, $back);
         }
         flash('success', sprintf('Paiement enregistré (%s). Monnaie à rendre : %s.', $r['number'], money($r['change'])));
+        if (!empty($r['sent_tickets'])) {
+            // Articles envoyés en cuisine au moment de l'encaissement : écran cuisine + imprimante du poste
+            $k = $this->printTickets($r['sent_tickets'], false);
+            flash('info', t('Commande envoyée en cuisine (écran cuisine).') . ($k['errors'] ? ' ' . implode(' ', $k['errors']) : ''));
+        }
         $next = $r['order_closed'] ? url('/restaurant') : url('/restaurant/orders/' . $id);
         if (setting('pos_auto_print', '1') === '1') {
             $print = \App\Services\PrintService::printReceipt($r['sale_id']);

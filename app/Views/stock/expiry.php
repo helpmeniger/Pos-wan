@@ -2,7 +2,7 @@
   <div class="col-auto"><label class="form-label small mb-0">Horizon (jours)</label><input type="number" name="days" min="1" max="730" value="<?= (int) $days ?>" class="form-control form-control-sm"></div>
   <div class="col-auto"><button class="btn btn-sm btn-primary">Afficher</button></div>
   <div class="col-auto"><a href="<?= e(url('/stock/lots')) ?>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i> Traçabilité d'un lot</a></div>
-  <div class="col-auto ms-auto"><a class="btn btn-sm btn-outline-success" href="<?= e(query_with(['export' => 'csv'])) ?>"><i class="bi bi-filetype-csv"></i> Exporter</a></div>
+  <div class="col-auto ms-auto"><a class="btn btn-sm btn-outline-success" href="<?= e(query_with(['export' => 'csv'])) ?>"><i class="bi bi-filetype-csv"></i> Exporter</a> <a class="btn btn-sm btn-outline-danger" href="<?= e(query_with(['export' => 'pdf'])) ?>"><i class="bi bi-filetype-pdf"></i> PDF</a></div>
 </form></div></div>
 <?php $valueExp = 0; foreach ($rows as $r) { if ((int) $r['days_left'] < 0) $valueExp += (float) $r['quantity'] * (float) $r['cost_price']; } ?>
 <?php if ($valueExp > 0 && can('products.cost_view')): ?><div class="alert alert-danger py-2">Valeur des lots déjà périmés encore en stock : <b><?= money($valueExp) ?></b>. Retirez-les de la vente (ajustement « périmé ») ou retournez-les au fournisseur.</div><?php endif; ?>

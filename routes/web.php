@@ -170,6 +170,7 @@ $router->get('/reports/products', [C\ReportController::class, 'products'], 'repo
 $router->get('/reports/profit', [C\ReportController::class, 'profit'], 'reports.financial');
 $router->get('/reports/stock', [C\ReportController::class, 'stock'], 'reports.financial');
 $router->get('/reports/debts', [C\ReportController::class, 'debts'], 'reports.financial');
+$router->get('/reports/vat', [C\ReportController::class, 'vat'], 'reports.financial');
 $router->get('/reports/cash', [C\ReportController::class, 'cash'], 'reports.financial');
 $router->get('/reports/prescriptions', [C\ReportController::class, 'prescriptions'], 'reports.view');
 
@@ -190,6 +191,7 @@ $router->get('/settings', [C\SettingsController::class, 'index'], 'settings.mana
 $router->post('/settings', [C\SettingsController::class, 'update'], 'settings.manage');
 $router->post('/settings/business', [C\SettingsController::class, 'business'], 'settings.manage');
 $router->get('/settings/template-preview', [C\SettingsController::class, 'templatePreview'], 'settings.manage');
+$router->post('/settings/vat', [C\SettingsController::class, 'vat'], 'settings.manage');
 $router->post('/settings/currency', [C\SettingsController::class, 'currency'], 'settings.manage');
 $router->post('/settings/mobile-money', [C\SettingsController::class, 'mobileMoney'], 'settings.manage');
 $router->post('/settings/logo', [C\SettingsController::class, 'logo'], 'settings.manage');

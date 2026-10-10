@@ -6,7 +6,7 @@
     <div class="col-auto"><label class="form-label small mb-0">Catégorie</label><select name="category" class="form-select form-select-sm" data-autosubmit><option value="">Toutes</option><?php foreach ($categories as $c): ?><option value="<?= (int) $c['id'] ?>" <?= (int) ($_GET['category'] ?? 0) === (int) $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option><?php endforeach; ?></select></div>
     <div class="col-auto"><label class="form-label small mb-0">Filtre</label><select name="filter" class="form-select form-select-sm" data-autosubmit><option value="">Tous</option><option value="low" <?= ($_GET['filter'] ?? '') === 'low' ? 'selected' : '' ?>>Sous le seuil</option><option value="out" <?= ($_GET['filter'] ?? '') === 'out' ? 'selected' : '' ?>>Rupture</option></select></div>
     <div class="col-auto"><button class="btn btn-sm btn-primary">Filtrer</button></div>
-    <div class="col-auto ms-auto"><a class="btn btn-sm btn-outline-success" href="<?= e(query_with(['export' => 'csv'])) ?>"><i class="bi bi-filetype-csv"></i> Exporter</a></div>
+    <div class="col-auto ms-auto"><a class="btn btn-sm btn-outline-success" href="<?= e(query_with(['export' => 'csv'])) ?>"><i class="bi bi-filetype-csv"></i> Exporter</a> <a class="btn btn-sm btn-outline-danger" href="<?= e(query_with(['export' => 'pdf'])) ?>"><i class="bi bi-filetype-pdf"></i> PDF</a></div>
   </form>
 </div></div>
 <?php if ($cost): ?><div class="alert alert-light border py-2">Valeur du stock affiché (au coût moyen pondéré) : <b><?= money($value) ?></b></div><?php endif; ?>

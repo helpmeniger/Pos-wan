@@ -6,7 +6,7 @@
     <div class="col-auto"><label class="form-label small mb-0">Statut</label><select name="status" class="form-select form-select-sm"><option value="">Tous</option><?php foreach (['completed' => 'Validée', 'cancelled' => 'Annulée', 'partially_returned' => 'Retour partiel', 'returned' => 'Retournée'] as $k => $v): ?><option value="<?= $k ?>" <?= ($_GET['status'] ?? '') === $k ? 'selected' : '' ?>><?= $v ?></option><?php endforeach; ?></select></div>
     <div class="col-auto form-check ms-2 mb-1"><input type="checkbox" class="form-check-input" name="credit" value="1" id="cr" <?= ($_GET['credit'] ?? '') === '1' ? 'checked' : '' ?>><label for="cr" class="form-check-label small">À crédit</label></div>
     <div class="col-auto"><button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> Filtrer</button></div>
-    <?php if (can('reports.export')): ?><div class="col-auto ms-auto"><a class="btn btn-sm btn-outline-success" href="<?= e(query_with(['export' => 'csv'])) ?>"><i class="bi bi-filetype-csv"></i> Exporter</a></div><?php endif; ?>
+    <?php if (can('reports.export')): ?><div class="col-auto ms-auto"><a class="btn btn-sm btn-outline-success" href="<?= e(query_with(['export' => 'csv'])) ?>"><i class="bi bi-filetype-csv"></i> Exporter</a> <a class="btn btn-sm btn-outline-danger" href="<?= e(query_with(['export' => 'pdf'])) ?>"><i class="bi bi-filetype-pdf"></i> PDF</a></div><?php endif; ?>
   </form>
 </div></div>
 <div class="card"><div class="card-header d-flex"><span><?= (int) $tot['n'] ?> vente(s)</span><span class="ms-auto">Total (hors annulées) : <b><?= money($tot['t']) ?></b></span></div>

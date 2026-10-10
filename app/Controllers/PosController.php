@@ -73,7 +73,7 @@ final class PosController extends Controller
             'image' => upload_url($p['image']),
             'color' => $p['cat_color'] ?? '#5d6d7e',
             'rx' => (int) $p['requires_prescription'] === 1 && feature('pharmacy'),
-            'tax' => (float) $p['tax_rate'],
+            'tax' => \App\Services\Tax::rate($p),
             'packs' => array_map(fn($k) => ['id' => (int) $k['id'], 'name' => $k['name'], 'factor' => (float) $k['factor'], 'price' => (float) $k['sale_price'], 'barcode' => $k['barcode']], $packs),
         ];
     }

@@ -20,6 +20,16 @@
     </form>
   </div>
   <div class="col-xl-5">
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-percent"></i> TVA</div><div class="card-body">
+      <?php $vMode = App\Services\Tax::mode(); ?>
+      <form method="post" action="<?= e(url('/settings/vat')) ?>" class="row g-2"><?= csrf_field() ?>
+        <div class="col-12"><?php foreach (App\Services\Tax::MODES as $k => $l): ?><div class="form-check"><input class="form-check-input" type="radio" name="vat_mode" value="<?= e($k) ?>" id="vm-<?= e($k) ?>" <?= $vMode === $k ? 'checked' : '' ?>><label class="form-check-label" for="vm-<?= e($k) ?>"><?= e($l) ?></label></div><?php endforeach; ?></div>
+        <div class="col-6"><label class="form-label small mb-0" for="vatRate">Taux général (%)</label><input type="number" step="any" min="0" max="100" name="vat_rate" id="vatRate" value="<?= e((string) (float) setting('vat_rate', '19')) ?>" class="form-control form-control-sm" list="vatRates"><datalist id="vatRates"><?php foreach (App\Services\Tax::COMMON_RATES as $r): ?><option value="<?= $r ?>"><?php endforeach; ?></datalist></div>
+        <div class="col-6"><label class="form-label small mb-0" for="vatLabel">Libellé</label><input name="vat_label" id="vatLabel" value="<?= e(App\Services\Tax::label()) ?>" class="form-control form-control-sm" maxlength="15"></div>
+        <div class="col-12 d-flex flex-wrap gap-1"><?php foreach (App\Services\Tax::COMMON_RATES as $r): ?><button type="button" class="btn btn-sm btn-outline-secondary" data-set-value="#vatRate" data-value="<?= $r ?>"><?= $r ?> %</button><?php endforeach; ?></div>
+        <div class="col-12 small text-secondary">Les prix de vente sont saisis <b>TVA comprise (TTC)</b> : la TVA est calculée sur chaque ligne et indiquée sur les tickets, factures et devis. En TVA générale, cochez « Exonéré » dans la fiche des articles non taxés. Rapport : <a href="<?= e(url('/reports/vat')) ?>">TVA collectée</a>.</div>
+        <div class="col-12"><button class="btn btn-sm btn-outline-primary">Enregistrer la TVA</button></div>
+      </form></div></div>
     <div class="card mb-3"><div class="card-header"><i class="bi bi-currency-exchange"></i> Devise</div><div class="card-body">
       <?php $cur = currency(); ?>
       <form method="post" action="<?= e(url('/settings/currency')) ?>" class="row g-2"><?= csrf_field() ?>

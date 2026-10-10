@@ -548,7 +548,7 @@ test('Préparation : salle, tables, ingrédient non vendable, fiche technique', 
     $R['t2'] = DB::insert('restaurant_tables', ['area_id' => $area, 'name' => 'T2']);
     $R['t3'] = DB::insert('restaurant_tables', ['area_id' => $area, 'name' => 'T3']);
     $cat = DB::insert('categories', ['name' => 'Plats test', 'kitchen_station' => 'cuisine']);
-    $drinks = DB::insert('categories', ['name' => 'Boissons test']);
+    $drinks = DB::insert('categories', ['name' => 'Boissons test', 'kitchen_station' => 'aucun']); // servies directement
     $R['poulet'] = S\ProductService::create(S\ProductService::validate(['name' => 'Poulet cru', 'sale_price' => 0, 'cost_price' => 3000, 'sellable' => 0]), 10, 1);
     $R['huile'] = S\ProductService::create(S\ProductService::validate(['name' => 'Huile test', 'sale_price' => 0, 'cost_price' => 1000, 'sellable' => 0]), 10, 1);
     $R['plat'] = S\ProductService::create(S\ProductService::validate(['name' => 'Poulet braisé test', 'sale_price' => 4500, 'category_id' => $cat, 'track_stock' => 0]));
@@ -571,7 +571,16 @@ test('Commande : une seule commande ouverte par table, regroupement des lignes',
     $o = S\RestaurantService::order($R['o1']);
     eq(4 * 4500.0 + 3 * 600.0, $o['total']);
 });
-test('Envoi en cuisine : ticket par poste, articles sans poste servis directement', function () use (&$R) {
+test('Poste par défaut : catégorie sans poste → cuisine ; « aucun » → servi sans ticket', function () {
+    eq('cuisine', S\RestaurantService::stationFor(null));
+    eq(null, S\RestaurantService::stationFor('aucun'));
+    eq('bar', S\RestaurantService::stationFor('bar'));
+    setting_set('restaurant_default_station', 'aucun');
+    eq(null, S\RestaurantService::stationFor(null));
+    setting_set('restaurant_default_station', 'cuisine');
+    ok(!in_array('aucun', S\RestaurantService::stations(), true), 'pas d\'onglet « aucun » en cuisine');
+});
+test('Envoi en cuisine : ticket par poste, articles « aucun » servis directement', function () use (&$R) {
     actingAs('serveur');
     $tickets = S\RestaurantService::send($R['o1']);
     eq(1, count($tickets), 'un ticket cuisine');

@@ -23,7 +23,7 @@ final class QuoteController extends Controller
 
     private function items(int $id): array
     {
-        return DB::all('SELECT qi.*, p.reference, un.short_name AS unit FROM quote_items qi JOIN products p ON p.id = qi.product_id LEFT JOIN units un ON un.id = p.unit_id WHERE qi.quote_id = ? ORDER BY qi.id', [$id]);
+        return DB::all('SELECT qi.*, p.reference, p.tax_rate, p.vat_exempt, un.short_name AS unit FROM quote_items qi JOIN products p ON p.id = qi.product_id LEFT JOIN units un ON un.id = p.unit_id WHERE qi.quote_id = ? ORDER BY qi.id', [$id]);
     }
 
     public function index(): void

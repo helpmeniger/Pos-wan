@@ -67,6 +67,7 @@ final class ProductService
         'promo_start' => 'nullable|date',
         'promo_end' => 'nullable|date',
         'tax_rate' => 'nullable|numeric|min:0|max:100',
+        'vat_exempt' => 'bool',
         'min_stock' => 'nullable|numeric|min:0|max:100000000',
         'track_stock' => 'bool',
         'sellable' => 'bool',
@@ -103,7 +104,7 @@ final class ProductService
     /** Nettoie et valide la saisie ; retourne les colonnes prêtes à enregistrer. */
     public static function validate(array $input, ?int $id = null): array
     {
-        foreach (['track_stock', 'track_lots', 'sold_by_weight', 'is_medicine', 'requires_prescription', 'is_controlled'] as $b) {
+        foreach (['track_stock', 'track_lots', 'sold_by_weight', 'is_medicine', 'requires_prescription', 'is_controlled', 'vat_exempt'] as $b) {
             $input[$b] = !empty($input[$b]) ? 1 : 0;
         }
         // « vendable » coché par défaut (absent = formulaire sans la case, ex. import)

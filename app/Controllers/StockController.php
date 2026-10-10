@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Core\Audit;
 use App\Core\Csv;
 use App\Core\DB;
+use App\Core\Export;
 use App\Core\HttpException;
 use App\Core\Request;
 use App\Services\InventoryService;
@@ -32,10 +33,10 @@ final class StockController extends Controller
         $sql = "SELECT p.id, p.name, p.reference, p.min_stock, p.cost_price, p.sale_price, c.name AS category, u.short_name AS unit, COALESCE(SUM(sl.quantity),0) AS qty
                 FROM products p LEFT JOIN stock_levels sl ON sl.product_id = p.id $whJoin LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN units u ON u.id = p.unit_id
                 WHERE " . implode(' AND ', $where) . " GROUP BY p.id, p.name, p.reference, p.min_stock, p.cost_price, p.sale_price, c.name, u.short_name $having";
-        if (Request::query('export') === 'csv') {
+        if (Export::requested()) {
             $rows = DB::all($sql . ' ORDER BY p.name', $params);
             $cost = can('products.cost_view');
-            Csv::download('stock_' . date('Ymd') . '.csv', array_merge(['Référence', 'Article', 'Catégorie', 'Stock', 'Unité', 'Seuil'], $cost ? ['CMP', 'Valeur'] : []),
+            Export::download('stock_' . date('Ymd') . '.csv', 'État des stocks', array_merge(['Référence', 'Article', 'Catégorie', 'Stock', 'Unité', 'Seuil'], $cost ? ['CMP', 'Valeur'] : []),
                 array_map(fn($r) => array_merge([$r['reference'], $r['name'], $r['category'], $r['qty'], $r['unit'], $r['min_stock']], $cost ? [$r['cost_price'], round($r['qty'] * $r['cost_price'], 2)] : []), $rows));
         }
         $total = (int) DB::value("SELECT COUNT(*) FROM ($sql) t", $params);
@@ -64,8 +65,8 @@ final class StockController extends Controller
             $params[] = $t;
         }
         $from_ = 'FROM stock_movements m JOIN products p ON p.id = m.product_id JOIN warehouses w ON w.id = m.warehouse_id LEFT JOIN users u ON u.id = m.user_id LEFT JOIN stock_lots l ON l.id = m.lot_id WHERE ' . implode(' AND ', $where);
-        if (Request::query('export') === 'csv') {
-            Csv::download("mouvements_{$from}_{$to}.csv", ['Date', 'Article', 'Entrepôt', 'Type', 'Lot', 'Quantité', 'Solde', 'Motif', 'Utilisateur'],
+        if (Export::requested()) {
+            Export::download("mouvements_{$from}_{$to}.csv", 'Mouvements de stock', ['Date', 'Article', 'Entrepôt', 'Type', 'Lot', 'Quantité', 'Solde', 'Motif', 'Utilisateur'],
                 DB::all("SELECT m.created_at, p.name, w.name AS w, m.type, l.lot_number, m.quantity, m.balance_after, m.reason, u.full_name $from_ ORDER BY m.id", $params));
         }
         $p = paginate($from_, $params, 'm.*, p.name AS product, w.name AS warehouse, u.full_name, l.lot_number', 'm.id DESC', 50);
@@ -156,8 +157,8 @@ final class StockController extends Controller
         $days = max(1, min(730, (int) Request::query('days', (int) setting('expiry_alert_days', '60'))));
         $rows = DB::all('SELECT l.*, p.name, p.reference, p.cost_price, w.name AS warehouse, DATEDIFF(l.expiry_date, CURDATE()) AS days_left FROM stock_lots l JOIN products p ON p.id = l.product_id JOIN warehouses w ON w.id = l.warehouse_id
                 WHERE l.quantity > 0 AND l.expiry_date IS NOT NULL AND l.expiry_date <= CURDATE() + INTERVAL ? DAY ORDER BY l.expiry_date', [$days]);
-        if (Request::query('export') === 'csv') {
-            Csv::download('peremptions_' . date('Ymd') . '.csv', ['Article', 'Lot', 'Entrepôt', 'Péremption', 'Jours restants', 'Quantité'], array_map(fn($r) => [$r['name'], $r['lot_number'], $r['warehouse'], $r['expiry_date'], $r['days_left'], $r['quantity']], $rows));
+        if (Export::requested()) {
+            Export::download('peremptions_' . date('Ymd') . '.csv', 'Lots proches de la péremption', ['Article', 'Lot', 'Entrepôt', 'Péremption', 'Jours restants', 'Quantité'], array_map(fn($r) => [$r['name'], $r['lot_number'], $r['warehouse'], $r['expiry_date'], $r['days_left'], $r['quantity']], $rows));
         }
         view('stock/expiry', ['title' => 'Lots & péremptions', 'rows' => $rows, 'days' => $days]);
     }
