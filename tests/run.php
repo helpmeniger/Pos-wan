@@ -134,6 +134,7 @@ test('Installation complète (schéma, rôles, paramètres, démo)', function ()
     ok(S\InstallService::isInstalled());
     ok((int) DB::value('SELECT COUNT(*) FROM permissions') >= 40, 'permissions');
     eq(11, (int) DB::value('SELECT COUNT(*) FROM roles'), 'rôles');
+    ok((bool) DB::value("SELECT 1 FROM permissions WHERE code = 'quotes.manage'"), 'permission devis');
     ok((int) DB::value('SELECT COUNT(*) FROM products') >= 10, 'articles démo');
     eq('1', setting('feature_lots'), 'lots activés pour alimentation');
 });
@@ -670,6 +671,196 @@ test('Commande à emporter / livraison', function () use (&$R) {
     eq('cancelled', DB::value('SELECT status FROM restaurant_orders WHERE id = ?', [$o]));
 });
 
+test('Canal de vente : article restaurant refusé en caisse, article boutique refusé au restaurant', function () use (&$R) {
+    actingAs('admin');
+    $plat = (int) $R['plat'];
+    DB::update('products', ['sales_channel' => 'restaurant'], 'id = ?', [$plat]);
+    actingAs('caissier');
+    throws(fn() => S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $plat, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 99999]]]), 'réservé au restaurant');
+    DB::update('products', ['sales_channel' => 'all'], 'id = ?', [$plat]);
+    $savon = (int) DB::value("SELECT id FROM products WHERE name LIKE 'Savon%'");
+    $cat = (int) DB::value('SELECT category_id FROM products WHERE id = ?', [$savon]);
+    DB::update('categories', ['sales_channel' => 'shop'], 'id = ?', [$cat]);
+    eq('shop', S\ProductService::channelOf($savon), 'hérité de la catégorie');
+    actingAs('serveur');
+    $o = S\RestaurantService::open(null, 'takeaway', 1, ['name' => 'Canal']);
+    throws(fn() => S\RestaurantService::addItem($o, $savon, 1), 'caisse boutique');
+    DB::update('categories', ['sales_channel' => 'all'], 'id = ?', [$cat]);
+    S\RestaurantService::cancelOrder($o, 'test');
+});
+
+echo "\n== Version 1.2 : devise, impression, devis, achats, canaux ==\n";
+// Petit « serveur d'impression » local : reçoit les octets ESC/POS envoyés au port 9100 simulé
+function printListener(): array
+{
+    $srv = stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
+    $name = stream_socket_get_name($srv, false);
+    return [$srv, (int) substr($name, strrpos($name, ':') + 1)];
+}
+function printReceived($srv): string
+{
+    $data = '';
+    while ($c = @stream_socket_accept($srv, 2)) {
+        stream_set_timeout($c, 2);
+        while (!feof($c) && ($chunk = fread($c, 65536)) !== false && $chunk !== '') {
+            $data .= $chunk;
+        }
+        fclose($c);
+    }
+    return $data;
+}
+test('Devise configurable : symbole, position, décimales', function () {
+    eq('13 500 F', str_replace("\u{202F}", ' ', money(13500)), 'FCFA par défaut');
+    foreach (['currency_code' => 'EUR', 'currency_symbol' => '€', 'currency_position' => 'before', 'currency_decimals' => '2'] as $k => $v) {
+        setting_set($k, $v);
+    }
+    ok(preg_match('/^€\s?1[\s\x{202F}\x{00A0}]?234,50$/u', money(1234.5)) === 1, 'euro : ' . money(1234.5));
+    foreach (['currency_code' => 'XOF', 'currency_symbol' => 'F', 'currency_position' => 'after', 'currency_decimals' => '0'] as $k => $v) {
+        setting_set($k, $v);
+    }
+    eq('XOF', currency()['code']);
+});
+test('Traduction : dictionnaires valides, pages traduites, scripts intacts', function () {
+    foreach (array_keys(App\Core\Lang::LANGUAGES) as $code) {
+        if ($code === 'fr' || !is_file(BASE_PATH . "/lang/$code.php")) {
+            continue;
+        }
+        $d = require BASE_PATH . "/lang/$code.php";
+        ok(is_array($d) && count($d) > 500, "dictionnaire $code");
+        foreach ($d as $k => $v) {
+            preg_match_all('/\{[a-z_]+\}/', $k, $a);
+            preg_match_all('/\{[a-z_]+\}/', $v, $b);
+            ok($a[0] == $b[0] || (sort($a[0]) || true) && (sort($b[0]) || true) && $a[0] == $b[0], "paramètres conservés ($code) : $k");
+        }
+    }
+    App\Core\Lang::set('en');
+    eq('Quote', t('Devis'));
+    $h = App\Core\Lang::html('<h1>Devis</h1><label>Client :</label><input placeholder="N° ou client"><script>var x = "Devis";</script><td>Mon article perso 42</td>');
+    ok(str_contains($h, '<h1>Quote</h1>') && str_contains($h, 'Customer :') || str_contains($h, 'Client :') === false, $h);
+    ok(str_contains($h, 'var x = "Devis"'), 'script non modifié');
+    ok(str_contains($h, 'Mon article perso 42'), 'données saisies non traduites');
+    App\Core\Lang::set('ar');
+    eq('rtl', App\Core\Lang::dir());
+    App\Core\Lang::reset();
+    eq('fr', App\Core\Lang::locale());
+});
+test('Adresses d\'imprimante : réseau local uniquement, partage Windows strict', function () {
+    eq('192.168.1.50:9100', S\PrintService::validateAddress('network', '192.168.1.50'));
+    eq('10.0.0.8:9101', S\PrintService::validateAddress('network', '10.0.0.8:9101'));
+    throws(fn() => S\PrintService::validateAddress('network', '8.8.8.8'), 'réseau local');
+    throws(fn() => S\PrintService::validateAddress('network', 'imprimante.example.com'), 'réseau local');
+    eq('\\\\localhost\\XP-80', S\PrintService::validateAddress('windows', '\\\\localhost\\XP-80'));
+    throws(fn() => S\PrintService::validateAddress('windows', 'C:\\Windows\\win.ini'), 'invalide');
+    throws(fn() => S\PrintService::validateAddress('windows', '\\\\localhost\\..\\..\\x'), 'invalide');
+});
+$printerId = 0;
+test('Ticket ESC/POS envoyé à une imprimante réseau (écoute TCP locale)', function () use ($savon, &$printerId) {
+    actingAs('caissier');
+    [$srv, $port] = printListener();
+    $printerId = DB::insert('printers', ['name' => 'Ticket alimentation', 'driver' => 'network', 'address' => "127.0.0.1:$port", 'paper' => '80', 'usages' => 'receipt', 'copies' => 1, 'cut' => 1, 'open_drawer' => 1, 'active' => 1]);
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 500]]]);
+    $p = S\PrintService::printReceipt($r['sale_id']);
+    eq(1, $p['printed'], implode(' ', $p['errors']));
+    $bytes = printReceived($srv);
+    fclose($srv);
+    ok(str_starts_with($bytes, "\x1B\x40"), 'initialisation ESC @');
+    ok(str_contains($bytes, $r['number']), 'numéro de ticket');
+    ok(str_contains($bytes, "\x1D\x28\x6B"), 'QR code natif');
+    ok(str_contains($bytes, "\x1B\x70\x00"), 'ouverture du tiroir');
+    ok(str_contains($bytes, "\x1D\x56"), 'coupe papier');
+    eq(1, (int) DB::value('SELECT print_count FROM sales WHERE id = ?', [$r['sale_id']]));
+});
+test('Imprimante injoignable : erreur signalée, vente conservée', function () use ($savon, &$printerId) {
+    actingAs('caissier');
+    [$srv, $port] = printListener();
+    fclose($srv); // port fermé
+    DB::update('printers', ['address' => "127.0.0.1:$port"], 'id = ?', [$printerId]);
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 5000]]]);
+    $p = S\PrintService::printReceipt($r['sale_id']);
+    eq(0, $p['printed']);
+    ok(count($p['errors']) === 1 && str_contains($p['errors'][0], 'injoignable'), implode(' ', $p['errors']));
+    eq('completed', DB::value('SELECT status FROM sales WHERE id = ?', [$r['sale_id']]));
+    DB::update('printers', ['active' => 0], 'id = ?', [$printerId]);
+});
+test('QR code signé : vérification, falsification détectée', function () {
+    $s = DB::one('SELECT * FROM sales ORDER BY id DESC LIMIT 1');
+    $code = S\DocumentRef::saleQr($s);
+    $v = S\DocumentRef::verify($code);
+    ok($v['valid'] && $v['doc']['number'] === $s['number'], $v['message']);
+    $forged = preg_replace('/\|(\d+(\.\d+)?)XOF\|/', '|1XOF|', $code);
+    ok($forged !== $code && !S\DocumentRef::verify($forged)['valid'], 'montant modifié');
+    ok(!S\DocumentRef::verify('nimporte quoi')['valid']);
+});
+test('Mobile money : opérateur enregistré, opérateur inconnu ignoré', function () use ($savon) {
+    actingAs('caissier');
+    setting_set('mobile_money_providers', 'Airtel Money,Moov Money');
+    $price = (float) DB::value('SELECT sale_price FROM products WHERE id = ?', [$savon]);
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 1]], 'payments' => [['method' => 'mobile_money', 'provider' => 'moov money', 'amount' => $price, 'reference' => 'TX9']]]);
+    eq('Moov Money', DB::value('SELECT provider FROM sale_payments WHERE sale_id = ?', [$r['sale_id']]));
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 1]], 'payments' => [['method' => 'mobile_money', 'provider' => '<script>', 'amount' => $price]]]);
+    eq(null, DB::value('SELECT provider FROM sale_payments WHERE sale_id = ?', [$r['sale_id']]));
+});
+test('Code-barres interne EAN-13 : clé de contrôle valide et unicité', function () {
+    $a = S\Barcode::newInternalEan();
+    ok(preg_match('/^21\d{11}$/', $a) === 1);
+    $sum = 0;
+    for ($i = 0; $i < 12; $i++) {
+        $sum += (int) $a[$i] * ($i % 2 ? 3 : 1);
+    }
+    eq((10 - $sum % 10) % 10, (int) $a[12], 'clé EAN');
+    ok($a !== S\Barcode::newInternalEan());
+});
+$quoteId = 0;
+test('Devis : prix protégés, statuts, aucun effet sur le stock', function () use ($savon, $riz, &$quoteId) {
+    actingAs('caissier');
+    $s0 = stock($savon);
+    throws(fn() => S\QuoteService::create(['customer_name' => 'Client devis'], [['product_id' => $savon, 'quantity' => 2, 'unit_price' => 100]]), 'autorisé');
+    throws(fn() => S\QuoteService::create(['customer_name' => ''], [['product_id' => $savon, 'quantity' => 2]]), 'client');
+    $quoteId = S\QuoteService::create(['customer_name' => 'Client devis', 'customer_phone' => '90000000'], [['product_id' => $savon, 'quantity' => 2, 'discount' => 50], ['product_id' => $riz, 'quantity' => 1]]);
+    $q = DB::one('SELECT * FROM quotes WHERE id = ?', [$quoteId]);
+    $expected = 2 * (float) DB::value('SELECT sale_price FROM products WHERE id = ?', [$savon]) - 50 + (float) DB::value('SELECT sale_price FROM products WHERE id = ?', [$riz]);
+    eq($expected, (float) $q['total'], 'total 2 × prix − remise + riz');
+    ok(str_starts_with($q['number'], 'DV'), 'numérotation DV');
+    eq($s0, stock($savon), 'stock inchangé');
+    throws(fn() => S\QuoteService::setStatus($quoteId, 'converted'), 'non autorisé');
+    S\QuoteService::setStatus($quoteId, 'accepted');
+    eq('accepted', DB::value('SELECT status FROM quotes WHERE id = ?', [$quoteId]));
+});
+test('Devis converti en vente : stock, caisse, idempotence, verrouillage', function () use ($savon, &$quoteId) {
+    actingAs('caissier');
+    $s0 = stock($savon);
+    $u = uuid();
+    $total = (float) DB::value('SELECT total FROM quotes WHERE id = ?', [$quoteId]);
+    $r = S\QuoteService::convert($quoteId, [['method' => 'cash', 'amount' => 15000]], $u);
+    eq(15000 - $total, $r['change'], 'monnaie');
+    eq($s0 - 2, stock($savon), 'stock déduit à la conversion');
+    $q = DB::one('SELECT * FROM quotes WHERE id = ?', [$quoteId]);
+    eq('converted', $q['status']);
+    eq($r['sale_id'], (int) $q['sale_id']);
+    eq($total, (float) DB::value('SELECT total FROM sales WHERE id = ?', [$r['sale_id']]), 'prix du devis conservés');
+    $again = S\QuoteService::convert($quoteId, [['method' => 'cash', 'amount' => 15000]], uuid());
+    ok($again['duplicate'] && $again['sale_id'] === $r['sale_id'], 'pas de double vente');
+    throws(fn() => S\QuoteService::update($quoteId, ['customer_name' => 'X'], [['product_id' => $savon, 'quantity' => 1]]), 'ne peut plus');
+});
+test('Réception : coût nouveau prix / ancien prix / moyen et nouveau prix de vente', function () use ($savon) {
+    actingAs('admin');
+    $sup = (int) DB::value('SELECT id FROM suppliers ORDER BY id LIMIT 1');
+    $c0 = (float) DB::value('SELECT cost_price FROM products WHERE id = ?', [$savon]);
+    S\PurchaseService::receive($sup, 1, [['product_id' => $savon, 'quantity' => 10, 'unit_cost' => 300, 'cost_mode' => 'old']], 0, null, null, null, null);
+    eq($c0, (float) DB::value('SELECT cost_price FROM products WHERE id = ?', [$savon]), 'ancien prix conservé');
+    S\PurchaseService::receive($sup, 1, [['product_id' => $savon, 'quantity' => 10, 'unit_cost' => 320, 'cost_mode' => 'new', 'new_sale_price' => '400']], 0, null, null, null, null);
+    eq(320.0, (float) DB::value('SELECT cost_price FROM products WHERE id = ?', [$savon]), 'nouveau prix sur tout le stock');
+    eq(400.0, (float) DB::value('SELECT sale_price FROM products WHERE id = ?', [$savon]), 'nouveau prix de vente');
+    ok((bool) DB::value("SELECT 1 FROM price_history WHERE product_id = ? AND field = 'sale_price' AND source LIKE 'reception:%'", [$savon]), 'historique');
+    $st = stock($savon);
+    S\PurchaseService::receive($sup, 1, [['product_id' => $savon, 'quantity' => 10, 'unit_cost' => 200]], 0, null, null, null, null);
+    eq(round(($st * 320 + 10 * 200) / ($st + 10), 2), (float) DB::value('SELECT cost_price FROM products WHERE id = ?', [$savon]), 'prix moyen pondéré par défaut');
+    eq('average', DB::value('SELECT cost_mode FROM reception_items ORDER BY id DESC LIMIT 1'));
+    actingAs('magasin'); // pas de droit de modifier les prix de vente
+    throws(fn() => S\PurchaseService::receive($sup, 1, [['product_id' => $savon, 'quantity' => 1, 'unit_cost' => 200, 'new_sale_price' => '999']], 0, null, null, null, null), 'autorisé');
+    eq(400.0, (float) DB::value('SELECT sale_price FROM products WHERE id = ?', [$savon]), 'transaction annulée');
+});
+
 echo "\n== Sauvegarde & restauration ==\n";
 test('Sauvegarde vérifiée, altération détectée, restauration fidèle', function () {
     actingAs('admin');
@@ -895,7 +1086,7 @@ test('Toutes les pages principales répondent sans erreur (admin)', function () 
     $h = new Http();
     $h->login($B, 'admin', 'Essai-Niamey-2026');
     $sale = (int) DB::value('SELECT MAX(id) FROM sales');
-    $pages = ['/dashboard', '/menu', '/pos', '/sales', "/sales/$sale", "/sales/$sale/invoice", '/returns', '/cash', '/cash/sessions', '/products', '/products/create', '/products/1', '/products/1/edit', '/products/import', '/products/labels', '/products/duplicates', '/categories', '/stock', '/stock/movements', '/stock/adjust?product=1', '/stock/transfers', '/stock/transfers/create', '/stock/expiry', '/stock/lots?q=L', '/inventories', '/suppliers', '/suppliers/1', '/purchases', '/purchases/create', '/receptions', '/receptions/create', '/supplier-returns', '/customers', '/customers/1', '/customers/1/statement', '/expenses', '/reports/sales', '/reports/products', '/reports/profit', '/reports/stock', '/reports/debts', '/reports/prescriptions', '/users', '/roles', '/settings', '/stores', '/audit', '/backups', '/account/password'];
+    $pages = ['/dashboard', '/menu', '/pos', '/sales', "/sales/$sale", "/sales/$sale/invoice", '/returns', '/cash', '/cash/sessions', '/products', '/products/create', '/products/1', '/products/1/edit', '/products/import', '/products/labels', '/products/duplicates', '/categories', '/stock', '/stock/movements', '/stock/adjust?product=1', '/stock/transfers', '/stock/transfers/create', '/stock/expiry', '/stock/lots?q=L', '/inventories', '/suppliers', '/suppliers/1', '/purchases', '/purchases/create', '/receptions', '/receptions/create', '/supplier-returns', '/customers', '/customers/1', '/customers/1/statement', '/expenses', '/reports/sales', '/reports/products', '/reports/profit', '/reports/stock', '/reports/debts', '/reports/prescriptions', '/users', '/roles', '/settings', '/stores', '/audit', '/backups', '/account/password', '/printers', '/quotes', '/quotes/create', '/verify', "/sales/$sale/delivery"];
     $bad = [];
     foreach ($pages as $p) {
         $r = $h->req('GET', $B . $p);
@@ -945,6 +1136,92 @@ test('Restaurant (HTTP) : serveur, cuisinier et écrans', function () use ($B, &
         $x = $a->req('GET', $B . $u);
         ok($x['code'] === 200 && !preg_match('/Fatal error|Warning:|Une erreur interne/', $x['body']), "$u ({$x['code']})");
     }
+});
+test('v1.2 (HTTP) : imprimantes, test d\'impression, ticket serveur à l\'encaissement', function () use ($B) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $t = $a->token("$B/printers");
+    $r = $a->req('POST', "$B/printers", http_build_query(['_csrf' => $t, 'name' => 'Externe', 'driver' => 'network', 'address' => '8.8.8.8', 'usages' => ['receipt'], 'paper' => '80']));
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM printers WHERE name = 'Externe'"), 'adresse publique refusée');
+    [$srv, $port] = printListener();
+    $a->req('POST', "$B/printers", http_build_query(['_csrf' => $t, 'name' => 'Caisse 1 XP-80', 'driver' => 'network', 'address' => "127.0.0.1:$port", 'usages' => ['receipt'], 'paper' => '80', 'cut' => '1', 'copies' => '1']));
+    $pid = (int) DB::value("SELECT id FROM printers WHERE name = 'Caisse 1 XP-80'");
+    ok($pid > 0, 'imprimante créée');
+    $a->req('POST', "$B/printers/$pid/test", http_build_query(['_csrf' => $t]));
+    ok(str_contains(printReceived($srv), 'TEST D\'IMPRESSION'), 'page de test reçue');
+    // Encaissement depuis la caisse avec impression serveur
+    $g = new Http();
+    $g->login($B, 'gerant', 'Mot-de-passe-2026');
+    $page = $g->req('GET', "$B/pos");
+    ok(str_contains($page['body'], '&quot;serverPrinter&quot;:true') || str_contains($page['body'], '"serverPrinter":true'), 'caisse informée de l\'imprimante');
+    preg_match('/name="csrf-token" content="([^"]+)"/', $page['body'], $m);
+    $pid2 = (int) DB::value("SELECT id FROM products WHERE name LIKE 'Dentifrice%'");
+    $body = json_encode(['client_uuid' => uuid(), 'items' => [['product_id' => $pid2, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 1000]], 'print_ticket' => true]);
+    $r = $g->req('POST', "$B/pos/checkout", $body, ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]]);
+    $d = json_decode($r['body'], true);
+    ok(($d['ok'] ?? false) && $d['printed_server'] === 1, $r['body']);
+    ok(str_contains(printReceived($srv), $d['number']), 'ticket reçu par l\'imprimante');
+    fclose($srv);
+    DB::update('printers', ['active' => 0], 'id = ?', [$pid]);
+});
+test('v1.2 (HTTP) : modèles, bon de livraison, vérification du QR code', function () use ($B) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $sale = DB::one('SELECT * FROM sales ORDER BY id DESC LIMIT 1');
+    foreach (['1', '2', '3'] as $n) {
+        setting_set('ticket_template', $n);
+        setting_set('invoice_template', $n);
+        $tk = $a->req('GET', "$B/sales/{$sale['id']}/ticket");
+        ok($tk['code'] === 200 && str_contains($tk['body'], 'data-qr="POSWAN|V|'), "ticket modèle $n");
+        $iv = $a->req('GET', "$B/sales/{$sale['id']}/invoice");
+        ok($iv['code'] === 200 && str_contains($iv['body'], 'tpl' . $n) && str_contains($iv['body'], 'data-qr='), "facture modèle $n");
+    }
+    setting_set('ticket_template', '1');
+    setting_set('invoice_template', '1');
+    $bl = $a->req('GET', "$B/sales/{$sale['id']}/delivery");
+    ok($bl['code'] === 200 && str_contains($bl['body'], 'BON DE LIVRAISON') && str_contains($bl['body'], 'BL-' . $sale['number']), 'bon de livraison');
+    ok(!str_contains($bl['body'], 'TOTAL TTC'), 'sans prix par défaut');
+    ok(str_contains($a->req('GET', "$B/sales/{$sale['id']}/delivery?prices=1")['body'], 'TOTAL TTC'), 'avec prix');
+    $code = S\DocumentRef::saleQr($sale);
+    ok(str_contains($a->req('GET', "$B/verify?code=" . rawurlencode($code))['body'], 'Document authentique'), 'QR authentique');
+    ok(str_contains($a->req('GET', "$B/verify?code=" . rawurlencode(substr($code, 0, -1) . 'x'))['body'], 'Signature invalide'), 'QR falsifié');
+    foreach (['ticket', 'invoice'] as $type) {
+        $p = $a->req('GET', "$B/settings/template-preview?type=$type");
+        ok($p['code'] === 200 && substr_count($p['body'], 'preview-item') === 3, "aperçu $type");
+    }
+    setting_set('receipt_qr', '0');
+    ok(!str_contains($a->req('GET', "$B/sales/{$sale['id']}/invoice")['body'], 'data-qr='), 'QR désactivable');
+    setting_set('receipt_qr', '1');
+});
+test('v1.2 (HTTP) : devis, code-barres généré, langue de l\'interface', function () use ($B) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $t = $a->token("$B/quotes/create");
+    $pid = (int) DB::value("SELECT id FROM products WHERE name LIKE 'Dentifrice%'");
+    $a->req('POST', "$B/quotes", http_build_query(['_csrf' => $t, 'customer_name' => 'Société Test HTTP', 'items' => [['product_id' => $pid, 'quantity' => '3', 'unit_price' => '900', 'discount' => '0']]]));
+    $q = (int) DB::value("SELECT id FROM quotes WHERE customer_name = 'Société Test HTTP'");
+    ok($q > 0, 'devis créé');
+    foreach (['/quotes', "/quotes/$q", "/quotes/$q/edit", "/quotes/$q/convert"] as $u) {
+        eq(200, $a->req('GET', $B . $u)['code'], $u);
+    }
+    ok(str_contains($a->req('GET', "$B/quotes/$q/print")['body'], 'data-qr="POSWAN|D|'), 'devis imprimable avec QR');
+    $j = json_decode($a->req('GET', "$B/products/new-barcode", null, ['Accept: application/json'])['body'], true);
+    ok(preg_match('/^21\d{11}$/', $j['barcode'] ?? '') === 1, 'code-barres proposé');
+    $np = DB::insert('products', ['reference' => 'SANSCB1', 'name' => 'Article sans code', 'sale_price' => 100, 'cost_price' => 50]);
+    $a->req('POST', "$B/products/$np/barcode", http_build_query(['_csrf' => $t]));
+    ok(preg_match('/^21\d{11}$/', (string) DB::value('SELECT barcode FROM products WHERE id = ?', [$np])) === 1, 'code-barres attribué');
+    $c = new Http();
+    $c->login($B, 'auditeur', 'Mot-de-passe-2026');
+    eq(403, $c->req('GET', "$B/quotes")['code'], 'auditeur sans devis');
+    // Langue : anglais puis arabe (RTL)
+    $l = (new Http())->req('GET', "$B/login?lang=en");
+    ok(str_contains($l['body'], 'lang="en"'), 'page de connexion en anglais');
+    $tp = $a->token("$B/account/password");
+    $a->req('POST', "$B/account/locale", http_build_query(['_csrf' => $tp, 'locale' => 'ar']));
+    $d = $a->req('GET', "$B/dashboard");
+    ok(str_contains($d['body'], 'dir="rtl"') && str_contains($d['body'], 'bootstrap.rtl.min.css'), 'arabe de droite à gauche');
+    $a->req('POST', "$B/account/locale", http_build_query(['_csrf' => $tp, 'locale' => 'fr']));
+    ok(str_contains($a->req('GET', "$B/dashboard")['body'], 'lang="fr"'), 'retour au français');
 });
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);

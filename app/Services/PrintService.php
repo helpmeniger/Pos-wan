@@ -51,10 +51,13 @@ final class PrintService
     {
         $address = trim($address);
         if ($driver === 'network') {
-            if (!preg_match('/^([a-z0-9.-]+)(?::(\d{1,5}))?$/i', $address, $m)) {
+            if (!preg_match('/^([a-z0-9.-]+)(?::(\d{1,5}))?$/i', $address, $m) || (int) ($m[2] ?? 9100) < 1 || (int) ($m[2] ?? 9100) > 65535) {
                 throw new BusinessException('Adresse réseau invalide (ex. 192.168.1.50 ou 192.168.1.50:9100).');
             }
-            return $m[1] . ':' . (int) ($m[2] ?? 9100);
+            if (!self::isLocalHost($m[1])) {
+                throw new BusinessException('L\'imprimante doit être sur le réseau local (adresse 192.168.x.x, 10.x.x.x, 172.16-31.x.x ou nom local).');
+            }
+            return strtolower($m[1]) . ':' . (int) ($m[2] ?? 9100);
         }
         if ($driver === 'windows') {
             // Uniquement un partage d'imprimante : \\ordinateur\partage
@@ -64,6 +67,17 @@ final class PrintService
             return $address;
         }
         return '';
+    }
+
+    /** Adresse IP privée / locale, ou nom d'hôte local (sans domaine, .local, .lan, .home). */
+    private static function isLocalHost(string $host): bool
+    {
+        $host = strtolower($host);
+        if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            return str_starts_with($host, '127.') || str_starts_with($host, '169.254.')
+                || !filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE);
+        }
+        return $host === 'localhost' || !str_contains($host, '.') || (bool) preg_match('/\.(local|lan|home|internal)$/', $host);
     }
 
     /** Envoie des octets ESC/POS à une imprimante. */
