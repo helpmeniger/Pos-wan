@@ -158,7 +158,10 @@ function money(mixed $amount, bool $withCurrency = true): string
     if (!$withCurrency) {
         return $s;
     }
-    return $c['position'] === 'before' ? $c['symbol'] . ' ' . $s : $s . ' ' . $c['symbol'];
+    $out = $c['position'] === 'before' ? $c['symbol'] . ' ' . $s : $s . ' ' . $c['symbol'];
+    // Arabe (droite à gauche) : le montant est isolé en gauche à droite pour que les
+    // groupes de chiffres et le symbole ne soient pas réordonnés.
+    return \App\Core\Lang::dir() === 'rtl' ? "\u{2066}" . $out . "\u{2069}" : $out;
 }
 
 function qty(mixed $q): string

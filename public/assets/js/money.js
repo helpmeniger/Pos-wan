@@ -9,7 +9,11 @@
     /** montant sans symbole */
     plain: (n) => num(n, c.decimals),
     /** montant avec symbole */
-    fmt: (n) => (c.position === 'before' ? c.symbol + ' ' + num(n, c.decimals) : num(n, c.decimals) + ' ' + c.symbol),
+    fmt: (n) => {
+      const s = c.position === 'before' ? c.symbol + ' ' + num(n, c.decimals) : num(n, c.decimals) + ' ' + c.symbol;
+      // Arabe : montant isolé en gauche à droite (chiffres et symbole non réordonnés)
+      return document.documentElement.dir === 'rtl' ? '\u2066' + s + '\u2069' : s;
+    },
     round: (n) => { const f = Math.pow(10, c.decimals); return Math.round((Number(n) || 0) * f) / f; },
   };
 })();

@@ -94,7 +94,7 @@
   function render() {
     const box = $('#cart');
     if (!cart.lines.length) {
-      box.innerHTML = '<div class="cart-empty"><i class="bi bi-upc-scan fs-1 d-block mb-2"></i>Scannez ou touchez un article</div>';
+      box.innerHTML = '<div class="cart-empty"><i class="bi bi-upc-scan fs-1 d-block mb-2"></i>' + esc(__('Scannez ou touchez un article')) + '</div>';
     } else {
       box.innerHTML = cart.lines.map((l, i) => {
         const up = unitPriceOf(l);
@@ -114,11 +114,11 @@
     }
     const t = totals();
     $('#totalOut').textContent = fmt(t.total);
-    $('#summary').innerHTML = `<div><span>${cart.lines.length} ligne(s) · ${fmtQ(t.items)} article(s)</span><span>Sous-total ${fmt(t.gross)}</span></div>` +
+    $('#summary').innerHTML = `<div><span>${cart.lines.length} ${esc(__('ligne(s)'))} · ${fmtQ(t.items)} ${esc(__('article(s)'))}</span><span>${esc(__('Sous-total'))} ${fmt(t.gross)}</span></div>` +
       (t.discount > 0 ? `<div><span>Remises</span><span>− ${fmt(t.discount)}</span></div>` : '') +
       (cart.note ? `<div><span>Note : ${esc(cart.note)}</span></div>` : '');
     const c = cart.customer;
-    $('#customerBadge span').textContent = c ? `${c.name}${c.phone ? ' · ' + c.phone : ''} — encours ${fmt(c.balance)}` : 'Client comptoir';
+    $('#customerBadge span').textContent = c ? `${c.name}${c.phone ? ' · ' + c.phone : ''} — ${__('encours')} ${fmt(c.balance)}` : __('Client comptoir');
     const ws = $('#optWholesale'); if (ws) ws.checked = !!cart.wholesale;
     updateChange();
     save();
@@ -180,16 +180,16 @@
     if (!d.ok) { toast(d.error || 'Erreur de chargement', 'danger'); return; }
     more = d.more; items = items.concat(d.items);
     const grid = $('#productGrid');
-    if (!items.length) { grid.innerHTML = '<div class="empty-msg"><i class="bi bi-inbox fs-1 d-block"></i>Aucun article</div>'; return; }
+    if (!items.length) { grid.innerHTML = '<div class="empty-msg"><i class="bi bi-inbox fs-1 d-block"></i>' + esc(__('Aucun article')) + '</div>'; return; }
     grid.innerHTML = items.map((p, i) => {
       const initials = esc(p.name.split(/\s+/).filter((w) => /^[\p{L}\d]/u.test(w)).slice(0, 2).map((w) => w[0]).join('').toUpperCase());
       const img = p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : initials;
       const packs = (p.packs || []).map((k) => `<button class="btn btn-sm btn-outline-secondary py-0 px-1 mt-1" data-pack="${k.id}" data-i="${i}">${esc(k.name)} · ${fmt(k.price)}</button>`).join(' ');
       return `<div class="p-card ${p.track && p.stock <= 0 ? 'out' : ''}" data-i="${i}" role="button" tabindex="0">
-        ${p.promo ? '<span class="badge bg-danger badge-promo">PROMO</span>' : ''}${p.rx ? '<span class="badge bg-info badge-rx" title="Ordonnance">Rx</span>' : ''}
+        ${p.promo ? '<span class="badge bg-danger badge-promo">PROMO</span>' : ''}${p.rx ? '<span class="badge bg-info badge-rx" title="' + esc(__('Ordonnance')) + '">Rx</span>' : ''}
         <div class="p-img" style="background:${p.image ? '#fff' : esc(p.color)}">${img}</div>
         <div class="p-name">${esc(p.name)}</div>
-        <div class="p-meta"><span class="stk">${p.track ? 'Stock : ' + fmtQ(p.stock) : '&nbsp;'}</span><span>${esc(p.unit || '')}</span></div>
+        <div class="p-meta"><span class="stk">${p.track ? __('Stock') + ' : ' + fmtQ(p.stock) : '&nbsp;'}</span><span>${esc(p.unit || '')}</span></div>
         <div class="p-price">${p.promo ? `<s class="text-secondary small me-1">${fmt(p.regular)}</s>` : ''}${fmt(p.price)}</div>${packs}</div>`;
     }).join('') + (more ? '<button class="btn btn-outline-secondary empty-msg" id="loadMore">Afficher plus…</button>' : '');
   }
@@ -245,16 +245,16 @@
 
   let numMode = null;
   function openNum(mode) {
-    if (mode !== 'discount' && (selected < 0 || !cart.lines[selected])) { toast('Sélectionnez une ligne du panier.', 'warning'); return; }
+    if (mode !== 'discount' && (selected < 0 || !cart.lines[selected])) { toast(__('Sélectionnez une ligne du panier.'), 'warning'); return; }
     numMode = mode;
     const l = cart.lines[selected];
     $('#numDiscType').classList.toggle('d-none', mode !== 'discount');
     $('#numScope').classList.toggle('d-none', mode !== 'discount');
-    if (mode === 'quantity') { $('#numTitle').textContent = 'Quantité — ' + l.name; $('#numInput').value = String(l.qty).replace('.', ','); }
-    if (mode === 'price') { $('#numTitle').textContent = 'Prix unitaire — ' + l.name + (CFG.perms.price ? '' : ' (autorisation requise)'); $('#numInput').value = String(unitPriceOf(l)); }
+    if (mode === 'quantity') { $('#numTitle').textContent = __('Quantité') + ' — ' + l.name; $('#numInput').value = String(l.qty).replace('.', ','); }
+    if (mode === 'price') { $('#numTitle').textContent = __('Prix unitaire') + ' — ' + l.name + (CFG.perms.price ? '' : ' (' + __('autorisation requise') + ')'); $('#numInput').value = String(unitPriceOf(l)); }
     if (mode === 'discount') {
-      if (!CFG.perms.discount) toast('Remise : une autorisation sera demandée.', 'warning');
-      $('#numTitle').textContent = 'Remise' + (CFG.maxDiscount ? ` (seuil ${CFG.maxDiscount} %)` : '');
+      if (!CFG.perms.discount) toast(__('Remise : une autorisation sera demandée.'), 'warning');
+      $('#numTitle').textContent = __('Remise') + (CFG.maxDiscount ? ` (${__('seuil')} ${CFG.maxDiscount} %)` : '');
       $('#scLine').checked = selected >= 0; $('#scTicket').checked = selected < 0;
       $('#numInput').value = '';
     }
@@ -304,7 +304,7 @@
   if (ncSave) ncSave.addEventListener('click', async () => {
     const d = await api('/pos/customers', { method: 'POST', body: { name: $('#ncName').value, phone: $('#ncPhone').value } });
     if (!d.ok) { toast(d.error, 'danger'); return; }
-    $('#ncName').value = ''; $('#ncPhone').value = ''; chooseCustomer(d.customer); toast('Client créé.', 'success');
+    $('#ncName').value = ''; $('#ncPhone').value = ''; chooseCustomer(d.customer); toast(__('Client créé.'), 'success');
   });
   $('#customerBadge').addEventListener('click', () => action('customer'));
 
@@ -317,7 +317,7 @@
     $('#payRemaining').textContent = fmt(Math.max(0, t - paid));
     $('#payChange').textContent = fmt(Math.max(0, paid - t));
     $('#payLines').innerHTML = payments.map((p, i) => `<tr><td>${esc(CFG.methods[p.method] || p.method)}${p.provider ? ' · ' + esc(p.provider) : ''}${p.reference ? ' <small class="text-secondary">' + esc(p.reference) + '</small>' : ''}</td><td class="text-end fw-bold">${fmt(p.amount)}</td><td class="text-end"><button class="btn btn-sm btn-link text-danger" data-del-pay="${i}"><i class="bi bi-x-circle"></i></button></td></tr>`).join('');
-    $('#payCustomer').textContent = cart.customer ? cart.customer.name : 'comptoir';
+    $('#payCustomer').textContent = cart.customer ? cart.customer.name : __('comptoir');
     const rx = cart.lines.some((l) => l.rx);
     $('#rxBox').classList.toggle('d-none', !rx);
     const rest = Math.max(0, t - paid);
@@ -356,7 +356,7 @@
     amount = Math.round(num(amount) * 100) / 100;
     if (amount <= 0) return false;
     const t = totals().total;
-    if (payMethod !== 'cash' && paidSum() + amount > t + 0.01) { toast('Un paiement électronique ne peut pas dépasser le reste dû.', 'warning'); return false; }
+    if (payMethod !== 'cash' && paidSum() + amount > t + 0.01) { toast(__('Un paiement électronique ne peut pas dépasser le reste dû.'), 'warning'); return false; }
     payments.push({ method: payMethod, amount, reference: $('#payRef').value.trim() || null, provider: payMethod === 'mobile_money' ? payProvider : null });
     $('#payRef').value = '';
     refreshPay();
@@ -375,8 +375,8 @@
     inp.value = k.dataset.k === '⌫' ? inp.value.slice(0, -1) : inp.value + k.dataset.k;
   });
   function openPay(opts = {}) {
-    if (!cart.lines.length) { toast('Le panier est vide.', 'warning'); return; }
-    if (CFG.requireSession && !CFG.sessionOpen) { toast('La caisse est fermée.', 'danger'); return; }
+    if (!cart.lines.length) { toast(__('Le panier est vide.'), 'warning'); return; }
+    if (CFG.requireSession && !CFG.sessionOpen) { toast(__('La caisse est fermée.'), 'danger'); return; }
     payments = [];
     supervisor = null;
     $('#payError').classList.add('d-none');
@@ -384,7 +384,7 @@
     refreshPay();
     selectMethod(CFG.methods.cash ? 'cash' : Object.keys(CFG.methods)[0]);
     if (tendered > 0 && CFG.methods.cash && !opts.credit) addPayment(tendered);
-    if (opts.credit) { $('#payAmount').value = ''; if (!cart.customer) toast('Sélectionnez le client de la vente à crédit.', 'warning'); }
+    if (opts.credit) { $('#payAmount').value = ''; if (!cart.customer) toast(__('Sélectionnez le client de la vente à crédit.'), 'warning'); }
     $('#payAmount').dataset.fresh = '1';
     modal('payModal').show();
     setTimeout(() => $('#payAmount').focus(), 350);
@@ -523,19 +523,19 @@
   }
   async function showHeld() {
     const list = await refreshHeld();
-    $('#listTitle').textContent = 'Ventes en attente';
-    $('#listBody').innerHTML = list.map((h) => `<button class="list-group-item list-group-item-action d-flex justify-content-between" data-resume="${h.id}"><span><b>${esc(h.label)}</b> · ${h.lines} ligne(s) <small class="text-secondary">${esc(h.full_name)}</small></span><small>${esc(h.created_at)}</small></button>`).join('') || '<div class="p-3 text-secondary">Aucune vente en attente.</div>';
+    $('#listTitle').textContent = __('Ventes en attente');
+    $('#listBody').innerHTML = list.map((h) => `<button class="list-group-item list-group-item-action d-flex justify-content-between" data-resume="${h.id}"><span><b>${esc(h.label)}</b> · ${h.lines} ${esc(__('ligne(s)'))} <small class="text-secondary">${esc(h.full_name)}</small></span><small>${esc(h.created_at)}</small></button>`).join('') || '<div class="p-3 text-secondary">' + esc(__('Aucune vente en attente.')) + '</div>';
     modal('listModal').show();
   }
   async function showRecent() {
     const d = await api('/pos/recent');
-    $('#listTitle').textContent = 'Mes dernières ventes';
-    $('#listBody').innerHTML = (d.items || []).map((s) => `<div class="list-group-item d-flex justify-content-between align-items-center"><span><b>${esc(s.number)}</b> ${s.status === 'cancelled' ? '<span class="badge bg-danger">annulée</span>' : ''}<br><small class="text-secondary">${esc(s.created_at)} · ${esc(s.customer || 'comptoir')}</small></span><span class="fw-bold">${fmt(s.total)}</span><span class="btn-group"><a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener" href="${BASE}/sales/${s.id}/ticket"><i class="bi bi-printer"></i></a><a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="${BASE}/sales/${s.id}"><i class="bi bi-eye"></i></a></span></div>`).join('') || '<div class="p-3 text-secondary">Aucune vente.</div>';
+    $('#listTitle').textContent = __('Mes dernières ventes');
+    $('#listBody').innerHTML = (d.items || []).map((s) => `<div class="list-group-item d-flex justify-content-between align-items-center"><span><b>${esc(s.number)}</b> ${s.status === 'cancelled' ? '<span class="badge bg-danger">' + esc(__('annulée')) + '</span>' : ''}<br><small class="text-secondary">${esc(s.created_at)} · ${esc(s.customer || __('comptoir'))}</small></span><span class="fw-bold">${fmt(s.total)}</span><span class="btn-group"><a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener" href="${BASE}/sales/${s.id}/ticket"><i class="bi bi-printer"></i></a><a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="${BASE}/sales/${s.id}"><i class="bi bi-eye"></i></a></span></div>`).join('') || '<div class="p-3 text-secondary">' + esc(__('Aucune vente.')) + '</div>';
     modal('listModal').show();
   }
   $('#listBody').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-resume]'); if (!b) return;
-    if (cart.lines.length && !confirm('Le panier actuel sera remplacé. Continuer ?')) return;
+    if (cart.lines.length && !confirm(__('Le panier actuel sera remplacé. Continuer ?'))) return;
     const d = await api(`/pos/held/${b.dataset.resume}/resume`, { method: 'POST', body: { _csrf: CFG.csrf } });
     if (!d.ok) { toast(d.error, 'danger'); return; }
     cart = Object.assign(newCart(), d.cart, { uuid: uuid() });
@@ -543,12 +543,12 @@
     modal('listModal').hide(); render(); refreshHeld();
   });
   async function hold() {
-    if (!cart.lines.length) { toast('Panier vide.', 'warning'); return; }
-    const label = prompt('Nom de la vente en attente :', cart.customer ? cart.customer.name : 'Client ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+    if (!cart.lines.length) { toast(__('Panier vide.'), 'warning'); return; }
+    const label = prompt(__('Nom de la vente en attente :'), cart.customer ? cart.customer.name : 'Client ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
     if (label === null) return;
     const d = await api('/pos/hold', { method: 'POST', body: { _csrf: CFG.csrf, label, cart } });
     if (!d.ok) { toast(d.error, 'danger'); return; }
-    cart = newCart(); selected = -1; render(); refreshHeld(); toast('Vente mise en attente.', 'success');
+    cart = newCart(); selected = -1; render(); refreshHeld(); toast(__('Vente mise en attente.'), 'success');
   }
 
   // ------------------------------------------------------------------ actions
@@ -557,7 +557,7 @@
       case 'customer': $('#customerSearch').value = ''; searchCustomers(); modal('customerModal').show(); setTimeout(() => $('#customerSearch').focus(), 300); break;
       case 'quantity': case 'price': case 'discount': openNum(a); break;
       case 'remove': if (selected >= 0) { cart.lines.splice(selected, 1); selected = Math.min(selected, cart.lines.length - 1); render(); } break;
-      case 'clear': if (cart.lines.length && confirm('Vider le panier ?')) { cart = newCart(); selected = -1; render(); } break;
+      case 'clear': if (cart.lines.length && confirm(__('Vider le panier ?'))) { cart = newCart(); selected = -1; render(); } break;
       case 'hold': hold(); break;
       case 'held': showHeld(); break;
       case 'recent': showRecent(); break;
@@ -568,7 +568,7 @@
         // Fenêtre d'encaissement complète (espèces par défaut, mobile money, carte, paiement mixte)
         if (!cart.lines.length) return;
         openPay(); break;
-      case 'note': { const n = prompt('Note sur la vente :', cart.note || ''); if (n !== null) { cart.note = n.slice(0, 255); render(); } break; }
+      case 'note': { const n = prompt(__('Note sur la vente :'), cart.note || ''); if (n !== null) { cart.note = n.slice(0, 255); render(); } break; }
       case 'fullscreen': if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); else document.exitFullscreen(); break;
       case 'lock': save(); $('form[action$="/logout"]').submit(); break;
       default: break;

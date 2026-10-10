@@ -888,6 +888,11 @@ test('Sauvegarde vérifiée, altération détectée, restauration fidèle', func
 // ------------------------------------------------------------------ tests HTTP
 echo "\n== HTTP & sécurité (serveur PHP intégré) ==\n";
 $port = (int) (getenv('TEST_PORT') ?: 8099);
+if ($busy = @fsockopen('127.0.0.1', $port, $errno, $errstr, 0.5)) {
+    fclose($busy);
+    fwrite(STDERR, "Le port $port est déjà utilisé (autre serveur PHP ?) : arrêtez-le ou définissez TEST_PORT.\n");
+    exit(1);
+}
 $cmd = sprintf('php -S 127.0.0.1:%d -t %s %s', $port, escapeshellarg(PUBLIC_PATH), escapeshellarg(__DIR__ . '/server-router.php'));
 $proc = proc_open($cmd, [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $pipes, BASE_PATH, array_merge(getenv(), $env));
 usleep(700000);

@@ -35,7 +35,7 @@ $chart = [
 </div>
 
 <div class="row g-3 mb-3">
-  <div class="col-xl-8"><div class="card h-100"><div class="card-header d-flex"><span><i class="bi bi-bar-chart"></i> Chiffre d'affaires — 30 derniers jours</span><span class="ms-auto small text-secondary">Mois : <?= money($month['net']) ?> net</span></div><div class="card-body"><canvas id="chDaily" height="110"></canvas></div></div></div>
+  <div class="col-xl-8"><div class="card h-100"><div class="card-header d-flex"><span><i class="bi bi-bar-chart"></i> Chiffre d'affaires — 30 derniers jours</span><span class="ms-auto small text-secondary"><?= e(t('Mois')) ?> : <?= money($month['net']) ?> <?= e(t('net')) ?></span></div><div class="card-body"><canvas id="chDaily" height="110"></canvas></div></div></div>
   <div class="col-xl-4"><div class="card h-100"><div class="card-header"><i class="bi bi-pie-chart"></i> Ventes par catégorie (mois)</div><div class="card-body"><canvas id="chCat" height="200"></canvas></div></div></div>
 </div>
 

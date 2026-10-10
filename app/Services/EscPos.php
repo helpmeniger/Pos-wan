@@ -23,6 +23,7 @@ final class EscPos
 
     public static function encode(string $text): string
     {
+        $text = str_replace(["\u{2066}", "\u{2069}"], '', $text);
         $text = str_replace(["\u{202F}", "\u{00A0}", '’', '«', '»', '—', '…', '€', '₦', '₵'], [' ', ' ', "'", '"', '"', '-', '...', 'EUR', 'N', 'C'], $text);
         $out = @iconv('UTF-8', 'CP850//TRANSLIT', $text);
         return $out === false ? preg_replace('/[^\x20-\x7E]/', '?', $text) : $out;

@@ -34,14 +34,15 @@ final class Lang
         if (self::$locale !== null) {
             return self::$locale;
         }
-        $candidates = [];
+        // Ordre : langue choisie pendant la session (écran de connexion ou « Mon compte »),
+        // puis préférence enregistrée de l'utilisateur, puis langue par défaut du logiciel.
+        $candidates = [$_SESSION['locale'] ?? null];
         try {
             $u = Auth::check() ? Auth::user() : null;
             $candidates[] = $u['locale'] ?? null;
         } catch (\Throwable) {
             // base indisponible (installation)
         }
-        $candidates[] = $_SESSION['locale'] ?? null;
         $candidates[] = setting('default_locale', 'fr');
         foreach ($candidates as $c) {
             if (is_string($c) && isset(self::LANGUAGES[$c])) {
@@ -139,6 +140,10 @@ final class Lang
         // « Libellé : » → traduit « Libellé » et garde la ponctuation finale
         if (preg_match('/^(.*?)(\s*[:：]|\s*…|\s*\*)$/u', $trim, $m) && isset($d[$m[1]])) {
             return htmlspecialchars($lead . $d[$m[1]] . $m[2] . $tail, ENT_NOQUOTES, 'UTF-8');
+        }
+        // « Libellé : valeur » dans un même nœud → traduit le libellé, garde la valeur
+        if (preg_match('/^(.+?)(\s*:\s+)(.+)$/u', $trim, $m) && isset($d[$m[1]])) {
+            return htmlspecialchars($lead . $d[$m[1]] . $m[2] . $m[3] . $tail, ENT_NOQUOTES, 'UTF-8');
         }
         return $node;
     }
