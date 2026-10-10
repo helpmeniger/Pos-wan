@@ -1,0 +1,15 @@
+<?php $types = App\Services\Catalog::STOCK_MOVEMENT_TYPES; ?>
+<div class="card mb-3"><div class="card-body py-2"><form class="row g-2 align-items-end" method="get">
+  <?= App\Core\View::partial('partials/period', compact('from', 'to')) ?>
+  <?php if ($product): ?><input type="hidden" name="product" value="<?= (int) $product['id'] ?>"><div class="col-auto"><span class="badge bg-primary p-2"><?= e($product['name']) ?> <a class="text-white ms-1" href="<?= e(query_with(['product' => null])) ?>">×</a></span></div><?php endif; ?>
+  <div class="col-auto"><label class="form-label small mb-0">Type</label><select name="type" class="form-select form-select-sm"><option value="">Tous</option><?php foreach ($types as $k => $v): ?><option value="<?= e($k) ?>" <?= ($_GET['type'] ?? '') === $k ? 'selected' : '' ?>><?= e($v) ?></option><?php endforeach; ?></select></div>
+  <div class="col-auto"><label class="form-label small mb-0">Entrepôt</label><select name="warehouse" class="form-select form-select-sm"><option value="">Tous</option><?php foreach ($warehouses as $w): ?><option value="<?= (int) $w['id'] ?>" <?= (int) ($_GET['warehouse'] ?? 0) === (int) $w['id'] ? 'selected' : '' ?>><?= e($w['name']) ?></option><?php endforeach; ?></select></div>
+  <div class="col-auto"><button class="btn btn-sm btn-primary">Filtrer</button></div>
+  <div class="col-auto ms-auto"><a class="btn btn-sm btn-outline-success" href="<?= e(query_with(['export' => 'csv'])) ?>"><i class="bi bi-filetype-csv"></i> Exporter</a></div>
+</form></div></div>
+<div class="card"><div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>Date</th><th>Article</th><th>Entrepôt</th><th>Type</th><th>Lot</th><th class="num">Quantité</th><th class="num">Solde</th><th>Motif / référence</th><th>Utilisateur</th></tr></thead><tbody>
+<?php foreach ($p['rows'] as $m): ?><tr><td class="text-nowrap"><?= e(fdate($m['created_at'])) ?></td><td><a href="<?= e(url('/products/' . $m['product_id'])) ?>"><?= e($m['product']) ?></a></td><td><?= e($m['warehouse']) ?></td><td><?= e($types[$m['type']] ?? $m['type']) ?></td><td><?= e($m['lot_number'] ?? '') ?></td>
+<td class="num fw-semibold <?= (float) $m['quantity'] < 0 ? 'text-danger' : 'text-success' ?>"><?= ((float) $m['quantity'] > 0 ? '+' : '') . qty($m['quantity']) ?></td><td class="num"><?= qty($m['balance_after']) ?></td><td class="small"><?php if ($m['ref_type'] === 'sale'): ?><a href="<?= e(url('/sales/' . $m['ref_id'])) ?>"><?= e($m['reason']) ?></a><?php elseif ($m['ref_type'] === 'reception'): ?><a href="<?= e(url('/receptions/' . $m['ref_id'])) ?>"><?= e($m['reason']) ?></a><?php else: ?><?= e($m['reason']) ?><?php endif; ?></td><td class="small"><?= e($m['full_name'] ?? 'système') ?></td></tr><?php endforeach; ?>
+<?php if (!$p['rows']): ?><tr><td colspan="9" class="text-center text-secondary py-4">Aucun mouvement.</td></tr><?php endif; ?>
+</tbody></table></div></div>
+<?= App\Core\View::partial('partials/pagination', ['p' => $p]) ?>

@@ -1,0 +1,788 @@
+<?php
+/**
+ * POS Wan — suite de tests automatisés (sans dépendance externe).
+ *
+ * Usage :
+ *   TEST_DB_USER=xxx TEST_DB_PASS=yyy php tests/run.php
+ * Variables optionnelles : TEST_DB_HOST (127.0.0.1), TEST_DB_NAME (poswan_test), TEST_PORT (8099)
+ *
+ * ATTENTION : la base TEST_DB_NAME est entièrement recréée. N'utilisez jamais la base de production.
+ */
+declare(strict_types=1);
+
+if (PHP_SAPI !== 'cli') {
+    exit(1);
+}
+
+$dbName = getenv('TEST_DB_NAME') ?: 'poswan_test';
+if (!preg_match('/test/i', $dbName)) {
+    fwrite(STDERR, "Par sécurité, le nom de la base de test doit contenir « test ».\n");
+    exit(1);
+}
+$env = [
+    'APP_ENV' => 'testing', 'APP_DEBUG' => 'false', 'APP_KEY' => bin2hex(random_bytes(32)),
+    'DB_HOST' => getenv('TEST_DB_HOST') ?: '127.0.0.1', 'DB_DATABASE' => $dbName,
+    'DB_USERNAME' => getenv('TEST_DB_USER') ?: 'root', 'DB_PASSWORD' => getenv('TEST_DB_PASS') ?: '',
+];
+foreach ($env as $k => $v) {
+    putenv("$k=$v");
+}
+
+// Recrée la base de test
+$pdo = new PDO("mysql:host={$env['DB_HOST']};charset=utf8mb4", $env['DB_USERNAME'], $env['DB_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+$pdo->exec("DROP DATABASE IF EXISTS `$dbName`");
+$pdo->exec("CREATE DATABASE `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+unset($pdo);
+
+require dirname(__DIR__) . '/app/bootstrap.php';
+restore_error_handler();
+set_error_handler(static function (int $no, string $str, string $file, int $line): bool {
+    if (!(error_reporting() & $no)) {
+        return false; // erreur volontairement masquée par @
+    }
+    throw new ErrorException($str, 0, $no, $file, $line);
+});
+
+use App\Core\Auth;
+use App\Core\BusinessException;
+use App\Core\DB;
+use App\Services as S;
+
+// ------------------------------------------------------------------ mini-framework
+$results = ['pass' => 0, 'fail' => 0, 'failures' => []];
+$current = '';
+function test(string $name, callable $fn): void
+{
+    global $results, $current;
+    $current = $name;
+    try {
+        $fn();
+        $results['pass']++;
+        echo "  \033[32m✔\033[0m $name\n";
+    } catch (Throwable $e) {
+        $results['fail']++;
+        $results['failures'][] = "$name : " . $e->getMessage() . ' (' . basename($e->getFile()) . ':' . $e->getLine() . ')';
+        echo "  \033[31m✘ $name\033[0m\n      → " . $e->getMessage() . "\n";
+    }
+}
+function ok(bool $cond, string $msg = 'assertion échouée'): void
+{
+    if (!$cond) {
+        throw new RuntimeException($msg);
+    }
+}
+function eq(mixed $expected, mixed $actual, string $msg = ''): void
+{
+    if (is_float($expected) || is_float($actual)) {
+        if (abs((float) $expected - (float) $actual) > 0.001) {
+            throw new RuntimeException(($msg ? "$msg : " : '') . 'attendu ' . var_export($expected, true) . ', obtenu ' . var_export($actual, true));
+        }
+        return;
+    }
+    if ($expected !== $actual) {
+        throw new RuntimeException(($msg ? "$msg : " : '') . 'attendu ' . var_export($expected, true) . ', obtenu ' . var_export($actual, true));
+    }
+}
+function throws(callable $fn, string $contains = '', string $class = BusinessException::class): void
+{
+    try {
+        $fn();
+    } catch (Throwable $e) {
+        if (!$e instanceof $class) {
+            throw new RuntimeException('Exception inattendue ' . get_class($e) . ' : ' . $e->getMessage());
+        }
+        if ($contains !== '' && mb_stripos($e->getMessage(), $contains) === false) {
+            throw new RuntimeException("Message inattendu : « {$e->getMessage()} » (attendu « $contains »)");
+        }
+        return;
+    }
+    throw new RuntimeException('Une exception était attendue.');
+}
+function uuid(): string
+{
+    $b = random_bytes(16);
+    $b[6] = chr((ord($b[6]) & 0x0f) | 0x40);
+    $b[8] = chr((ord($b[8]) & 0x3f) | 0x80);
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($b), 4));
+}
+function actingAs(string $username): array
+{
+    $u = DB::one('SELECT * FROM users WHERE username = ?', [$username]);
+    Auth::login($u);
+    Auth::reset();
+    return Auth::user();
+}
+function stock(int $pid, int $wh = 1): float
+{
+    return (float) DB::value('SELECT COALESCE(quantity,0) FROM stock_levels WHERE product_id = ? AND warehouse_id = ?', [$pid, $wh]);
+}
+
+// Session CLI (sans cookie) pour simuler un utilisateur connecté
+ini_set('session.use_cookies', '0');
+ini_set('session.use_strict_mode', '0');
+session_save_path(sys_get_temp_dir());
+session_start();
+
+$ADMIN_PWD = 'Essai-Niamey-2026';
+echo "\n== Installation ==\n";
+test('Installation complète (schéma, rôles, paramètres, démo)', function () use ($ADMIN_PWD) {
+    @unlink(S\InstallService::lockFile() . '.bak');
+    if (S\InstallService::isInstalled()) {
+        rename(S\InstallService::lockFile(), S\InstallService::lockFile() . '.bak');
+    }
+    S\InstallService::install(['company' => 'Test SARL', 'business_type' => 'alimentation', 'admin_username' => 'admin', 'admin_name' => 'Admin Test', 'admin_password' => $ADMIN_PWD, 'store_name' => '', 'demo' => true]);
+    ok(S\InstallService::isInstalled());
+    ok((int) DB::value('SELECT COUNT(*) FROM permissions') >= 40, 'permissions');
+    eq(9, (int) DB::value('SELECT COUNT(*) FROM roles'), 'rôles');
+    ok((int) DB::value('SELECT COUNT(*) FROM products') >= 10, 'articles démo');
+    eq('1', setting('feature_lots'), 'lots activés pour alimentation');
+});
+test('Mot de passe administrateur haché (jamais en clair)', function () use ($ADMIN_PWD) {
+    $h = DB::value("SELECT password_hash FROM users WHERE username = 'admin'");
+    ok($h !== $ADMIN_PWD && password_verify($ADMIN_PWD, $h) && str_starts_with($h, '$2y$') || str_starts_with($h, '$argon'));
+});
+test('Politique de mot de passe', function () {
+    ok(Auth::passwordPolicyError('court1', 'x') !== null, 'trop court');
+    ok(Auth::passwordPolicyError('seulementdeslettres', 'x') !== null, 'sans chiffre');
+    ok(Auth::passwordPolicyError('admin2026xyz', 'admin') !== null, 'contient identifiant');
+    ok(Auth::passwordPolicyError('Bonne-Phrase-2026', 'kader') === null, 'valide');
+});
+test('Migrations idempotentes', function () {
+    eq([], S\InstallService::migrate());
+});
+
+// Comptes de test pour chaque rôle
+$roles = array_column(DB::all('SELECT id, code FROM roles'), 'id', 'code');
+foreach (['caissier' => 'cashier', 'gerant' => 'store_manager', 'magasin' => 'stock_manager', 'auditeur' => 'auditor', 'pharma' => 'pharmacist'] as $u => $r) {
+    DB::insert('users', ['username' => $u, 'full_name' => ucfirst($u), 'password_hash' => Auth::hash('Mot-de-passe-2026'), 'pin_hash' => Auth::hash('4826'), 'role_id' => $roles[$r], 'store_id' => 1, 'register_id' => 1]);
+}
+
+echo "\n== Authentification & permissions ==\n";
+test('Permissions par rôle (serveur)', function () {
+    actingAs('caissier');
+    ok(Auth::can('pos.sell'), 'caissier vend');
+    ok(!Auth::can('pos.cancel_sale'), 'caissier n\'annule pas');
+    ok(!Auth::can('products.price_edit'), 'caissier ne modifie pas les prix');
+    ok(!Auth::can('users.manage'), 'caissier ne gère pas les utilisateurs');
+    actingAs('auditeur');
+    ok(Auth::can('reports.financial') && !Auth::can('pos.sell') && !Auth::can('products.manage'), 'auditeur lecture seule');
+    actingAs('admin');
+    ok(Auth::can('backup.manage') && Auth::can('anything.future'), 'admin a tout');
+});
+test('Autorisation superviseur : identifiants valides et permission requise', function () {
+    eq((int) DB::value("SELECT id FROM users WHERE username = 'gerant'"), Auth::verifySupervisor('gerant', '4826', 'pos.discount_high'), 'PIN gérant');
+    throws(fn() => Auth::verifySupervisor('gerant', 'mauvais', 'pos.discount_high'), 'incorrects');
+    throws(fn() => Auth::verifySupervisor('caissier', 'Mot-de-passe-2026', 'pos.discount_high'), 'permission');
+});
+
+// ------------------------------------------------------------------ caisse
+echo "\n== Caisse : sessions ==\n";
+$riz = (int) DB::value("SELECT id FROM products WHERE name LIKE 'Sac de riz%'");      // lots, 13000 F, coût 10000
+$savon = (int) DB::value("SELECT id FROM products WHERE name LIKE 'Savon%'");         // sans lot, 250 F, stock 6
+$eau = (int) DB::value("SELECT id FROM products WHERE name LIKE 'Eau min%'");          // lots + pack de 6
+$niebe = (int) DB::value("SELECT id FROM products WHERE name LIKE 'Ni%b%'");           // au kg
+$session = 0;
+
+test('Vente refusée caisse fermée', function () use ($savon) {
+    actingAs('caissier');
+    throws(fn() => S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 250]]]), 'fermée');
+});
+test('Ouverture de caisse et unicité de la session ouverte', function () use (&$session) {
+    actingAs('caissier');
+    $session = S\CashService::open(1, 10000);
+    ok($session > 0);
+    throws(fn() => S\CashService::open(1, 5000), 'déjà ouverte');
+});
+
+echo "\n== Ventes ==\n";
+$saleId = 0;
+test('Vente simple : totaux, monnaie, stock, coût, caisse', function () use ($savon, $riz, &$saleId, &$session) {
+    actingAs('caissier');
+    $s0 = stock($savon);
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 2], ['product_id' => $riz, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 15000]]]);
+    $saleId = $r['sale_id'];
+    eq(13500.0, $r['total'], 'total');
+    eq(1500.0, $r['change'], 'monnaie');
+    eq($s0 - 2, stock($savon), 'stock savon');
+    $sale = DB::one('SELECT * FROM sales WHERE id = ?', [$saleId]);
+    eq(13500.0, (float) $sale['paid_total']);
+    eq(10350.0, (float) $sale['cost_total'], 'coût des ventes (2×175 + 10000)');
+    eq(23500.0, S\CashService::expectedCash($session), 'espèces théoriques = fond + vente nette');
+});
+test('Idempotence : double soumission = une seule vente', function () use ($savon) {
+    actingAs('caissier');
+    $u = uuid();
+    $data = ['client_uuid' => $u, 'items' => [['product_id' => $savon, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 250]]];
+    $a = S\SaleService::create($data);
+    $b = S\SaleService::create($data);
+    eq($a['sale_id'], $b['sale_id']);
+    ok($b['duplicate'] === true);
+    eq(1, (int) DB::value('SELECT COUNT(*) FROM sales WHERE client_uuid = ?', [$u]));
+});
+test('Paiement mixte espèces + mobile money', function () use ($riz) {
+    actingAs('caissier');
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $riz, 'quantity' => 1]], 'payments' => [['method' => 'mobile_money', 'amount' => 8000, 'reference' => 'MM123'], ['method' => 'cash', 'amount' => 10000]]]);
+    eq(5000.0, $r['change']);
+    $p = array_column(DB::all('SELECT method, amount FROM sale_payments WHERE sale_id = ?', [$r['sale_id']]), 'amount', 'method');
+    eq(8000.0, (float) $p['mobile_money']);
+    eq(5000.0, (float) $p['cash'], 'espèces nettes de la monnaie');
+});
+test('Paiement électronique supérieur au total refusé', function () use ($savon) {
+    actingAs('caissier');
+    throws(fn() => S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 1]], 'payments' => [['method' => 'card', 'amount' => 1000]]]), 'dépasser');
+});
+test('Stock insuffisant : vente refusée et rien n\'est enregistré (transaction)', function () use ($savon) {
+    actingAs('caissier');
+    $before = (int) DB::value('SELECT COUNT(*) FROM sales');
+    $s = stock($savon);
+    throws(fn() => S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 999]], 'payments' => [['method' => 'cash', 'amount' => 999999]]]), 'insuffisant');
+    eq($before, (int) DB::value('SELECT COUNT(*) FROM sales'));
+    eq($s, stock($savon));
+});
+test('Quantité décimale refusée pour un article à l\'unité, acceptée au kg', function () use ($savon, $niebe) {
+    actingAs('caissier');
+    throws(fn() => S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 1.5]], 'payments' => [['method' => 'cash', 'amount' => 1000]]]), 'entière');
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $niebe, 'quantity' => 2.5]], 'payments' => [['method' => 'cash', 'amount' => 2250]]]);
+    eq(2250.0, $r['total']);
+});
+test('Le prix envoyé par le navigateur est ignoré sans permission (dérogation)', function () use ($riz) {
+    actingAs('caissier');
+    try {
+        S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $riz, 'quantity' => 1, 'unit_price' => 100]], 'payments' => [['method' => 'cash', 'amount' => 100]]]);
+        throw new RuntimeException('dérogation acceptée sans autorisation');
+    } catch (BusinessException $e) {
+        ok(str_starts_with($e->getMessage(), 'AUTH_REQUIRED'), 'autorisation exigée');
+    }
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $riz, 'quantity' => 1, 'unit_price' => 12500]], 'payments' => [['method' => 'cash', 'amount' => 12500]], 'supervisor' => ['username' => 'gerant', 'secret' => '4826']]);
+    eq(12500.0, $r['total']);
+    ok((int) DB::value('SELECT authorized_by FROM sales WHERE id = ?', [$r['sale_id']]) > 0, 'superviseur tracé');
+});
+test('Remise : seuil, autorisation superviseur, répartition', function () use ($riz) {
+    actingAs('caissier');
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $riz, 'quantity' => 1]], 'discount_type' => 'percent', 'discount_value' => 5, 'payments' => [['method' => 'cash', 'amount' => 12350]]]);
+    eq(12350.0, $r['total'], 'remise 5 % autorisée');
+    try {
+        S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $riz, 'quantity' => 1]], 'discount_type' => 'percent', 'discount_value' => 20, 'payments' => [['method' => 'cash', 'amount' => 10400]]]);
+        throw new RuntimeException('remise 20 % acceptée');
+    } catch (BusinessException $e) {
+        ok(str_contains($e->getMessage(), 'AUTH_REQUIRED'));
+    }
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $riz, 'quantity' => 1]], 'discount_type' => 'percent', 'discount_value' => 20, 'payments' => [['method' => 'cash', 'amount' => 10400]], 'supervisor' => ['username' => 'gerant', 'secret' => 'Mot-de-passe-2026']]);
+    eq(10400.0, $r['total']);
+    eq(2600.0, (float) DB::value('SELECT SUM(discount) FROM sale_items WHERE sale_id = ?', [$r['sale_id']]), 'remise portée sur les lignes');
+});
+test('Conditionnement : pack de 6 décompte 6 unités', function () use ($eau) {
+    actingAs('caissier');
+    $pack = (int) DB::value('SELECT id FROM product_packagings WHERE product_id = ?', [$eau]);
+    $s = stock($eau);
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $eau, 'packaging_id' => $pack, 'quantity' => 2]], 'payments' => [['method' => 'cash', 'amount' => 4400]]]);
+    eq(4400.0, $r['total']);
+    eq($s - 12, stock($eau));
+});
+test('FEFO : le lot qui périme en premier sort en premier ; lot périmé et lot rappelé exclus', function () {
+    actingAs('admin');
+    $pid = S\ProductService::create(S\ProductService::validate(['name' => 'Yaourt test', 'sale_price' => 500, 'cost_price' => 300, 'track_lots' => 1, 'track_stock' => 1]));
+    DB::transaction(function () use ($pid) {
+        S\StockService::receive($pid, 1, 5, 300, 'reception', 'test', null, 't', 'LOT-OLD', date('Y-m-d', strtotime('-2 days')));   // périmé
+        S\StockService::receive($pid, 1, 5, 300, 'reception', 'test', null, 't', 'LOT-RECALL', date('Y-m-d', strtotime('+5 days')));
+        S\StockService::receive($pid, 1, 5, 300, 'reception', 'test', null, 't', 'LOT-B', date('Y-m-d', strtotime('+20 days')));
+        S\StockService::receive($pid, 1, 5, 300, 'reception', 'test', null, 't', 'LOT-A', date('Y-m-d', strtotime('+10 days')));
+    });
+    DB::run("UPDATE stock_lots SET recalled = 1 WHERE lot_number = 'LOT-RECALL'");
+    actingAs('caissier');
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $pid, 'quantity' => 7]], 'payments' => [['method' => 'cash', 'amount' => 3500]]]);
+    $alloc = DB::all('SELECT l.lot_number, sil.quantity FROM sale_item_lots sil JOIN stock_lots l ON l.id = sil.lot_id JOIN sale_items si ON si.id = sil.sale_item_id WHERE si.sale_id = ? ORDER BY sil.id', [$r['sale_id']]);
+    eq('LOT-A', $alloc[0]['lot_number']);
+    eq(5.0, (float) $alloc[0]['quantity']);
+    eq('LOT-B', $alloc[1]['lot_number']);
+    eq(2.0, (float) $alloc[1]['quantity']);
+    throws(fn() => S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $pid, 'quantity' => 4]], 'payments' => [['method' => 'cash', 'amount' => 2000]]]), 'vendable insuffisant');
+});
+
+echo "\n== Crédit client ==\n";
+test('Vente à crédit : client obligatoire, plafond, grand livre', function () use ($riz) {
+    actingAs('caissier');
+    throws(fn() => S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $riz, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 3000]]]), 'sélectionnez un client');
+    $cid = DB::insert('customers', ['name' => 'Client crédit', 'credit_limit' => 20000]);
+    try {
+        S\SaleService::create(['client_uuid' => uuid(), 'customer_id' => $cid, 'items' => [['product_id' => $riz, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 3000]]]);
+        throw new RuntimeException('crédit accordé par un caissier sans droit');
+    } catch (BusinessException $e) {
+        ok(str_contains($e->getMessage(), 'AUTH_REQUIRED'));
+    }
+});
+test('Vente à crédit autorisée et dépassement de plafond bloqué', function () use ($riz) {
+    actingAs('gerant');
+    $cid = (int) DB::value("SELECT id FROM customers WHERE name = 'Client crédit'");
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'customer_id' => $cid, 'items' => [['product_id' => $riz, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 3000]]]);
+    eq(10000.0, (float) DB::value('SELECT credit_amount FROM sales WHERE id = ?', [$r['sale_id']]));
+    eq(10000.0, (float) DB::value('SELECT balance FROM customers WHERE id = ?', [$cid]));
+    try {
+        S\SaleService::create(['client_uuid' => uuid(), 'customer_id' => $cid, 'items' => [['product_id' => $riz, 'quantity' => 1]], 'payments' => []]);
+        throw new RuntimeException('plafond dépassé accepté');
+    } catch (BusinessException $e) {
+        ok(str_contains($e->getMessage(), 'Plafond'), $e->getMessage());
+    }
+    // Règlement partiel du client
+    S\CustomerService::payment($cid, 4000, 'cash', 'Acompte test');
+    eq(6000.0, (float) DB::value('SELECT balance FROM customers WHERE id = ?', [$cid]));
+    eq(3, (int) DB::value('SELECT COUNT(*) FROM customer_transactions WHERE customer_id = ?', [$cid]) + 1, 'grand livre');
+});
+
+echo "\n== Retours & annulations ==\n";
+test('Retour partiel : remboursement espèces + réintégration stock', function () use (&$saleId, $savon, &$session) {
+    actingAs('gerant');
+    $item = DB::one('SELECT * FROM sale_items WHERE sale_id = ? AND product_id = ?', [$saleId, $savon]);
+    $s = stock($savon);
+    $cash = S\CashService::expectedCash($session);
+    $retId = S\SaleService::createReturn($saleId, [$item['id'] => 1], 'cash', 'Défectueux', true);
+    eq(250.0, (float) DB::value('SELECT total FROM sale_returns WHERE id = ?', [$retId]));
+    eq($s + 1, stock($savon));
+    eq($cash - 250, S\CashService::expectedCash($session));
+    eq('partially_returned', DB::value('SELECT status FROM sales WHERE id = ?', [$saleId]));
+    throws(fn() => S\SaleService::createReturn($saleId, [$item['id'] => 5], 'cash', 'trop', true), 'supérieure');
+});
+test('Annulation : contre-passation stock et caisse, vente conservée', function () use ($savon, &$session) {
+    actingAs('caissier');
+    $s = stock($savon);
+    $cash = S\CashService::expectedCash($session);
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 250]]]);
+    actingAs('gerant');
+    S\SaleService::cancel($r['sale_id'], 'Erreur de saisie');
+    eq('cancelled', DB::value('SELECT status FROM sales WHERE id = ?', [$r['sale_id']]));
+    eq($s, stock($savon));
+    eq($cash, S\CashService::expectedCash($session));
+    throws(fn() => S\SaleService::cancel($r['sale_id'], 'x'), 'Seule');
+    throws(fn() => S\SaleService::cancel($r['sale_id'], ''), 'motif');
+});
+
+echo "\n== Achats & fournisseurs ==\n";
+test('Commande : n\'affecte pas le stock ; réception partielle puis complète ; CMP ; dette', function () use ($savon) {
+    actingAs('admin');
+    $sup = DB::insert('suppliers', ['name' => 'Fournisseur test']);
+    $s0 = stock($savon);
+    $cost0 = (float) DB::value('SELECT cost_price FROM products WHERE id = ?', [$savon]);
+    $po = S\PurchaseService::createOrder($sup, 1, [['product_id' => $savon, 'quantity' => 100, 'unit_cost' => 200]], null, null);
+    eq($s0, stock($savon), 'commande sans effet stock');
+    $poi = (int) DB::value('SELECT id FROM purchase_order_items WHERE purchase_order_id = ?', [$po]);
+    S\PurchaseService::receive($sup, 1, [['product_id' => $savon, 'quantity' => 40, 'unit_cost' => 200, 'po_item_id' => $poi]], 400, $po, 'F-1', null, null);
+    eq($s0 + 40, stock($savon));
+    eq('partial', DB::value('SELECT status FROM purchase_orders WHERE id = ?', [$po]));
+    $expected = round(($s0 * $cost0 + 40 * 210) / ($s0 + 40), 2); // 400 F de frais / 40 = +10 F
+    eq($expected, (float) DB::value('SELECT cost_price FROM products WHERE id = ?', [$savon]), 'CMP avec frais d\'approche');
+    eq(8400.0, (float) DB::value('SELECT balance FROM suppliers WHERE id = ?', [$sup]), 'dette');
+    S\PurchaseService::receive($sup, 1, [['product_id' => $savon, 'quantity' => 60, 'unit_cost' => 200, 'po_item_id' => $poi]], 0, $po, 'F-2', null, null);
+    eq('received', DB::value('SELECT status FROM purchase_orders WHERE id = ?', [$po]));
+    throws(fn() => S\PurchaseService::receive($sup, 1, [['product_id' => $savon, 'quantity' => 1, 'unit_cost' => 200, 'po_item_id' => $poi]], 0, $po, null, null, null), 'ne peut plus');
+    S\SupplierService::pay($sup, 5000, 'transfer', 'Virement', false);
+    eq(15400.0, (float) DB::value('SELECT balance FROM suppliers WHERE id = ?', [$sup]));
+});
+test('Réception d\'un article suivi par lot : lot et péremption obligatoires', function () use ($riz) {
+    actingAs('admin');
+    $sup = (int) DB::value("SELECT id FROM suppliers WHERE name = 'Fournisseur test'");
+    throws(fn() => S\PurchaseService::receive($sup, 1, [['product_id' => $riz, 'quantity' => 5, 'unit_cost' => 10000]], 0, null, null, null, null), 'lot obligatoire');
+    S\PurchaseService::receive($sup, 1, [['product_id' => $riz, 'quantity' => 5, 'unit_cost' => 10000, 'lot_number' => 'R-2027', 'expiry_date' => '2027-06-30']], 0, null, null, null, null);
+    ok((bool) DB::value("SELECT id FROM stock_lots WHERE lot_number = 'R-2027' AND quantity = 5"));
+});
+test('Retour fournisseur : stock et dette diminués', function () use ($savon) {
+    actingAs('admin');
+    $sup = (int) DB::value("SELECT id FROM suppliers WHERE name = 'Fournisseur test'");
+    $s = stock($savon);
+    $d = (float) DB::value('SELECT balance FROM suppliers WHERE id = ?', [$sup]);
+    S\PurchaseService::supplierReturn($sup, 1, [['product_id' => $savon, 'quantity' => 10, 'unit_cost' => 200]], 'Lot abîmé');
+    eq($s - 10, stock($savon));
+    eq($d - 2000, (float) DB::value('SELECT balance FROM suppliers WHERE id = ?', [$sup]));
+});
+
+echo "\n== Stocks ==\n";
+test('Ajustement : motif obligatoire, mouvement tracé', function () use ($savon) {
+    actingAs('magasin');
+    throws(fn() => S\StockService::adjust($savon, 1, -1, 'loss', ''), 'motif');
+    $s = stock($savon);
+    S\StockService::adjust($savon, 1, -2, 'loss', 'Casse');
+    eq($s - 2, stock($savon));
+    $m = DB::one('SELECT * FROM stock_movements WHERE product_id = ? ORDER BY id DESC LIMIT 1', [$savon]);
+    eq('loss', $m['type']);
+    eq((int) DB::value("SELECT id FROM users WHERE username = 'magasin'"), (int) $m['user_id'], 'utilisateur tracé');
+    eq($s - 2, (float) $m['balance_after']);
+});
+test('Cohérence : niveau de stock = somme des mouvements (tous articles)', function () {
+    $bad = DB::all('SELECT sl.product_id, sl.warehouse_id, sl.quantity, COALESCE(SUM(m.quantity),0) AS mv FROM stock_levels sl LEFT JOIN stock_movements m ON m.product_id = sl.product_id AND m.warehouse_id = sl.warehouse_id GROUP BY sl.product_id, sl.warehouse_id, sl.quantity HAVING ABS(sl.quantity - mv) > 0.001');
+    eq([], $bad);
+});
+test('Cohérence : niveau de stock = somme des lots (articles suivis par lot)', function () {
+    $bad = DB::all('SELECT sl.product_id FROM stock_levels sl JOIN products p ON p.id = sl.product_id AND p.track_lots = 1 LEFT JOIN stock_lots l ON l.product_id = sl.product_id AND l.warehouse_id = sl.warehouse_id GROUP BY sl.product_id, sl.warehouse_id, sl.quantity HAVING ABS(sl.quantity - COALESCE(SUM(l.quantity),0)) > 0.001');
+    eq([], $bad);
+});
+test('Transfert entre entrepôts (lots conservés)', function () use ($riz) {
+    actingAs('admin');
+    $wh2 = DB::insert('warehouses', ['name' => 'Dépôt', 'code' => 'E02', 'store_id' => 1]);
+    $s = stock($riz);
+    S\StockService::transfer(1, $wh2, [['product_id' => $riz, 'quantity' => 3]], 'test');
+    eq($s - 3, stock($riz));
+    eq(3.0, stock($riz, $wh2));
+    eq(3.0, (float) DB::value('SELECT SUM(quantity) FROM stock_lots WHERE product_id = ? AND warehouse_id = ?', [$riz, $wh2]));
+    throws(fn() => S\StockService::transfer(1, 1, [['product_id' => $riz, 'quantity' => 1]], null), 'différents');
+});
+test('Inventaire : écart appliqué au stock actuel, articles non comptés ignorés', function () use ($savon, $niebe) {
+    actingAs('gerant');
+    $inv = S\InventoryService::start(1, null, null);
+    $itemSavon = (int) DB::value('SELECT id FROM inventory_items WHERE inventory_id = ? AND product_id = ?', [$inv, $savon]);
+    $expected = (float) DB::value('SELECT expected_qty FROM inventory_items WHERE id = ?', [$itemSavon]);
+    $niebeBefore = stock($niebe);
+    S\InventoryService::saveCounts($inv, [$itemSavon => (string) ($expected - 3)]);
+    // une vente pendant l'inventaire
+    S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $savon, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 250]]]);
+    $r = S\InventoryService::validate($inv);
+    eq(1, $r['adjusted']);
+    eq($expected - 3 - 1, stock($savon));
+    eq($niebeBefore, stock($niebe), 'non compté inchangé');
+    throws(fn() => S\InventoryService::validate($inv), 'déjà');
+});
+
+echo "\n== Clôture de caisse ==\n";
+test('Clôture : écart calculé, commentaire obligatoire si écart', function () use (&$session) {
+    actingAs('caissier');
+    $exp = S\CashService::expectedCash($session);
+    throws(fn() => S\CashService::close($session, $exp - 500, ''), 'commentaire');
+    $r = S\CashService::close($session, $exp - 500, 'Billet manquant');
+    eq(-500.0, $r['difference']);
+    throws(fn() => S\CashService::close($session, 0, 'x'), 'déjà clôturée');
+});
+
+echo "\n== Articles ==\n";
+test('Unicité du code-barres et de la référence', function () use ($savon) {
+    actingAs('admin');
+    $bc = DB::value('SELECT barcode FROM products WHERE id = ?', [$savon]);
+    throws(fn() => S\ProductService::validate(['name' => 'Doublon', 'sale_price' => 10, 'barcode' => $bc]), 'déjà utilisé');
+    throws(fn() => S\ProductService::validate(['name' => 'Doublon', 'sale_price' => 10, 'reference' => 'ART00001']), 'déjà utilisée');
+    throws(fn() => S\ProductService::validate(['name' => '', 'sale_price' => 10]), 'obligatoire');
+    throws(fn() => S\ProductService::validate(['name' => 'X', 'sale_price' => -5]), 'minimum');
+});
+test('Historique des prix enregistré ; prix protégés sans permission', function () use ($savon) {
+    actingAs('admin');
+    $p = DB::one('SELECT * FROM products WHERE id = ?', [$savon]);
+    $d = S\ProductService::validate(['sale_price' => 300] + $p, $savon);
+    S\ProductService::update($savon, $d, true, false);
+    eq(300.0, (float) DB::value('SELECT sale_price FROM products WHERE id = ?', [$savon]));
+    ok((bool) DB::value("SELECT id FROM price_history WHERE product_id = ? AND field = 'sale_price' AND new_value = 300", [$savon]));
+    $d = S\ProductService::validate(['sale_price' => 1] + $p, $savon);
+    S\ProductService::update($savon, $d, false, false);
+    eq(300.0, (float) DB::value('SELECT sale_price FROM products WHERE id = ?', [$savon]), 'prix inchangé sans droit');
+});
+test('Le suivi par lot ne peut pas changer si du stock existe', function () use ($savon) {
+    actingAs('admin');
+    $p = DB::one('SELECT * FROM products WHERE id = ?', [$savon]);
+    throws(fn() => S\ProductService::update($savon, S\ProductService::validate(['track_lots' => 1] + $p, $savon), true, true), 'lot');
+});
+test('Modification groupée des prix avec arrondi', function () {
+    actingAs('admin');
+    $cat = (int) DB::value("SELECT id FROM categories WHERE name = 'Boissons'");
+    $before = (float) DB::value("SELECT sale_price FROM products WHERE name LIKE 'Jus de bissap%'");
+    S\ProductService::bulkPrice($cat, 'percent', 10, 25);
+    eq(ceil($before * 1.1 / 25) * 25, (float) DB::value("SELECT sale_price FROM products WHERE name LIKE 'Jus de bissap%'"));
+});
+
+echo "\n== Pharmacie ==\n";
+test('Médicament sur ordonnance : ordonnance et pharmacien exigés', function () {
+    actingAs('admin');
+    setting_set('feature_pharmacy', '1');
+    $pid = S\ProductService::create(S\ProductService::validate(['name' => 'Amoxicilline test', 'sale_price' => 1500, 'cost_price' => 1000, 'requires_prescription' => 1, 'is_medicine' => 1]), 10, 1);
+    S\CashService::open(1, 0);
+    actingAs('caissier');
+    try {
+        S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $pid, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 1500]]]);
+        throw new RuntimeException('délivrance sans pharmacien');
+    } catch (BusinessException $e) {
+        ok(str_contains($e->getMessage(), 'AUTH_REQUIRED'), $e->getMessage());
+    }
+    actingAs('pharma');
+    try {
+        S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $pid, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 1500]]]);
+        throw new RuntimeException('délivrance sans ordonnance');
+    } catch (BusinessException $e) {
+        ok(str_contains($e->getMessage(), 'PRESCRIPTION_REQUIRED'), $e->getMessage());
+    }
+    $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $pid, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 1500]], 'prescription' => ['prescriber' => 'Dr Issa', 'patient_name' => 'Aïcha', 'prescription_ref' => 'ORD-1']]);
+    ok((bool) DB::value('SELECT id FROM prescriptions WHERE sale_id = ?', [$r['sale_id']]), 'ordonnancier');
+    setting_set('feature_pharmacy', '0');
+});
+
+echo "\n== Divers ==\n";
+test('Montant en lettres', function () {
+    eq('treize mille cinq cents', amount_words(13500));
+    eq('quatre-vingt-onze', amount_words(91));
+    eq('un million deux cent cinquante mille trois cents', amount_words(1250300));
+});
+test('Numérotation continue sans doublon', function () {
+    $a = S\Sequence::next('expense');
+    $b = S\Sequence::next('expense');
+    ok($a !== $b && (int) substr($b, -6) === (int) substr($a, -6) + 1);
+});
+test('Dépense puis contrepassation (aucune suppression)', function () {
+    actingAs('gerant');
+    $cat = (int) DB::value("SELECT id FROM expense_categories WHERE type = 'expense' LIMIT 1");
+    $id = S\ExpenseService::create('expense', $cat, 5000, 'transfer', date('Y-m-d'), 'Loyer test', false);
+    S\ExpenseService::reverse($id, 'Erreur');
+    eq('reversed', DB::value('SELECT status FROM expenses WHERE id = ?', [$id]));
+    eq(0.0, (float) DB::value("SELECT SUM(amount) FROM cash_movements WHERE ref_type = 'expense' AND ref_id = ?", [$id]), 'écritures équilibrées');
+});
+test('Rapports : CA net = ventes − retours ; marge = CA net − CMV', function () {
+    $s = S\ReportService::summary(date('Y-m-d'), date('Y-m-d'));
+    ok($s['tickets'] > 5);
+    eq(round($s['gross'] - $s['returns'], 2), round($s['net'], 2));
+    eq(round($s['net'] - $s['cogs'], 2), round($s['margin'], 2));
+    $gross = (float) DB::value("SELECT SUM(total) FROM sales WHERE status <> 'cancelled' AND DATE(created_at) = CURDATE()");
+    eq($gross, $s['gross']);
+});
+
+echo "\n== Sauvegarde & restauration ==\n";
+test('Sauvegarde vérifiée, altération détectée, restauration fidèle', function () {
+    actingAs('admin');
+    $countBefore = (int) DB::value('SELECT COUNT(*) FROM sales');
+    $b = S\BackupService::create('test');
+    ok(S\BackupService::verify($b['sql']), 'intégrité');
+    DB::insert('expense_categories', ['name' => 'Après sauvegarde', 'type' => 'expense']);
+    DB::run('DELETE FROM held_sales');
+    $r = S\BackupService::restore($b['sql']);
+    ok($r['statements'] > 50);
+    eq($countBefore, (int) DB::value('SELECT COUNT(*) FROM sales'));
+    eq(null, DB::value("SELECT id FROM expense_categories WHERE name = 'Après sauvegarde'"), 'état antérieur restauré');
+    eq(1, (int) DB::value("SELECT COUNT(*) FROM cash_sessions WHERE register_id = 1 AND status = 'open'"), 'colonne générée recalculée');
+    // altération
+    $path = S\BackupService::path($b['sql']);
+    file_put_contents($path, 'x', FILE_APPEND);
+    ok(!S\BackupService::verify($b['sql']), 'altération détectée');
+    throws(fn() => S\BackupService::restore($b['sql']), 'corrompue');
+    throws(fn() => S\BackupService::path('../../.env'), 'invalide');
+    foreach (glob(S\BackupService::dir() . '/poswan_*_{test,avant_restauration}*', GLOB_BRACE) ?: [] as $f) {
+        @unlink($f);
+    }
+});
+
+// ------------------------------------------------------------------ tests HTTP
+echo "\n== HTTP & sécurité (serveur PHP intégré) ==\n";
+$port = (int) (getenv('TEST_PORT') ?: 8099);
+$cmd = sprintf('php -S 127.0.0.1:%d -t %s %s', $port, escapeshellarg(PUBLIC_PATH), escapeshellarg(__DIR__ . '/server-router.php'));
+$proc = proc_open($cmd, [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $pipes, BASE_PATH, array_merge(getenv(), $env));
+usleep(700000);
+$B = "http://127.0.0.1:$port";
+
+final class Http
+{
+    public string $jar;
+    public function __construct()
+    {
+        $this->jar = tempnam(sys_get_temp_dir(), 'pwjar');
+    }
+    public function req(string $method, string $url, array|string|null $data = null, array $headers = []): array
+    {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_COOKIEJAR => $this->jar, CURLOPT_COOKIEFILE => $this->jar, CURLOPT_CUSTOMREQUEST => $method, CURLOPT_HTTPHEADER => $headers, CURLOPT_TIMEOUT => 20]);
+        if ($data !== null) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        }
+        $raw = (string) curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $hs = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        curl_close($ch);
+        return ['code' => $code, 'headers' => substr($raw, 0, $hs), 'body' => substr($raw, $hs)];
+    }
+    public function token(string $url): string
+    {
+        $r = $this->req('GET', $url);
+        preg_match('/name="_csrf" value="([^"]+)"/', $r['body'], $m);
+        return $m[1] ?? '';
+    }
+    public function login(string $base, string $user, string $pwd): array
+    {
+        $t = $this->token($base . '/login');
+        return $this->req('POST', $base . '/login', http_build_query(['_csrf' => $t, 'username' => $user, 'password' => $pwd]));
+    }
+}
+
+test('En-têtes de sécurité HTTP présents', function () use ($B) {
+    $r = (new Http())->req('GET', "$B/login");
+    eq(200, $r['code']);
+    foreach (['Content-Security-Policy', 'X-Content-Type-Options: nosniff', 'X-Frame-Options', 'Referrer-Policy'] as $h) {
+        ok(stripos($r['headers'], $h) !== false, "en-tête $h");
+    }
+    ok(stripos($r['headers'], 'HttpOnly') !== false && stripos($r['headers'], 'SameSite=Strict') !== false, 'cookie de session HttpOnly + SameSite');
+    ok(stripos($r['headers'], 'X-Powered-By') === false, 'version PHP masquée');
+});
+test('Pages protégées : redirection vers la connexion / 401 en JSON', function () use ($B) {
+    $h = new Http();
+    $r = $h->req('GET', "$B/products");
+    eq(302, $r['code']);
+    ok(str_contains($r['headers'], '/login'));
+    $r = $h->req('GET', "$B/pos/products", null, ['Accept: application/json']);
+    eq(401, $r['code']);
+});
+test('CSRF : requête POST sans jeton refusée (419)', function () use ($B) {
+    $h = new Http();
+    $r = $h->req('POST', "$B/login", http_build_query(['username' => 'admin', 'password' => 'x']));
+    eq(419, $r['code']);
+    $h->login($B, 'admin', 'Essai-Niamey-2026');
+    $r = $h->req('POST', "$B/users", http_build_query(['username' => 'pirate', 'full_name' => 'P', 'role_id' => 1, 'password' => 'Pirate-2026-xx']));
+    eq(419, $r['code']);
+    eq(null, DB::value("SELECT id FROM users WHERE username = 'pirate'"));
+    $r = $h->req('POST', "$B/pos/checkout", '{}', ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: faux']);
+    eq(419, $r['code']);
+});
+test('Connexion : échec générique, succès, régénération de session', function () use ($B) {
+    $h = new Http();
+    $h->req('GET', "$B/login");
+    $h->req('GET', "$B/login");
+    preg_match('/POSWANSESSID\s+(\S+)/', file_get_contents($h->jar) ?: '', $m0);
+    $r = $h->login($B, 'admin', 'mauvais');
+    eq(302, $r['code']);
+    $page = $h->req('GET', "$B/login");
+    ok(str_contains($page['body'], 'Identifiants incorrects'), 'message générique');
+    $r = $h->login($B, 'admin', 'Essai-Niamey-2026');
+    ok((bool) preg_match('#Location: /\r?\n#', $r['headers']), 'redirigé vers l\'accueil');
+    preg_match_all('/POSWANSESSID\s+(\S+)/', file_get_contents($h->jar) ?: '', $m1);
+    ok(($m0[1] ?? '') !== end($m1[1]), 'identifiant de session régénéré');
+    eq(200, $h->req('GET', "$B/dashboard")['code']);
+});
+test('Verrouillage du compte après 5 échecs', function () use ($B) {
+    $h = new Http();
+    for ($i = 0; $i < 5; $i++) {
+        $h->login($B, 'auditeur', 'faux-' . $i);
+    }
+    ok(DB::value("SELECT locked_until FROM users WHERE username = 'auditeur'") !== null, 'verrouillé');
+    $h->login($B, 'auditeur', 'Mot-de-passe-2026');
+    eq(302, $h->req('GET', "$B/dashboard")['code'], 'bon mot de passe refusé pendant le verrouillage');
+    DB::run("UPDATE users SET locked_until = NULL, failed_attempts = 0 WHERE username = 'auditeur'");
+    DB::run("DELETE FROM login_attempts");
+});
+test('Connexion par PIN', function () use ($B) {
+    $h = new Http();
+    $t = $h->token("$B/login");
+    $h->req('POST', "$B/login/pin", http_build_query(['_csrf' => $t, 'username' => 'caissier', 'pin' => '4826']));
+    eq(200, $h->req('GET', "$B/pos")['code']);
+});
+test('Contrôle d\'accès serveur : un caissier ne peut pas administrer', function () use ($B) {
+    $h = new Http();
+    $h->login($B, 'caissier', 'Mot-de-passe-2026');
+    foreach (['/users', '/products/create', '/settings', '/backups', '/reports/profit', '/audit', '/roles'] as $u) {
+        eq(403, $h->req('GET', $B . $u)['code'], $u);
+    }
+    $t = $h->token("$B/sales");
+    $sale = (int) DB::value("SELECT id FROM sales WHERE status = 'completed' ORDER BY id DESC LIMIT 1");
+    eq(403, $h->req('POST', "$B/sales/$sale/cancel", http_build_query(['_csrf' => $t, 'reason' => 'x']))['code'], 'annulation');
+    eq('completed', DB::value('SELECT status FROM sales WHERE id = ?', [$sale]));
+});
+test('Un vendeur ne voit pas les ventes des autres (IDOR)', function () use ($B) {
+    $h = new Http();
+    $h->login($B, 'caissier', 'Mot-de-passe-2026');
+    $other = (int) DB::value("SELECT s.id FROM sales s JOIN users u ON u.id = s.user_id WHERE u.username = 'gerant' LIMIT 1");
+    eq(403, $h->req('GET', "$B/sales/$other")['code']);
+});
+test('Injection SQL : paramètres malveillants sans effet', function () use ($B) {
+    $h = new Http();
+    $h->login($B, 'admin', 'Essai-Niamey-2026');
+    $n = (int) DB::value('SELECT COUNT(*) FROM products');
+    foreach (["' OR 1=1 -- ", "1; DROP TABLE products; --", "\" UNION SELECT password_hash FROM users -- "] as $p) {
+        $r = $h->req('GET', "$B/products?q=" . urlencode($p) . '&category=' . urlencode($p) . '&sort=' . urlencode($p));
+        eq(200, $r['code']);
+        ok(!str_contains($r['body'], '$2y$'), 'aucune fuite de hash');
+        $r = $h->req('GET', "$B/pos/products?q=" . urlencode($p), null, ['Accept: application/json']);
+        eq(200, $r['code']);
+        eq([], json_decode($r['body'], true)['items'] ?? null);
+    }
+    eq($n, (int) DB::value('SELECT COUNT(*) FROM products'), 'table intacte');
+});
+test('XSS : contenu saisi échappé à l\'affichage', function () use ($B) {
+    DB::insert('products', ['reference' => 'XSS1', 'name' => '<script>alert(1)</script>', 'sale_price' => 1]);
+    $h = new Http();
+    $h->login($B, 'admin', 'Essai-Niamey-2026');
+    $r = $h->req('GET', "$B/products?q=XSS1");
+    ok(!str_contains($r['body'], '<script>alert(1)</script>') && str_contains($r['body'], '&lt;script&gt;'));
+    DB::run("DELETE FROM products WHERE reference = 'XSS1'");
+});
+test('Fichiers sensibles inaccessibles depuis le web', function () use ($B) {
+    $h = new Http();
+    foreach (['/.env', '/../.env', '/app/bootstrap.php', '/config/database.php', '/storage/logs/', '/database/schema.sql', '/index.php/../.env'] as $u) {
+        $r = $h->req('GET', $B . $u);
+        ok(!str_contains($r['body'], 'DB_PASSWORD') && !str_contains($r['body'], 'CREATE TABLE') && !str_contains($r['body'], 'spl_autoload'), "fuite via $u");
+    }
+    ok(!is_file(PUBLIC_PATH . '/.env') && !glob(PUBLIC_PATH . '/*.sql'), 'aucun secret dans public/');
+    ok(str_contains((string) file_get_contents(PUBLIC_PATH . '/uploads/.htaccess'), 'engine off'), 'exécution PHP désactivée dans uploads');
+});
+test('Téléversement : script déguisé en image refusé, image valide ré-encodée', function () use ($B) {
+    $h = new Http();
+    $h->login($B, 'admin', 'Essai-Niamey-2026');
+    $evil = tempnam(sys_get_temp_dir(), 'ev');
+    file_put_contents($evil, "<?php system(\$_GET['c']); ?>");
+    $t = $h->token("$B/products/create");
+    $h->req('POST', "$B/products", ['_csrf' => $t, 'name' => 'Upload test', 'sale_price' => '100', 'image' => new CURLFile($evil, 'image/png', 'photo.php.png')]);
+    eq(null, DB::value("SELECT id FROM products WHERE name = 'Upload test'"), 'article non créé');
+    ok(!glob(PUBLIC_PATH . '/uploads/products/*.php*'), 'aucun script déposé');
+    $img = tempnam(sys_get_temp_dir(), 'im') . '.png';
+    $gd = imagecreatetruecolor(20, 20);
+    imagepng($gd, $img);
+    $t = $h->token("$B/products/create");
+    $h->req('POST', "$B/products", ['_csrf' => $t, 'name' => 'Upload ok', 'sale_price' => '100', 'image' => new CURLFile($img, 'image/png', 'photo.png')]);
+    $path = DB::value("SELECT image FROM products WHERE name = 'Upload ok'");
+    ok($path && preg_match('#^products/[0-9a-f]{32}\.png$#', $path), 'nom aléatoire');
+    @unlink(PUBLIC_PATH . '/uploads/' . $path);
+});
+test('Vente complète via l\'API de caisse (JSON + CSRF)', function () use ($B) {
+    $h = new Http();
+    $h->login($B, 'gerant', 'Mot-de-passe-2026');
+    $page = $h->req('GET', "$B/pos");
+    preg_match('/name="csrf-token" content="([^"]+)"/', $page['body'], $m);
+    $pid = (int) DB::value("SELECT id FROM products WHERE name LIKE 'Dentifrice%'");
+    $body = json_encode(['client_uuid' => uuid(), 'items' => [['product_id' => $pid, 'quantity' => 2]], 'payments' => [['method' => 'cash', 'amount' => 2000]]]);
+    $r = $h->req('POST', "$B/pos/checkout", $body, ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]]);
+    $d = json_decode($r['body'], true);
+    eq(200, $r['code'], $r['body']);
+    ok($d['ok'] === true && $d['total'] == 1800 && $d['change'] == 200, $r['body']);
+    $t = $h->req('GET', $B . $d['ticket_url']);
+    eq(200, $t['code']);
+    ok(str_contains($t['body'], $d['number']), 'ticket');
+    $t2 = (new Http());
+    $t2->login($B, 'caissier', 'Mot-de-passe-2026');
+});
+test('Réimpression : DUPLICATA et permission requise', function () use ($B) {
+    $h = new Http();
+    $h->login($B, 'gerant', 'Mot-de-passe-2026');
+    $sid = (int) DB::value("SELECT s.id FROM sales s JOIN users u ON u.id = s.user_id WHERE u.username = 'gerant' AND s.print_count > 0 ORDER BY s.id DESC LIMIT 1");
+    $r = $h->req('GET', "$B/sales/$sid/ticket");
+    ok(str_contains($r['body'], 'DUPLICATA'));
+    $own = (int) DB::value("SELECT s.id FROM sales s JOIN users u ON u.id = s.user_id WHERE u.username = 'caissier' ORDER BY s.id DESC LIMIT 1");
+    DB::run('UPDATE sales SET print_count = 1 WHERE id = ?', [$own]);
+    DB::run("DELETE rp FROM role_permissions rp JOIN permissions p ON p.id = rp.permission_id JOIN roles r ON r.id = rp.role_id WHERE r.code = 'cashier' AND p.code = 'pos.reprint'");
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(403, $c->req('GET', "$B/sales/$own/ticket")['code']);
+});
+test('Toutes les pages principales répondent sans erreur (admin)', function () use ($B) {
+    $h = new Http();
+    $h->login($B, 'admin', 'Essai-Niamey-2026');
+    $sale = (int) DB::value('SELECT MAX(id) FROM sales');
+    $pages = ['/dashboard', '/menu', '/pos', '/sales', "/sales/$sale", "/sales/$sale/invoice", '/returns', '/cash', '/cash/sessions', '/products', '/products/create', '/products/1', '/products/1/edit', '/products/import', '/products/labels', '/products/duplicates', '/categories', '/stock', '/stock/movements', '/stock/adjust?product=1', '/stock/transfers', '/stock/transfers/create', '/stock/expiry', '/stock/lots?q=L', '/inventories', '/suppliers', '/suppliers/1', '/purchases', '/purchases/create', '/receptions', '/receptions/create', '/supplier-returns', '/customers', '/customers/1', '/customers/1/statement', '/expenses', '/reports/sales', '/reports/products', '/reports/profit', '/reports/stock', '/reports/debts', '/reports/prescriptions', '/users', '/roles', '/settings', '/stores', '/audit', '/backups', '/account/password'];
+    $bad = [];
+    foreach ($pages as $p) {
+        $r = $h->req('GET', $B . $p);
+        if ($r['code'] !== 200 || preg_match('/Fatal error|Warning:|Notice:|Une erreur interne/', $r['body'])) {
+            $bad[] = "$p ({$r['code']})";
+        }
+    }
+    eq([], $bad);
+});
+test('Installateur désactivé après installation', function () use ($B) {
+    eq(404, (new Http())->req('GET', "$B/install")['code']);
+});
+
+proc_terminate($proc);
+if (is_file(S\InstallService::lockFile() . '.bak')) {
+    rename(S\InstallService::lockFile() . '.bak', S\InstallService::lockFile());
+}
+
+echo "\n" . str_repeat('=', 60) . "\n";
+printf("Résultat : %d réussi(s), %d échec(s)\n", $results['pass'], $results['fail']);
+foreach ($results['failures'] as $f) {
+    echo " - $f\n";
+}
+exit($results['fail'] > 0 ? 1 : 0);

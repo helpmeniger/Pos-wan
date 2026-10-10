@@ -1,0 +1,17 @@
+<div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+  <a class="btn btn-outline-secondary" href="<?= e(url('/purchases')) ?>"><i class="bi bi-arrow-left"></i></a>
+  <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/purchases/' . $po['id'], ['print' => 1])) ?>"><i class="bi bi-printer"></i> Bon de commande</a>
+  <?php if (can('purchases.manage')): ?>
+    <?php if (in_array($po['status'], ['ordered', 'partial', 'draft'], true)): ?><a class="btn btn-success" href="<?= e(url('/purchases/' . $po['id'] . '/receive')) ?>"><i class="bi bi-box-arrow-in-down"></i> Réceptionner</a><?php endif; ?>
+    <?php if ($po['status'] === 'draft'): ?><form method="post" action="<?= e(url('/purchases/' . $po['id'] . '/status')) ?>"><?= csrf_field() ?><button class="btn btn-outline-primary" name="status" value="ordered">Marquer commandée</button></form><?php endif; ?>
+    <?php if (in_array($po['status'], ['draft', 'ordered'], true)): ?><form method="post" action="<?= e(url('/purchases/' . $po['id'] . '/status')) ?>" data-confirm="Annuler cette commande ?"><?= csrf_field() ?><button class="btn btn-outline-danger" name="status" value="cancelled">Annuler</button></form><?php endif; ?>
+    <?php if ($po['status'] === 'partial'): ?><form method="post" action="<?= e(url('/purchases/' . $po['id'] . '/status')) ?>" data-confirm="Solder la commande ? Le reliquat ne sera pas livré."><?= csrf_field() ?><button class="btn btn-outline-warning" name="status" value="received">Solder (abandonner le reliquat)</button></form><?php endif; ?>
+  <?php endif; ?>
+  <span class="ms-auto"><?= App\Core\View::partial('partials/status', ['status' => $po['status']]) ?></span>
+</div>
+<div class="card mb-3"><div class="card-body small">Fournisseur : <b><a href="<?= e(url('/suppliers/' . $po['supplier_id'])) ?>"><?= e($po['supplier']) ?></a></b> · Entrepôt : <?= e($po['warehouse']) ?> · Créée le <?= e(fdate($po['created_at'])) ?> par <?= e($po['full_name']) ?><?= $po['expected_date'] ? ' · Livraison prévue : ' . e(fdate($po['expected_date'], false)) : '' ?><?= $po['note'] ? '<br>' . e($po['note']) : '' ?></div></div>
+<div class="card mb-3"><table class="table table-sm mb-0"><thead><tr><th>Article</th><th class="num">Commandé</th><th class="num">Reçu</th><th class="num">Reste</th><th class="num">P.U.</th><th class="num">Total</th></tr></thead><tbody>
+<?php foreach ($items as $i): $rest = max(0, (float) $i['quantity'] - (float) $i['received_qty']); ?><tr><td><?= e($i['name']) ?> <small class="text-secondary"><?= e($i['reference']) ?></small></td><td class="num"><?= qty($i['quantity']) ?></td><td class="num"><?= qty($i['received_qty']) ?></td><td class="num <?= $rest > 0 ? 'text-warning fw-bold' : 'text-success' ?>"><?= qty($rest) ?></td><td class="num"><?= money($i['unit_cost']) ?></td><td class="num"><?= money((float) $i['quantity'] * (float) $i['unit_cost']) ?></td></tr><?php endforeach; ?>
+<tr><th colspan="5" class="text-end">Total</th><th class="num"><?= money($po['total']) ?></th></tr>
+</tbody></table></div>
+<?php if ($receptions): ?><div class="card"><div class="card-header">Réceptions</div><table class="table table-sm mb-0"><tbody><?php foreach ($receptions as $r): ?><tr><td><a href="<?= e(url('/receptions/' . $r['id'])) ?>"><?= e($r['number']) ?></a></td><td><?= e(fdate($r['created_at'])) ?></td><td><?= e($r['supplier_invoice_ref'] ?? '') ?></td><td class="num"><?= money($r['total']) ?></td></tr><?php endforeach; ?></tbody></table></div><?php endif; ?>

@@ -1,0 +1,45 @@
+/* POS Wan — impressions (ticket thermique 58/80 mm, A4) */
+* { box-sizing: border-box; }
+body { font-family: "DejaVu Sans", Arial, Helvetica, sans-serif; color: #000; margin: 0; background: #e9ecef; }
+.print-toolbar { position: sticky; top: 0; background: #14213d; padding: .5rem; display: flex; gap: .5rem; justify-content: center; z-index: 10; }
+.pbtn { background: #fff; color: #14213d; border: 0; border-radius: 6px; padding: .45rem .9rem; font-size: 14px; cursor: pointer; text-decoration: none; font-weight: 600; }
+.pbtn.primary { background: #f39c12; }
+.sheet { background: #fff; margin: 1rem auto; padding: 14mm; width: 210mm; min-height: 297mm; box-shadow: 0 0 10px rgba(0,0,0,.15); font-size: 12px; }
+.ticket { background: #fff; margin: 1rem auto; padding: 3mm; font-family: "Courier New", Courier, monospace; font-size: 12px; line-height: 1.3; box-shadow: 0 0 10px rgba(0,0,0,.15); }
+body.t80 .ticket { width: 80mm; }
+body.t58 .ticket { width: 58mm; font-size: 10.5px; }
+.ticket .c { text-align: center; }
+.ticket .r { text-align: right; }
+.ticket .b { font-weight: bold; }
+.ticket .big { font-size: 1.35em; font-weight: bold; }
+.ticket hr { border: 0; border-top: 1px dashed #000; margin: 4px 0; }
+.ticket table { width: 100%; border-collapse: collapse; }
+.ticket td { vertical-align: top; padding: 1px 0; }
+.ticket .logo { max-width: 60%; max-height: 22mm; }
+.dup { border: 2px solid #000; text-align: center; font-weight: bold; padding: 2px; margin: 4px 0; letter-spacing: .2em; }
+.sheet h1 { font-size: 22px; margin: 0 0 4px; }
+.sheet table.lines { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.sheet table.lines th { background: #14213d; color: #fff; padding: 6px; text-align: left; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.sheet table.lines td { border-bottom: 1px solid #ddd; padding: 6px; }
+.sheet .num, .ticket .num { text-align: right; white-space: nowrap; }
+.sheet .head { display: flex; justify-content: space-between; gap: 20px; border-bottom: 3px solid #f39c12; padding-bottom: 10px; }
+.sheet .box { border: 1px solid #ccc; border-radius: 6px; padding: 8px 10px; }
+.sheet .totals { width: 45%; margin-left: auto; margin-top: 10px; border-collapse: collapse; }
+.sheet .totals td { padding: 4px 6px; }
+.sheet .totals tr.grand td { font-size: 15px; font-weight: bold; border-top: 2px solid #000; }
+.sheet .foot { margin-top: 30px; font-size: 10px; color: #444; border-top: 1px solid #ccc; padding-top: 6px; text-align: center; }
+.sheet .sign { display: flex; justify-content: space-between; margin-top: 40px; }
+.labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; padding: 8mm; background: #fff; width: 210mm; margin: 1rem auto; }
+.label { border: 1px dashed #999; padding: 2mm; text-align: center; font-size: 10px; height: 34mm; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
+.label .lname { font-weight: bold; font-size: 11px; max-height: 2.6em; overflow: hidden; }
+.label .lprice { font-size: 15px; font-weight: bold; }
+.label svg { width: 100%; height: 14mm; }
+@media print {
+  body { background: #fff; }
+  .no-print { display: none !important; }
+  .sheet, .ticket, .labels { margin: 0; box-shadow: none; }
+  .sheet { padding: 0; width: auto; min-height: auto; }
+  .label { border-color: #ddd; }
+}
+@page { margin: 8mm; }
+body.t80 { --w: 80mm; }

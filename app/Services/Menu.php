@@ -1,0 +1,71 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Services;
+
+/** Structure de navigation (menu latéral + écran « Menu de gestion »). */
+final class Menu
+{
+    public static function groups(): array
+    {
+        return [
+            'Gestion des ventes' => [
+                ['Caisse', 'bi-cart3', '/pos', 'pos.sell', '#27ae60'],
+                ['Historique des ventes', 'bi-receipt', '/sales', 'sales.view', '#e84393'],
+                ['Retours & avoirs', 'bi-arrow-counterclockwise', '/returns', 'sales.view', '#00897b'],
+                ['Ma caisse (ouverture / clôture)', 'bi-safe2', '/cash', 'cash.open_close', '#5dade2'],
+                ['Sessions de caisse', 'bi-clock-history', '/cash/sessions', 'cash.view_all', '#8e44ad'],
+                ['Clients & crédits', 'bi-people', '/customers', 'customers.view', '#f39c12'],
+            ],
+            'Gestion des articles' => [
+                ['Articles', 'bi-box-seam', '/products', 'products.view', '#e67e22'],
+                ['Catégories, marques, unités', 'bi-tags', '/categories', 'categories.manage', '#7f8c8d'],
+                ['État des stocks', 'bi-boxes', '/stock', 'stock.view', '#1e3a8a'],
+                ['Mouvements de stock', 'bi-arrow-left-right', '/stock/movements', 'stock.view', '#2d6a4f'],
+                ['Ajustement / pertes', 'bi-sliders', '/stock/adjust', 'stock.adjust', '#c0392b'],
+                ['Inventaires', 'bi-clipboard-check', '/inventories', 'stock.inventory', '#d4ac0d'],
+                ['Transferts', 'bi-truck', '/stock/transfers', 'stock.view', '#2874a6'],
+                ['Lots & péremptions', 'bi-calendar-x', '/stock/expiry', 'stock.view', '#e74c3c', 'lots'],
+                ['Étiquettes code-barres', 'bi-upc-scan', '/products/labels', 'products.view', '#117a65'],
+                ['Import / export', 'bi-file-earmark-spreadsheet', '/products/import', 'products.import', '#1d8348'],
+            ],
+            'Achats & fournisseurs' => [
+                ['Fournisseurs', 'bi-building', '/suppliers', 'purchases.view', '#9b59b6'],
+                ['Commandes fournisseurs', 'bi-cart-plus', '/purchases', 'purchases.view', '#2e86c1'],
+                ['Réceptions', 'bi-box-arrow-in-down', '/receptions', 'purchases.view', '#16a085'],
+                ['Retours fournisseurs', 'bi-box-arrow-up', '/supplier-returns', 'purchases.view', '#a04000'],
+            ],
+            'Finances & rapports' => [
+                ['Tableau de bord', 'bi-speedometer2', '/dashboard', 'dashboard.view', '#0d6efd'],
+                ['Dépenses & recettes', 'bi-wallet2', '/expenses', 'expenses.manage', '#d35400'],
+                ['Rapports des ventes', 'bi-bar-chart-line', '/reports/sales', 'reports.view', '#e91e63'],
+                ['Bénéfices & marges', 'bi-graph-up-arrow', '/reports/profit', 'reports.financial', '#c2185b'],
+                ['Valeur du stock', 'bi-cash-stack', '/reports/stock', 'reports.financial', '#455a64'],
+                ['Créances & dettes', 'bi-journal-text', '/reports/debts', 'reports.financial', '#6d4c41'],
+                ['Registre des ordonnances', 'bi-file-medical', '/reports/prescriptions', 'reports.view', '#00838f', 'pharmacy'],
+            ],
+            'Configuration' => [
+                ['Utilisateurs', 'bi-person-badge', '/users', 'users.manage', '#5dade2'],
+                ['Rôles & permissions', 'bi-shield-lock', '/roles', 'roles.manage', '#8e44ad'],
+                ['Paramètres entreprise', 'bi-gear', '/settings', 'settings.manage', '#566573'],
+                ['Boutiques, entrepôts, caisses', 'bi-shop', '/stores', 'stores.manage', '#28b463'],
+                ['Sauvegardes', 'bi-hdd-stack', '/backups', 'backup.manage', '#b03a2e'],
+                ['Journal d\'audit', 'bi-journal-check', '/audit', 'audit.view', '#34495e'],
+                ['Mon mot de passe / PIN', 'bi-key', '/account/password', null, '#f1c40f'],
+            ],
+        ];
+    }
+
+    /** Menu filtré selon les permissions et fonctionnalités actives. */
+    public static function visible(): array
+    {
+        $out = [];
+        foreach (self::groups() as $g => $items) {
+            $f = array_values(array_filter($items, fn($i) => ($i[3] === null || can($i[3])) && (!isset($i[5]) || feature($i[5]))));
+            if ($f) {
+                $out[$g] = $f;
+            }
+        }
+        return $out;
+    }
+}

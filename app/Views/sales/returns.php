@@ -1,0 +1,6 @@
+<div class="card mb-3"><div class="card-body"><form class="row g-2 align-items-end" method="get"><?= App\Core\View::partial('partials/period', compact('from', 'to')) ?><div class="col-auto"><button class="btn btn-sm btn-primary">Filtrer</button></div></form></div></div>
+<div class="card"><div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead><tr><th>N°</th><th>Date</th><th>Vente</th><th>Client</th><th>Par</th><th>Mode</th><th>Motif</th><th class="num">Montant</th></tr></thead><tbody>
+<?php foreach ($p['rows'] as $r): ?><tr><td><a href="<?= e(url('/returns/' . $r['id'])) ?>"><?= e($r['number']) ?></a></td><td><?= e(fdate($r['created_at'])) ?></td><td><a href="<?= e(url('/sales/' . $r['sale_id'])) ?>"><?= e($r['sale_number']) ?></a></td><td><?= e($r['customer'] ?? '—') ?></td><td><?= e($r['full_name']) ?></td><td><?= e(method_label($r['refund_method'])) ?></td><td><?= e($r['reason']) ?></td><td class="num"><?= money($r['total']) ?></td></tr><?php endforeach; ?>
+<?php if (!$p['rows']): ?><tr><td colspan="8" class="text-center text-secondary py-4">Aucun retour sur la période.</td></tr><?php endif; ?>
+</tbody></table></div></div>
+<?= App\Core\View::partial('partials/pagination', ['p' => $p]) ?>

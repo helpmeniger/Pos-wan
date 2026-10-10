@@ -1,0 +1,20 @@
+# POS Wan — règles Apache du dossier public
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Les fichiers existants (CSS, JS, images) sont servis directement
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L,QSA]
+</IfModule>
+
+# Interdire les fichiers sensibles éventuellement copiés par erreur
+<FilesMatch "(?i)(^\.|\.(env|ini|log|sql|gz|zip|bak|sh|lock|md|json|dist)$)">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>

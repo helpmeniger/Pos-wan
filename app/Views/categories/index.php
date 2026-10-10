@@ -1,0 +1,29 @@
+<?php $e = $edit ?? []; $icons = ['bi-basket', 'bi-cup-straw', 'bi-droplet', 'bi-capsule', 'bi-bag', 'bi-tag', 'bi-egg-fried', 'bi-apple', 'bi-house', 'bi-tools', 'bi-phone', 'bi-pencil', 'bi-gear', 'bi-heart-pulse', 'bi-shield-plus', 'bi-watch', 'bi-person-standing-dress', 'bi-lightbulb', 'bi-fire', 'bi-snow']; ?>
+<div class="row g-3">
+  <div class="col-xl-8"><div class="card"><div class="card-header">Catégories</div><div class="table-responsive"><table class="table table-sm table-hover mb-0 align-middle">
+    <thead><tr><th></th><th>Nom</th><th>Parente</th><th class="num">Articles</th><th class="num">Ordre</th><th>État</th><th></th></tr></thead><tbody>
+    <?php foreach ($categories as $c): ?><tr><td><span class="thumb-ph" style="background:<?= e($c['color']) ?>;width:32px;height:32px"><i class="bi <?= e($c['icon'] ?: 'bi-tag') ?>"></i></span></td><td class="<?= $c['parent_id'] ? 'ps-4' : 'fw-semibold' ?>"><?= e($c['name']) ?></td><td><?= e($c['parent'] ?? '') ?></td><td class="num"><?= (int) $c['n'] ?></td><td class="num"><?= (int) $c['sort_order'] ?></td><td><?= (int) $c['active'] === 1 ? '<span class="badge bg-success">active</span>' : '<span class="badge bg-secondary">masquée</span>' ?></td><td><a href="<?= e(url('/categories', ['edit' => $c['id']])) ?>" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a></td></tr><?php endforeach; ?>
+    </tbody></table></div></div></div>
+  <div class="col-xl-4">
+    <div class="card mb-3"><div class="card-header"><?= $e ? 'Modifier « ' . e($e['name']) . ' »' : 'Nouvelle catégorie' ?></div><div class="card-body">
+      <form method="post" enctype="multipart/form-data" action="<?= e(url($e ? '/categories/' . $e['id'] : '/categories')) ?>" class="row g-2"><?= csrf_field() ?>
+        <div class="col-12"><label class="form-label required">Nom</label><input name="name" value="<?= e($e['name'] ?? '') ?>" class="form-control" required maxlength="120"></div>
+        <div class="col-8"><label class="form-label">Catégorie parente</label><select name="parent_id" class="form-select"><option value="">— (principale)</option><?php foreach ($categories as $c): if ($c['parent_id'] || ($e['id'] ?? 0) == $c['id']) continue; ?><option value="<?= (int) $c['id'] ?>" <?= ($e['parent_id'] ?? '') == $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option><?php endforeach; ?></select></div>
+        <div class="col-4"><label class="form-label">Couleur</label><input type="color" name="color" value="<?= e($e['color'] ?? '#e67e22') ?>" class="form-control form-control-color w-100"></div>
+        <div class="col-8"><label class="form-label">Icône</label><select name="icon" class="form-select"><?php foreach ($icons as $i): ?><option value="<?= $i ?>" <?= ($e['icon'] ?? '') === $i ? 'selected' : '' ?>><?= $i ?></option><?php endforeach; ?></select></div>
+        <div class="col-4"><label class="form-label">Ordre</label><input type="number" name="sort_order" value="<?= (int) ($e['sort_order'] ?? 0) ?>" class="form-control"></div>
+        <div class="col-12"><label class="form-label">Image (tuile caisse)</label><input type="file" name="image" accept="image/*" class="form-control form-control-sm"></div>
+        <?php if ($e): ?><div class="col-12 form-check ms-1"><input type="checkbox" class="form-check-input" name="active" value="1" id="ca" <?= (int) $e['active'] === 1 ? 'checked' : '' ?>><label class="form-check-label" for="ca">Visible en caisse</label></div><?php endif; ?>
+        <div class="col-12"><button class="btn btn-primary">Enregistrer</button> <?php if ($e): ?><a href="<?= e(url('/categories')) ?>" class="btn btn-light">Annuler</a><?php endif; ?></div>
+      </form>
+    </div></div>
+    <div class="card mb-3"><div class="card-header">Marques</div><div class="card-body">
+      <form method="post" action="<?= e(url('/brands')) ?>" class="input-group input-group-sm mb-2"><?= csrf_field() ?><input name="name" class="form-control" placeholder="Nouvelle marque" required maxlength="120"><button class="btn btn-outline-primary">Ajouter</button></form>
+      <?php foreach ($brands as $b): ?><span class="badge badge-soft me-1 mb-1"><?= e($b['name']) ?> (<?= (int) $b['n'] ?>)</span><?php endforeach; ?>
+    </div></div>
+    <div class="card"><div class="card-header">Unités</div><div class="card-body">
+      <form method="post" action="<?= e(url('/units')) ?>" class="row g-1 mb-2"><?= csrf_field() ?><div class="col-5"><input name="name" class="form-control form-control-sm" placeholder="Nom (Carton)" required maxlength="50"></div><div class="col-3"><input name="short_name" class="form-control form-control-sm" placeholder="ctn" required maxlength="10"></div><div class="col-4"><button class="btn btn-sm btn-outline-primary w-100">Ajouter</button></div><div class="col-12 form-check ms-1"><input type="checkbox" class="form-check-input" name="allow_decimal" value="1" id="ad"><label for="ad" class="form-check-label small">Quantités décimales (kg, L, m)</label></div></form>
+      <?php foreach ($units as $u): ?><span class="badge badge-soft me-1 mb-1"><?= e($u['name']) ?> · <?= e($u['short_name']) ?><?= (int) $u['allow_decimal'] === 1 ? ' · déc.' : '' ?></span><?php endforeach; ?>
+    </div></div>
+  </div>
+</div>
