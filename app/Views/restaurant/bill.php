@@ -10,4 +10,5 @@
   <?php if ($o['paid'] > 0): ?><tr><td>Déjà réglé</td><td class="num"><?= money($o['paid']) ?></td></tr><tr><td class="b">RESTE À PAYER</td><td class="num b"><?= money($o['due']) ?></td></tr><?php endif; ?>
   <?php if ((int) $o['covers'] > 1): ?><tr><td>Par personne (<?= (int) $o['covers'] ?>)</td><td class="num"><?= money($o['due'] / (int) $o['covers']) ?></td></tr><?php endif; ?></table>
   <hr><div class="c"><?= nl2br(e(setting('ticket_footer', 'Merci de votre visite !'))) ?></div>
+  <?php if (setting('receipt_qr', '1') === '1'): ?><div class="c qr-box"><div data-qr="<?= e(App\Services\DocumentRef::orderQr($o, (float) $o['total'])) ?>" data-qr-size="3" class="qr"></div><div class="small"><?= e($o['number']) ?></div></div><?php endif; ?>
 </div>

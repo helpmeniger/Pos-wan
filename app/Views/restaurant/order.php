@@ -1,12 +1,13 @@
 <?php /** Prise de commande en salle — même ergonomie que la caisse. */ ?><!doctype html>
-<html lang="fr">
+<html <?= html_attrs() ?>>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="pw-currency" content="<?= e(json_encode(currency(), JSON_UNESCAPED_UNICODE)) ?>">
 <meta name="base-url" content="<?= e(url('/')) ?>">
 <title><?= e($o['number']) ?> · Restaurant · POS Wan</title>
 <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>">
-<link rel="stylesheet" href="<?= e(asset('vendor/bootstrap/bootstrap.min.css')) ?>">
+<link rel="stylesheet" href="<?= e(bootstrap_css()) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/pos.css')) ?>">
 </head>
@@ -43,7 +44,7 @@
         <a href="<?= e(url('/menu')) ?>" title="Menu de gestion"><i class="bi bi-grid-3x3-gap-fill"></i></a>
       </div>
     </div>
-    <div class="pr-total"><span>Reste dû :</span><output id="totalOut">0 F</output></div>
+    <div class="pr-total"><span>Reste dû :</span><output id="totalOut"><?= e(money(0)) ?></output></div>
     <div class="pr-customer" id="customerBadge"></div>
     <div class="pr-actions">
       <button data-action="covers"><i class="bi bi-people"></i><span>Couverts</span></button>
@@ -54,6 +55,8 @@
       <button data-action="transfer"><i class="bi bi-arrow-left-right"></i><span>Table</span></button>
       <button data-action="bill"><i class="bi bi-receipt"></i><span>Addition</span></button>
       <button data-action="customer"><i class="bi bi-person"></i><span>Client</span></button>
+      <button data-action="printKitchen"><i class="bi bi-printer"></i><span>Bon cuisine</span></button>
+      <a href="<?= e(url('/restaurant')) ?>"><i class="bi bi-grid-3x3"></i><span>Plan de salle</span></a>
     </div>
     <div class="cart-head"><span>Article</span><span>Qté</span><span>P.U.</span><span>Total</span></div>
     <div class="cart" id="cart" tabindex="0"></div>
@@ -126,6 +129,8 @@
 <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" id="toasts"></div>
 <script type="application/json" id="rest-config"><?= json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?></script>
 <script src="<?= e(asset('vendor/bootstrap/bootstrap.bundle.min.js')) ?>"></script>
+<?= i18n_script() ?>
+<script src="<?= e(asset('js/money.js')) ?>"></script>
 <script src="<?= e(asset('js/restaurant-order.js')) ?>"></script>
 </body>
 </html>

@@ -18,12 +18,12 @@
   </div>
   <div class="col-xl-5">
     <div class="card mb-3"><div class="card-body">
-      <div class="pay-summary d-flex justify-content-between align-items-baseline"><span>Sélection</span><b class="fs-5" id="selTotal">0 F</b></div>
+      <div class="pay-summary d-flex justify-content-between align-items-baseline"><span>Sélection</span><b class="fs-5" id="selTotal"><?= e(money(0)) ?></b></div>
       <div class="row g-2 mt-1">
-        <div class="col-7"><select name="discount_type" class="form-select form-select-sm"><option value="amount">Remise en F</option><option value="percent" <?= App\Core\Session::old('discount_type') === 'percent' ? 'selected' : '' ?>>Remise en %</option></select></div>
+        <div class="col-7"><select name="discount_type" class="form-select form-select-sm"><option value="amount">Remise en <?= e(currency()['symbol']) ?></option><option value="percent" <?= App\Core\Session::old('discount_type') === 'percent' ? 'selected' : '' ?>>Remise en %</option></select></div>
         <div class="col-5"><input type="number" step="any" min="0" name="discount_value" value="<?= $old('discount_value', '0') ?>" class="form-control form-control-sm" data-disc></div>
       </div>
-      <div class="d-flex justify-content-between align-items-baseline mt-2 border-top pt-2"><span class="fs-5">Total à payer</span><b class="fs-3 text-success" id="toPay">0 F</b></div>
+      <div class="d-flex justify-content-between align-items-baseline mt-2 border-top pt-2"><span class="fs-5">Total à payer</span><b class="fs-3 text-success" id="toPay"><?= e(money(0)) ?></b></div>
     </div></div>
     <div class="card mb-3"><div class="card-header"><i class="bi bi-wallet2"></i> Paiement</div><div class="card-body">
       <?php foreach ([0, 1, 2] as $n): ?>
@@ -34,9 +34,9 @@
       </div>
       <?php endforeach; ?>
       <div class="d-flex flex-wrap gap-1 my-2" id="quick"></div>
-      <div class="d-flex justify-content-between"><span>Reçu</span><b id="received">0 F</b></div>
-      <div class="d-flex justify-content-between fs-4"><span>À rendre</span><b class="text-success" id="change">0 F</b></div>
-      <div class="d-flex justify-content-between text-danger d-none" id="restRow"><span>Reste (crédit client)</span><b id="rest">0 F</b></div>
+      <div class="d-flex justify-content-between"><span>Reçu</span><b id="received"><?= e(money(0)) ?></b></div>
+      <div class="d-flex justify-content-between fs-4"><span>À rendre</span><b class="text-success" id="change"><?= e(money(0)) ?></b></div>
+      <div class="d-flex justify-content-between text-danger d-none" id="restRow"><span>Reste (crédit client)</span><b id="rest"><?= e(money(0)) ?></b></div>
       <hr>
       <label class="form-label small">Client (obligatoire pour une vente à crédit)</label>
       <select name="customer_id" class="form-select form-select-sm"><option value="">— <?= e($o['customer'] ?? $o['customer_name'] ?? 'Client comptoir') ?></option>

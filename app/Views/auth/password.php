@@ -1,3 +1,9 @@
+<div class="card mb-3"><div class="card-body d-flex flex-wrap align-items-center gap-2">
+  <i class="bi bi-translate fs-4"></i><b>Langue de l'interface</b>
+  <form method="post" action="<?= e(url('/account/locale')) ?>" class="d-flex gap-2 ms-md-3"><?= csrf_field() ?>
+    <select name="locale" class="form-select"><option value="">Langue par défaut de l'entreprise</option><?php foreach (App\Core\Lang::LANGUAGES as $code => [$label]): ?><option value="<?= e($code) ?>" <?= ($u['locale'] ?? '') === $code ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select>
+    <button class="btn btn-primary">Enregistrer</button></form>
+</div></div>
 <div class="row g-3">
   <div class="col-lg-6">
     <div class="card"><div class="card-header"><i class="bi bi-key"></i> Changer mon mot de passe</div>

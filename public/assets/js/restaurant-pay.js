@@ -4,7 +4,7 @@
   const { $, $$ } = window.PW;
   const form = $('#payForm'); if (!form) return;
   const num = (v) => { const n = parseFloat(String(v ?? '').replace(/\s/g, '').replace(',', '.')); return isFinite(n) ? n : 0; };
-  const fmt = (n) => Math.round(n).toLocaleString('fr-FR') + ' F';
+  const fmt = (n) => PWMoney.fmt(n);
   let toPay = 0;
   function calc() {
     let sel = 0;

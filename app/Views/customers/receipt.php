@@ -5,5 +5,5 @@
   <hr><table><tr><td class="big"><?= $t['type'] === 'deposit' ? 'ACOMPTE' : 'MONTANT REÇU' ?></td><td class="num big"><?= money(-(float) $t['amount']) ?></td></tr><tr><td>Mode</td><td class="num"><?= e(method_label($t['method'])) ?></td></tr><tr><td class="b">Nouveau solde dû</td><td class="num b"><?= money($t['balance_after']) ?></td></tr></table>
   <?php if ($t['note']): ?><div>Note : <?= e($t['note']) ?></div><?php endif; ?>
   <div>Reçu par : <?= e($t['full_name'] ?? '') ?></div>
-  <hr><div class="c"><?= e(ucfirst(amount_words(-(float) $t['amount']))) ?> francs CFA</div><br><div>Signature :</div><br><br>
+  <hr><div class="c"><?= e(ucfirst(amount_words(-(float) $t['amount']))) ?> <?= e(currency()['name']) ?></div><br><div>Signature :</div><br><br>
 </div>

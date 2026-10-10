@@ -8,7 +8,7 @@ $typeLabels = ['sale' => 'Ventes', 'sale_cancel' => 'Annulations', 'refund' => '
     <div class="col-lg-5"><div class="card"><div class="card-header"><i class="bi bi-unlock"></i> Ouvrir <?= e($register['name']) ?> — <?= e($register['store_name']) ?></div><div class="card-body">
       <form method="post" action="<?= e(url('/cash/open')) ?>"><?= csrf_field() ?>
         <label class="form-label required">Fond de caisse compté</label>
-        <div class="input-group input-group-lg mb-3"><input type="number" name="opening_amount" min="0" step="1" class="form-control text-end" required autofocus><span class="input-group-text">F</span></div>
+        <div class="input-group input-group-lg mb-3"><input type="number" name="opening_amount" min="0" step="1" class="form-control text-end" required autofocus><span class="input-group-text"><?= e(currency()['symbol']) ?></span></div>
         <button class="btn btn-success btn-lg w-100"><i class="bi bi-unlock"></i> Ouvrir la caisse</button></form>
     </div></div></div>
     <div class="col-lg-7"><div class="card"><div class="card-header">Dernières clôtures</div><table class="table table-sm mb-0"><thead><tr><th>Ouverture</th><th>Clôture</th><th class="num">Théorique</th><th class="num">Compté</th><th class="num">Écart</th><th></th></tr></thead><tbody>

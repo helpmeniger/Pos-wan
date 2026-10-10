@@ -23,6 +23,7 @@ body.kds { background: #0b0f14; color: #e9eef5; font-size: 16px; margin: 0; }
 .kt-table { font-size: 1.6rem; font-weight: 800; line-height: 1; }
 .kt-sub { font-size: .78rem; color: #9fb0c8; }
 .kt-time { font-weight: 800; font-size: 1.05rem; padding: .1rem .5rem; border-radius: .4rem; background: #2c3a4d; font-variant-numeric: tabular-nums; }
+.kt-print { background: #2c3a4d; border: 0; color: #fff; border-radius: .4rem; padding: .1rem .45rem; }
 .kt-items { list-style: none; margin: 0; padding: .4rem .7rem; flex: 1; }
 .kt-items li { padding: .3rem 0; border-bottom: 1px dashed #2c3a4d; font-size: 1.15rem; font-weight: 600; }
 .kt-items li:last-child { border-bottom: 0; }

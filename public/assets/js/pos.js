@@ -10,7 +10,8 @@
   const CFG = JSON.parse($('#pos-config').textContent);
   const BASE = ($('meta[name="base-url"]').content || '/').replace(/\/$/, '');
   const STORE_KEY = 'pw-cart-' + CFG.userId;
-  const fmt = (n) => Math.round(Number(n) || 0).toLocaleString('fr-FR').replace(/ /g, ' ') + ' F';
+  const fmt = (n) => PWMoney.fmt(n);
+  const plain = (n) => PWMoney.plain(n);
   const fmtQ = (q) => (Math.round(q * 1000) / 1000).toLocaleString('fr-FR');
   const num = (v) => { const n = parseFloat(String(v ?? '').replace(/\s/g, '').replace(',', '.')); return isFinite(n) ? n : 0; };
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -104,7 +105,7 @@
         if (l.rx) subs.push('ordonnance');
         if (l.track && l.qty * (l.factor || 1) > l.stock) subs.push('⚠ stock ' + fmtQ(l.stock));
         return `<div class="cart-line ${i === selected ? 'sel' : ''}" data-i="${i}">
-          <span class="ln-name">${esc(l.name)}</span><span>${fmtQ(l.qty)}</span><span>${fmt(up).replace(' F', '')}</span><span>${fmt(lt).replace(' F', '')}</span>
+          <span class="ln-name">${esc(l.name)}</span><span>${fmtQ(l.qty)}</span><span>${plain(up)}</span><span>${plain(lt)}</span>
           ${subs.length ? `<span class="ln-sub">${esc(subs.join(' · '))}</span>` : ''}</div>`;
       }).join('');
       const sel = $('.cart-line.sel', box); if (sel) sel.scrollIntoView({ block: 'nearest' });

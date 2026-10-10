@@ -16,6 +16,11 @@ final class AuthController extends Controller
         if (Auth::check()) {
             redirect('/');
         }
+        $lang = (string) Request::query('lang', '');
+        if (isset(\App\Core\Lang::LANGUAGES[$lang])) {
+            Session::set('locale', $lang);
+            \App\Core\Lang::set($lang);
+        }
         $quickUsers = [];
         if (setting('pin_login_enabled', '1') === '1') {
             // Liste des comptes ayant un PIN (connexion rapide en caisse, comme sur l'ancien logiciel)
@@ -98,6 +103,21 @@ final class AuthController extends Controller
         Auth::login(DB::one('SELECT * FROM users WHERE id = ?', [$u['id']]));
         flash('success', 'Mot de passe modifié.');
         redirect('/');
+    }
+
+    /** Langue de l'interface choisie par l'utilisateur (vide = langue par défaut). */
+    public function localeUpdate(): void
+    {
+        $u = $this->user();
+        $code = Request::str('locale');
+        if ($code !== '' && !isset(\App\Core\Lang::LANGUAGES[$code])) {
+            $this->fail('Langue inconnue.', '/account/password');
+        }
+        DB::update('users', ['locale' => $code ?: null], 'id = ?', [$u['id']]);
+        Session::set('locale', $code ?: null);
+        \App\Core\Lang::reset();
+        flash('success', t('Langue enregistrée.'));
+        redirect('/account/password');
     }
 
     public function pinUpdate(): void

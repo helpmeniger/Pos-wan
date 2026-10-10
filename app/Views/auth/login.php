@@ -1,10 +1,10 @@
 <?php $tab = in_array($_GET['tab'] ?? '', ['pin', 'badge'], true) ? $_GET['tab'] : (empty($quickUsers) ? 'password' : 'pin'); ?><!doctype html>
-<html lang="fr">
+<html <?= html_attrs() ?>>
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Connexion · POS Wan</title>
 <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>">
-<link rel="stylesheet" href="<?= e(asset('vendor/bootstrap/bootstrap.min.css')) ?>">
+<link rel="stylesheet" href="<?= e(bootstrap_css()) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
@@ -66,10 +66,13 @@
       </div>
       <?php endif; ?>
     </div>
-    <p class="text-center small text-secondary mt-4 mb-0"><i class="bi bi-shield-lock"></i> Connexion protégée · tentatives limitées</p>
+    <p class="text-center small text-secondary mt-4 mb-1"><i class="bi bi-shield-lock"></i> Connexion protégée · tentatives limitées</p>
+    <div class="text-center small"><i class="bi bi-translate"></i> <?php foreach (App\Core\Lang::LANGUAGES as $code => [$label]): ?><a class="mx-1 <?= App\Core\Lang::locale() === $code ? 'text-warning fw-bold' : 'text-secondary' ?>" href="<?= e(url('/login', ['lang' => $code])) ?>"><?= e($label) ?></a><?php endforeach; ?></div>
   </div>
 </div>
 <script src="<?= e(asset('vendor/bootstrap/bootstrap.bundle.min.js')) ?>"></script>
+<?= i18n_script() ?>
+<script src="<?= e(asset('js/money.js')) ?>"></script>
 <script src="<?= e(asset('js/login.js')) ?>"></script>
 </body>
 </html>

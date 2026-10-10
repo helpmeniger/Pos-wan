@@ -130,6 +130,33 @@ final class Catalog
         'recipes' => 'Fiches techniques : déstockage automatique des ingrédients',
     ];
 
+    /** Devises proposées : code => [nom, symbole, décimales, position du symbole] */
+    public const CURRENCIES = [
+        'XOF' => ['francs CFA (UEMOA)', 'F', 0, 'after'],
+        'XAF' => ['francs CFA (CEMAC)', 'FCFA', 0, 'after'],
+        'NGN' => ['naira', '₦', 2, 'before'],
+        'GHS' => ['cedi', 'GH₵', 2, 'before'],
+        'GNF' => ['francs guinéens', 'FG', 0, 'after'],
+        'MRU' => ['ouguiya', 'UM', 2, 'after'],
+        'MAD' => ['dirhams', 'DH', 2, 'after'],
+        'DZD' => ['dinars algériens', 'DA', 2, 'after'],
+        'TND' => ['dinars tunisiens', 'DT', 3, 'after'],
+        'LYD' => ['dinars libyens', 'LD', 3, 'after'],
+        'EGP' => ['livres égyptiennes', 'E£', 2, 'before'],
+        'CDF' => ['francs congolais', 'FC', 2, 'after'],
+        'KES' => ['shillings kényans', 'KSh', 2, 'before'],
+        'ZAR' => ['rands', 'R', 2, 'before'],
+        'EUR' => ['euros', '€', 2, 'after'],
+        'USD' => ['dollars', '$', 2, 'before'],
+        'GBP' => ['livres sterling', '£', 2, 'before'],
+        'CNY' => ['yuans', '¥', 2, 'before'],
+        'SAR' => ['riyals saoudiens', 'SR', 2, 'after'],
+        'AED' => ['dirhams des Émirats', 'AED', 2, 'after'],
+        'TRY' => ['livres turques', '₺', 2, 'before'],
+    ];
+
+    public const MOBILE_MONEY_SUGGESTIONS = ['Airtel Money', 'Moov Money', 'Zamani Cash', 'Nita', 'Amanata', 'Orange Money', 'Wave', 'MTN MoMo', 'Free Money', 'Flooz', 'M-Pesa'];
+
     public const STOCK_MOVEMENT_TYPES = [
         'initial' => 'Stock initial', 'sale' => 'Vente', 'sale_cancel' => 'Annulation vente', 'return' => 'Retour client',
         'reception' => 'Réception', 'adjustment' => 'Ajustement', 'loss' => 'Perte / casse', 'expired' => 'Périmé',

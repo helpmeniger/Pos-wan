@@ -82,8 +82,35 @@ function json_response(array $data, int $status = 200): never
 
 function view(string $template, array $data = [], ?string $layout = 'layouts/admin'): never
 {
-    echo App\Core\View::render($template, $data, $layout);
+    echo App\Core\Lang::html(App\Core\View::render($template, $data, $layout));
     exit;
+}
+
+/** Traduction d'un texte de l'interface (le français est la langue source). */
+function t(string $text, array $params = []): string
+{
+    return App\Core\Lang::t($text, $params);
+}
+
+/** Attributs <html> : langue et sens d'écriture (arabe : droite à gauche). */
+function html_attrs(): string
+{
+    return 'lang="' . e(App\Core\Lang::locale()) . '" dir="' . e(App\Core\Lang::dir()) . '"';
+}
+
+/** Feuille Bootstrap adaptée au sens d'écriture. */
+function bootstrap_css(): string
+{
+    return asset(App\Core\Lang::dir() === 'rtl' ? 'vendor/bootstrap/bootstrap.rtl.min.css' : 'vendor/bootstrap/bootstrap.min.css');
+}
+
+/** Dictionnaire de traduction pour les scripts (vide en français). */
+function i18n_script(): string
+{
+    if (App\Core\Lang::locale() === 'fr') {
+        return '';
+    }
+    return '<script type="application/json" id="pw-i18n">' . App\Core\Lang::jsonForJs() . '</script>';
 }
 
 function csrf_field(): string
@@ -106,13 +133,32 @@ function flash(string $type, string $message): void
     App\Core\Session::flash($type, $message);
 }
 
-/** Format monétaire FCFA : 13 000 F (pas de centimes en usage courant). */
+/** Paramètres de la devise (Paramètres → Devise). */
+function currency(): array
+{
+    return [
+        'code' => (string) setting('currency_code', 'XOF'),
+        'symbol' => (string) setting('currency_symbol', 'F'),
+        'name' => (string) setting('currency_name', 'francs CFA'),
+        'position' => setting('currency_position', 'after') === 'before' ? 'before' : 'after',
+        'decimals' => max(0, min(3, (int) setting('currency_decimals', '0'))),
+    ];
+}
+
+/** Format monétaire selon la devise configurée : 13 000 F, $ 12,50, 1 250,000 DT… */
 function money(mixed $amount, bool $withCurrency = true): string
 {
+    $c = currency();
     $a = (float) $amount;
-    $dec = abs($a - round($a)) > 0.001 ? 2 : 0;
+    $dec = $c['decimals'];
+    if ($dec === 0 && abs($a - round($a)) > 0.001) {
+        $dec = 2; // montant non entier (rare en FCFA) : on n'arrondit pas en silence
+    }
     $s = number_format($a, $dec, ',', ' ');
-    return $withCurrency ? $s . ' F' : $s;
+    if (!$withCurrency) {
+        return $s;
+    }
+    return $c['position'] === 'before' ? $c['symbol'] . ' ' . $s : $s . ' ' . $c['symbol'];
 }
 
 function qty(mixed $q): string

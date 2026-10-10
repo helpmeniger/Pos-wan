@@ -158,8 +158,15 @@ final class PosController extends Controller
     public function checkout(): void
     {
         $this->jsonAttempt(function () {
-            $r = SaleService::create(Request::json());
-            return $r + ['ticket_url' => url('/sales/' . $r['sale_id'] . '/ticket', ['auto' => 1]), 'invoice_url' => url('/sales/' . $r['sale_id'] . '/invoice')];
+            $data = Request::json();
+            $r = SaleService::create($data);
+            // Ticket sur l'imprimante de la caisse (si configurée et demandé) : la vente reste valide même si l'impression échoue
+            $print = ['printed' => 0, 'errors' => []];
+            if (!$r['duplicate'] && !empty($data['print_ticket'])) {
+                $print = \App\Services\PrintService::printReceipt($r['sale_id']);
+            }
+            return $r + ['ticket_url' => url('/sales/' . $r['sale_id'] . '/ticket', ['auto' => 1]), 'invoice_url' => url('/sales/' . $r['sale_id'] . '/invoice'),
+                'delivery_url' => url('/sales/' . $r['sale_id'] . '/delivery'), 'printed_server' => $print['printed'], 'print_errors' => $print['errors']];
         });
     }
 

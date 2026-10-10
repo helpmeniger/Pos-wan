@@ -8,7 +8,7 @@
     new Chart(cv, {
       type: c.type,
       data: { labels: c.labels, datasets: c.series.map((s, i) => ({ label: s.label, data: s.data, type: s.type, backgroundColor: round ? (s.colors || palette) : (s.color || palette[i]), borderColor: s.color || palette[i], tension: 0.3, borderRadius: 4 })) },
-      options: { plugins: { legend: { display: round || c.series.length > 1, position: 'bottom' }, tooltip: { callbacks: { label: (x) => (x.dataset.label ? x.dataset.label + ' : ' : '') + Number(round ? x.parsed : (c.horizontal ? x.parsed.x : x.parsed.y)).toLocaleString('fr-FR') + (c.unit || ' F') } } }, indexAxis: c.horizontal ? 'y' : 'x' },
+      options: { plugins: { legend: { display: round || c.series.length > 1, position: 'bottom' }, tooltip: { callbacks: { label: (x) => (x.dataset.label ? x.dataset.label + ' : ' : '') + Number(round ? x.parsed : (c.horizontal ? x.parsed.x : x.parsed.y)).toLocaleString('fr-FR') + (c.unit || (window.PWMoney ? ' ' + PWMoney.c.symbol : '')) } } }, indexAxis: c.horizontal ? 'y' : 'x' },
     });
   });
 })();

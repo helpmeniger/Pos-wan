@@ -21,6 +21,7 @@ $router->post('/logout', [C\AuthController::class, 'logout']);
 $router->get('/account/password', [C\AuthController::class, 'passwordForm']);
 $router->post('/account/password', [C\AuthController::class, 'passwordUpdate']);
 $router->post('/account/pin', [C\AuthController::class, 'pinUpdate']);
+$router->post('/account/locale', [C\AuthController::class, 'localeUpdate']);
 $router->get('/session/ping', [C\AuthController::class, 'ping']);
 
 // --- Accueil ---
@@ -45,6 +46,9 @@ $router->get('/sales', [C\SaleController::class, 'index'], 'sales.view');
 $router->get('/sales/{id}', [C\SaleController::class, 'show'], 'sales.view');
 $router->get('/sales/{id}/ticket', [C\SaleController::class, 'ticket'], 'sales.view');
 $router->get('/sales/{id}/invoice', [C\SaleController::class, 'invoice'], 'sales.view');
+$router->get('/sales/{id}/delivery', [C\SaleController::class, 'delivery'], 'sales.view');
+$router->post('/sales/{id}/print', [C\SaleController::class, 'printServer'], 'sales.view');
+$router->get('/verify', [C\SaleController::class, 'verify'], 'sales.view');
 $router->post('/sales/{id}/cancel', [C\SaleController::class, 'cancel'], 'pos.cancel_sale');
 $router->get('/sales/{id}/return', [C\SaleController::class, 'returnForm'], 'returns.create');
 $router->post('/sales/{id}/return', [C\SaleController::class, 'returnStore'], 'returns.create');
@@ -171,6 +175,9 @@ $router->post('/roles/{id}', [C\UserController::class, 'roleUpdate'], 'roles.man
 $router->get('/settings', [C\SettingsController::class, 'index'], 'settings.manage');
 $router->post('/settings', [C\SettingsController::class, 'update'], 'settings.manage');
 $router->post('/settings/business', [C\SettingsController::class, 'business'], 'settings.manage');
+$router->get('/settings/template-preview', [C\SettingsController::class, 'templatePreview'], 'settings.manage');
+$router->post('/settings/currency', [C\SettingsController::class, 'currency'], 'settings.manage');
+$router->post('/settings/mobile-money', [C\SettingsController::class, 'mobileMoney'], 'settings.manage');
 $router->post('/settings/logo', [C\SettingsController::class, 'logo'], 'settings.manage');
 $router->post('/settings/demo/archive', [C\SettingsController::class, 'archiveDemo'], 'settings.manage');
 $router->get('/stores', [C\SettingsController::class, 'stores'], 'stores.manage');
@@ -178,6 +185,11 @@ $router->post('/stores', [C\SettingsController::class, 'storeStore'], 'stores.ma
 $router->post('/warehouses', [C\SettingsController::class, 'warehouseStore'], 'stores.manage');
 $router->post('/registers', [C\SettingsController::class, 'registerStore'], 'stores.manage');
 $router->get('/audit', [C\SettingsController::class, 'audit'], 'audit.view');
+$router->get('/printers', [C\PrinterController::class, 'index'], 'settings.manage');
+$router->post('/printers', [C\PrinterController::class, 'store'], 'settings.manage');
+$router->post('/printers/{id}', [C\PrinterController::class, 'update'], 'settings.manage');
+$router->post('/printers/{id}/delete', [C\PrinterController::class, 'delete'], 'settings.manage');
+$router->post('/printers/{id}/test', [C\PrinterController::class, 'test'], 'settings.manage');
 $router->get('/backups', [C\BackupController::class, 'index'], 'backup.manage');
 $router->post('/backups', [C\BackupController::class, 'create'], 'backup.manage');
 $router->post('/backups/download', [C\BackupController::class, 'download'], 'backup.manage');
@@ -215,3 +227,5 @@ $router->get('/kitchen', [C\RestaurantController::class, 'kitchen'], 'restaurant
 $router->get('/kitchen/feed', [C\RestaurantController::class, 'kitchenFeed'], 'restaurant.kitchen');
 $router->post('/kitchen/tickets/{id}', [C\RestaurantController::class, 'ticketStatus'], 'restaurant.kitchen');
 $router->get('/kitchen/tickets/{id}/print', [C\RestaurantController::class, 'ticketPrint']);
+$router->post('/kitchen/tickets/{id}/print', [C\RestaurantController::class, 'ticketPrintNow']);
+$router->post('/restaurant/orders/{id}/print-kitchen', [C\RestaurantController::class, 'printKitchen'], 'restaurant.order');

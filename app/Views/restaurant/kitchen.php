@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="fr" data-bs-theme="dark">
+<html <?= html_attrs() ?> data-bs-theme="dark">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>"><meta name="base-url" content="<?= e(url('/')) ?>">
 <title>Écran <?= e($station) ?> · POS Wan</title>
 <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>">
-<link rel="stylesheet" href="<?= e(asset('vendor/bootstrap/bootstrap.min.css')) ?>">
+<link rel="stylesheet" href="<?= e(bootstrap_css()) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/kitchen.css')) ?>">
 </head>
@@ -23,6 +23,8 @@
   </div>
 </header>
 <main class="kds-board" id="board"><div class="kds-empty">Chargement…</div></main>
+<?= i18n_script() ?>
+<script src="<?= e(asset('js/money.js')) ?>"></script>
 <script src="<?= e(asset('js/kitchen.js')) ?>"></script>
 </body>
 </html>

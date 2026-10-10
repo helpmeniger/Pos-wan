@@ -7,7 +7,7 @@
 <div class="card" data-lines data-template="#tplSr" data-warehouse="<?= (int) $wh ?>"><div class="card-body">
   <input class="form-control mb-1" data-line-search placeholder="Ajouter un article…" autocomplete="off"><div class="list-group mb-2" data-line-results></div>
   <table class="table table-sm"><thead><tr><th>Article</th><th class="num">Stock</th><th style="width:120px">Quantité</th><th style="width:150px">Valeur unitaire</th><th class="num">Total</th><th></th></tr></thead><tbody></tbody>
-  <tfoot><tr><th colspan="4" class="text-end">Total à déduire</th><th class="num" data-grand-total>0 F</th><th></th></tr></tfoot></table>
+  <tfoot><tr><th colspan="4" class="text-end">Total à déduire</th><th class="num" data-grand-total><?= e(money(0)) ?></th><th></th></tr></tfoot></table>
   <button class="btn btn-warning"><i class="bi bi-box-arrow-up"></i> Valider le retour</button>
 </div></div>
 </form>

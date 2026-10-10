@@ -10,15 +10,16 @@ $title = $title ?? 'POS Wan';
 $current = App\Core\Request::path();
 $notes = $u ? Notifications::get() : [];
 ?><!doctype html>
-<html lang="fr" data-bs-theme="light">
+<html <?= html_attrs() ?> data-bs-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
+<meta name="pw-currency" content="<?= e(json_encode(currency(), JSON_UNESCAPED_UNICODE)) ?>">
 <meta name="base-url" content="<?= e(url('/')) ?>">
 <title><?= e($title) ?> · POS Wan</title>
 <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>">
-<link rel="stylesheet" href="<?= e(asset('vendor/bootstrap/bootstrap.min.css')) ?>">
+<link rel="stylesheet" href="<?= e(bootstrap_css()) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
@@ -93,6 +94,8 @@ $notes = $u ? Notifications::get() : [];
 </div>
 <?= App\Core\View::partial('partials/confirm') ?>
 <script src="<?= e(asset('vendor/bootstrap/bootstrap.bundle.min.js')) ?>"></script>
+<?= i18n_script() ?>
+<script src="<?= e(asset('js/money.js')) ?>"></script>
 <script src="<?= e(asset('js/app.js')) ?>"></script>
 <?php foreach (($scripts ?? []) as $s): ?><script src="<?= e(asset($s)) ?>"></script><?php endforeach; ?>
 </body>

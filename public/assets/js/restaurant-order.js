@@ -9,12 +9,13 @@
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const CFG = JSON.parse($('#rest-config').textContent);
   const BASE = ($('meta[name="base-url"]').content || '/').replace(/\/$/, '');
-  const fmt = (n) => Math.round(Number(n) || 0).toLocaleString('fr-FR').replace(/ /g, ' ') + ' F';
+  const fmt = (n) => PWMoney.fmt(n);
+  const plain = (n) => PWMoney.plain(n);
   const fmtQ = (q) => (Math.round(q * 1000) / 1000).toLocaleString('fr-FR');
   const num = (v) => { const n = parseFloat(String(v ?? '').replace(/\s/g, '').replace(',', '.')); return isFinite(n) ? n : 0; };
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const modal = (id) => bootstrap.Modal.getOrCreateInstance(document.getElementById(id));
-  const ST = { new: 'à envoyer', sent: 'envoyé', preparing: 'en préparation', ready: 'PRÊT', served: 'servi', cancelled: 'annulé' };
+  const ST = { new: __('à envoyer'), sent: __('envoyé'), preparing: __('en préparation'), ready: __('PRÊT'), served: __('servi'), cancelled: __('annulé') };
 
   let order = CFG.order;
   let selected = null;
@@ -32,11 +33,12 @@
   async function api(url, body = null) {
     const res = await fetch(BASE + url, { method: body ? 'POST' : 'GET', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-Token': CFG.csrf }, body: body ? JSON.stringify(Object.assign({ _csrf: CFG.csrf }, body)) : undefined });
     if (res.status === 401) { location.href = BASE + '/login'; throw new Error('session'); }
-    const d = await res.json().catch(() => ({ ok: false, error: 'Réponse invalide du serveur.' }));
+    const d = await res.json().catch(() => ({ ok: false, error: __('Réponse invalide du serveur.') }));
     if (d.order) { order = d.order; render(); }
     if (!d.ok && d.error) toast(d.error, 'danger');
     return d;
   }
+  function printFeedback(d) { (d.print_errors || []).forEach((m) => toast(m, 'warning')); }
   function printUrls(urls) {
     (urls || []).forEach((u, i) => setTimeout(() => {
       const f = document.createElement('iframe'); f.style.cssText = 'position:fixed;width:0;height:0;border:0'; f.src = u; document.body.appendChild(f);
@@ -63,7 +65,7 @@
         const sub = [i.note ? '📝 ' + i.note : '', i.reason ? 'motif : ' + i.reason : '', i.paid > 0 && !paid ? 'payé : ' + fmtQ(i.paid) : ''].filter(Boolean).join(' · ');
         return sep + `<div class="cart-line ${i.id === selected ? 'sel' : ''} ${i.status === 'cancelled' ? 'cancelled' : ''}" data-id="${i.id}">
           <span class="ln-name">${esc(i.name)}<span class="st st-${paid ? 'paid' : i.status}">${paid ? 'payé' : ST[i.status]}</span></span>
-          <span>${fmtQ(i.qty)}</span><span>${fmt(i.price).replace(' F', '')}</span><span>${fmt(i.qty * i.price).replace(' F', '')}</span>
+          <span>${fmtQ(i.qty)}</span><span>${plain(i.price)}</span><span>${plain(i.qty * i.price)}</span>
           ${sub ? `<span class="ln-sub">${esc(sub)}</span>` : ''}</div>`;
       }).join('');
       const sel = $('.cart-line.sel'); if (sel) sel.scrollIntoView({ block: 'nearest' });
@@ -108,7 +110,7 @@
   $('#cart').addEventListener('click', (e) => { const l = e.target.closest('.cart-line'); if (l) { selected = Number(l.dataset.id); render(); } });
 
   const sel = () => order.items.find((i) => i.id === selected);
-  function needSel() { const i = sel(); if (!i) toast('Sélectionnez une ligne.', 'warning'); return i; }
+  function needSel() { const i = sel(); if (!i) toast(__('Sélectionnez une ligne.'), 'warning'); return i; }
 
   // ------------------------------------------------------------------ saisies
   let numCb = null;
@@ -138,7 +140,7 @@
     const d = await api(`/restaurant/items/${i.id}/cancel`, body);
     if ($('#supSecret')) $('#supSecret').value = '';
     if (!d.ok) { $('#cancelError').textContent = d.error; $('#cancelError').classList.remove('d-none'); return; }
-    modal('cancelModal').hide(); selected = null; render(); printUrls(d.print); toast('Article annulé' + ((d.print || []).length ? ' — ticket d\'annulation envoyé en cuisine.' : '.'), 'success');
+    modal('cancelModal').hide(); selected = null; render(); printUrls(d.print); printFeedback(d); toast(__('Article annulé — la cuisine est prévenue.'), 'success');
   });
 
   // client
@@ -163,32 +165,40 @@
         if (busy) return; busy = true;
         const d = await api(`/restaurant/orders/${CFG.orderId}/send`, {});
         busy = false;
-        if (d.ok) { toast(d.sent ? `Envoyé : ${d.sent} ticket(s) de préparation.` : 'Articles marqués comme servis.', 'success'); if (CFG.autoPrintKitchen) printUrls(d.print); }
+        if (d.ok) {
+          toast(d.sent ? __('Envoyé en cuisine : {n} bon(s) affiché(s) sur l\'écran cuisine.', { n: d.sent }) : __('Articles marqués comme servis.'), 'success');
+          printUrls(d.print); printFeedback(d);
+        }
+        break;
+      }
+      case 'printKitchen': {
+        const d = await api(`/restaurant/orders/${CFG.orderId}/print-kitchen`, {});
+        if (d.ok) { printUrls(d.print); printFeedback(d); if (d.printed_server) toast(__('Bon(s) envoyé(s) à l\'imprimante.'), 'success'); }
         break;
       }
       case 'quantity':
         if (!needSel()) return;
-        if (i.status !== 'new') { toast('Article déjà envoyé : utilisez « Annuler » pour réduire.', 'warning'); return; }
+        if (i.status !== 'new') { toast(__('Article déjà envoyé : utilisez « Annuler » pour réduire.'), 'warning'); return; }
         askNumber('Quantité — ' + i.name, String(i.qty), (v) => api(`/restaurant/items/${i.id}`, { quantity: v }));
         break;
       case 'note':
         if (!needSel()) return;
-        if (i.status !== 'new') { toast('Note modifiable avant l\'envoi en cuisine uniquement.', 'warning'); return; }
+        if (i.status !== 'new') { toast(__('Note modifiable avant l\'envoi en cuisine uniquement.'), 'warning'); return; }
         $('#noteInput').value = i.note || ''; modal('noteModal').show(); break;
       case 'cancel':
         if (!i) {
-          const r = prompt('Annuler TOUTE la commande ? Indiquez le motif :');
+          const r = prompt(__('Annuler TOUTE la commande ? Indiquez le motif :'));
           if (r && r.trim()) { $('#cancelOrderReason').value = r.trim(); $('#cancelOrderForm').submit(); }
           return;
         }
         if (i.status === 'cancelled') return;
         if (i.status === 'new') { await api(`/restaurant/items/${i.id}`, { quantity: 0 }); selected = null; render(); return; }
         openCancel(i); break;
-      case 'covers': askNumber('Nombre de couverts', String(order.covers), (v) => api(`/restaurant/orders/${CFG.orderId}/update`, { covers: Math.max(1, Math.round(v)) })); break;
-      case 'serve': { const d = await api(`/restaurant/orders/${CFG.orderId}/serve`, {}); if (d.ok) toast('Plats prêts marqués comme servis.', 'success'); break; }
-      case 'transfer': if (!CFG.perms.transfer) { toast('Permission requise pour changer de table.', 'warning'); return; } modal('tableModal').show(); break;
+      case 'covers': askNumber(__('Nombre de couverts'), String(order.covers), (v) => api(`/restaurant/orders/${CFG.orderId}/update`, { covers: Math.max(1, Math.round(v)) })); break;
+      case 'serve': { const d = await api(`/restaurant/orders/${CFG.orderId}/serve`, {}); if (d.ok) toast(__('Plats prêts marqués comme servis.'), 'success'); break; }
+      case 'transfer': if (!CFG.perms.transfer) { toast(__('Permission requise pour changer de table.'), 'warning'); return; } modal('tableModal').show(); break;
       case 'bill': {
-        if (order.items.some((x) => x.status === 'new')) { toast('Des articles ne sont pas envoyés en cuisine.', 'warning'); }
+        if (order.items.some((x) => x.status === 'new')) { toast(__('Des articles ne sont pas envoyés en cuisine.'), 'warning'); }
         const f = document.createElement('iframe'); f.style.cssText = 'position:fixed;width:0;height:0;border:0'; f.src = `${BASE}/restaurant/orders/${CFG.orderId}/bill?auto=1`; document.body.appendChild(f);
         setTimeout(() => api(`/restaurant/orders/${CFG.orderId}/data`), 1500); break;
       }
@@ -200,7 +210,7 @@
     }
   }
   document.addEventListener('click', (e) => { const b = e.target.closest('[data-action]'); if (b) { e.preventDefault(); action(b.dataset.action); } });
-  $('#payBtn') && $('#payBtn').addEventListener('click', (e) => { if (order.items.some((x) => x.status === 'new') && !confirm('Des articles ne sont pas envoyés en cuisine. Encaisser quand même ?')) e.preventDefault(); });
+  $('#payBtn') && $('#payBtn').addEventListener('click', (e) => { if (order.items.some((x) => x.status === 'new') && !confirm(__('Des articles ne sont pas envoyés en cuisine. Encaisser quand même ?'))) e.preventDefault(); });
 
   render();
   loadProducts();

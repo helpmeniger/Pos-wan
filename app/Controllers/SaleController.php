@@ -75,6 +75,7 @@ final class SaleController extends Controller
             'returns' => DB::all('SELECT r.*, u.full_name FROM sale_returns r JOIN users u ON u.id = r.user_id WHERE r.sale_id = ?', [$id]),
             'lots' => DB::all('SELECT sil.*, l.lot_number, l.expiry_date, si.product_name FROM sale_item_lots sil JOIN stock_lots l ON l.id = sil.lot_id JOIN sale_items si ON si.id = sil.sale_item_id WHERE si.sale_id = ?', [$id]),
             'prescription' => DB::one('SELECT p.*, u.full_name AS validator FROM prescriptions p JOIN users u ON u.id = p.validated_by WHERE p.sale_id = ?', [$id]),
+            'hasPrinter' => \App\Services\PrintService::targets('receipt', $s['register_id'] ? (int) $s['register_id'] : null) !== [],
         ]);
     }
 
@@ -112,6 +113,42 @@ final class SaleController extends Controller
         return url(can('pos.sell') ? '/pos' : '/');
     }
 
+    /** (Ré)impression du ticket sur l'imprimante de caisse configurée. */
+    public function printServer(int $id): void
+    {
+        $s = $this->scopedSale($id);
+        $dup = (int) $s['print_count'] > 0;
+        if ($dup && !can('pos.reprint')) {
+            throw new HttpException(403, 'Réimpression non autorisée : demandez à un responsable.');
+        }
+        $r = \App\Services\PrintService::printReceipt($id, $dup);
+        if (\App\Core\Request::wantsJson()) {
+            json_response(['ok' => $r['printed'] > 0, 'printed' => $r['printed'], 'error' => $r['errors'] ? implode(' ', $r['errors']) : ($r['printed'] ? null : 'Aucune imprimante de tickets configurée sur le serveur.')]);
+        }
+        flash($r['printed'] ? 'success' : 'warning', $r['printed'] ? 'Ticket envoyé à l\'imprimante.' : ($r['errors'] ? implode(' ', $r['errors']) : 'Aucune imprimante de tickets configurée : utilisez « Ticket » (navigateur).'));
+        redirect('/sales/' . $id);
+    }
+
+    /** Bon de livraison A4 (quantités, sans ou avec prix). */
+    public function delivery(int $id): void
+    {
+        $s = $this->scopedSale($id);
+        view('sales/delivery', [
+            'title' => 'Bon de livraison BL-' . $s['number'], 's' => $s, 'bodyClass' => 'a4', 'withPrices' => Request::query('prices') === '1',
+            'items' => DB::all('SELECT si.*, p.reference, u.short_name AS unit FROM sale_items si JOIN products p ON p.id = si.product_id LEFT JOIN units u ON u.id = p.unit_id WHERE si.sale_id = ?', [$id]),
+            'backUrl' => url('/sales/' . $id),
+            'toolbarLinks' => [Request::query('prices') === '1' ? [url('/sales/' . $id . '/delivery'), 'Sans les prix', 'eye-slash'] : [url('/sales/' . $id . '/delivery', ['prices' => 1]), 'Avec les prix', 'cash-coin']],
+        ], 'layouts/print');
+    }
+
+    /** Vérification d'un QR code de ticket / facture / devis (douchette 2D ou saisie). */
+    public function verify(): void
+    {
+        $code = trim((string) Request::query('code', ''));
+        $r = $code !== '' ? \App\Services\DocumentRef::verify($code) : null;
+        view('sales/verify', ['title' => 'Vérifier un ticket ou une facture', 'code' => $code, 'r' => $r]);
+    }
+
     public function invoice(int $id): void
     {
         $s = $this->scopedSale($id);
@@ -120,6 +157,7 @@ final class SaleController extends Controller
             'items' => DB::all('SELECT si.*, p.reference FROM sale_items si JOIN products p ON p.id = si.product_id WHERE si.sale_id = ?', [$id]),
             'payments' => DB::all('SELECT * FROM sale_payments WHERE sale_id = ?', [$id]),
             'backUrl' => url('/sales/' . $id),
+            'toolbarLinks' => [[url('/sales/' . $id . '/delivery'), 'Bon de livraison', 'truck']],
         ], 'layouts/print');
     }
 

@@ -8,7 +8,7 @@
 <div class="card" data-lines data-template="#tplPo"><div class="card-body">
   <input class="form-control mb-1" data-line-search placeholder="Ajouter un article (nom, référence, code-barres)…" autocomplete="off"><div class="list-group mb-2" data-line-results></div>
   <table class="table table-sm"><thead><tr><th>Article</th><th style="width:140px">Quantité</th><th style="width:160px">Prix d'achat unitaire</th><th class="num">Total</th><th></th></tr></thead><tbody></tbody>
-  <tfoot><tr><th colspan="3" class="text-end">Total commande</th><th class="num" data-grand-total>0 F</th><th></th></tr></tfoot></table>
+  <tfoot><tr><th colspan="3" class="text-end">Total commande</th><th class="num" data-grand-total><?= e(money(0)) ?></th><th></th></tr></tfoot></table>
   <button class="btn btn-primary" name="status" value="ordered"><i class="bi bi-send"></i> Enregistrer la commande</button>
   <button class="btn btn-outline-secondary" name="status" value="draft">Brouillon</button>
 </div></div>

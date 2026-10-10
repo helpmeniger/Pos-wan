@@ -5,7 +5,7 @@
   let data = JSON.parse($('#floor-data').textContent);
   let area = Number(localStorage.getItem('pw-area') || 0);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const fmt = (n) => Math.round(n).toLocaleString('fr-FR') + ' F';
+  const fmt = (n) => PWMoney.fmt(n);
   const since = (d) => { const m = Math.max(0, Math.round((Date.parse(data.now.replace(' ', 'T')) - Date.parse(String(d).replace(' ', 'T'))) / 60000)); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; };
   const modal = () => bootstrap.Modal.getOrCreateInstance($('#openModal'));
 

@@ -5,7 +5,7 @@
   const BASE = ($('meta[name="base-url"]').content || '/').replace(/\/$/, '');
   const CSRF = $('meta[name="csrf-token"]').content;
   const STATION = document.body.dataset.station;
-  const COURSES = { 0: 'Boissons', 1: 'Entrées', 2: 'Plats', 3: 'Desserts' };
+  const COURSES = { 0: __('Boissons'), 1: __('Entrées'), 2: __('Plats'), 3: __('Desserts') };
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const qty = (q) => (Math.round(q * 1000) / 1000).toLocaleString('fr-FR');
   let known = new Set(JSON.parse(sessionStorage.getItem('kds-known-' + STATION) || '[]'));
@@ -26,7 +26,7 @@
     $('#cPending').textContent = tickets.filter((t) => t.status === 'pending').length;
     $('#cPrep').textContent = tickets.filter((t) => t.status === 'preparing').length;
     $('#cReady').textContent = tickets.filter((t) => t.status === 'ready').length;
-    if (!list.length) { $('#board').innerHTML = '<div class="kds-empty"><i class="bi bi-check2-circle"></i> Aucun ticket en attente</div>'; return; }
+    if (!list.length) { $('#board').innerHTML = '<div class="kds-empty"><i class="bi bi-check2-circle"></i> ' + __('Aucun ticket en attente') + '</div>'; return; }
     $('#board').innerHTML = list.map((t) => {
       const a = age(t);
       const cls = t.type === 'cancel' ? 'cancel' : t.status;
@@ -35,18 +35,18 @@
       const items = t.items.map((i) => {
         const sep = t.type === 'order' && i.course !== last ? `<li class="course">${esc(COURSES[i.course] || '')}</li>` : '';
         last = i.course;
-        return sep + `<li class="${i.status === 'cancelled' ? 'x' : ''}"><span class="q">${qty(i.quantity)}×</span>${esc(i.name)}${i.note ? `<span class="n">» ${esc(i.note)}</span>` : ''}${i.cancel_reason ? `<span class="n">Motif : ${esc(i.cancel_reason)}</span>` : ''}</li>`;
+        return sep + `<li class="${i.status === 'cancelled' ? 'x' : ''}"><span class="q">${qty(i.quantity)}×</span>${esc(i.name)}${i.note ? `<span class="n">» ${esc(i.note)}</span>` : ''}${i.cancel_reason ? `<span class="n">${__('Motif')} : ${esc(i.cancel_reason)}</span>` : ''}</li>`;
       }).join('');
-      const where = t.table_name ? 'Table ' + esc(t.table_name) : (t.order_type === 'delivery' ? 'Livraison' : 'À emporter');
+      const where = t.table_name ? __('Table') + ' ' + esc(t.table_name) : (t.order_type === 'delivery' ? __('Livraison') : __('À emporter'));
       let actions = '';
-      if (t.type === 'cancel') actions = `<button class="b-serve" data-id="${t.id}" data-s="served">Vu — retirer</button>`;
-      else if (t.status === 'pending') actions = `<button class="b-start" data-id="${t.id}" data-s="preparing">Commencer</button><button class="b-ready" data-id="${t.id}" data-s="ready">Prêt</button>`;
-      else if (t.status === 'preparing') actions = `<button class="b-back" data-id="${t.id}" data-s="pending" title="Annuler l'étape">↶</button><button class="b-ready" data-id="${t.id}" data-s="ready">Prêt ✔</button>`;
-      else if (t.status === 'ready') actions = `<button class="b-back" data-id="${t.id}" data-s="preparing" title="Rappeler">↶</button><button class="b-serve" data-id="${t.id}" data-s="served">Servi — retirer</button>`;
-      else actions = `<button class="b-back w-100" data-id="${t.id}" data-s="ready" style="flex:1!important">Rappeler le ticket</button>`;
-      return `<article class="kt ${cls} ${late}"><div class="kt-head"><div><div class="kt-table">${t.type === 'cancel' ? '<i class="bi bi-x-octagon"></i> ANNULATION<br>' : ''}${where}</div>
+      if (t.type === 'cancel') actions = `<button class="b-serve" data-id="${t.id}" data-s="served">${__('Vu — retirer')}</button>`;
+      else if (t.status === 'pending') actions = `<button class="b-start" data-id="${t.id}" data-s="preparing">${__('Commencer')}</button><button class="b-ready" data-id="${t.id}" data-s="ready">${__('Prêt')}</button>`;
+      else if (t.status === 'preparing') actions = `<button class="b-back" data-id="${t.id}" data-s="pending" title="Annuler l'étape">↶</button><button class="b-ready" data-id="${t.id}" data-s="ready">${__('Prêt')} ✔</button>`;
+      else if (t.status === 'ready') actions = `<button class="b-back" data-id="${t.id}" data-s="preparing" title="Rappeler">↶</button><button class="b-serve" data-id="${t.id}" data-s="served">${__('Servi — retirer')}</button>`;
+      else actions = `<button class="b-back w-100" data-id="${t.id}" data-s="ready" style="flex:1!important">${__('Rappeler le ticket')}</button>`;
+      return `<article class="kt ${cls} ${late}"><div class="kt-head"><div><div class="kt-table">${t.type === 'cancel' ? '<i class="bi bi-x-octagon"></i> ' + __('ANNULATION') + '<br>' : ''}${where}</div>
         <div class="kt-sub">${esc(t.number)} · ${esc(t.order_number)} · ${esc(t.waiter)} · ${t.covers} couv.${t.customer_name ? ' · ' + esc(t.customer_name) : ''}</div></div>
-        <span class="kt-time" data-t="${t.id}">${mmss(a)}</span></div><ul class="kt-items">${items}</ul><div class="kt-actions">${actions}</div></article>`;
+        <span class="d-flex gap-1 align-items-start"><button class="kt-print" data-print="${t.id}" title="${__('Imprimer le bon')}"><i class="bi bi-printer"></i></button><span class="kt-time" data-t="${t.id}">${mmss(a)}</span></span></div><ul class="kt-items">${items}</ul><div class="kt-actions">${actions}</div></article>`;
     }).join('');
   }
   async function load() {
@@ -64,7 +64,14 @@
       render();
     } catch (e) { /* réseau : nouvel essai au prochain cycle */ }
   }
+  async function printTicket(id) {
+    const r = await fetch(`${BASE}/kitchen/tickets/${id}/print`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': CSRF }, body: JSON.stringify({ _csrf: CSRF }) });
+    const d = await r.json().catch(() => ({}));
+    (d.print || []).forEach((u) => { const f = document.createElement('iframe'); f.style.cssText = 'position:fixed;width:0;height:0;border:0'; f.src = u; document.body.appendChild(f); setTimeout(() => f.remove(), 60000); });
+    if (d.print_errors && d.print_errors.length) alert(d.print_errors.join('\n'));
+  }
   document.addEventListener('click', async (e) => {
+    const pr = e.target.closest('[data-print]'); if (pr) { printTicket(pr.dataset.print); return; }
     const b = e.target.closest('button[data-s]'); if (!b) return;
     b.disabled = true;
     await fetch(`${BASE}/kitchen/tickets/${b.dataset.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': CSRF }, body: JSON.stringify({ _csrf: CSRF, status: b.dataset.s }) });

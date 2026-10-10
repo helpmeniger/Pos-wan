@@ -1,13 +1,14 @@
 <?php /** Écran de caisse plein écran — disposition inspirée de l'ancien logiciel, modernisée. */ ?><!doctype html>
-<html lang="fr">
+<html <?= html_attrs() ?>>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
+<meta name="pw-currency" content="<?= e(json_encode(currency(), JSON_UNESCAPED_UNICODE)) ?>">
 <meta name="base-url" content="<?= e(url('/')) ?>">
 <title>Caisse · POS Wan</title>
 <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>">
-<link rel="stylesheet" href="<?= e(asset('vendor/bootstrap/bootstrap.min.css')) ?>">
+<link rel="stylesheet" href="<?= e(bootstrap_css()) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/pos.css')) ?>">
 </head>
@@ -46,7 +47,7 @@
       <button class="btn btn-icon btn-trash" data-action="clear" title="Vider le panier"><i class="bi bi-trash3"></i></button>
       <div class="money-box"><input type="text" id="tenderedInput" class="form-control" inputmode="numeric" value="" placeholder="0"><label>Argent client</label></div>
       <button class="btn btn-icon btn-calc" data-action="pay" title="Encaisser"><i class="bi bi-calculator"></i></button>
-      <div class="money-box change"><output id="changeOut">0 F</output><label>à rendre</label></div>
+      <div class="money-box change"><output id="changeOut"><?= e(money(0)) ?></output><label>à rendre</label></div>
     </div>
   </section>
 
@@ -69,7 +70,7 @@
       </div>
     </div>
     <div class="pr-total">
-      <span>Total :</span><output id="totalOut">0 F</output>
+      <span>Total :</span><output id="totalOut"><?= e(money(0)) ?></output>
     </div>
     <div class="pr-customer" id="customerBadge"><i class="bi bi-person-circle"></i> <span>Client comptoir</span></div>
     <div class="pr-actions">
@@ -114,7 +115,7 @@
       <p>Saisissez le fond de caisse compté pour ouvrir <b><?= e($register['name']) ?></b>.</p>
       <form method="post" action="<?= e(url('/cash/open')) ?>">
         <?= csrf_field() ?><input type="hidden" name="return" value="pos">
-        <div class="input-group input-group-lg mb-3"><input type="number" name="opening_amount" class="form-control text-end" min="0" step="1" required placeholder="0" autofocus><span class="input-group-text">F</span></div>
+        <div class="input-group input-group-lg mb-3"><input type="number" name="opening_amount" class="form-control text-end" min="0" step="1" required placeholder="0" autofocus><span class="input-group-text"><?= e(currency()['symbol']) ?></span></div>
         <button class="btn btn-warning btn-lg w-100"><i class="bi bi-unlock"></i> Ouvrir la caisse</button>
       </form>
     <?php else: ?>
@@ -132,7 +133,7 @@
       <div class="modal-body">
         <div class="row g-3">
           <div class="col-lg-7">
-            <div class="pay-total"><div><small>Total à payer</small><output id="payTotal">0 F</output></div><div><small>Reste</small><output id="payRemaining">0 F</output></div><div><small>À rendre</small><output id="payChange" class="text-success">0 F</output></div></div>
+            <div class="pay-total"><div><small>Total à payer</small><output id="payTotal"><?= e(money(0)) ?></output></div><div><small>Reste</small><output id="payRemaining"><?= e(money(0)) ?></output></div><div><small>À rendre</small><output id="payChange" class="text-success"><?= e(money(0)) ?></output></div></div>
             <div class="pay-methods" id="payMethods"></div>
             <div class="input-group input-group-lg my-2">
               <span class="input-group-text" id="payMethodLabel">Espèces</span>
@@ -171,7 +172,7 @@
   <div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content">
     <div class="modal-header"><h6 class="modal-title" id="numTitle">Quantité</h6><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button></div>
     <div class="modal-body">
-      <div class="btn-group w-100 mb-2 d-none" id="numDiscType"><input type="radio" class="btn-check" name="dt" id="dtAmount" value="amount" checked><label class="btn btn-outline-secondary" for="dtAmount">Montant F</label><input type="radio" class="btn-check" name="dt" id="dtPercent" value="percent"><label class="btn btn-outline-secondary" for="dtPercent">%</label></div>
+      <div class="btn-group w-100 mb-2 d-none" id="numDiscType"><input type="radio" class="btn-check" name="dt" id="dtAmount" value="amount" checked><label class="btn btn-outline-secondary" for="dtAmount">Montant <?= e(currency()['symbol']) ?></label><input type="radio" class="btn-check" name="dt" id="dtPercent" value="percent"><label class="btn btn-outline-secondary" for="dtPercent">%</label></div>
       <div class="btn-group w-100 mb-2 d-none" id="numScope"><input type="radio" class="btn-check" name="sc" id="scLine" value="line" checked><label class="btn btn-outline-secondary" for="scLine">Ligne</label><input type="radio" class="btn-check" name="sc" id="scTicket" value="ticket"><label class="btn btn-outline-secondary" for="scTicket">Ticket entier</label></div>
       <input type="text" class="form-control form-control-lg text-end fw-bold mb-2" id="numInput" inputmode="decimal" autocomplete="off">
       <div class="keypad-pos small-keys" id="numKeypad"><?php foreach (['7', '8', '9', '4', '5', '6', '1', '2', '3', ',', '0', '⌫'] as $k): ?><button type="button" data-k="<?= e($k) ?>"><?= e($k) ?></button><?php endforeach; ?></div>
@@ -223,7 +224,7 @@
     <i class="bi bi-check-circle-fill text-success display-3"></i>
     <h4 class="mt-2">Vente enregistrée</h4>
     <p class="mb-1" id="doneNumber"></p>
-    <div class="done-change">Monnaie à rendre : <output id="doneChange">0 F</output></div>
+    <div class="done-change">Monnaie à rendre : <output id="doneChange"><?= e(money(0)) ?></output></div>
     <div class="d-flex gap-2 justify-content-center mt-3">
       <a class="btn btn-outline-primary" id="doneTicket" target="_blank" rel="noopener"><i class="bi bi-printer"></i> Ticket</a>
       <a class="btn btn-outline-secondary" id="doneInvoice" target="_blank" rel="noopener"><i class="bi bi-file-earmark-text"></i> Facture A4</a>
@@ -235,6 +236,8 @@
 <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" id="toasts"></div>
 <script type="application/json" id="pos-config"><?= json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?></script>
 <script src="<?= e(asset('vendor/bootstrap/bootstrap.bundle.min.js')) ?>"></script>
+<?= i18n_script() ?>
+<script src="<?= e(asset('js/money.js')) ?>"></script>
 <script src="<?= e(asset('js/pos.js')) ?>"></script>
 </body>
 </html>

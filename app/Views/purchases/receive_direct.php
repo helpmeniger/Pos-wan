@@ -9,7 +9,7 @@
 <div class="card" data-lines data-template="#tplRec"><div class="card-body">
   <input class="form-control mb-1" data-line-search placeholder="Ajouter un article (nom, référence, scanner le code-barres)…" autocomplete="off"><div class="list-group mb-2" data-line-results></div>
   <table class="table table-sm"><thead><tr><th>Article</th><th style="width:110px">Quantité</th><th style="width:140px">P.U. d'achat</th><?php if (feature('lots')): ?><th>Lot / péremption</th><?php endif; ?><th class="num">Total</th><th></th></tr></thead><tbody></tbody>
-  <tfoot><tr><th colspan="<?= feature('lots') ? 4 : 3 ?>" class="text-end">Total marchandises</th><th class="num" data-grand-total>0 F</th><th></th></tr></tfoot></table>
+  <tfoot><tr><th colspan="<?= feature('lots') ? 4 : 3 ?>" class="text-end">Total marchandises</th><th class="num" data-grand-total><?= e(money(0)) ?></th><th></th></tr></tfoot></table>
   <input name="note" class="form-control mb-2" placeholder="Note" maxlength="255">
   <button class="btn btn-success"><i class="bi bi-check2-all"></i> Valider la réception</button>
 </div></div>

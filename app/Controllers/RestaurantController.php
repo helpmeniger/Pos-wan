@@ -166,7 +166,9 @@ final class RestaurantController extends Controller
                 $by = Auth::verifySupervisor((string) $sup['username'], (string) ($sup['secret'] ?? ''), 'restaurant.cancel_item');
             }
             $ticket = R::cancelItem($itemId, Request::num('quantity'), Request::str('reason'), (bool) Request::input('waste'), $by);
-            return $this->orderJson($orderId) + ['print' => $ticket ? [url('/kitchen/tickets/' . $ticket . '/print', ['auto' => 1])] : []];
+            // Un bon d'annulation est toujours signalé à la cuisine (écran) et imprimé s'il y a une imprimante serveur
+            $print = $ticket ? $this->printTickets([$ticket], true) : ['urls' => [], 'printed' => 0, 'errors' => []];
+            return $this->orderJson($orderId) + ['print' => $print['urls'], 'printed_server' => $print['printed'], 'print_errors' => $print['errors']];
         });
     }
 
@@ -175,7 +177,59 @@ final class RestaurantController extends Controller
         $this->orderOr404($id);
         $this->jsonAttempt(function () use ($id) {
             $tickets = R::send($id);
-            return $this->orderJson($id) + ['print' => array_map(fn($t) => url('/kitchen/tickets/' . $t . '/print', ['auto' => 1]), $tickets), 'sent' => count($tickets)];
+            // Les commandes s'affichent sur l'écran cuisine ; impression automatique seulement si activée
+            $print = setting('restaurant_print_kitchen', '0') === '1' ? $this->printTickets($tickets, false) : ['urls' => [], 'printed' => 0, 'errors' => []];
+            return $this->orderJson($id) + ['print' => $print['urls'], 'printed_server' => $print['printed'], 'print_errors' => $print['errors'], 'sent' => count($tickets)];
+        });
+    }
+
+    /**
+     * Imprime des bons cuisine : sur l'imprimante serveur du poste si elle existe,
+     * sinon renvoie l'adresse du bon pour une impression par le navigateur.
+     */
+    private function printTickets(array $tickets, bool $browserFallback): array
+    {
+        $urls = [];
+        $printed = 0;
+        $errors = [];
+        foreach ($tickets as $t) {
+            $station = (string) DB::value('SELECT station FROM kitchen_tickets WHERE id = ?', [$t]);
+            if (\App\Services\PrintService::targets('kitchen:' . $station)) {
+                $r = \App\Services\PrintService::printKitchenTicket((int) $t);
+                $printed += $r['printed'];
+                $errors = array_merge($errors, $r['errors']);
+            } elseif ($browserFallback || setting('restaurant_print_kitchen', '0') === '1') {
+                $urls[] = url('/kitchen/tickets/' . $t . '/print', ['auto' => 1]);
+            }
+        }
+        return ['urls' => $urls, 'printed' => $printed, 'errors' => $errors];
+    }
+
+    /** Impression à la demande des bons en cours d'une commande (bouton « Bon cuisine »). */
+    public function printKitchen(int $id): void
+    {
+        $this->orderOr404($id);
+        $this->jsonAttempt(function () use ($id) {
+            $tickets = array_map('intval', array_column(DB::all("SELECT id FROM kitchen_tickets WHERE order_id = ? AND status IN ('pending','preparing') ORDER BY id", [$id]), 'id'));
+            if (!$tickets) {
+                throw new BusinessException('Aucun bon en préparation pour cette commande.');
+            }
+            $p = $this->printTickets($tickets, true);
+            return ['print' => $p['urls'], 'printed_server' => $p['printed'], 'print_errors' => $p['errors'], 'count' => count($tickets)];
+        });
+    }
+
+    /** Écran cuisine : imprimer un bon au besoin. */
+    public function ticketPrintNow(int $id): void
+    {
+        $this->guardFeature();
+        if (!can('restaurant.order') && !can('restaurant.kitchen')) {
+            throw new HttpException(403);
+        }
+        $this->findOr404('kitchen_tickets', $id);
+        $this->jsonAttempt(function () use ($id) {
+            $p = $this->printTickets([$id], true);
+            return ['print' => $p['urls'], 'printed_server' => $p['printed'], 'print_errors' => $p['errors']];
         });
     }
 
@@ -278,6 +332,16 @@ final class RestaurantController extends Controller
         }
         flash('success', sprintf('Paiement enregistré (%s). Monnaie à rendre : %s.', $r['number'], money($r['change'])));
         $next = $r['order_closed'] ? url('/restaurant') : url('/restaurant/orders/' . $id);
+        if (setting('pos_auto_print', '1') === '1') {
+            $print = \App\Services\PrintService::printReceipt($r['sale_id']);
+            if ($print['printed'] > 0) {
+                header('Location: ' . $next); // $next est déjà une adresse complète (url())
+                exit;
+            }
+            if ($print['errors']) {
+                flash('warning', implode(' ', $print['errors']));
+            }
+        }
         redirect('/sales/' . $r['sale_id'] . '/ticket', ['auto' => setting('pos_auto_print', '1') === '1' ? 1 : 0, 'next' => $next]);
     }
 

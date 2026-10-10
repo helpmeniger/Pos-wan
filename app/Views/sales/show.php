@@ -2,6 +2,10 @@
   <a class="btn btn-outline-secondary" href="<?= e(url('/sales')) ?>"><i class="bi bi-arrow-left"></i> Ventes</a>
   <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/sales/' . $s['id'] . '/ticket')) ?>"><i class="bi bi-printer"></i> Ticket<?= (int) $s['print_count'] > 0 ? ' (duplicata)' : '' ?></a>
   <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/sales/' . $s['id'] . '/invoice')) ?>"><i class="bi bi-file-earmark-text"></i> Facture A4</a>
+  <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/sales/' . $s['id'] . '/delivery')) ?>"><i class="bi bi-truck"></i> Bon de livraison</a>
+  <?php if ($hasPrinter && ((int) $s['print_count'] === 0 || can('pos.reprint'))): ?>
+    <form method="post" action="<?= e(url('/sales/' . $s['id'] . '/print')) ?>"><?= csrf_field() ?><button class="btn btn-outline-dark"><i class="bi bi-printer-fill"></i> Imprimer sur l'imprimante de caisse</button></form>
+  <?php endif; ?>
   <?php if (can('returns.create') && in_array($s['status'], ['completed', 'partially_returned'], true)): ?>
     <a class="btn btn-outline-warning" href="<?= e(url('/sales/' . $s['id'] . '/return')) ?>"><i class="bi bi-arrow-counterclockwise"></i> Retour / remboursement</a>
   <?php endif; ?>

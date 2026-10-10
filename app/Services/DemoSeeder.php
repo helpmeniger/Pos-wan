@@ -120,7 +120,7 @@ final class DemoSeeder
     {
         DB::transaction(function () {
             setting_set('demo_data', '1');
-            setting_set('restaurant_print_kitchen', '1');
+            setting_set('restaurant_print_kitchen', '0');
             $wh = (int) DB::value('SELECT id FROM warehouses ORDER BY id LIMIT 1');
             $unit = fn(string $s) => (int) DB::value('SELECT id FROM units WHERE short_name = ?', [$s]);
             $sup = DB::insert('suppliers', ['name' => '[DÉMO] Marché de Katako', 'phone' => '+227 20 00 00 10', 'address' => 'Katako, Niamey']);

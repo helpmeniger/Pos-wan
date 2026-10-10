@@ -23,6 +23,12 @@ final class SettingsController extends Controller
         'ticket_footer' => ['Pied de ticket', 'textarea'],
         'invoice_footer' => ['Pied de facture (mentions légales)', 'textarea'],
         'ticket_width' => ['Largeur du ticket', 'select', ['80' => '80 mm', '58' => '58 mm']],
+        'ticket_template' => ['Modèle du ticket de caisse', 'select', ['1' => '1 — Classique', '2' => '2 — Compact', '3' => '3 — Moderne']],
+        'invoice_template' => ['Modèle de facture / devis A4', 'select', ['1' => '1 — Classique', '2' => '2 — Moderne (bandeau couleur)', '3' => '3 — Épuré']],
+        'receipt_qr' => ['QR code de vérification en bas des tickets et factures', 'bool'],
+        'pos_quick_validate' => ['Caisse : « Valider » encaisse directement en espèces (fenêtre de paiement via le bouton Espèces)', 'bool'],
+        'quote_validity_days' => ['Validité des devis (jours)', 'number'],
+        'default_locale' => ['Langue par défaut', 'select', 'LANG'],
         'pos_auto_print' => ['Impression automatique du ticket après vente', 'bool'],
         'restaurant_print_kitchen' => ['Restaurant : impression automatique des bons cuisine', 'bool'],
         'max_discount_percent' => ['Seuil de remise sans autorisation (%)', 'number'],
@@ -51,6 +57,9 @@ final class SettingsController extends Controller
         $changes = [];
         foreach (self::FIELDS as $key => [$label, $type]) {
             $opts = self::FIELDS[$key][2] ?? null;
+            if ($opts === 'LANG') {
+                $opts = array_map(fn($l) => $l[0], \App\Core\Lang::LANGUAGES);
+            }
             if ($type === 'bool') {
                 $val = Request::input($key) === '1' ? '1' : '0';
             } else {
@@ -88,6 +97,55 @@ final class SettingsController extends Controller
         }
         Audit::log('settings.update', null, null, $changes ?: null);
         flash('success', 'Paramètres enregistrés.');
+        redirect('/settings');
+    }
+
+    /** Devise : valeurs standard du catalogue ou personnalisées. */
+    public function currency(): void
+    {
+        $code = Request::str('currency_code');
+        if (!isset(Catalog::CURRENCIES[$code])) {
+            $this->fail('Devise inconnue.', '/settings');
+        }
+        [$name, $symbol, $dec, $pos] = Catalog::CURRENCIES[$code];
+        if (Request::input('custom') === '1') {
+            $symbol = mb_substr(Request::str('currency_symbol') ?: $symbol, 0, 10);
+            $name = mb_substr(Request::str('currency_name') ?: $name, 0, 50);
+            $dec = max(0, min(3, Request::int('currency_decimals', $dec)));
+            $pos = Request::str('currency_position') === 'before' ? 'before' : 'after';
+        }
+        foreach (['currency_code' => $code, 'currency_symbol' => $symbol, 'currency_name' => $name, 'currency_decimals' => (string) $dec, 'currency_position' => $pos] as $k => $v) {
+            setting_set($k, (string) $v);
+        }
+        Audit::log('settings.currency', null, null, ['code' => $code, 'symbol' => $symbol]);
+        flash('success', 'Devise enregistrée. Les montants déjà enregistrés ne sont pas convertis.');
+        redirect('/settings');
+    }
+
+    /** Aperçu des trois modèles de ticket ou de facture sur une vente fictive. */
+    public function templatePreview(): void
+    {
+        $type = \App\Core\Request::query('type') === 'invoice' ? 'invoice' : 'ticket';
+        view('settings/template_preview', [
+            'title' => $type === 'ticket' ? 'Modèles de ticket' : 'Modèles de facture', 'type' => $type,
+            'bodyClass' => $type === 'ticket' ? (setting('ticket_width', '80') === '58' ? 't58 preview' : 't80 preview') : 'a4 preview',
+            'backUrl' => url('/settings'),
+        ], 'layouts/print');
+    }
+
+    /** Liste des opérateurs de mobile money proposés à l'encaissement. */
+    public function mobileMoney(): void
+    {
+        $list = [];
+        foreach (preg_split('/[\r\n,]+/', (string) Request::input('providers', '')) ?: [] as $p) {
+            $p = trim($p);
+            if ($p !== '' && mb_strlen($p) <= 50 && !in_array($p, $list, true)) {
+                $list[] = $p;
+            }
+        }
+        setting_set('mobile_money_providers', implode(',', array_slice($list, 0, 20)));
+        Audit::log('settings.mobile_money', null, null, ['providers' => $list]);
+        flash('success', count($list) . ' opérateur(s) de mobile money enregistré(s).');
         redirect('/settings');
     }
 

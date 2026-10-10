@@ -85,10 +85,10 @@
         const q = parseFloat(($('[data-q]', tr) || {}).value || '0') || 0;
         const c = parseFloat(($('[data-c]', tr) || {}).value || '0') || 0;
         const cell = $('[data-line-total]', tr);
-        if (cell) cell.textContent = (q * c).toLocaleString('fr-FR');
+        if (cell) cell.textContent = window.PWMoney ? PWMoney.plain(q * c) : (q * c).toLocaleString('fr-FR');
         tot += q * c;
       });
-      const t = $('[data-grand-total]', wrap); if (t) t.textContent = tot.toLocaleString('fr-FR') + ' F';
+      const t = $('[data-grand-total]', wrap); if (t) t.textContent = window.PWMoney ? PWMoney.fmt(tot) : tot.toLocaleString('fr-FR');
     };
     const add = (p) => {
       if (!tpl) return;
@@ -162,3 +162,10 @@
   });
 })();
 document.querySelectorAll('[data-print-page]').forEach((b) => b.addEventListener('click', () => window.print()));
+/* Paramètres : ajout rapide d'un opérateur de mobile money */
+document.querySelectorAll('[data-add-provider]').forEach((b) => b.addEventListener('click', () => {
+  const ta = b.closest('form').querySelector('textarea[name="providers"]');
+  const list = ta.value.split(/\n/).map((x) => x.trim()).filter(Boolean);
+  if (!list.includes(b.dataset.addProvider)) list.push(b.dataset.addProvider);
+  ta.value = list.join('\n');
+}));

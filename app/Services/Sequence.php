@@ -11,7 +11,7 @@ final class Sequence
     public const DEFAULTS = [
         'sale' => 'V', 'return' => 'AV', 'purchase_order' => 'BC', 'reception' => 'BR', 'transfer' => 'TR',
         'inventory' => 'INV', 'expense' => 'DEP', 'supplier_return' => 'RF',
-        'restaurant_order' => 'CMD', 'kitchen_ticket' => 'KT',
+        'restaurant_order' => 'CMD', 'kitchen_ticket' => 'KT', 'quote' => 'DV',
     ];
 
     public static function next(string $name): string

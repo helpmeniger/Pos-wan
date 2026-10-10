@@ -2,7 +2,7 @@
 (function () {
   const el = document.getElementById('dash-data'); if (!el || !window.Chart) return;
   const d = JSON.parse(el.textContent);
-  const fmt = (v) => Number(v).toLocaleString('fr-FR') + ' F';
+  const fmt = (v) => (window.PWMoney ? PWMoney.fmt(v) : Number(v).toLocaleString('fr-FR'));
   const dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
   Chart.defaults.color = dark ? '#c9d3e6' : '#495057';
   const daily = document.getElementById('chDaily');
