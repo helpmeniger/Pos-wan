@@ -55,7 +55,7 @@
       <div class="d-flex justify-content-between fs-5 fw-bold border-top mt-1 pt-1"><span>Total TTC</span><span><?= money($s['total']) ?></span></div>
       <?php if ((float) $s['tax_total'] > 0): ?><div class="d-flex justify-content-between small text-secondary"><span>dont taxes</span><span><?= money($s['tax_total']) ?></span></div><?php endif; ?>
       <hr>
-      <?php foreach ($payments as $pm): ?><div class="d-flex justify-content-between small"><span><?= e(method_label($pm['method'])) ?> <?= e($pm['reference'] ?? '') ?></span><span><?= money($pm['amount']) ?></span></div><?php endforeach; ?>
+      <?php foreach ($payments as $pm): ?><div class="d-flex justify-content-between small"><span><?= e(method_label($pm['method'])) ?><?= !empty($pm['provider']) ? ' · ' . e($pm['provider']) : '' ?> <?= e($pm['reference'] ?? '') ?></span><span><?= money($pm['amount']) ?></span></div><?php endforeach; ?>
       <div class="d-flex justify-content-between small text-secondary"><span>Montant remis</span><span><?= money($s['tendered']) ?></span></div>
       <div class="d-flex justify-content-between small text-secondary"><span>Monnaie rendue</span><span><?= money($s['change_due']) ?></span></div>
       <?php if (can('reports.financial')): ?><div class="d-flex justify-content-between small mt-2"><span>Marge brute</span><span><?= money((float) $s['total'] - (float) $s['cost_total']) ?></span></div><?php endif; ?>

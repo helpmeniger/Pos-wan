@@ -313,7 +313,8 @@ final class RestaurantController extends Controller
         $payments = [];
         foreach ((array) Request::input('payments', []) as $p) {
             if (is_array($p) && (float) str_replace([' ', ','], ['', '.'], (string) ($p['amount'] ?? 0)) > 0) {
-                $payments[] = ['method' => (string) ($p['method'] ?? ''), 'amount' => (float) str_replace([' ', ','], ['', '.'], (string) $p['amount']), 'reference' => (string) ($p['reference'] ?? '')];
+                [$method, $provider] = array_pad(explode('|', (string) ($p['method'] ?? ''), 2), 2, null);
+                $payments[] = ['method' => $method, 'provider' => $provider, 'amount' => (float) str_replace([' ', ','], ['', '.'], (string) $p['amount']), 'reference' => (string) ($p['reference'] ?? '')];
             }
         }
         $sup = Request::str('sup_username') !== '' ? ['username' => Request::str('sup_username'), 'secret' => (string) Request::input('sup_secret', '')] : null;

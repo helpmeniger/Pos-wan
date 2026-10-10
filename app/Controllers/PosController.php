@@ -36,6 +36,9 @@ final class PosController extends Controller
             ],
             'shortcuts' => is_array($shortcuts) ? $shortcuts : self::defaultShortcuts(),
             'autoPrint' => setting('pos_auto_print', '1') === '1',
+            'quickValidate' => setting('pos_quick_validate', '1') === '1',
+            'mobileProviders' => mobile_money_providers(),
+            'serverPrinter' => \App\Services\PrintService::targets('receipt', $register ? (int) $register['id'] : null) !== [],
         ];
         view('pos/index', ['u' => $u, 'register' => $register, 'session' => $session, 'categories' => $categories, 'config' => $config], null);
     }

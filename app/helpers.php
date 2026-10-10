@@ -222,6 +222,24 @@ function payment_methods(): array
     return array_intersect_key($all, array_flip($enabled)) ?: ['cash' => 'Espèces'];
 }
 
+/** Opérateurs de mobile money configurés dans les paramètres (liste ordonnée). */
+function mobile_money_providers(): array
+{
+    return array_values(array_filter(array_map('trim', explode(',', (string) setting('mobile_money_providers', '')))));
+}
+
+/** Nom d'opérateur accepté : un de la liste configurée, sinon null. */
+function mobile_money_provider(?string $p): ?string
+{
+    $p = trim((string) $p);
+    foreach (mobile_money_providers() as $known) {
+        if (mb_strtolower($known) === mb_strtolower($p)) {
+            return $known;
+        }
+    }
+    return null;
+}
+
 function method_label(?string $m): string
 {
     return [

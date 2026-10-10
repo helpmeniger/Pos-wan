@@ -86,9 +86,10 @@
     <div class="cart-head"><span>Articles</span><span>Qté</span><span>P.U.</span><span>Total</span></div>
     <div class="cart" id="cart" tabindex="0" aria-label="Panier"></div>
     <div class="pr-summary" id="summary"></div>
-    <button class="btn-validate" data-action="pay"><i class="bi bi-check-circle"></i> Valider</button>
+    <div class="last-sale d-none" id="lastSale" role="status" aria-live="polite"></div>
+    <button class="btn-validate" data-action="validate" title="<?= $config['quickValidate'] ? 'Encaissement automatique en espèces (F9)' : 'Encaisser (F9)' ?>"><i class="bi bi-check-circle"></i> Valider</button>
     <div class="pr-bottom">
-      <button data-action="cashExact" title="Espèces : montant exact (F10)"><i class="bi bi-cash-stack"></i><span>Espèces</span></button>
+      <button data-action="cashExact" title="Fenêtre d'encaissement : espèces, mobile money, carte, paiement mixte (F10)"><i class="bi bi-cash-stack"></i><span>Espèces</span></button>
       <button data-action="credit" title="Vente à crédit"><i class="bi bi-journal-bookmark"></i><span>Crédit</span></button>
       <button data-action="note" title="Note sur la vente"><i class="bi bi-chat-left-text"></i><span>Note</span></button>
       <a href="<?= e(url('/cash')) ?>" title="Ma caisse"><i class="bi bi-safe2"></i><span>Caisse</span></a>
@@ -135,6 +136,7 @@
           <div class="col-lg-7">
             <div class="pay-total"><div><small>Total à payer</small><output id="payTotal"><?= e(money(0)) ?></output></div><div><small>Reste</small><output id="payRemaining"><?= e(money(0)) ?></output></div><div><small>À rendre</small><output id="payChange" class="text-success"><?= e(money(0)) ?></output></div></div>
             <div class="pay-methods" id="payMethods"></div>
+            <div class="pay-providers d-none" id="payProviders" aria-label="Opérateur mobile money"></div>
             <div class="input-group input-group-lg my-2">
               <span class="input-group-text" id="payMethodLabel">Espèces</span>
               <input type="text" class="form-control text-end fw-bold" id="payAmount" inputmode="numeric" autocomplete="off">

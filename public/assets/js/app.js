@@ -169,3 +169,17 @@ document.querySelectorAll('[data-add-provider]').forEach((b) => b.addEventListen
   if (!list.includes(b.dataset.addProvider)) list.push(b.dataset.addProvider);
   ta.value = list.join('\n');
 }));
+
+// Formulaire article : génération d'un code-barres interne (EAN-13) à la demande
+document.querySelectorAll('[data-gen-barcode]').forEach((b) => b.addEventListener('click', async () => {
+  const field = document.querySelector(b.dataset.target);
+  if (!field) return;
+  if (field.value.trim() && !confirm(window.__ ? __('Remplacer le code-barres saisi ?') : 'Remplacer le code-barres saisi ?')) return;
+  b.disabled = true;
+  try {
+    const r = await fetch(b.dataset.genBarcode, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+    const d = await r.json();
+    if (d.ok) { field.value = d.barcode; field.classList.add('is-valid'); }
+  } catch (e) { alert('Génération impossible (connexion au serveur).'); }
+  b.disabled = false;
+}));

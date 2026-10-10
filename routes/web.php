@@ -75,6 +75,9 @@ $router->get('/products/labels', [C\ProductController::class, 'labels'], 'produc
 $router->get('/products/bulk-price', [C\ProductController::class, 'bulkPriceForm'], 'products.price_edit');
 $router->post('/products/bulk-price', [C\ProductController::class, 'bulkPrice'], 'products.price_edit');
 $router->get('/products/duplicates', [C\ProductController::class, 'duplicates'], 'products.view');
+$router->get('/products/new-barcode', [C\ProductController::class, 'newBarcode'], 'products.manage');
+$router->post('/products/generate-barcodes', [C\ProductController::class, 'bulkBarcodes'], 'products.manage');
+$router->post('/products/{id}/barcode', [C\ProductController::class, 'assignBarcode'], 'products.manage');
 $router->get('/products/{id}', [C\ProductController::class, 'show'], 'products.view');
 $router->get('/products/{id}/edit', [C\ProductController::class, 'edit'], 'products.manage');
 $router->post('/products/{id}', [C\ProductController::class, 'update'], 'products.manage');

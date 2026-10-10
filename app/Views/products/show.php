@@ -24,7 +24,7 @@
       </div>
       <dl class="row small mb-0">
         <dt class="col-5">Référence</dt><dd class="col-7"><?= e($p['reference']) ?></dd>
-        <dt class="col-5">Code-barres</dt><dd class="col-7"><?= e($p['barcode'] ?? '—') ?><?php if ($p['barcode']): ?><br><img src="<?= e(url('/barcode/' . $p['id'])) ?>" alt="" style="height:44px"><?php endif; ?></dd>
+        <dt class="col-5">Code-barres</dt><dd class="col-7"><?= e($p['barcode'] ?? '—') ?><?php if ($p['barcode']): ?><br><img src="<?= e(url('/barcode/' . $p['id'])) ?>" alt="" style="height:44px"><?php elseif (can('products.manage')): ?><form method="post" action="<?= e(url('/products/' . $p['id'] . '/barcode')) ?>" class="mt-1"><?= csrf_field() ?><button class="btn btn-sm btn-outline-primary"><i class="bi bi-upc"></i> Créer un code-barres</button></form><?php endif; ?></dd>
         <?php if ($p['brand']): ?><dt class="col-5">Marque</dt><dd class="col-7"><?= e($p['brand']) ?></dd><?php endif; ?>
         <dt class="col-5">Unité</dt><dd class="col-7"><?= e($p['unit'] ?? '—') ?></dd>
         <dt class="col-5">Fournisseur</dt><dd class="col-7"><?= e($p['supplier'] ?? '—') ?></dd>

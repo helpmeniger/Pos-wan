@@ -28,7 +28,7 @@
     <div class="card mb-3"><div class="card-header"><i class="bi bi-wallet2"></i> Paiement</div><div class="card-body">
       <?php foreach ([0, 1, 2] as $n): ?>
       <div class="row g-1 mb-1 pay-row">
-        <div class="col-4"><select name="payments[<?= $n ?>][method]" class="form-select form-select-sm"><?php foreach (payment_methods() as $k => $l): ?><option value="<?= e($k) ?>" <?= ($n === 1 && $k === 'mobile_money') || ($n === 2 && $k === 'card') ? 'selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
+        <div class="col-4"><select name="payments[<?= $n ?>][method]" class="form-select form-select-sm"><?php foreach (payment_methods() as $k => $l): ?><?php if ($k === 'mobile_money' && mobile_money_providers()): ?><?php foreach (mobile_money_providers() as $pi => $prov): ?><option value="mobile_money|<?= e($prov) ?>" <?= $n === 1 && $pi === 0 ? 'selected' : '' ?>><?= e($prov) ?></option><?php endforeach; ?><?php else: ?><option value="<?= e($k) ?>" <?= ($n === 1 && $k === 'mobile_money') || ($n === 2 && $k === 'card') ? 'selected' : '' ?>><?= e($l) ?></option><?php endif; ?><?php endforeach; ?></select></div>
         <div class="col-4"><input type="number" step="any" min="0" name="payments[<?= $n ?>][amount]" class="form-control form-control-sm" placeholder="Montant" data-amount <?= $n === 0 ? 'autofocus' : '' ?>></div>
         <div class="col-4"><input name="payments[<?= $n ?>][reference]" class="form-control form-control-sm" placeholder="Réf." maxlength="100"></div>
       </div>

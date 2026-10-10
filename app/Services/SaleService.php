@@ -231,7 +231,8 @@ final class SaleService
             } else {
                 $nonCash += $a;
             }
-            $payments[] = ['method' => $m, 'amount' => $a, 'reference' => mb_substr(trim((string) ($pay['reference'] ?? '')), 0, 100) ?: null];
+            $payments[] = ['method' => $m, 'amount' => $a, 'reference' => mb_substr(trim((string) ($pay['reference'] ?? '')), 0, 100) ?: null,
+                'provider' => $m === 'mobile_money' ? mobile_money_provider($pay['provider'] ?? null) : null];
         }
         if ($nonCash - $total > 0.009) {
             throw new BusinessException('Les paiements par carte / mobile / virement ne peuvent pas dépasser le total.');
@@ -343,7 +344,7 @@ final class SaleService
                 if ($amount <= 0) {
                     continue;
                 }
-                DB::insert('sale_payments', ['sale_id' => $saleId, 'method' => $pay['method'], 'amount' => $amount, 'reference' => $pay['reference']]);
+                DB::insert('sale_payments', ['sale_id' => $saleId, 'method' => $pay['method'], 'provider' => $pay['provider'] ?? null, 'amount' => $amount, 'reference' => $pay['reference']]);
                 CashService::movement($session['id'] ?? null, 'sale', $pay['method'], $amount, 'sale', $saleId, $number);
             }
             if ($credit > 0) {

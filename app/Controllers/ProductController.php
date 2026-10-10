@@ -341,6 +341,44 @@ final class ProductController extends Controller
         view('products/labels', ['title' => 'Étiquettes code-barres', 'products' => $products, 'copies' => $copies, 'categories' => DB::all('SELECT id, name FROM categories ORDER BY name')]);
     }
 
+    /** Formulaire article : propose un EAN-13 interne libre (bouton « Générer »). */
+    public function newBarcode(): void
+    {
+        json_response(['ok' => true, 'barcode' => Barcode::newInternalEan()]);
+    }
+
+    /** Fiche article : crée un code-barres interne pour un article qui n'en a pas. */
+    public function assignBarcode(int $id): void
+    {
+        $p = $this->findOr404('products', $id);
+        if ($p['barcode']) {
+            flash('warning', 'Cet article possède déjà un code-barres.');
+        } else {
+            $code = Barcode::newInternalEan();
+            DB::update('products', ['barcode' => $code], 'id = ?', [$id]);
+            Audit::log('product.barcode', 'product', $id, ['barcode' => $code]);
+            flash('success', 'Code-barres ' . $code . ' créé. Imprimez l\'étiquette pour l\'apposer sur l\'article.');
+        }
+        redirect('/products/' . $id);
+    }
+
+    /** Crée un code-barres interne pour tous les articles actifs qui n'en ont pas. */
+    public function bulkBarcodes(): void
+    {
+        $ids = array_column(DB::all("SELECT id FROM products WHERE active = 1 AND (barcode IS NULL OR barcode = '') ORDER BY id LIMIT 2000"), 'id');
+        DB::transaction(function () use ($ids) {
+            foreach ($ids as $id) {
+                DB::update('products', ['barcode' => Barcode::newInternalEan()], 'id = ?', [(int) $id]);
+            }
+        });
+        Audit::log('product.barcode_bulk', 'product', null, ['count' => count($ids)]);
+        flash('success', count($ids) ? count($ids) . ' code(s)-barres créé(s). Imprimez les étiquettes correspondantes.' : 'Tous les articles actifs ont déjà un code-barres.');
+        if ($ids) {
+            redirect('/products/labels', ['ids' => array_slice(array_map('intval', $ids), 0, 300)]);
+        }
+        redirect('/products');
+    }
+
     public function barcode(int $id): void
     {
         $p = $this->findOr404('products', $id);

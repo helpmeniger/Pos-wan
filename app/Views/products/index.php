@@ -45,6 +45,7 @@
       <?php endif; ?>
       <?php if (can('products.price_edit')): ?><a href="<?= e(url('/products/bulk-price')) ?>" class="btn btn-outline-secondary"><i class="bi bi-percent"></i> Prix groupés</a><?php endif; ?>
       <a href="<?= e(url('/products/labels')) ?>" class="btn btn-outline-secondary"><i class="bi bi-upc-scan"></i> Étiquettes</a>
+      <?php if (can('products.manage')): ?><form method="post" action="<?= e(url('/products/generate-barcodes')) ?>" class="d-inline" data-confirm="Créer un code-barres interne (EAN-13 « 21… ») pour chaque article actif qui n'en a pas ?"><?= csrf_field() ?><button class="btn btn-outline-primary"><i class="bi bi-upc"></i> Codes-barres manquants</button></form><?php endif; ?>
       <a href="<?= e(url('/products/duplicates')) ?>" class="btn btn-outline-danger btn-sm"><i class="bi bi-files"></i> Doublons potentiels</a>
       <?php if (can('categories.manage')): ?><a href="<?= e(url('/categories')) ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-tags"></i> Catégories</a><?php endif; ?>
     </div>

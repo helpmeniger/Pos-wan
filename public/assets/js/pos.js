@@ -34,6 +34,8 @@
   let currentCat = 0;
   let payments = [];
   let payMethod = 'cash';
+  let payProvider = null;
+  let quickMode = false;
   let supervisor = null;
   let busy = false;
   const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(cart)); } catch (e) { /* stockage plein */ } };
@@ -314,7 +316,7 @@
     $('#payTotal').textContent = fmt(t);
     $('#payRemaining').textContent = fmt(Math.max(0, t - paid));
     $('#payChange').textContent = fmt(Math.max(0, paid - t));
-    $('#payLines').innerHTML = payments.map((p, i) => `<tr><td>${esc(CFG.methods[p.method] || p.method)}${p.reference ? ' <small class="text-secondary">' + esc(p.reference) + '</small>' : ''}</td><td class="text-end fw-bold">${fmt(p.amount)}</td><td class="text-end"><button class="btn btn-sm btn-link text-danger" data-del-pay="${i}"><i class="bi bi-x-circle"></i></button></td></tr>`).join('');
+    $('#payLines').innerHTML = payments.map((p, i) => `<tr><td>${esc(CFG.methods[p.method] || p.method)}${p.provider ? ' · ' + esc(p.provider) : ''}${p.reference ? ' <small class="text-secondary">' + esc(p.reference) + '</small>' : ''}</td><td class="text-end fw-bold">${fmt(p.amount)}</td><td class="text-end"><button class="btn btn-sm btn-link text-danger" data-del-pay="${i}"><i class="bi bi-x-circle"></i></button></td></tr>`).join('');
     $('#payCustomer').textContent = cart.customer ? cart.customer.name : 'comptoir';
     const rx = cart.lines.some((l) => l.rx);
     $('#rxBox').classList.toggle('d-none', !rx);
@@ -329,18 +331,33 @@
     $$('#payMethods button').forEach((b) => b.classList.toggle('active', b.dataset.m === m));
     $('#payMethodLabel').textContent = CFG.methods[m];
     $('#payRef').classList.toggle('d-none', m === 'cash');
+    const prov = $('#payProviders');
+    const list = CFG.mobileProviders || [];
+    prov.classList.toggle('d-none', m !== 'mobile_money' || !list.length);
+    if (m === 'mobile_money' && list.length) {
+      if (!list.includes(payProvider)) payProvider = list[0];
+      prov.innerHTML = list.map((n) => `<button type="button" data-prov="${esc(n)}" class="${n === payProvider ? 'active' : ''}"><i class="bi bi-phone"></i> ${esc(n)}</button>`).join('');
+      $('#payMethodLabel').textContent = payProvider;
+    }
     const rest = Math.max(0, totals().total - paidSum());
     $('#payAmount').value = rest ? String(Math.round(rest)) : '';
     $('#payAmount').focus(); $('#payAmount').select();
   }
   $('#payMethods').innerHTML = Object.entries(CFG.methods).map(([k, v]) => `<button type="button" data-m="${k}"><i class="bi ${{ cash: 'bi-cash', card: 'bi-credit-card', mobile_money: 'bi-phone', transfer: 'bi-bank', cheque: 'bi-journal' }[k] || 'bi-wallet'}"></i> ${esc(v)}</button>`).join('');
   $('#payMethods').addEventListener('click', (e) => { const b = e.target.closest('[data-m]'); if (b) selectMethod(b.dataset.m); });
+  $('#payProviders').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-prov]'); if (!b) return;
+    payProvider = b.dataset.prov;
+    $$('#payProviders button').forEach((x) => x.classList.toggle('active', x === b));
+    $('#payMethodLabel').textContent = payProvider;
+    $('#payAmount').focus();
+  });
   function addPayment(amount) {
     amount = Math.round(num(amount) * 100) / 100;
     if (amount <= 0) return false;
     const t = totals().total;
     if (payMethod !== 'cash' && paidSum() + amount > t + 0.01) { toast('Un paiement électronique ne peut pas dépasser le reste dû.', 'warning'); return false; }
-    payments.push({ method: payMethod, amount, reference: $('#payRef').value.trim() || null });
+    payments.push({ method: payMethod, amount, reference: $('#payRef').value.trim() || null, provider: payMethod === 'mobile_money' ? payProvider : null });
     $('#payRef').value = '';
     refreshPay();
     const rest = Math.max(0, t - paidSum());
@@ -376,11 +393,43 @@
 
   async function checkout() {
     if (busy) return;
+    quickMode = false;
     // Montant saisi mais non ajouté : on l'ajoute automatiquement
     if ($('#payAmount').value && num($('#payAmount').value) > 0 && payments.length === 0) addPayment($('#payAmount').value);
     const t = totals().total;
     const rest = t - paidSum();
-    if (rest > 0.009 && !cart.customer) { payError(`Il manque ${fmt(rest)}. Pour une vente à crédit, choisissez d'abord un client.`); return; }
+    if (rest > 0.009 && !cart.customer) { payError(__('Il manque {m}. Pour une vente à crédit, choisissez d\'abord un client.', { m: fmt(rest) })); return; }
+    submitSale();
+  }
+
+  /*
+   * Bouton « Valider » : encaissement automatique en espèces, sans la fenêtre
+   * d'encaissement. Montant remis = « Argent client » s'il couvre le total,
+   * sinon le montant exact. La fenêtre reste accessible avec le bouton « Espèces ».
+   */
+  function quickValidate() {
+    if (busy) return;
+    if (!cart.lines.length) { toast(__('Le panier est vide.'), 'warning'); return; }
+    if (CFG.requireSession && !CFG.sessionOpen) { toast(__('La caisse est fermée.'), 'danger'); return; }
+    if (!CFG.methods.cash || cart.lines.some((l) => l.rx)) { openPay(); return; }
+    const t = totals().total;
+    const tendered = num($('#tenderedInput').value);
+    if (tendered > 0 && tendered + 0.009 < t) {
+      // Montant insuffisant : on passe par la fenêtre (paiement mixte ou crédit)
+      toast(__('Argent client insuffisant : complétez le paiement.'), 'warning');
+      openPay(); return;
+    }
+    payments = [{ method: 'cash', amount: Math.round((tendered > 0 ? tendered : t) * 100) / 100, reference: null, provider: null }];
+    supervisor = null;
+    quickMode = true;
+    submitSale();
+  }
+
+  function saleError(msg) {
+    if (quickMode) { toast(msg, 'danger'); beep(false); } else payError(msg);
+  }
+
+  async function submitSale() {
     const body = {
       _csrf: CFG.csrf,
       client_uuid: cart.uuid,
@@ -391,20 +440,27 @@
       supervisor,
       prescription: cart.lines.some((l) => l.rx) ? { prescriber: $('#rxPrescriber').value, patient_name: $('#rxPatient').value, prescription_ref: $('#rxRef').value, prescription_date: $('#rxDate').value } : null,
     };
+    body.print_ticket = $('#optTicket').checked && CFG.autoPrint && CFG.serverPrinter;
     busy = true;
     $('#payConfirm').disabled = true;
+    $$('.btn-validate').forEach((b) => { b.disabled = true; });
     let d;
-    try { d = await api('/pos/checkout', { method: 'POST', body }); } catch (e) { d = { ok: false, error: 'Connexion au serveur impossible. La vente n\'a pas été enregistrée ; réessayez (aucun doublon possible).' }; }
+    try { d = await api('/pos/checkout', { method: 'POST', body }); } catch (e) { d = { ok: false, error: __('Connexion au serveur impossible. La vente n\'a pas été enregistrée ; réessayez (aucun doublon possible).') }; }
     busy = false;
     $('#payConfirm').disabled = false;
+    $$('.btn-validate').forEach((b) => { b.disabled = false; });
     if (!d.ok) {
       if (d.status === 419) { save(); setTimeout(() => location.reload(), 1500); }
-      if (d.code === 'AUTH_REQUIRED') { $('#authReason').textContent = d.error + ' — un responsable doit autoriser.'; $('#authUser').value = ''; $('#authSecret').value = ''; modal('authModal').show(); setTimeout(() => $('#authUser').focus(), 300); return; }
-      if (d.code === 'PRESCRIPTION_REQUIRED') { $('#rxBox').classList.remove('d-none'); $('#rxPrescriber').focus(); }
-      payError(d.error || 'Erreur lors de l\'enregistrement.');
+      if (d.code === 'AUTH_REQUIRED') { $('#authReason').textContent = d.error + ' — ' + __('un responsable doit autoriser.'); $('#authUser').value = ''; $('#authSecret').value = ''; modal('authModal').show(); setTimeout(() => $('#authUser').focus(), 300); return; }
+      if (d.code === 'PRESCRIPTION_REQUIRED') {
+        if (quickMode) { openPay(); }
+        $('#rxBox').classList.remove('d-none'); $('#rxPrescriber').focus();
+        if (quickMode) { quickMode = false; payError(d.error); return; }
+      }
+      saleError(d.error || __('Erreur lors de l\'enregistrement.'));
       return;
     }
-    modal('payModal').hide();
+    if (!quickMode) modal('payModal').hide();
     finishSale(d);
   }
   $('#payConfirm').addEventListener('click', checkout);
@@ -412,24 +468,41 @@
     supervisor = { username: $('#authUser').value.trim(), secret: $('#authSecret').value };
     $('#authSecret').value = '';
     modal('authModal').hide();
-    checkout();
+    submitSale();
   });
   $('#authSecret').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#authOk').click(); });
 
   function finishSale(d) {
     beep(true);
-    $('#doneNumber').textContent = 'N° ' + d.number + (d.duplicate ? ' (déjà enregistrée)' : '');
+    $('#doneNumber').textContent = 'N° ' + d.number + (d.duplicate ? ' (' + __('déjà enregistrée') + ')' : '');
     $('#doneChange').textContent = fmt(d.change);
     $('#doneTicket').href = d.ticket_url;
     $('#doneInvoice').href = d.invoice_url;
-    if ($('#optTicket').checked && CFG.autoPrint && !d.duplicate) printInFrame(d.ticket_url);
+    if ($('#optTicket').checked && CFG.autoPrint && !d.duplicate && !(d.printed_server > 0)) printInFrame(d.ticket_url);
+    if (d.print_errors && d.print_errors.length) toast(__('Imprimante de caisse') + ' : ' + d.print_errors.join(' '), 'warning');
     if ($('#optA4').checked) window.open(d.invoice_url, '_blank', 'noopener');
     cart = newCart();
     selected = -1;
     $('#tenderedInput').value = '';
     render();
+    if (quickMode) {
+      // Encaissement automatique : pas de fenêtre, la monnaie s'affiche dans la barre de caisse
+      quickMode = false;
+      showLastSale(d);
+      bi.focus();
+      return;
+    }
     modal('doneModal').show();
     setTimeout(() => $('#doneNew').focus(), 350);
+  }
+  function showLastSale(d) {
+    const el = $('#lastSale');
+    if (!el) return;
+    el.innerHTML = `<i class="bi bi-check-circle-fill"></i> <b>${esc(d.number)}</b> · ${esc(__('Monnaie à rendre'))} : <b class="ls-change">${fmt(d.change)}</b>`;
+    el.classList.remove('d-none');
+    el.classList.toggle('has-change', d.change > 0);
+    clearTimeout(showLastSale.t);
+    showLastSale.t = setTimeout(() => el.classList.add('d-none'), 15000);
   }
   // Impression silencieuse du ticket via un cadre caché (pas de fenêtre surgissante bloquée)
   function printInFrame(url) {
@@ -489,10 +562,12 @@
       case 'held': showHeld(); break;
       case 'recent': showRecent(); break;
       case 'pay': openPay(); break;
+      case 'validate': if (CFG.quickValidate) quickValidate(); else openPay(); break;
       case 'credit': openPay({ credit: true }); break;
       case 'cashExact':
+        // Fenêtre d'encaissement complète (espèces par défaut, mobile money, carte, paiement mixte)
         if (!cart.lines.length) return;
-        openPay(); payments = []; selectMethod('cash'); addPayment(totals().total); break;
+        openPay(); break;
       case 'note': { const n = prompt('Note sur la vente :', cart.note || ''); if (n !== null) { cart.note = n.slice(0, 255); render(); } break; }
       case 'fullscreen': if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); else document.exitFullscreen(); break;
       case 'lock': save(); $('form[action$="/logout"]').submit(); break;
@@ -503,7 +578,7 @@
   const ws = $('#optWholesale');
   if (ws) ws.addEventListener('change', () => { cart.wholesale = ws.checked; render(); });
   $('#tenderedInput').addEventListener('input', updateChange);
-  $('#tenderedInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); action('pay'); } });
+  $('#tenderedInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); action('validate'); } });
 
   // Raccourcis clavier (configurables dans Paramètres)
   const SC = CFG.shortcuts || {};
@@ -513,7 +588,7 @@
     if (open && open.id === 'payModal' && e.key === (SC.pay || 'F9')) { e.preventDefault(); checkout(); return; }
     if (open) return;
     const map = { [SC.search || 'F2']: () => $('#productSearch').focus(), [SC.customer || 'F4']: () => action('customer'), [SC.quantity || 'F6']: () => action('quantity'),
-      [SC.discount || 'F7']: () => action('discount'), [SC.hold || 'F8']: () => action('hold'), [SC.pay || 'F9']: () => action('pay'),
+      [SC.discount || 'F7']: () => action('discount'), [SC.hold || 'F8']: () => action('hold'), [SC.pay || 'F9']: () => action('validate'),
       [SC.cashExact || 'F10']: () => action('cashExact'), [SC.clear || 'F12']: () => action('clear') };
     if (map[e.key]) { e.preventDefault(); map[e.key](); return; }
     const tag = (document.activeElement && document.activeElement.tagName) || '';
