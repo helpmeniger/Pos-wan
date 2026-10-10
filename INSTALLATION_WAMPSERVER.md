@@ -157,8 +157,37 @@ Toute douchette USB en mode « clavier » (HID) fonctionne, configurée pour env
 après chaque code (réglage d'usine le plus courant). En caisse, le mode **Auto** ajoute
 l'article dès la lecture, même si le curseur n'est pas dans le champ code-barres.
 
-### Imprimante thermique (tickets 58/80 mm)
-POS Wan imprime via le **pilote Windows** de l'imprimante (pas de commande ESC/POS directe) :
+### Plusieurs imprimantes (alimentation + restaurant…) — impression par le serveur
+Un navigateur imprime toujours sur l'imprimante **par défaut** de l'appareil. Pour envoyer
+chaque document sur sa propre imprimante (tickets de l'alimentation, bons de la cuisine, bons
+du bar…), déclarez les imprimantes dans **Paramètres → Imprimantes** : c'est alors le serveur
+POS Wan (le PC où tourne WampServer) qui leur envoie les données en **ESC/POS** (langage
+de la plupart des imprimantes thermiques : Epson, Xprinter, Rongta, Sunmi…).
+
+| Branchement | À saisir dans « Adresse » | Préparation |
+|---|---|---|
+| Réseau (câble Ethernet ou Wi-Fi) | `192.168.1.50` (port 9100 par défaut) ou `192.168.1.50:9100` | Donnez une **adresse IP fixe** à l'imprimante (page de configuration imprimée en maintenant le bouton FEED à l'allumage). |
+| USB sur le PC serveur | `\\localhost\XP-80` | Windows : *Paramètres → Imprimantes → l'imprimante → Propriétés de l'imprimante → Partage* : cochez « Partager », nom de partage sans espace (ex. `XP-80`). |
+
+Pour chaque imprimante, cochez ses **usages** (Tickets de caisse, Bons cuisine, Bons bar,
+Additions restaurant) et, si besoin, la **caisse concernée** (ex. caisse « Alimentation » →
+imprimante A, caisse « Restaurant » → imprimante B). Le bouton **Tester** imprime une page
+de test (accents, montant, QR code). Options : coupe automatique, ouverture du tiroir-caisse
+à chaque ticket, nombre de copies.
+
+Remarques :
+- L'imprimante réseau doit être sur le **réseau local** (adresses 192.168.x.x, 10.x.x.x,
+  172.16–31.x.x ou nom local) ; une adresse Internet est refusée.
+- Si l'imprimante est éteinte ou injoignable, la vente est **quand même enregistrée** ; un
+  message s'affiche et le ticket peut être réimprimé (navigateur ou bouton « Imprimer sur
+  l'imprimante de caisse » de la fiche de vente).
+- L'écriture arabe ne s'imprime pas en mode ESC/POS texte : utilisez l'impression navigateur
+  (imprimante « Navigateur ») pour des tickets en arabe.
+- Sans imprimante serveur pour un usage, l'impression se fait par le navigateur comme ci-dessous.
+
+### Imprimante thermique par le navigateur (tickets 58/80 mm)
+Sans imprimante déclarée côté serveur, POS Wan imprime via le **pilote Windows** de
+l'imprimante par défaut de l'appareil :
 
 1. Installez le pilote du fabricant, réglez le papier sur 80 mm (ou 58 mm) et la hauteur « continue ».
 2. Définissez-la comme imprimante par défaut du poste de caisse.
@@ -171,8 +200,9 @@ Les factures A4, bons de commande, bons de réception, états de caisse et étiq
 sur une imprimante classique ; « Enregistrer au format PDF » de la fenêtre d'impression produit un PDF.
 
 ### Tiroir-caisse
-Les tiroirs reliés à l'imprimante thermique s'ouvrent si le pilote est réglé pour l'ouvrir
-« avant impression » (option du pilote). POS Wan ne pilote pas directement le tiroir.
+Avec une imprimante déclarée côté serveur, cochez « Ouvrir le tiroir-caisse à chaque ticket »
+(impulsion ESC/POS). Avec l'impression navigateur, réglez le pilote pour ouvrir le tiroir
+« avant impression » (option du pilote).
 
 ### Badge RFID (optionnel)
 Lecteurs USB en émulation clavier uniquement. Activez « Connexion par badge RFID » dans
@@ -183,11 +213,11 @@ Le numéro du badge n'est jamais stocké en clair (empreinte HMAC).
 - **Écran cuisine / bar** : ouvrez `http://pos-wan.local/kitchen` sur une tablette ou un
   téléviseur avec navigateur placé en cuisine (compte de rôle « Cuisinier / barman »).
   Un onglet par poste : cuisine, grill, bar… (le poste se règle sur chaque catégorie).
-- **Bons imprimés** : à l'envoi en cuisine, le bon s'imprime sur l'imprimante **par défaut
-  de l'appareil qui prend la commande** (paramètre « impression automatique des bons
-  cuisine »). Pour imprimer directement en cuisine, utilisez l'écran cuisine ou placez
-  l'imprimante par défaut du poste de prise de commande en cuisine. Le routage vers
-  plusieurs imprimantes réseau (une par poste) n'est pas implémenté.
+- **Bons imprimés** : déclarez une imprimante par poste (usage « Bons cuisine », « Bons
+  bar »…) dans Paramètres → Imprimantes : chaque bon part automatiquement à l'envoi sur
+  l'imprimante de son poste. Sans imprimante de poste, les commandes s'affichent sur
+  l'écran cuisine et le bon peut être imprimé **à la demande** (bouton « Bon cuisine » de
+  la commande ou icône imprimante de chaque ticket de l'écran cuisine).
 - **Serveurs sur tablette/téléphone** : la prise de commande fonctionne dans le navigateur
   sur le Wi-Fi de l'établissement (voir § 4 `Require ip` et § 8 HTTPS).
 

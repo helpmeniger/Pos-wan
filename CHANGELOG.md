@@ -2,6 +2,48 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [1.2.0] — 2026-10-10
+
+### Ajouté
+- **Imprimantes multiples** (Paramètres → Imprimantes) : imprimantes réseau (IP, port 9100) ou
+  USB partagées sous Windows, pilotées en ESC/POS par le serveur ; chaque imprimante a ses
+  usages (tickets de caisse, bons cuisine / bar / grill, additions) et peut être limitée à une
+  caisse (ex. alimentation → imprimante A, restaurant → imprimante B). Page de test, coupe
+  papier, ouverture du tiroir-caisse, copies. Repli automatique sur l'impression navigateur.
+  Une panne d'imprimante n'annule jamais une vente.
+- **Langues** : français, anglais, arabe (affichage de droite à gauche), haoussa, espagnol,
+  portugais, turc. Langue par défaut dans les paramètres, choix par utilisateur (Mon compte)
+  et sur l'écran de connexion.
+- **Devise configurable** (FCFA, naira, cedi, dirham, euro, dollar… ou personnalisée) :
+  symbole, position, décimales, nom en toutes lettres sur les factures.
+- **Modèles d'impression** : 3 modèles de ticket (Classique, Compact, Moderne) et 3 modèles
+  de facture / devis A4 (Classique, Moderne à bandeau, Épuré), avec aperçu.
+- **QR code** en bas des tickets, factures, devis et additions (référence et identifiant du
+  document, signature HMAC) et page **Vérifier un QR code** qui détecte les documents falsifiés.
+- **Devis** : création, suivi (envoyé, accepté, refusé, annulé), impression, duplication,
+  **conversion en vente** (prix du devis conservés, stock et caisse contrôlés).
+- **Bons de livraison** A4 pour toute vente, avec ou sans les prix.
+- **Caisse** : le bouton **Valider** encaisse directement en espèces sans fenêtre (montant
+  « Argent client » ou montant exact, monnaie affichée dans la barre) ; le bouton **Espèces**
+  ouvre la fenêtre d'encaissement complète (paiement mixte, carte, mobile money). Option
+  désactivable dans les paramètres.
+- **Mobile money** : liste des opérateurs paramétrable (Airtel Money, Moov Money, Zamani Cash,
+  Nita, Amanata…), choix de l'opérateur à l'encaissement, opérateur enregistré sur le paiement.
+- **Codes-barres** : bouton « Générer » dans la fiche article, « Créer un code-barres » sur un
+  article qui n'en a pas, génération groupée pour tous les articles sans code (+ étiquettes).
+- **Restaurant** : articles et catégories réservés au restaurant (ou à la boutique) ;
+  commandes affichées sur l'écran cuisine dès l'envoi ; bouton « Bon cuisine » et bouton
+  d'impression sur chaque ticket de l'écran cuisine (impression à la demande).
+- **Achats** : à la réception, choix du coût par ligne — **prix moyen pondéré** (défaut),
+  **nouveau prix** (tout le stock revalorisé) ou **ancien prix** — et nouveau prix de vente
+  facultatif (historisé).
+- Migration `0003_imprimantes_devis_langues` ; permission `quotes.manage` (accordée aux
+  rôles Responsable de magasin et Caissier).
+
+### Modifié
+- L'impression automatique des bons cuisine par le navigateur est désactivée par défaut
+  (écran cuisine ou imprimante de poste recommandés).
+
 ## [1.1.0] — 2026-10-10
 
 ### Ajouté — module Restaurant

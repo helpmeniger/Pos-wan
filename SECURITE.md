@@ -71,6 +71,19 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
   (requête POST + CSRF), noms de fichiers validés (pas de traversée de répertoire),
   empreinte SHA-256 vérifiée avant toute restauration.
 
+### Impression, QR codes et traductions (v1.2)
+- Imprimantes serveur : adresses limitées au **réseau local** (IP privées, nom local) et aux
+  partages d'imprimante Windows `\\poste\partage` (aucun chemin de fichier arbitraire) ;
+  gestion réservée à `settings.manage`, chaque modification journalisée.
+- QR codes des documents : référence + **signature HMAC-SHA256** (clé `APP_KEY`, tronquée à
+  48 bits) ; la page *Vérifier* signale un document modifié ou émis par une autre installation.
+  Ce n'est pas une signature fiscale ; changer `APP_KEY` invalide les QR déjà imprimés.
+- Traductions : appliquées uniquement aux textes fixes de l'interface (correspondance
+  exacte), jamais à l'intérieur des scripts ; les valeurs restent échappées.
+- Devis convertis, mobile money, coût d'achat : mêmes contrôles serveur que les ventes
+  (prix et remises protégés par permission, opérateur limité à la liste paramétrée,
+  nouveau prix de vente soumis à `products.price_edit`).
+
 ### Intégrité métier
 - **Transactions SQL** pour ventes, paiements, stocks, retours, réceptions, inventaires, caisse.
 - Verrous de ligne (`SELECT … FOR UPDATE`) sur stocks, lots, sessions de caisse, comptes
@@ -91,12 +104,16 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
 
 Exécutées réellement dans l'environnement de développement (PHP 8.3, MariaDB 10.11) :
 
-1. **`php tests/run.php` : 67 tests, 0 échec**, dont :
+1. **`php tests/run.php` : 82 tests, 0 échec**, dont :
    CSRF (formulaire, API JSON), connexion/échec/verrouillage/PIN, régénération de session,
    en-têtes HTTP, redirection des pages protégées, contrôle d'accès par rôle (403),
    accès aux ventes d'autrui (IDOR), injections SQL dans la recherche, les filtres et le tri,
    XSS stocké, fichiers sensibles, téléversement d'un script déguisé en image,
-   intégrité et altération des sauvegardes, traversée de répertoire, cohérence stock/mouvements/lots.
+   intégrité et altération des sauvegardes, traversée de répertoire, cohérence stock/mouvements/lots,
+   et pour la v1.2 : impression ESC/POS vers un serveur TCP local de test (octets, QR, tiroir,
+   coupe), imprimante injoignable sans perte de vente, adresses d'imprimante publiques refusées,
+   QR authentique / falsifié, devis (prix protégés, conversion idempotente), modes de coût,
+   canaux de vente, traductions et affichage arabe (RTL).
 2. **Apache 2.4 + mod_php (configuration type WampServer, projet dans un sous-dossier)** :
    `/.env`, `/.env.example`, `/app/…`, `/config/…`, `/storage/…`, `/database/schema.sql`,
    `/routes/…`, `/tests/…`, `/bin/…`, `/README.md`, `/public/.htaccess`, `/public/uploads/` → **403** ;
@@ -124,7 +141,9 @@ Ces tests ont été faits sur l'application locale uniquement (aucun test sur un
 | `'unsafe-inline'` autorisé pour les styles (CSP) | Risque faible (aucun script inline autorisé) ; peut être retiré lors d'une refonte des styles. |
 | Dépendances front-end figées (Bootstrap 5.3.3, Chart.js 4.4.4) | Vérifier les avis de sécurité lors des mises à jour ; elles sont servies localement. |
 | Module pharmacie | Fonctions de traçabilité fournies, mais **la conformité réglementaire (Niger) n'est pas certifiée** : à valider par un pharmacien responsable et l'autorité compétente avant usage en production. |
-| Paiements carte / mobile money | Enregistrés avec leur référence, sans intégration aux opérateurs : rapprochement manuel avec les relevés. |
+| Paiements carte / mobile money | Enregistrés avec l'opérateur et la référence, sans intégration aux opérateurs : rapprochement manuel avec les relevés. |
+| Imprimantes réseau (port 9100) | Le protocole RAW n'est ni chiffré ni authentifié : placer les imprimantes sur le réseau de la boutique, pas sur un Wi-Fi public. |
+| Traductions générées | Relues automatiquement (paramètres, cohérence) mais pas par des locuteurs natifs, en particulier le haoussa : faire relire avant usage auprès du public. |
 
 ### Bonnes pratiques d'exploitation
 - Un compte nominatif par personne, jamais de compte partagé.

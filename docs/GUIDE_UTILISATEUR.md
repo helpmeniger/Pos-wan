@@ -25,11 +25,21 @@ Après plusieurs erreurs, le compte est bloqué 15 minutes (un administrateur pe
 3. **Modifier une ligne** : la toucher, puis *Quantité*, *Prix*, *Remise* ou *Retirer*.
    Clavier : `+` / `-` (quantité), `Suppr` (retirer), flèches (sélection).
 4. **Client** : bouton *Client* (recherche par nom ou téléphone, création rapide).
-5. **Encaisser** : *Valider* (ou F9). Choisir le mode (espèces, carte, mobile money…),
-   ajouter un ou plusieurs paiements, les billets rapides proposent les montants usuels.
-   La monnaie à rendre s'affiche en grand. Saisir « Argent client » en bas permet aussi
-   de voir immédiatement la monnaie.
-6. Le ticket s'imprime automatiquement (case **TICKET**). Case **Facture A4** pour une facture.
+5. **Encaisser** :
+   - **Valider** (ou F9) : encaissement **espèces immédiat**, sans fenêtre. Si un montant
+     est saisi dans « Argent client » (en bas), il sert de montant remis et la **monnaie à
+     rendre** s'affiche dans la barre orange au-dessus du bouton ; sinon le montant exact
+     est encaissé. Si l'argent client ne couvre pas le total, la fenêtre d'encaissement s'ouvre.
+   - **Espèces** (ou F10, bouton en bas du ticket) : ouvre la **fenêtre d'encaissement**
+     complète : espèces avec billets rapides, carte, **mobile money** (choisir l'opérateur :
+     Airtel Money, Moov Money, Zamani Cash… et saisir la référence), virement, paiement
+     mixte. Valider la vente dans la fenêtre.
+   - La validation directe peut être désactivée (Paramètres → « Caisse : « Valider »
+     encaisse directement en espèces ») : Valider ouvre alors toujours la fenêtre.
+6. Le ticket s'imprime automatiquement (case **TICKET**) — sur l'imprimante de la caisse si
+   elle est déclarée dans Paramètres → Imprimantes, sinon par le navigateur. Case
+   **Facture A4** pour une facture. Un **QR code** en bas du ticket et de la facture permet
+   de vérifier le document (menu *Vérifier un QR code*, avec une douchette 2D).
 
 | Touche | Action |
 |---|---|
@@ -38,8 +48,8 @@ Après plusieurs erreurs, le compte est bloqué 15 minutes (un administrateur pe
 | F6 | Quantité de la ligne |
 | F7 | Remise |
 | F8 | Mettre en attente |
-| F9 | Encaisser / valider le paiement |
-| F10 | Encaissement espèces au montant exact |
+| F9 | Valider (encaissement espèces direct) / valider dans la fenêtre |
+| F10 | Fenêtre d'encaissement (espèces, mobile money, carte, mixte) |
 | F12 | Vider le panier |
 | Entrée | (après une vente) nouvelle vente |
 
@@ -52,6 +62,44 @@ Les touches sont modifiables dans Paramètres.
 - **Médicament sur ordonnance** (pharmacie) : renseigner prescripteur et patient dans la fenêtre d'encaissement ; un pharmacien doit être connecté ou autoriser.
 - **Coupure réseau / double clic** : la vente n'est jamais enregistrée deux fois ; réessayer sans crainte.
 - **Réimpression** : *Tickets* → icône imprimante ; la copie porte la mention DUPLICATA (permission requise).
+
+## Devis et bons de livraison
+- **Devis** (menu Gestion des ventes → Devis) : *Nouveau devis*, choisir une fiche client ou
+  saisir le nom, ajouter les articles (recherche ou douchette), quantités, remises, date de
+  validité. Le devis n'affecte ni le stock ni la caisse. Imprimer (modèle A4 choisi dans les
+  paramètres, avec QR code), marquer *envoyé*, *accepté* ou *refusé*, *Dupliquer*.
+- **Convertir en vente** : saisir le ou les paiements ; la vente reprend les prix du devis,
+  déduit le stock et passe dans la caisse ouverte. Le devis devient « Facturé ».
+- **Bon de livraison** : fiche d'une vente → *Bon de livraison* (sans les prix ; bouton
+  « Avec les prix » dans la barre d'impression). Colonne « Livré / contrôle » et signatures.
+
+## Articles : code-barres
+- Article sans code-barres : dans la fiche (création ou modification), bouton **Générer**
+  à côté du champ Code-barres (code interne EAN-13 commençant par 21), puis imprimer
+  l'étiquette. Sur la fiche d'un article : bouton **Créer un code-barres**.
+- Articles → **Codes-barres manquants** : crée un code pour tous les articles actifs qui n'en
+  ont pas et ouvre la page d'étiquettes.
+
+## Achats : prix qui change
+À la réception (commande ou réception directe), pour chaque ligne :
+- **Prix moyen** (par défaut) : coût = (ancien stock × ancien coût + quantité reçue × nouveau
+  coût) ÷ stock total ;
+- **Nouveau prix** : tout le stock, ancien compris, est valorisé au nouveau coût ;
+- **Ancien prix** : le coût actuel ne change pas.
+Le menu en haut du tableau applique le même choix à toutes les lignes. La colonne
+**Nouveau prix de vente** (droit « Modifier les prix de vente ») met à jour le prix en caisse ;
+le changement est historisé.
+
+## Paramètres utiles (v1.2)
+- **Langue** : langue par défaut du logiciel ; chacun peut choisir la sienne dans *Mon
+  compte* ou sur l'écran de connexion (français, anglais, arabe, haoussa, espagnol,
+  portugais, turc). La traduction haoussa est à faire relire par un locuteur.
+- **Devise** : FCFA par défaut ; choisir une autre devise ou en saisir une (symbole,
+  position, décimales). Les montants déjà enregistrés ne sont pas convertis.
+- **Mobile money** : liste des opérateurs proposés à l'encaissement.
+- **Modèles** : ticket (Classique, Compact, Moderne) et facture / devis (Classique, Moderne,
+  Épuré), lien *aperçu* ; QR code activable.
+- **Imprimantes** : voir INSTALLATION_WAMPSERVER.md § 7.
 
 ## Restaurant (si le module est activé)
 
@@ -79,6 +127,15 @@ et au rouge après 20 min. Les tickets rouges sont des **annulations**.
 
 **Gestion** — *Salles & tables*, *Fiches techniques* (ingrédients par portion : le stock
 d'ingrédients baisse à chaque vente), *Rapport restaurant*.
+
+### Alimentation + restaurant dans le même établissement
+- Par défaut un article est vendu « en boutique et au restaurant ». Pour qu'un plat
+  n'apparaisse **qu'au restaurant**, choisir « Restaurant uniquement » dans sa fiche (champ
+  *Vendu sur*) ou sur sa catégorie ; pour que les articles d'épicerie n'encombrent pas la
+  prise de commande, mettre leurs catégories en « Boutique (caisse) uniquement ».
+- Les commandes envoyées s'affichent immédiatement sur l'écran cuisine ; le bouton
+  **Bon cuisine** de la commande (ou l'icône imprimante d'un ticket sur l'écran cuisine)
+  imprime le bon au besoin.
 
 ## Fin de journée
 *Ma caisse* → compter les billets et pièces par coupure → *Clôturer*. L'état de caisse

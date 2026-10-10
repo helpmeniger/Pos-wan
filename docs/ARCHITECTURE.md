@@ -136,6 +136,30 @@ les vues/services concernés.
   annulation « déjà préparé »), pas à l'envoi en cuisine.
 - Articles `sellable = 0` : ingrédients, invisibles en caisse, refusés à la vente.
 
+## 6 bis. Version 1.2 : impression, langues, documents
+
+- **Impression** : `PrintService` choisit les imprimantes actives (`printers`) d'un usage
+  (`receipt`, `kitchen:<poste>`, `bill`) et d'une caisse, construit le document avec
+  `EscPos` (page de codes PC850, QR natif `GS ( k`, coupe, tiroir) et l'envoie par
+  `fsockopen` (réseau, port 9100) ou `fopen` sur un partage Windows. Les erreurs sont
+  renvoyées et journalisées, jamais propagées à la vente.
+- **Documents** : `Documents` prépare des tableaux neutres (ticket, A4) affichés par les
+  gabarits `app/Views/documents/ticket_{1,2,3}` et `a4_{1,2,3}` ; `DocumentRef` produit et
+  vérifie le contenu signé des QR codes (`POSWAN|type|numéro|id|date|montant|signature`),
+  dessinés dans le navigateur par `vendor/qrcode` (qrcode-generator, MIT).
+- **Langues** : `App\Core\Lang` ; dictionnaires `lang/<code>.php` (clé = texte français).
+  `t()` dans le code, `Lang::html()` traduit à l'affichage les nœuds texte et attributs
+  identiques à une entrée, `__()` côté JavaScript. Arabe : `dir="rtl"`, Bootstrap RTL et
+  montants isolés (U+2066/U+2069).
+- **Devise** : paramètres `currency_*`, `money()` / `PWMoney` (aucune conversion).
+- **Devis** : `QuoteService` (lignes contrôlées, statuts, conversion par `SaleService::create`
+  avec `trusted_prices`, idempotente). Table `quotes`, `quote_items`, séquence `DV`.
+- **Canal de vente** : `products.sales_channel` / `categories.sales_channel`
+  (`all`, `shop`, `restaurant`), hérité de la catégorie puis de la catégorie parente,
+  appliqué à l'affichage et contrôlé par `SaleService` et `RestaurantService`.
+- **Coût d'achat** : `StockService::receive(..., $costMode)` — `average` (CMP), `new`, `old` ;
+  mémorisé dans `reception_items.cost_mode`.
+
 ## 7. Rôles par défaut
 
 | Rôle | Périmètre |
@@ -143,7 +167,7 @@ les vues/services concernés.
 | Administrateur général | Tout |
 | Propriétaire / gérant | Tout sauf gestion des rôles et sauvegardes |
 | Responsable de magasin | Ventes, annulations, remises élevées, crédit, stock, achats, clients, caisse, rapports |
-| Caissier | Vente, remise sous le seuil, réimpression, clients, ouverture/clôture de sa caisse |
+| Caissier | Vente, remise sous le seuil, réimpression, devis, clients, ouverture/clôture de sa caisse |
 | Gestionnaire de stock | Articles, stock, ajustements, transferts, inventaires, lots |
 | Acheteur | Fournisseurs, commandes, réceptions |
 | Comptable | Rapports financiers, dépenses, paiements fournisseurs, règlements clients |
