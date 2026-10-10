@@ -212,7 +212,7 @@ $router->post('/backups/restore', [C\BackupController::class, 'restore'], 'backu
 // --- Restaurant (module activé par le type d'activité « restaurant ») ---
 $router->get('/restaurant', [C\RestaurantController::class, 'floor'], 'restaurant.order');
 $router->get('/restaurant/floor', [C\RestaurantController::class, 'floorJson'], 'restaurant.order');
-$router->get('/restaurant/products', [C\PosController::class, 'products'], 'restaurant.order');
+$router->get('/restaurant/products', [C\PosController::class, 'restaurantProducts'], 'restaurant.order');
 $router->get('/restaurant/customers', [C\PosController::class, 'customers'], 'restaurant.order');
 $router->get('/restaurant/orders', [C\RestaurantController::class, 'orders'], 'restaurant.order');
 $router->post('/restaurant/orders', [C\RestaurantController::class, 'open'], 'restaurant.order');

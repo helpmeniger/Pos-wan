@@ -17,7 +17,7 @@ final class PosController extends Controller
         $u = $this->user();
         $register = $u['register_id'] ? DB::one('SELECT r.*, s.name AS store_name, w.name AS warehouse_name FROM cash_registers r JOIN stores s ON s.id = r.store_id JOIN warehouses w ON w.id = r.warehouse_id WHERE r.id = ?', [$u['register_id']]) : null;
         $session = $register ? CashService::openSessionForRegister((int) $register['id']) : null;
-        $categories = DB::all('SELECT id, name, color, icon, image FROM categories WHERE active = 1 AND parent_id IS NULL ORDER BY sort_order, name');
+        $categories = DB::all("SELECT id, name, color, icon, image FROM categories WHERE active = 1 AND parent_id IS NULL AND sales_channel IN ('all','shop') ORDER BY sort_order, name");
         $shortcuts = json_decode((string) setting('pos_shortcuts', ''), true);
         $config = [
             'csrf' => csrf_token(),
@@ -78,18 +78,26 @@ final class PosController extends Controller
         ];
     }
 
-    private function baseQuery(): string
+    /** @param string $channel 'shop' (caisse) ou 'restaurant' (prise de commande) */
+    private function baseQuery(string $channel = 'shop'): string
     {
         $wh = $this->defaultWarehouseId();
+        $channel = $channel === 'restaurant' ? 'restaurant' : 'shop';
         return "SELECT p.*, u.short_name AS unit_short, u.allow_decimal, c.color AS cat_color, COALESCE(sl.quantity,0) AS stock
-                FROM products p LEFT JOIN units u ON u.id = p.unit_id LEFT JOIN categories c ON c.id = p.category_id
+                FROM products p LEFT JOIN units u ON u.id = p.unit_id LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN categories pc ON pc.id = c.parent_id
                 LEFT JOIN stock_levels sl ON sl.product_id = p.id AND sl.warehouse_id = " . (int) $wh . "
-                WHERE p.status = 'active' AND p.sellable = 1";
+                WHERE p.status = 'active' AND p.sellable = 1 AND " . \App\Services\ProductService::CHANNEL_SQL . " IN ('all', '$channel')";
     }
 
-    public function products(): void
+    /** Articles proposés à la prise de commande restaurant (canal « restaurant »). */
+    public function restaurantProducts(): void
     {
-        $sql = $this->baseQuery();
+        $this->products('restaurant');
+    }
+
+    public function products(string $channel = 'shop'): void
+    {
+        $sql = $this->baseQuery($channel);
         $params = [];
         $cat = (int) Request::query('category', 0);
         $q = trim((string) Request::query('q', ''));

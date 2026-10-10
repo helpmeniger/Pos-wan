@@ -31,6 +31,7 @@ final class CategoryController extends Controller
         }
         $d = $v->data;
         $d['sort_order'] ??= 0;
+        $d['sales_channel'] = isset(\App\Services\ProductService::CHANNELS[$_POST['sales_channel'] ?? '']) ? $_POST['sales_channel'] : 'all';
         if ($d['parent_id'] && ($d['parent_id'] === $id || DB::value('SELECT parent_id FROM categories WHERE id = ?', [$d['parent_id']]))) {
             $this->fail('Catégorie parente invalide (deux niveaux maximum).', '/categories');
         }

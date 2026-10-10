@@ -91,6 +91,9 @@ final class RestaurantService
             if (!$p) {
                 throw new BusinessException('Article introuvable ou non vendable.');
             }
+            if (ProductService::channelOf($productId) === 'shop') {
+                throw new BusinessException('« ' . $p['name'] . ' » est réservé à la caisse boutique.');
+            }
             if ((int) $p['sold_by_weight'] !== 1 && (int) $p['allow_decimal'] !== 1 && abs($qty - round($qty)) > 0.0001) {
                 throw new BusinessException('Quantité entière obligatoire pour « ' . $p['name'] . ' ».');
             }

@@ -81,6 +81,20 @@ final class ProductService
         'is_controlled' => 'bool',
     ];
 
+    /** Canal de vente : caisse boutique, restaurant uniquement, ou les deux. */
+    public const CHANNELS = ['all' => 'Boutique et restaurant', 'shop' => 'Boutique (caisse) uniquement', 'restaurant' => 'Restaurant uniquement'];
+
+    /**
+     * Canal effectif d'un article (requête avec alias p, c = catégorie, pc = catégorie parente) :
+     * celui de l'article, sinon celui de sa catégorie, sinon celui de la catégorie parente.
+     */
+    public const CHANNEL_SQL = "IF(p.sales_channel <> 'all', p.sales_channel, COALESCE(NULLIF(c.sales_channel, 'all'), NULLIF(pc.sales_channel, 'all'), 'all'))";
+
+    public static function channelOf(int $productId): string
+    {
+        return (string) DB::value('SELECT ' . self::CHANNEL_SQL . ' FROM products p LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN categories pc ON pc.id = c.parent_id WHERE p.id = ?', [$productId]);
+    }
+
     public const LABELS = [
         'name' => 'Nom', 'reference' => 'Référence', 'barcode' => 'Code-barres', 'sale_price' => 'Prix de vente', 'cost_price' => 'Prix d\'achat',
         'wholesale_price' => 'Prix de gros', 'promo_price' => 'Prix promotionnel', 'min_stock' => 'Seuil d\'alerte', 'tax_rate' => 'Taux de taxe',
@@ -99,6 +113,9 @@ final class ProductService
             throw new BusinessException($v->firstError());
         }
         $d = $v->data;
+        if (array_key_exists('sales_channel', $input)) {
+            $d['sales_channel'] = isset(self::CHANNELS[$input['sales_channel']]) ? $input['sales_channel'] : 'all';
+        }
         $d['reference'] = $d['reference'] ?: ($id ? DB::value('SELECT reference FROM products WHERE id = ?', [$id]) : Barcode::newReference());
         if ($d['barcode'] !== null && $d['barcode'] !== '') {
             $dup = DB::one('SELECT id, name FROM products WHERE barcode = ? AND id <> ?', [$d['barcode'], $id ?? 0]);

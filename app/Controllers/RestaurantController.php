@@ -111,7 +111,7 @@ final class RestaurantController extends Controller
         $u = $this->user();
         view('restaurant/order', [
             'o' => $o, 'u' => $u,
-            'categories' => DB::all('SELECT id, name, color, icon, image FROM categories WHERE active = 1 AND parent_id IS NULL ORDER BY sort_order, name'),
+            'categories' => DB::all("SELECT id, name, color, icon, image FROM categories WHERE active = 1 AND parent_id IS NULL AND sales_channel IN ('all','restaurant') ORDER BY sort_order, name"),
             'tables' => DB::all("SELECT t.id, t.name, a.name AS area, (SELECT o.id FROM restaurant_orders o WHERE o.table_id = t.id AND o.status IN ('open','billed') LIMIT 1) AS order_id FROM restaurant_tables t JOIN restaurant_areas a ON a.id = t.area_id WHERE t.active = 1 ORDER BY a.sort_order, t.sort_order, t.name"),
             'config' => [
                 'csrf' => csrf_token(), 'orderId' => (int) $o['id'],
