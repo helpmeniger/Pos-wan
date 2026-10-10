@@ -53,9 +53,11 @@ final class SaleService
     /**
      * @param array $data {client_uuid, items[], payments[], customer_id?, discount_type?, discount_value?,
      *                     wholesale?, supervisor?{username,secret}, prescription?{...}, note?}
+     * @param array $options Options internes (jamais issues du navigateur) :
+     *                       trusted_prices (prix fixés par une commande restaurant), restaurant_order_id
      * @return array{sale_id:int, number:string, duplicate:bool, change:float, total:float}
      */
-    public static function create(array $data): array
+    public static function create(array $data, array $options = []): array
     {
         $user = Auth::user();
         if (!$user) {
@@ -125,6 +127,9 @@ final class SaleService
             if (!$p) {
                 throw new BusinessException('Un article du panier est introuvable ou archivé.');
             }
+            if ((int) ($p['sellable'] ?? 1) === 0) {
+                throw new BusinessException(sprintf('« %s » est un ingrédient : il ne peut pas être vendu.', $p['name']));
+            }
             $allowDecimal = (int) $p['sold_by_weight'] === 1 || (bool) DB::value('SELECT allow_decimal FROM units WHERE id = ?', [$p['unit_id']]);
             if (!$allowDecimal && abs($q - round($q)) > 0.0001) {
                 throw new BusinessException(sprintf('« %s » ne peut être vendu qu\'en quantité entière.', $p['name']));
@@ -144,7 +149,9 @@ final class SaleService
                 if ($price < 0) {
                     throw new BusinessException('Prix négatif interdit.');
                 }
-                $authorize('pos.price_override', 'Modification du prix de « ' . $p['name'] . ' »');
+                if (empty($options['trusted_prices'])) {
+                    $authorize('pos.price_override', 'Modification du prix de « ' . $p['name'] . ' »');
+                }
             }
             $gross = round($price * $q, 2);
             $disc = round(max(0.0, (float) ($raw['discount'] ?? 0)), 2);
@@ -259,7 +266,7 @@ final class SaleService
         }
 
         // ------- Écriture transactionnelle -------
-        $result = DB::transaction(function () use ($uuid, $user, $storeId, $warehouseId, $register, $session, $customer, $wholesale, $subtotal, $discountTotal, $taxTotal, $total, $paid, $tendered, $change, $credit, $supervisorId, $lines, $payments, $prescription, $data) {
+        $result = DB::transaction(function () use ($uuid, $user, $storeId, $warehouseId, $register, $session, $customer, $wholesale, $subtotal, $discountTotal, $taxTotal, $total, $paid, $tendered, $change, $credit, $supervisorId, $lines, $payments, $prescription, $data, $options) {
             // Re-vérification sous verrou (protection contre deux soumissions simultanées)
             $dup = DB::one('SELECT id, number, change_due, total FROM sales WHERE client_uuid = ? FOR UPDATE', [$uuid]);
             if ($dup) {
@@ -275,7 +282,8 @@ final class SaleService
             $saleId = DB::insert('sales', [
                 'number' => $number, 'client_uuid' => $uuid, 'store_id' => $storeId, 'warehouse_id' => $warehouseId,
                 'register_id' => (int) $register['id'], 'cash_session_id' => $session['id'] ?? null,
-                'customer_id' => $customer['id'] ?? null, 'user_id' => (int) $user['id'], 'is_wholesale' => $wholesale ? 1 : 0,
+                'customer_id' => $customer['id'] ?? null, 'restaurant_order_id' => $options['restaurant_order_id'] ?? null,
+                'user_id' => (int) $user['id'], 'is_wholesale' => $wholesale ? 1 : 0,
                 'subtotal' => $subtotal, 'discount_total' => $discountTotal, 'tax_total' => $taxTotal, 'total' => $total,
                 'paid_total' => $paid, 'tendered' => $tendered, 'change_due' => $change, 'credit_amount' => $credit,
                 'authorized_by' => $supervisorId, 'note' => mb_substr(trim((string) ($data['note'] ?? '')), 0, 255) ?: null,
@@ -292,7 +300,21 @@ final class SaleService
                     'unit_cost' => (float) $p['cost_price'],
                 ]);
                 $lineCost = 0.0;
-                if ((int) $p['track_stock'] === 1) {
+                $recipe = DB::all('SELECT ingredient_id, quantity FROM product_recipes WHERE product_id = ?', [$p['id']]);
+                if ($recipe) {
+                    // Fiche technique : ce sont les ingrédients qui sortent du stock
+                    foreach ($recipe as $rc) {
+                        $need = round((float) $rc['quantity'] * $l['base_qty'], 3);
+                        if ($need <= 0) {
+                            continue;
+                        }
+                        foreach (StockService::issue((int) $rc['ingredient_id'], $warehouseId, $need, 'sale', 'sale', $saleId, $number . ' (' . $p['name'] . ')') as $a) {
+                            $lineCost += $a['qty'] * $a['unit_cost'];
+                            DB::insert('sale_item_components', ['sale_item_id' => $itemId, 'ingredient_id' => (int) $rc['ingredient_id'], 'lot_id' => $a['lot_id'], 'quantity' => $a['qty'], 'unit_cost' => $a['unit_cost']]);
+                        }
+                    }
+                    DB::run('UPDATE sale_items SET unit_cost = ? WHERE id = ?', [$l['base_qty'] > 0 ? round($lineCost / $l['base_qty'], 2) : 0, $itemId]);
+                } elseif ((int) $p['track_stock'] === 1) {
                     $alloc = StockService::issue((int) $p['id'], $warehouseId, $l['base_qty'], 'sale', 'sale', $saleId, $number);
                     foreach ($alloc as $a) {
                         $lineCost += $a['qty'] * $a['unit_cost'];
@@ -376,7 +398,11 @@ final class SaleService
             }
             // Stock : réintégration dans les lots d'origine
             foreach (DB::all('SELECT si.*, p.track_stock FROM sale_items si JOIN products p ON p.id = si.product_id WHERE si.sale_id = ?', [$saleId]) as $it) {
-                if ((int) $it['track_stock'] !== 1) {
+                $components = DB::all('SELECT * FROM sale_item_components WHERE sale_item_id = ?', [$it['id']]);
+                foreach ($components as $c) {
+                    StockService::move((int) $c['ingredient_id'], (int) $sale['warehouse_id'], (float) $c['quantity'], 'sale_cancel', 'sale', $saleId, 'Annulation ' . $sale['number'], (float) $c['unit_cost'], $c['lot_id'] ? (int) $c['lot_id'] : null);
+                }
+                if ($components || (int) $it['track_stock'] !== 1) {
                     continue;
                 }
                 $lots = DB::all('SELECT lot_id, quantity FROM sale_item_lots WHERE sale_item_id = ?', [$it['id']]);
@@ -455,7 +481,14 @@ final class SaleService
                 DB::insert('sale_return_items', ['return_id' => $retId, 'sale_item_id' => (int) $it['id'], 'product_id' => (int) $it['product_id'], 'quantity' => $q, 'amount' => $amount]);
                 DB::run('UPDATE sale_items SET returned_qty = returned_qty + ? WHERE id = ?', [$q, $it['id']]);
                 $trackStock = (int) DB::value('SELECT track_stock FROM products WHERE id = ?', [$it['product_id']]);
-                if ($restock && $trackStock === 1) {
+                $components = DB::all('SELECT * FROM sale_item_components WHERE sale_item_id = ?', [$it['id']]);
+                if ($restock && $components) {
+                    // Plat non consommé et réutilisable : ingrédients réintégrés au prorata
+                    $ratio = $q / (float) $it['quantity'];
+                    foreach ($components as $c) {
+                        StockService::move((int) $c['ingredient_id'], (int) $sale['warehouse_id'], round((float) $c['quantity'] * $ratio, 4), 'return', 'return', $retId, $number, (float) $c['unit_cost'], $c['lot_id'] ? (int) $c['lot_id'] : null);
+                    }
+                } elseif ($restock && $trackStock === 1) {
                     $baseQ = round($q * (float) $it['base_quantity'] / (float) $it['quantity'], 3);
                     $lots = DB::all('SELECT lot_id, quantity FROM sale_item_lots WHERE sale_item_id = ? ORDER BY id', [$it['id']]);
                     if ($lots) {

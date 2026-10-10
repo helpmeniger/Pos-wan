@@ -120,3 +120,21 @@ input, textarea { user-select: text; }
   .bottom-bar { flex-wrap: wrap; }
   .money-box { width: 45%; }
 }
+
+/* ---------- Restaurant : prise de commande ---------- */
+.btn-send { width: 100%; margin: .3rem 0 0; border: 0; background: linear-gradient(135deg, #f39c12, #d35400); color: #fff; font-size: 1.45rem; font-weight: 700; border-radius: .3rem; padding: .45rem; display: flex; align-items: center; justify-content: center; gap: .6rem; }
+.btn-send:disabled { opacity: .45; }
+a.btn-validate { font-size: 1.7rem; }
+a.btn-validate:hover { color: #fff; }
+.cart-line .st { white-space: nowrap; display: inline-block; font-size: .66rem; font-weight: 700; padding: 0 .35rem; border-radius: .6rem; margin-left: .3rem; vertical-align: 1px; }
+.st-new { background: #ffd27a; color: #14213d; }
+.st-sent { background: #5dade2; color: #fff; }
+.st-preparing { background: #e67e22; color: #fff; }
+.st-ready { background: #8e44ad; color: #fff; animation: pulse 1.2s infinite; }
+.st-served { background: #27ae60; color: #fff; }
+.st-cancelled { background: #7f8c8d; color: #fff; }
+.st-paid { background: #fff; color: #1e8449; }
+.cart-line.cancelled { opacity: .5; text-decoration: line-through; }
+.course-sep { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: #ffd27a; padding: .35rem .2rem .1rem; border-bottom: 1px solid #333; }
+#courseSel .btn.active { background: #14213d; color: #fff; }
+@keyframes pulse { 50% { opacity: .55; } }

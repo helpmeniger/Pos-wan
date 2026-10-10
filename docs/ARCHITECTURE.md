@@ -112,10 +112,29 @@ Le type d'activité active des **fonctionnalités** (paramètres `feature_*`) sa
 | `promotions` | Prix promotionnel daté |
 | `pharmacy` | DCI, dosage, forme, ordonnance obligatoire, registre des délivrances, rappels de lots |
 | `loyalty` | Cumul de points fidélité |
+| `restaurant` | Plan de salle, commandes, écran cuisine, addition séparée |
+| `recipes` | Fiches techniques : déstockage des ingrédients à la vente |
 
 Ajouter un type de commerce : une entrée dans `Catalog::BUSINESS_TYPES`. Ajouter une
 fonctionnalité : une entrée dans `Catalog::FEATURES`, puis des tests `feature('code')` dans
 les vues/services concernés.
+
+### Restaurant (fonctionnalités `restaurant` et `recipes`)
+- Tables : `restaurant_areas`, `restaurant_tables` ; commandes : `restaurant_orders` (une seule
+  commande en cours par table, garanti par index unique), `restaurant_order_items`
+  (cycle new → sent → preparing → ready → served, ou cancelled), `kitchen_tickets`
+  (un bon par poste et par envoi, ou bon d'annulation), `kitchen_ticket_cancellations`.
+- Le poste de préparation vient de la catégorie (`categories.kitchen_station`), hérité de la
+  catégorie parente ; sans poste, l'article ne génère pas de bon (servi directement).
+- Les prix sont figés à la saisie de la commande. Le paiement crée une vente via
+  `SaleService::create(..., ['trusted_prices' => true, 'restaurant_order_id' => …])` :
+  caisse, stock, crédit et tickets restent gérés par le moteur commun. Une commande peut
+  être réglée en plusieurs ventes (`restaurant_order_items.paid_qty`).
+- Fiche technique (`product_recipes`) : à la vente, ce sont les ingrédients qui sortent
+  du stock (FEFO si lots) ; le détail est mémorisé dans `sale_item_components` pour les
+  annulations et retours. Le déstockage a lieu au **paiement** (et en perte lors d'une
+  annulation « déjà préparé »), pas à l'envoi en cuisine.
+- Articles `sellable = 0` : ingrédients, invisibles en caisse, refusés à la vente.
 
 ## 7. Rôles par défaut
 
@@ -129,6 +148,8 @@ les vues/services concernés.
 | Acheteur | Fournisseurs, commandes, réceptions |
 | Comptable | Rapports financiers, dépenses, paiements fournisseurs, règlements clients |
 | Pharmacien responsable | Vente et délivrance sur ordonnance, lots, rappels, inventaires |
+| Serveur | Plan de salle, prise de commande, envoi en cuisine, transfert de table (pas d'encaissement) |
+| Cuisinier / barman | Écran cuisine / bar |
 | Auditeur | Lecture seule (rapports, ventes, stock, journal d'audit) |
 
 Les permissions de chaque rôle sont modifiables (Rôles & permissions) ; des rôles

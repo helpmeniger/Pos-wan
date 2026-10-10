@@ -62,9 +62,28 @@ final class InstallService
     /** Synchronise permissions et rôles système (idempotent). */
     public static function seedPermissions(): void
     {
+        $existing = array_column(DB::all('SELECT code FROM permissions'), 'code');
+        $new = [];
         foreach (Catalog::PERMISSIONS as $module => $perms) {
             foreach ($perms as $code => $label) {
+                if (!in_array($code, $existing, true)) {
+                    $new[] = $code;
+                }
                 DB::run('INSERT INTO permissions (code, module, label) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE module = VALUES(module), label = VALUES(label)', [$code, $module, $label]);
+            }
+        }
+        // Mise à jour : les NOUVELLES permissions sont accordées aux rôles système existants
+        // qui les prévoient (les choix faits par l'administrateur ne sont pas touchés).
+        if ($existing && $new) {
+            foreach (Catalog::ROLES as $code => [, , $perms]) {
+                $roleId = DB::value('SELECT id FROM roles WHERE code = ? AND is_system = 1', [$code]);
+                if (!$roleId) {
+                    continue;
+                }
+                $grant = $perms === '*' ? $new : (is_string($perms) ? array_diff($new, explode(',', substr($perms, 8))) : array_intersect($new, $perms));
+                foreach ($grant as $p) {
+                    DB::run('INSERT IGNORE INTO role_permissions (role_id, permission_id) SELECT ?, id FROM permissions WHERE code = ?', [$roleId, $p]);
+                }
             }
         }
         $allCodes = array_merge(...array_values(array_map('array_keys', Catalog::PERMISSIONS)));

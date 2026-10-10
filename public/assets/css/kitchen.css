@@ -1,0 +1,35 @@
+/* POS Wan — écran cuisine / bar (KDS) */
+html, body { height: 100%; }
+body.kds { background: #0b0f14; color: #e9eef5; font-size: 16px; margin: 0; }
+.kds-head { display: flex; align-items: center; gap: 1.2rem; padding: .5rem 1rem; background: #141b24; border-bottom: 2px solid #f39c12; position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
+.kds-title { font-size: 1.5rem; font-weight: 800; letter-spacing: .05em; }
+.kds-stations a { color: #9fb0c8; text-decoration: none; margin-right: .8rem; font-weight: 600; }
+.kds-stations a.on { color: #fff; border-bottom: 2px solid #f39c12; }
+.kds-counts { color: #9fb0c8; }
+.kds-counts span { font-weight: 800; font-size: 1.15rem; }
+.c-pending { color: #5dade2; } .c-prep { color: #f39c12; } .c-ready { color: #2ecc71; }
+.kds-clock { font-size: 1.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kds-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: .8rem; padding: .8rem; align-items: start; }
+.kds-empty { grid-column: 1 / -1; text-align: center; color: #6c7a89; padding: 4rem; font-size: 1.4rem; }
+.kt { background: #1a2330; border-radius: .7rem; overflow: hidden; border-top: 6px solid #5dade2; display: flex; flex-direction: column; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+.kt.preparing { border-top-color: #f39c12; }
+.kt.ready { border-top-color: #2ecc71; opacity: .85; }
+.kt.served { border-top-color: #555; opacity: .45; }
+.kt.cancel { border-top-color: #e74c3c; background: #3b1414; }
+.kt.late .kt-time { background: #e74c3c; color: #fff; animation: blink 1s infinite; }
+.kt.warn .kt-time { background: #f39c12; color: #000; }
+@keyframes blink { 50% { opacity: .5; } }
+.kt-head { display: flex; justify-content: space-between; align-items: flex-start; padding: .55rem .7rem; background: rgba(255,255,255,.04); }
+.kt-table { font-size: 1.6rem; font-weight: 800; line-height: 1; }
+.kt-sub { font-size: .78rem; color: #9fb0c8; }
+.kt-time { font-weight: 800; font-size: 1.05rem; padding: .1rem .5rem; border-radius: .4rem; background: #2c3a4d; font-variant-numeric: tabular-nums; }
+.kt-items { list-style: none; margin: 0; padding: .4rem .7rem; flex: 1; }
+.kt-items li { padding: .3rem 0; border-bottom: 1px dashed #2c3a4d; font-size: 1.15rem; font-weight: 600; }
+.kt-items li:last-child { border-bottom: 0; }
+.kt-items .q { display: inline-block; min-width: 2.2rem; color: #ffd27a; font-weight: 800; }
+.kt-items .n { display: block; color: #f5b7b1; font-size: .9rem; font-weight: 700; padding-left: 2.2rem; }
+.kt-items .course { font-size: .7rem; text-transform: uppercase; color: #9fb0c8; letter-spacing: .08em; border: 0; padding-top: .5rem; }
+.kt-items li.x { text-decoration: line-through; opacity: .5; }
+.kt-actions { display: flex; }
+.kt-actions button { flex: 1; border: 0; padding: .8rem; font-size: 1.1rem; font-weight: 800; color: #fff; }
+.b-start { background: #e67e22; } .b-ready { background: #27ae60; } .b-serve { background: #34495e; } .b-back { background: #2c3a4d; flex: 0 0 56px !important; }

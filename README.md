@@ -1,7 +1,7 @@
 # POS Wan
 
 **Logiciel de caisse et de gestion commerciale** pour les commerces du Niger (alimentations,
-supermarchés, boutiques, pharmacies, quincailleries, dépôts de boissons…), en français,
+supermarchés, boutiques, pharmacies, restaurants et maquis, quincailleries, dépôts de boissons…), en français,
 en FCFA, fonctionnant en local sur **WampServer** — sans Internet.
 
 ![Caisse](docs/captures/caisse.png)
@@ -41,11 +41,17 @@ créances, dettes, espèces en caisse, valeur du stock, meilleures ventes, ruptu
 péremptions, graphiques ; rapports par période, boutique, catégorie, vendeur, caisse,
 mode de paiement, heure ; bénéfice estimé ; stock dormant ; export CSV et impression PDF.
 
+**Restaurant** — plan de salle (tables, salles, terrasse), commandes sur place / à emporter /
+livraison, envoi en cuisine avec bons par poste (cuisine, grill, bar), **écran cuisine**
+en temps réel, annulations tracées avec perte, transfert et fusion de tables, addition et
+**addition séparée**, fiches techniques (déstockage des ingrédients, coût matière),
+rapport (couverts, serveurs, temps de préparation). Rôles Serveur et Cuisinier.
+
 **Pharmacie** — DCI, dosage, forme, présentation ; délivrance sur ordonnance réservée au
 pharmacien ; registre des délivrances ; lots, FEFO, rappels. *(Conformité réglementaire à
 faire valider par un professionnel : voir SECURITE.md.)*
 
-**Administration** — utilisateurs, 9 rôles prédéfinis et **46 permissions** modifiables,
+**Administration** — utilisateurs, 11 rôles prédéfinis et **51 permissions** modifiables,
 connexion par mot de passe, **PIN** ou badge RFID, journal d'audit, paramètres de
 l'entreprise (logo, NIF, RCCM, pieds de ticket/facture), multi-boutiques, sauvegarde et
 restauration vérifiées, assistant d'installation.
@@ -80,7 +86,7 @@ PHP 8.1+ (testé en 8.3), MySQL 8 / MariaDB 10.4+ (testé en 10.11), Apache 2.4 
 Bootstrap 5.3, Chart.js 4.4 — aucune dépendance à télécharger, aucun appel réseau externe.
 
 ```
-php tests/run.php     # 57 tests automatisés (base de test dédiée, voir INSTALLATION § 13)
+php tests/run.php     # 67 tests automatisés (base de test dédiée, voir INSTALLATION § 13)
 php bin/backup.php    # sauvegarde en ligne de commande (planifiable)
 php bin/migrate.php   # mise à jour du schéma sans perte de données
 ```
@@ -95,6 +101,10 @@ php bin/migrate.php   # mise à jour du schéma sans perte de données
 |---|---|
 | ![Tableau de bord](docs/captures/tableau-de-bord.png) | ![Articles](docs/captures/articles.png) |
 
-| Encaissement |
-|---|
-| ![Encaissement](docs/captures/encaissement.png) |
+| Encaissement | Restaurant : plan de salle |
+|---|---|
+| ![Encaissement](docs/captures/encaissement.png) | ![Plan de salle](docs/captures/restaurant-plan.png) |
+
+| Restaurant : prise de commande | Restaurant : écran cuisine |
+|---|---|
+| ![Commande](docs/captures/restaurant-commande.png) | ![Cuisine](docs/captures/restaurant-cuisine.png) |

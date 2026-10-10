@@ -17,6 +17,14 @@ final class Menu
                 ['Sessions de caisse', 'bi-clock-history', '/cash/sessions', 'cash.view_all', '#8e44ad'],
                 ['Clients & crédits', 'bi-people', '/customers', 'customers.view', '#f39c12'],
             ],
+            'Restaurant' => [
+                ['Plan de salle', 'bi-grid-3x3', '/restaurant', 'restaurant.order', '#e67e22', 'restaurant'],
+                ['Écran cuisine / bar', 'bi-fire', '/kitchen', 'restaurant.kitchen', '#c0392b', 'restaurant'],
+                ['Commandes restaurant', 'bi-card-checklist', '/restaurant/orders', 'restaurant.order', '#2e86c1', 'restaurant'],
+                ['Fiches techniques', 'bi-journal-text', '/restaurant/recipes', 'restaurant.manage', '#16a085', 'restaurant'],
+                ['Salles & tables', 'bi-house-gear', '/restaurant/setup', 'restaurant.manage', '#8e44ad', 'restaurant'],
+                ['Rapport restaurant', 'bi-bar-chart-steps', '/restaurant/report', 'reports.view', '#d35400', 'restaurant'],
+            ],
             'Gestion des articles' => [
                 ['Articles', 'bi-box-seam', '/products', 'products.view', '#e67e22'],
                 ['Catégories, marques, unités', 'bi-tags', '/categories', 'categories.manage', '#7f8c8d'],

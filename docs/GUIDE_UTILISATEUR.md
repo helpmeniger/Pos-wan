@@ -53,6 +53,33 @@ Les touches sont modifiables dans Paramètres.
 - **Coupure réseau / double clic** : la vente n'est jamais enregistrée deux fois ; réessayer sans crainte.
 - **Réimpression** : *Tickets* → icône imprimante ; la copie porte la mention DUPLICATA (permission requise).
 
+## Restaurant (si le module est activé)
+
+**Serveur**
+1. *Plan de salle* : les tables vertes sont libres, oranges occupées, bleues « addition
+   demandée » ; une cloche violette signale des plats prêts, un badge jaune des articles
+   non encore envoyés.
+2. Toucher une table libre → choisir le nombre de couverts → la commande s'ouvre.
+   *À emporter* / *Livraison* : saisir le nom et le téléphone du client.
+3. Toucher les plats (2–9 pour la quantité). *Note plat* : « sans piment », « bien cuit »…
+   Le service (boisson, entrée, plat, dessert) est automatique ou choisi en haut.
+4. **Envoyer en cuisine** : un bon part à chaque poste (cuisine, grill, bar).
+5. Quand la cuisine marque un plat « prêt », la table clignote : servir puis *Servi*.
+6. *Table* : transférer vers une table libre ou fusionner avec une table occupée.
+7. *Annuler* : un article non envoyé se retire librement ; un article envoyé exige un
+   motif et l'accord d'un responsable ; cocher « déjà préparé » le déclare en perte.
+8. *Addition* imprime la pré-note (montant par personne si plusieurs couverts).
+
+**Caissier / responsable** — *Encaisser* : choisir les articles payés (addition séparée
+par client) ou *÷ parts* pour diviser en parts égales ; la table se libère quand tout est payé.
+
+**Cuisine / bar** — *Écran cuisine* : *Commencer* puis *Prêt* ; *Servi — retirer* quand le
+plat est parti ; ↶ pour revenir en arrière. Le chronomètre passe à l'orange après 10 min
+et au rouge après 20 min. Les tickets rouges sont des **annulations**.
+
+**Gestion** — *Salles & tables*, *Fiches techniques* (ingrédients par portion : le stock
+d'ingrédients baisse à chaque vente), *Rapport restaurant*.
+
 ## Fin de journée
 *Ma caisse* → compter les billets et pièces par coupure → *Clôturer*. L'état de caisse
 (théorique, compté, écart) s'imprime. Tout écart doit être commenté.

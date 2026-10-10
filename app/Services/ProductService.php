@@ -12,6 +12,41 @@ use App\Core\Validator;
 /** Création / modification des fiches articles (contrôles d'unicité, historique des prix). */
 final class ProductService
 {
+    /**
+     * Fiche technique : remplace la recette d'un article.
+     * @param array<int, float> $lines [ingredient_id => quantité par unité vendue]
+     */
+    public static function saveRecipe(int $productId, array $lines): void
+    {
+        DB::transaction(function () use ($productId, $lines) {
+            DB::run('DELETE FROM product_recipes WHERE product_id = ?', [$productId]);
+            foreach ($lines as $ing => $q) {
+                $ing = (int) $ing;
+                $q = (float) $q;
+                if ($q <= 0) {
+                    continue;
+                }
+                if ($ing === $productId) {
+                    throw new BusinessException('Un article ne peut pas être son propre ingrédient.');
+                }
+                if (DB::value('SELECT 1 FROM product_recipes WHERE product_id = ? LIMIT 1', [$ing])) {
+                    throw new BusinessException('Un ingrédient ne peut pas avoir lui-même une fiche technique.');
+                }
+                if (!DB::value("SELECT 1 FROM products WHERE id = ? AND status = 'active'", [$ing])) {
+                    throw new BusinessException('Ingrédient introuvable.');
+                }
+                DB::insert('product_recipes', ['product_id' => $productId, 'ingredient_id' => $ing, 'quantity' => $q]);
+            }
+            Audit::log('product.recipe', 'product', $productId, ['lines' => count($lines)]);
+        });
+    }
+
+    /** Coût théorique d'une fiche technique (au CMP des ingrédients). */
+    public static function recipeCost(int $productId): float
+    {
+        return (float) DB::value('SELECT COALESCE(SUM(r.quantity * p.cost_price),0) FROM product_recipes r JOIN products p ON p.id = r.ingredient_id WHERE r.product_id = ?', [$productId]);
+    }
+
     public const RULES = [
         'name' => 'required|max:200',
         'reference' => 'nullable|max:50|regex:/^[A-Za-z0-9._\-\/]+$/',
@@ -34,6 +69,7 @@ final class ProductService
         'tax_rate' => 'nullable|numeric|min:0|max:100',
         'min_stock' => 'nullable|numeric|min:0|max:100000000',
         'track_stock' => 'bool',
+        'sellable' => 'bool',
         'track_lots' => 'bool',
         'sold_by_weight' => 'bool',
         'is_medicine' => 'bool',
@@ -56,6 +92,8 @@ final class ProductService
         foreach (['track_stock', 'track_lots', 'sold_by_weight', 'is_medicine', 'requires_prescription', 'is_controlled'] as $b) {
             $input[$b] = !empty($input[$b]) ? 1 : 0;
         }
+        // « vendable » coché par défaut (absent = formulaire sans la case, ex. import)
+        $input['sellable'] = !array_key_exists('sellable', $input) || !empty($input['sellable']) ? 1 : 0;
         $v = Validator::make($input, self::RULES, self::LABELS);
         if ($v->fails()) {
             throw new BusinessException($v->firstError());

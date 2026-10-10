@@ -24,7 +24,8 @@ final class CategoryController extends Controller
 
     private function data(?int $id): array
     {
-        $v = Validator::make($_POST, ['name' => 'required|max:120', 'parent_id' => 'nullable|int', 'color' => 'required|color', 'icon' => 'nullable|max:50|regex:/^bi-[a-z0-9-]+$/', 'sort_order' => 'nullable|int', 'active' => 'bool'], ['name' => 'Nom', 'color' => 'Couleur', 'icon' => 'Icône']);
+        $_POST['kitchen_station'] = mb_strtolower(trim((string) ($_POST['kitchen_station'] ?? '')));
+        $v = Validator::make($_POST, ['name' => 'required|max:120', 'parent_id' => 'nullable|int', 'color' => 'required|color', 'icon' => 'nullable|max:50|regex:/^bi-[a-z0-9-]+$/', 'sort_order' => 'nullable|int', 'active' => 'bool', 'kitchen_station' => 'nullable|max:30|regex:/^[a-z0-9_-]+$/'], ['name' => 'Nom', 'color' => 'Couleur', 'icon' => 'Icône']);
         if ($v->fails()) {
             $this->fail($v->firstError(), '/categories');
         }

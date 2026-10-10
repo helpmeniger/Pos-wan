@@ -2,6 +2,34 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [1.1.0] — 2026-10-10
+
+### Ajouté — module Restaurant
+- Nouveau type d'activité « Restaurant / maquis / café / fast-food » et fonctionnalités
+  `restaurant` (plan de salle, commandes, cuisine) et `recipes` (fiches techniques).
+- Plan de salle par salle (tables libres / occupées / addition demandée / plats prêts),
+  rafraîchi automatiquement ; commandes à emporter et en livraison.
+- Prise de commande tactile (même ergonomie que la caisse) : couverts, services
+  (boisson, entrée, plat, dessert), notes pour la cuisine, quantités rapides.
+- Envoi en cuisine : un bon par poste de préparation (cuisine, grill, bar…) défini sur
+  les catégories, impression automatique des bons, articles sans poste servis directement.
+- Écran cuisine / bar (KDS) : tickets en temps réel, chronomètre avec alertes de retard,
+  étapes « Commencer → Prêt → Servi », rappel d'un ticket, signal sonore.
+- Annulation d'un plat envoyé : permission ou autorisation d'un responsable, motif,
+  bon d'annulation en cuisine, déclaration de perte (déstockage des ingrédients).
+- Transfert de table, fusion de tables, addition (pré-note), paiement total ou
+  **addition séparée** (par article ou en parts égales), remise, crédit client.
+- Fiches techniques : les ventes déstockent les ingrédients (articles « non vendables »),
+  coût matière réel, réintégration en cas d'annulation ou de retour.
+- Rapport restaurant : CA, couverts, ticket moyen par couvert, serveurs, plats,
+  rotation des tables, temps de préparation, annulations.
+- Rôles « Serveur » et « Cuisinier / barman » ; 5 nouvelles permissions.
+- Migration `0002_restaurant` : les installations existantes sont mises à jour par
+  `php bin/migrate.php` (les nouvelles permissions sont accordées aux rôles système concernés).
+
+### Corrigé
+- Retour automatique à l'écran d'origine après l'impression d'un ticket (`next` contrôlé).
+
 ## [1.0.0] — 2026-10-10
 
 ### Ajouté

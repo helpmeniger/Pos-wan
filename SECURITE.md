@@ -28,7 +28,7 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
 | Re-saisie du mot de passe pour une restauration de sauvegarde | `BackupController::restore()` |
 
 ### Autorisations
-- Rôles et **permissions granulaires** (46 permissions) vérifiés **côté serveur** sur chaque route
+- Rôles et **permissions granulaires** (51 permissions) vérifiés **côté serveur** sur chaque route
   (`routes/web.php` → `Router::dispatch()` → `Auth::authorize()`), et à nouveau dans les services
   pour les décisions métier (remise, prix, crédit, ordonnance).
 - Cloisonnement des données : un vendeur sans `sales.view_all` ne voit que ses propres ventes
@@ -91,7 +91,7 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
 
 Exécutées réellement dans l'environnement de développement (PHP 8.3, MariaDB 10.11) :
 
-1. **`php tests/run.php` : 57 tests, 0 échec**, dont :
+1. **`php tests/run.php` : 67 tests, 0 échec**, dont :
    CSRF (formulaire, API JSON), connexion/échec/verrouillage/PIN, régénération de session,
    en-têtes HTTP, redirection des pages protégées, contrôle d'accès par rôle (403),
    accès aux ventes d'autrui (IDOR), injections SQL dans la recherche, les filtres et le tri,

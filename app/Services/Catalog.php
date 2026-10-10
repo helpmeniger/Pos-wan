@@ -62,6 +62,13 @@ final class Catalog
             'reports.financial' => 'Voir les rapports financiers (marges, bénéfices)',
             'reports.export' => 'Exporter les rapports',
         ],
+        'Restaurant' => [
+            'restaurant.order' => 'Prendre les commandes en salle (serveur)',
+            'restaurant.kitchen' => 'Utiliser l\'écran cuisine / bar',
+            'restaurant.cancel_item' => 'Annuler un plat déjà envoyé en cuisine',
+            'restaurant.transfer' => 'Transférer / fusionner des tables',
+            'restaurant.manage' => 'Gérer salles, tables et fiches techniques',
+        ],
         'Pharmacie' => [
             'pharmacy.dispense' => 'Délivrer les médicaments sur ordonnance',
             'pharmacy.manage' => 'Gérer lots, rappels et péremptions',
@@ -84,12 +91,15 @@ final class Catalog
             'sales.view', 'sales.view_all', 'returns.create', 'products.view', 'products.manage', 'products.cost_view', 'products.price_edit', 'products.import', 'categories.manage',
             'stock.view', 'stock.adjust', 'stock.transfer', 'stock.inventory', 'stock.inventory_validate', 'purchases.view', 'purchases.manage', 'suppliers.manage',
             'customers.view', 'customers.manage', 'customers.payments', 'cash.open_close', 'cash.view_all', 'cash.movements', 'expenses.manage', 'reports.view', 'reports.financial', 'reports.export',
+            'restaurant.order', 'restaurant.kitchen', 'restaurant.cancel_item', 'restaurant.transfer', 'restaurant.manage',
         ]],
-        'cashier' => ['Caissier', 'Ventes à la caisse', ['pos.sell', 'pos.discount', 'pos.reprint', 'sales.view', 'products.view', 'customers.view', 'customers.manage', 'customers.payments', 'cash.open_close']],
+        'cashier' => ['Caissier', 'Ventes à la caisse', ['pos.sell', 'pos.discount', 'pos.reprint', 'sales.view', 'products.view', 'customers.view', 'customers.manage', 'customers.payments', 'cash.open_close', 'restaurant.order', 'restaurant.transfer']],
         'stock_manager' => ['Gestionnaire de stock', 'Stocks, réceptions, inventaires', ['dashboard.view', 'products.view', 'products.manage', 'products.import', 'categories.manage', 'stock.view', 'stock.adjust', 'stock.transfer', 'stock.inventory', 'purchases.view', 'pharmacy.manage']],
         'buyer' => ['Acheteur', 'Commandes et fournisseurs', ['dashboard.view', 'products.view', 'products.cost_view', 'stock.view', 'purchases.view', 'purchases.manage', 'suppliers.manage']],
         'accountant' => ['Comptable', 'Finances et rapports', ['dashboard.view', 'sales.view', 'sales.view_all', 'products.view', 'products.cost_view', 'stock.view', 'purchases.view', 'suppliers.pay', 'customers.view', 'customers.payments', 'cash.view_all', 'expenses.manage', 'expenses.reverse', 'reports.view', 'reports.financial', 'reports.export']],
         'pharmacist' => ['Pharmacien responsable', 'Délivrance et traçabilité pharmaceutique', ['dashboard.view', 'pos.sell', 'pos.discount', 'pos.reprint', 'sales.view', 'sales.view_all', 'returns.create', 'products.view', 'products.manage', 'stock.view', 'stock.adjust', 'stock.inventory', 'purchases.view', 'purchases.manage', 'customers.view', 'customers.manage', 'cash.open_close', 'pharmacy.dispense', 'pharmacy.manage', 'reports.view']],
+        'waiter' => ['Serveur', 'Prise de commande en salle (sans encaissement)', ['restaurant.order', 'restaurant.transfer', 'products.view', 'customers.view']],
+        'cook' => ['Cuisinier / barman', 'Écran cuisine ou bar', ['restaurant.kitchen', 'products.view']],
         'auditor' => ['Auditeur (lecture seule)', 'Consultation sans modification', ['dashboard.view', 'sales.view', 'sales.view_all', 'products.view', 'products.cost_view', 'stock.view', 'purchases.view', 'customers.view', 'cash.view_all', 'reports.view', 'reports.financial', 'audit.view']],
     ];
 
@@ -104,6 +114,7 @@ final class Catalog
         'informatique' => ['Matériel informatique', ['variants', 'wholesale']],
         'papeterie' => ['Papeterie', ['packaging', 'wholesale']],
         'pieces' => ['Pièces détachées', ['variants', 'wholesale']],
+        'restaurant' => ['Restaurant / maquis / café / fast-food', ['restaurant', 'recipes', 'weight', 'packaging']],
     ];
 
     public const FEATURES = [
@@ -115,12 +126,14 @@ final class Catalog
         'promotions' => 'Prix promotionnels',
         'pharmacy' => 'Module pharmacie (DCI, ordonnances, rappels de lots)',
         'loyalty' => 'Programme de fidélité',
+        'restaurant' => 'Module restaurant (plan de salle, commandes, écran cuisine)',
+        'recipes' => 'Fiches techniques : déstockage automatique des ingrédients',
     ];
 
     public const STOCK_MOVEMENT_TYPES = [
         'initial' => 'Stock initial', 'sale' => 'Vente', 'sale_cancel' => 'Annulation vente', 'return' => 'Retour client',
         'reception' => 'Réception', 'adjustment' => 'Ajustement', 'loss' => 'Perte / casse', 'expired' => 'Périmé',
         'transfer_in' => 'Transfert entrant', 'transfer_out' => 'Transfert sortant', 'inventory' => 'Inventaire',
-        'supplier_return' => 'Retour fournisseur', 'recall' => 'Rappel de lot',
+        'supplier_return' => 'Retour fournisseur', 'recall' => 'Rappel de lot', 'kitchen_waste' => 'Perte cuisine (plat annulé)',
     ];
 }

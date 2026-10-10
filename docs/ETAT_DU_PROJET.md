@@ -1,4 +1,4 @@
-# État du projet — version 1.0.0
+# État du projet — version 1.1.0
 
 ## Terminé et vérifié
 
@@ -21,10 +21,12 @@
 | Pharmacie : champs DCI, ordonnance obligatoire, pharmacien, registre | ✅ | Tests |
 | Multi-boutiques / multi-entrepôts / multi-caisses | ✅ | Pages testées ; transfert testé |
 | Journal d'audit | ✅ | Pages testées |
+| **Restaurant** : plan de salle, commandes (sur place / emporter / livraison), bons par poste, écran cuisine, annulations avec perte, transfert/fusion, addition séparée, fiches techniques, rapport | ✅ | 10 tests + scénario complet Chromium (salle → cuisine → paiement) |
+| Migration d'une installation existante (0001 → 0002) | ✅ | Exécutée sur une base avec données |
 | Sauvegarde, vérification SHA-256, restauration, rotation, sauvegarde CLI planifiable | ✅ | Tests (aller-retour + altération) |
 | Protections Apache (.htaccess) en sous-dossier | ✅ | Testé sous Apache 2.4 + mod_php |
 
-**Résultat de la suite de tests : 57 réussis, 0 échec** (`php tests/run.php`).
+**Résultat de la suite de tests : 67 réussis, 0 échec** (`php tests/run.php`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 
@@ -39,6 +41,8 @@
 | Conversion d'unités générique (kg ↔ g, etc.) | Conditionnements (N unités de base) uniquement | Table de conversions |
 | Génération automatique de la grille de variantes | Chaque variante est un article lié à son parent (création par « Dupliquer / variante ») | Assistant taille × couleur |
 | Mode hors ligne (coupure du serveur local) | Le panier en cours est conservé dans le navigateur, mais la vente nécessite le serveur | File d'attente locale synchronisée |
+| Restaurant : routage des bons vers plusieurs imprimantes réseau (une par poste) | Bon imprimé sur l'imprimante par défaut de l'appareil qui envoie ; écran cuisine recommandé | Service local d'impression par poste |
+| Restaurant : modificateurs payants (suppléments), menus/formules à prix fixe, réservations | Notes libres ; suppléments à saisir comme articles | Options d'articles et réservations |
 | HTTPS | Documenté (certificat local), non configuré automatiquement | — |
 | Conformité réglementaire pharmacie / fiscale (Niger) | Fonctions de traçabilité fournies, **non certifiées** | Validation par un pharmacien et un expert-comptable |
 | Factures normalisées / dispositifs fiscaux éventuels exigés par l'administration | Non implémenté | À étudier selon la réglementation en vigueur |

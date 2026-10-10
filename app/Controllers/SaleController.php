@@ -98,8 +98,18 @@ final class SaleController extends Controller
             'title' => 'Ticket ' . $s['number'], 's' => $s, 'dup' => $dup, 'bodyClass' => $width,
             'items' => DB::all('SELECT * FROM sale_items WHERE sale_id = ?', [$id]),
             'payments' => DB::all('SELECT * FROM sale_payments WHERE sale_id = ?', [$id]),
-            'autoPrint' => Request::query('auto') === '1', 'backUrl' => url('/pos'),
+            'autoPrint' => Request::query('auto') === '1', 'backUrl' => self::safeNext(), 'returnAfterPrint' => Request::query('next') !== null,
         ], 'layouts/print');
+    }
+
+    /** URL de retour après impression : chemin local uniquement (pas de redirection ouverte). */
+    private static function safeNext(): string
+    {
+        $n = (string) Request::query('next', '');
+        if ($n !== '' && str_starts_with($n, '/') && !str_starts_with($n, '//') && !str_contains($n, '\\') && !preg_match('/[\r\n]/', $n)) {
+            return $n;
+        }
+        return url(can('pos.sell') ? '/pos' : '/');
     }
 
     public function invoice(int $id): void

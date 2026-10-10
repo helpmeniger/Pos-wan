@@ -81,7 +81,7 @@ final class PosController extends Controller
         return "SELECT p.*, u.short_name AS unit_short, u.allow_decimal, c.color AS cat_color, COALESCE(sl.quantity,0) AS stock
                 FROM products p LEFT JOIN units u ON u.id = p.unit_id LEFT JOIN categories c ON c.id = p.category_id
                 LEFT JOIN stock_levels sl ON sl.product_id = p.id AND sl.warehouse_id = " . (int) $wh . "
-                WHERE p.status = 'active'";
+                WHERE p.status = 'active' AND p.sellable = 1";
     }
 
     public function products(): void

@@ -133,7 +133,7 @@ test('Installation complète (schéma, rôles, paramètres, démo)', function ()
     S\InstallService::install(['company' => 'Test SARL', 'business_type' => 'alimentation', 'admin_username' => 'admin', 'admin_name' => 'Admin Test', 'admin_password' => $ADMIN_PWD, 'store_name' => '', 'demo' => true]);
     ok(S\InstallService::isInstalled());
     ok((int) DB::value('SELECT COUNT(*) FROM permissions') >= 40, 'permissions');
-    eq(9, (int) DB::value('SELECT COUNT(*) FROM roles'), 'rôles');
+    eq(11, (int) DB::value('SELECT COUNT(*) FROM roles'), 'rôles');
     ok((int) DB::value('SELECT COUNT(*) FROM products') >= 10, 'articles démo');
     eq('1', setting('feature_lots'), 'lots activés pour alimentation');
 });
@@ -153,7 +153,7 @@ test('Migrations idempotentes', function () {
 
 // Comptes de test pour chaque rôle
 $roles = array_column(DB::all('SELECT id, code FROM roles'), 'id', 'code');
-foreach (['caissier' => 'cashier', 'gerant' => 'store_manager', 'magasin' => 'stock_manager', 'auditeur' => 'auditor', 'pharma' => 'pharmacist'] as $u => $r) {
+foreach (['caissier' => 'cashier', 'gerant' => 'store_manager', 'magasin' => 'stock_manager', 'auditeur' => 'auditor', 'pharma' => 'pharmacist', 'serveur' => 'waiter', 'cuisto' => 'cook'] as $u => $r) {
     DB::insert('users', ['username' => $u, 'full_name' => ucfirst($u), 'password_hash' => Auth::hash('Mot-de-passe-2026'), 'pin_hash' => Auth::hash('4826'), 'role_id' => $roles[$r], 'store_id' => 1, 'register_id' => 1]);
 }
 
@@ -536,6 +536,140 @@ test('Rapports : CA net = ventes − retours ; marge = CA net − CMV', function
     eq($gross, $s['gross']);
 });
 
+echo "\n== Restaurant ==\n";
+$R = [];
+test('Préparation : salle, tables, ingrédient non vendable, fiche technique', function () use (&$R) {
+    actingAs('admin');
+    setting_set('feature_restaurant', '1');
+    setting_set('feature_recipes', '1');
+    $area = DB::insert('restaurant_areas', ['name' => 'Salle test']);
+    $R['t1'] = DB::insert('restaurant_tables', ['area_id' => $area, 'name' => 'T1']);
+    $R['t2'] = DB::insert('restaurant_tables', ['area_id' => $area, 'name' => 'T2']);
+    $R['t3'] = DB::insert('restaurant_tables', ['area_id' => $area, 'name' => 'T3']);
+    $cat = DB::insert('categories', ['name' => 'Plats test', 'kitchen_station' => 'cuisine']);
+    $drinks = DB::insert('categories', ['name' => 'Boissons test']);
+    $R['poulet'] = S\ProductService::create(S\ProductService::validate(['name' => 'Poulet cru', 'sale_price' => 0, 'cost_price' => 3000, 'sellable' => 0]), 10, 1);
+    $R['huile'] = S\ProductService::create(S\ProductService::validate(['name' => 'Huile test', 'sale_price' => 0, 'cost_price' => 1000, 'sellable' => 0]), 10, 1);
+    $R['plat'] = S\ProductService::create(S\ProductService::validate(['name' => 'Poulet braisé test', 'sale_price' => 4500, 'category_id' => $cat, 'track_stock' => 0]));
+    $R['soda'] = S\ProductService::create(S\ProductService::validate(['name' => 'Soda test', 'sale_price' => 600, 'cost_price' => 350, 'category_id' => $drinks]), 20, 1);
+    S\ProductService::saveRecipe($R['plat'], [$R['poulet'] => 0.5, $R['huile'] => 0.1]);
+    eq(1600.0, S\ProductService::recipeCost($R['plat']), 'coût matière (0,5×3000 + 0,1×1000)');
+    throws(fn() => S\ProductService::saveRecipe($R['plat'], [$R['plat'] => 1]), 'propre ingrédient');
+    actingAs('caissier');
+    throws(fn() => S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $R['poulet'], 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 10]]]), 'ingrédient');
+});
+test('Commande : une seule commande ouverte par table, regroupement des lignes', function () use (&$R) {
+    actingAs('serveur');
+    $R['o1'] = S\RestaurantService::open($R['t1'], 'dine_in', 3);
+    throws(fn() => S\RestaurantService::open($R['t1'], 'dine_in', 2), 'occupée');
+    S\RestaurantService::addItem($R['o1'], $R['plat'], 2, null, 2);
+    S\RestaurantService::addItem($R['o1'], $R['plat'], 1, null, 2);
+    S\RestaurantService::addItem($R['o1'], $R['plat'], 1, 'Sans piment', 2);
+    S\RestaurantService::addItem($R['o1'], $R['soda'], 3, null, 0);
+    eq(3, (int) DB::value('SELECT COUNT(*) FROM restaurant_order_items WHERE order_id = ?', [$R['o1']]), 'lignes (note distincte = ligne distincte)');
+    $o = S\RestaurantService::order($R['o1']);
+    eq(4 * 4500.0 + 3 * 600.0, $o['total']);
+});
+test('Envoi en cuisine : ticket par poste, articles sans poste servis directement', function () use (&$R) {
+    actingAs('serveur');
+    $tickets = S\RestaurantService::send($R['o1']);
+    eq(1, count($tickets), 'un ticket cuisine');
+    $R['ticket'] = $tickets[0];
+    eq(2, (int) DB::value("SELECT COUNT(*) FROM restaurant_order_items WHERE order_id = ? AND status = 'sent'", [$R['o1']]));
+    eq('served', DB::value('SELECT status FROM restaurant_order_items WHERE order_id = ? AND product_id = ?', [$R['o1'], $R['soda']]));
+    throws(fn() => S\RestaurantService::send($R['o1']), 'Aucune nouvelle');
+    eq(1, count(S\RestaurantService::kitchenFeed('cuisine')));
+    $line = (int) DB::value("SELECT id FROM restaurant_order_items WHERE order_id = ? AND status = 'sent' LIMIT 1", [$R['o1']]);
+    throws(fn() => S\RestaurantService::updateItem($line, 9, null, null), 'déjà envoyée');
+});
+test('Écran cuisine : préparation → prêt → servi', function () use (&$R) {
+    actingAs('cuisto');
+    S\RestaurantService::ticketStatus($R['ticket'], 'preparing');
+    S\RestaurantService::ticketStatus($R['ticket'], 'ready');
+    eq(2, (int) DB::value("SELECT COUNT(*) FROM restaurant_order_items WHERE order_id = ? AND status = 'ready'", [$R['o1']]));
+    actingAs('serveur');
+    eq(2, S\RestaurantService::serveReady($R['o1']));
+    eq('served', DB::value('SELECT status FROM kitchen_tickets WHERE id = ?', [$R['ticket']]));
+    ok(DB::value('SELECT ready_at FROM kitchen_tickets WHERE id = ?', [$R['ticket']]) !== null, 'temps de préparation mesuré');
+});
+test('Annulation d\'un plat envoyé : autorisation, ticket d\'annulation, perte des ingrédients', function () use (&$R) {
+    actingAs('serveur');
+    $line = (int) DB::value("SELECT id FROM restaurant_order_items WHERE order_id = ? AND product_id = ? AND note IS NULL", [$R['o1'], $R['plat']]);
+    try {
+        S\RestaurantService::cancelItem($line, 1, 'Client a changé d\'avis', true);
+        throw new RuntimeException('annulation acceptée sans droit');
+    } catch (BusinessException $e) {
+        ok(str_contains($e->getMessage(), 'AUTH_REQUIRED'));
+    }
+    $sup = Auth::verifySupervisor('gerant', '4826', 'restaurant.cancel_item');
+    $poulet = stock($R['poulet']);
+    $t = S\RestaurantService::cancelItem($line, 1, 'Client a changé d\'avis', true, $sup);
+    ok($t > 0, 'ticket d\'annulation');
+    eq('cancel', DB::value('SELECT type FROM kitchen_tickets WHERE id = ?', [$t]));
+    eq(2.0, (float) DB::value('SELECT quantity FROM restaurant_order_items WHERE id = ?', [$line]), 'ligne réduite');
+    eq($poulet - 0.5, stock($R['poulet']), 'perte déstockée');
+    eq('kitchen_waste', DB::value('SELECT type FROM stock_movements WHERE product_id = ? ORDER BY id DESC LIMIT 1', [$R['poulet']]));
+});
+test('Addition séparée puis paiement complet : ingrédients déstockés, table libérée', function () use (&$R) {
+    actingAs('gerant');
+    S\RestaurantService::bill($R['o1']);
+    eq('billed', DB::value('SELECT status FROM restaurant_orders WHERE id = ?', [$R['o1']]));
+    $items = array_column(DB::all("SELECT id, product_id, quantity FROM restaurant_order_items WHERE order_id = ? AND status <> 'cancelled'", [$R['o1']]), null, 'id');
+    $platLine = (int) array_values(array_filter($items, fn($i) => (int) $i['product_id'] === $R['plat']))[0]['id'];
+    $poulet = stock($R['poulet']);
+    // 1re part : 1 plat
+    $r1 = S\RestaurantService::pay($R['o1'], [$platLine => 1], ['client_uuid' => uuid(), 'payments' => [['method' => 'cash', 'amount' => 5000]]]);
+    eq(4500.0, $r1['total']);
+    eq(500.0, $r1['change']);
+    ok(!$r1['order_closed'], 'commande toujours ouverte');
+    eq($poulet - 0.5, stock($R['poulet']), 'ingrédients de la portion vendue');
+    eq(1600.0, (float) DB::value('SELECT cost_total FROM sales WHERE id = ?', [$r1['sale_id']]), 'coût matière réel');
+    throws(fn() => S\RestaurantService::pay($R['o1'], [$platLine => 5], ['client_uuid' => uuid(), 'payments' => [['method' => 'cash', 'amount' => 99999]]]), 'supérieure');
+    // reste
+    $rest = [];
+    foreach (DB::all("SELECT id, quantity - paid_qty AS q FROM restaurant_order_items WHERE order_id = ? AND status <> 'cancelled'", [$R['o1']]) as $l) {
+        $rest[$l['id']] = (float) $l['q'];
+    }
+    $due = S\RestaurantService::order($R['o1'])['due'];
+    $r2 = S\RestaurantService::pay($R['o1'], $rest, ['client_uuid' => uuid(), 'payments' => [['method' => 'mobile_money', 'amount' => $due, 'reference' => 'MM9']]]);
+    ok($r2['order_closed'], 'commande soldée');
+    eq('paid', DB::value('SELECT status FROM restaurant_orders WHERE id = ?', [$R['o1']]));
+    eq(2, (int) DB::value('SELECT COUNT(*) FROM sales WHERE restaurant_order_id = ?', [$R['o1']]));
+    $R['sale2'] = $r2['sale_id'];
+    actingAs('serveur');
+    $R['o1b'] = S\RestaurantService::open($R['t1'], 'dine_in', 2); // table de nouveau libre
+    ok($R['o1b'] > 0);
+});
+test('Annulation d\'une vente restaurant : ingrédients réintégrés', function () use (&$R) {
+    actingAs('gerant');
+    $poulet = stock($R['poulet']);
+    $used = (float) DB::value('SELECT COALESCE(SUM(c.quantity),0) FROM sale_item_components c JOIN sale_items si ON si.id = c.sale_item_id WHERE si.sale_id = ? AND c.ingredient_id = ?', [$R['sale2'], $R['poulet']]);
+    ok($used > 0);
+    S\SaleService::cancel($R['sale2'], 'Erreur de caisse');
+    eq($poulet + $used, stock($R['poulet']));
+});
+test('Transfert et fusion de tables', function () use (&$R) {
+    actingAs('serveur');
+    $o2 = S\RestaurantService::open($R['t2'], 'dine_in', 2);
+    S\RestaurantService::addItem($o2, $R['soda'], 2);
+    S\RestaurantService::transfer($o2, $R['t3']);
+    eq($R['t3'], (int) DB::value('SELECT table_id FROM restaurant_orders WHERE id = ?', [$o2]));
+    throws(fn() => S\RestaurantService::transfer($o2, $R['t1']), 'occupée');
+    S\RestaurantService::addItem($R['o1b'], $R['soda'], 1);
+    S\RestaurantService::merge($o2, $R['o1b']);
+    eq('cancelled', DB::value('SELECT status FROM restaurant_orders WHERE id = ?', [$o2]));
+    eq(3.0, (float) DB::value('SELECT SUM(quantity) FROM restaurant_order_items WHERE order_id = ?', [$R['o1b']]));
+    eq(4, (int) DB::value('SELECT covers FROM restaurant_orders WHERE id = ?', [$R['o1b']]));
+});
+test('Commande à emporter / livraison', function () use (&$R) {
+    actingAs('serveur');
+    throws(fn() => S\RestaurantService::open(null, 'delivery', 1, ['name' => 'Awa']), 'téléphone');
+    $o = S\RestaurantService::open(null, 'delivery', 1, ['name' => 'Awa', 'phone' => '+227 96 11 22 33', 'address' => 'Plateau']);
+    ok(count(S\RestaurantService::openWithoutTable()) >= 1);
+    S\RestaurantService::cancelOrder($o, 'Client injoignable');
+    eq('cancelled', DB::value('SELECT status FROM restaurant_orders WHERE id = ?', [$o]));
+});
+
 echo "\n== Sauvegarde & restauration ==\n";
 test('Sauvegarde vérifiée, altération détectée, restauration fidèle', function () {
     actingAs('admin');
@@ -770,6 +904,40 @@ test('Toutes les pages principales répondent sans erreur (admin)', function () 
         }
     }
     eq([], $bad);
+});
+test('Restaurant (HTTP) : serveur, cuisinier et écrans', function () use ($B, &$R) {
+    $w = new Http();
+    $w->login($B, 'serveur', 'Mot-de-passe-2026');
+    eq(200, $w->req('GET', "$B/restaurant")['code'], 'plan de salle');
+    eq(200, $w->req('GET', "$B/restaurant/orders/{$R['o1b']}")['code'], 'prise de commande');
+    eq(403, $w->req('GET', "$B/pos")['code'], 'pas de caisse pour un serveur');
+    eq(403, $w->req('GET', "$B/restaurant/orders/{$R['o1b']}/pay")['code'], 'pas d\'encaissement pour un serveur');
+    eq(403, $w->req('GET', "$B/kitchen")['code']);
+    $page = $w->req('GET', "$B/restaurant");
+    preg_match('/name="csrf-token" content="([^"]+)"/', $page['body'], $m);
+    $r = $w->req('POST', "$B/restaurant/orders/{$R['o1b']}/items", json_encode(['product_id' => $R['plat'], 'quantity' => 1]), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]]);
+    $d = json_decode($r['body'], true);
+    ok($d['ok'] ?? false, $r['body']);
+    $line = (int) DB::value("SELECT id FROM restaurant_order_items WHERE order_id = ? AND status = 'new' ORDER BY id DESC LIMIT 1", [$R['o1b']]);
+    $r = $w->req('POST', "$B/restaurant/items/$line", json_encode(['quantity' => 2, 'note' => 'Sans piment']), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]]);
+    ok((json_decode($r['body'], true)['ok'] ?? false), 'modification de ligne : ' . $r['body']);
+    eq('Sans piment', DB::value('SELECT note FROM restaurant_order_items WHERE id = ?', [$line]));
+    $r = $w->req('POST', "$B/restaurant/orders/{$R['o1b']}/send", '{}', ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]]);
+    $d = json_decode($r['body'], true);
+    ok(($d['ok'] ?? false) && count($d['print']) === 1, $r['body']);
+    eq(200, $w->req('GET', $B . $d['print'][0])['code'], 'bon cuisine imprimable');
+    $c = new Http();
+    $c->login($B, 'cuisto', 'Mot-de-passe-2026');
+    eq(200, $c->req('GET', "$B/kitchen")['code']);
+    $feed = json_decode($c->req('GET', "$B/kitchen/feed?station=cuisine", null, ['Accept: application/json'])['body'], true);
+    ok(count($feed['tickets']) >= 1, 'ticket visible en cuisine');
+    eq(403, $c->req('GET', "$B/restaurant")['code']);
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    foreach (['/restaurant/orders', '/restaurant/setup', '/restaurant/recipes', "/restaurant/recipes/{$R['plat']}", '/restaurant/report', "/restaurant/orders/{$R['o1b']}/pay", "/restaurant/orders/{$R['o1b']}/bill", "/restaurant/orders/{$R['o1']}"] as $u) {
+        $x = $a->req('GET', $B . $u);
+        ok($x['code'] === 200 && !preg_match('/Fatal error|Warning:|Une erreur interne/', $x['body']), "$u ({$x['code']})");
+    }
 });
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);

@@ -131,7 +131,7 @@ Le mot de passe administrateur est demandé au clavier. Pour générer `APP_KEY`
 `php -r "echo bin2hex(random_bytes(32));"`
 
 Types disponibles : `alimentation`, `boutique`, `pharmacie`, `quincaillerie`, `boissons`,
-`cosmetique`, `informatique`, `papeterie`, `pieces`.
+`cosmetique`, `informatique`, `papeterie`, `pieces`, `restaurant`.
 
 ---
 
@@ -178,6 +178,18 @@ Les tiroirs reliés à l'imprimante thermique s'ouvrent si le pilote est réglé
 Lecteurs USB en émulation clavier uniquement. Activez « Connexion par badge RFID » dans
 Paramètres, puis enregistrez le badge de chaque utilisateur (Utilisateurs → Modifier).
 Le numéro du badge n'est jamais stocké en clair (empreinte HMAC).
+
+### Restaurant : écrans et bons de cuisine
+- **Écran cuisine / bar** : ouvrez `http://pos-wan.local/kitchen` sur une tablette ou un
+  téléviseur avec navigateur placé en cuisine (compte de rôle « Cuisinier / barman »).
+  Un onglet par poste : cuisine, grill, bar… (le poste se règle sur chaque catégorie).
+- **Bons imprimés** : à l'envoi en cuisine, le bon s'imprime sur l'imprimante **par défaut
+  de l'appareil qui prend la commande** (paramètre « impression automatique des bons
+  cuisine »). Pour imprimer directement en cuisine, utilisez l'écran cuisine ou placez
+  l'imprimante par défaut du poste de prise de commande en cuisine. Le routage vers
+  plusieurs imprimantes réseau (une par poste) n'est pas implémenté.
+- **Serveurs sur tablette/téléphone** : la prise de commande fonctionne dans le navigateur
+  sur le Wi-Fi de l'établissement (voir § 4 `Require ip` et § 8 HTTPS).
 
 ### Balance
 Les articles « vendus au poids » acceptent des quantités décimales (saisie du poids au pavé
@@ -312,4 +324,4 @@ php tests\run.php
 ```
 
 L'utilisateur MySQL doit pouvoir créer la base `poswan_test`. Résultat attendu :
-`57 réussi(s), 0 échec(s)`.
+`67 réussi(s), 0 échec(s)`.

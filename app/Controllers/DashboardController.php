@@ -14,6 +14,12 @@ final class DashboardController extends Controller
         if (can('dashboard.view')) {
             redirect('/dashboard');
         }
+        if (feature('restaurant') && can('restaurant.order')) {
+            redirect('/restaurant');
+        }
+        if (feature('restaurant') && can('restaurant.kitchen')) {
+            redirect('/kitchen');
+        }
         redirect(can('pos.sell') ? '/pos' : '/menu');
     }
 

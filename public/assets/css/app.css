@@ -109,3 +109,24 @@ body { background: var(--wan-bg); font-size: .95rem; }
 }
 .login-card .input-group-text { background: #2c3e57; border-color: #35507a; color: #f39c12; }
 .login-card .form-select { background-color: #22344f; border-color: #35507a; color: #fff; }
+
+/* ---------- Restaurant : plan de salle ---------- */
+.floor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .8rem; }
+.r-table { border: 0; border-radius: 1rem; padding: .7rem; min-height: 132px; color: #fff; text-align: left; position: relative; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,.12); transition: transform .08s; background: #27ae60; }
+.r-table:hover { transform: translateY(-2px); }
+.r-table.round { border-radius: 50% / 38%; padding: 1rem 1.2rem; }
+.r-table.long { grid-column: span 2; }
+.r-table .t-name { font-size: 1.55rem; font-weight: 800; line-height: 1; }
+.r-table .t-meta { font-size: .78rem; opacity: .95; }
+.r-table .t-due { font-size: 1.05rem; font-weight: 700; }
+.r-table.busy { background: linear-gradient(135deg, #f39c12, #d35400); }
+.r-table.billed { background: linear-gradient(135deg, #2e86c1, #1b4f72); }
+.r-table.free { background: linear-gradient(135deg, #2ecc71, #1e8449); }
+.r-table .t-badges { position: absolute; top: .5rem; right: .6rem; display: flex; gap: .25rem; }
+.r-table .t-badge { background: #fff; color: #c0392b; border-radius: 1rem; padding: 0 .45rem; font-size: .75rem; font-weight: 700; }
+.r-table .t-badge.ready { color: #fff; background: #8e44ad; animation: pulse 1.2s infinite; }
+.r-table .t-badge.unsent { color: #14213d; background: #ffd27a; }
+@keyframes pulse { 50% { transform: scale(1.12); } }
+.floor-legend .lg { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; margin: 0 .25rem 0 .8rem; }
+.lg.free { background: #27ae60; } .lg.busy { background: #e67e22; } .lg.billed { background: #2e86c1; } .lg.ready { background: #8e44ad; } .lg.unsent { background: #ffd27a; }
+.cover-key { width: 42px; }

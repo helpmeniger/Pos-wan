@@ -14,6 +14,10 @@ final class DemoSeeder
 {
     public static function run(string $type): void
     {
+        if ($type === 'restaurant') {
+            self::restaurant();
+            return;
+        }
         DB::transaction(function () use ($type) {
             setting_set('demo_data', '1');
             $wh = (int) DB::value('SELECT id FROM warehouses ORDER BY id LIMIT 1');
@@ -105,6 +109,79 @@ final class DemoSeeder
                     }
                     if (feature('packaging') && $name === 'Soda 33 cl') {
                         DB::insert('product_packagings', ['product_id' => $pid, 'name' => 'Carton de 24', 'factor' => 24, 'sale_price' => 11000]);
+                    }
+                }
+            }
+        });
+    }
+
+    /** Démo restaurant : salles, tables, carte, ingrédients et fiches techniques. */
+    private static function restaurant(): void
+    {
+        DB::transaction(function () {
+            setting_set('demo_data', '1');
+            setting_set('restaurant_print_kitchen', '1');
+            $wh = (int) DB::value('SELECT id FROM warehouses ORDER BY id LIMIT 1');
+            $unit = fn(string $s) => (int) DB::value('SELECT id FROM units WHERE short_name = ?', [$s]);
+            $sup = DB::insert('suppliers', ['name' => '[DÉMO] Marché de Katako', 'phone' => '+227 20 00 00 10', 'address' => 'Katako, Niamey']);
+            DB::insert('customers', ['name' => '[DÉMO] Client fidèle Ibrahim', 'phone' => '+227 90 00 00 03', 'credit_limit' => 30000]);
+            $salle = DB::insert('restaurant_areas', ['name' => 'Salle principale', 'sort_order' => 1]);
+            $terr = DB::insert('restaurant_areas', ['name' => 'Terrasse', 'sort_order' => 2]);
+            for ($i = 1; $i <= 8; $i++) {
+                DB::insert('restaurant_tables', ['area_id' => $salle, 'name' => 'T' . $i, 'seats' => $i % 3 === 0 ? 6 : 4, 'shape' => $i % 4 === 0 ? 'round' : 'square', 'sort_order' => $i]);
+            }
+            for ($i = 9; $i <= 12; $i++) {
+                DB::insert('restaurant_tables', ['area_id' => $terr, 'name' => 'T' . $i, 'seats' => 4, 'shape' => 'round', 'sort_order' => $i]);
+            }
+            // Ingrédients (non vendables), stock initial au coût indiqué
+            $ing = [];
+            foreach ([['Riz', 'kg', 700, 50], ['Poulet entier', 'pce', 3500, 30], ['Poisson capitaine', 'kg', 4500, 20], ['Viande de bœuf', 'kg', 4000, 25], ['Huile', 'L', 1300, 30],
+                      ['Oignon', 'kg', 500, 30], ['Pâte d\'arachide', 'kg', 1500, 10], ['Tomate', 'kg', 600, 20], ['Mil (farine)', 'kg', 450, 30], ['Feuilles de bissap', 'kg', 1200, 10],
+                      ['Gingembre', 'kg', 1500, 8], ['Sucre', 'kg', 650, 30], ['Pomme de terre', 'kg', 700, 30]] as $n => [$name, $u, $cost, $q]) {
+                $id = DB::insert('products', ['reference' => sprintf('ING%03d', $n + 1), 'name' => $name, 'unit_id' => $unit($u), 'supplier_id' => $sup, 'description' => '[DÉMO] Ingrédient',
+                    'sale_price' => 0, 'min_stock' => 5, 'sellable' => 0]);
+                StockService::receive($id, $wh, (float) $q, (float) $cost, 'initial', 'demo', null, 'Stock initial [DÉMO]');
+                $ing[$name] = $id;
+            }
+            $cats = [
+                'Plats' => ['#e67e22', 'bi-egg-fried', 'cuisine', [
+                    ['Riz sauce arachide', 2000, ['Riz' => 0.25, 'Pâte d\'arachide' => 0.08, 'Viande de bœuf' => 0.1, 'Oignon' => 0.05, 'Huile' => 0.03]],
+                    ['Poulet braisé + frites', 4500, ['Poulet entier' => 0.5, 'Pomme de terre' => 0.3, 'Huile' => 0.1, 'Oignon' => 0.05]],
+                    ['Poisson braisé (capitaine)', 5000, ['Poisson capitaine' => 0.6, 'Oignon' => 0.05, 'Tomate' => 0.1]],
+                    ['Riz gras (jollof)', 1500, ['Riz' => 0.25, 'Tomate' => 0.1, 'Huile' => 0.04, 'Oignon' => 0.05]],
+                    ['Dambou', 1000, ['Mil (farine)' => 0.2, 'Huile' => 0.02, 'Oignon' => 0.03]],
+                ]],
+                'Grillades' => ['#c0392b', 'bi-fire', 'grill', [
+                    ['Brochettes (tchintchinga) x5', 1500, ['Viande de bœuf' => 0.25, 'Oignon' => 0.03]],
+                    ['Kilichi (portion)', 2000, ['Viande de bœuf' => 0.3]],
+                ]],
+                'Boissons maison' => ['#8e44ad', 'bi-cup-straw', 'bar', [
+                    ['Jus de bissap', 500, ['Feuilles de bissap' => 0.02, 'Sucre' => 0.05]],
+                    ['Jus de gingembre', 500, ['Gingembre' => 0.03, 'Sucre' => 0.05]],
+                    ['Fura da nono', 700, ['Mil (farine)' => 0.08, 'Sucre' => 0.03]],
+                ]],
+                'Boissons' => ['#2980b9', 'bi-cup', null, [
+                    ['Eau minérale 50 cl', 300, 'stock:100:150'],
+                    ['Soda 33 cl', 600, 'stock:100:350'],
+                ]],
+            ];
+            $i = 0;
+            $order = 0;
+            foreach ($cats as $cat => [$color, $icon, $station, $items]) {
+                $catId = DB::insert('categories', ['name' => $cat, 'color' => $color, 'icon' => $icon, 'kitchen_station' => $station, 'sort_order' => $order++]);
+                foreach ($items as [$name, $price, $recipe]) {
+                    $i++;
+                    $stocked = is_string($recipe);
+                    $pid = DB::insert('products', ['reference' => sprintf('MEN%03d', $i), 'name' => $name, 'category_id' => $catId, 'unit_id' => $unit('pce'), 'description' => '[DÉMO] Carte',
+                        'sale_price' => $price, 'track_stock' => $stocked ? 1 : 0, 'min_stock' => $stocked ? 12 : 0]);
+                    if ($stocked) {
+                        [, $q, $cost] = explode(':', $recipe);
+                        StockService::receive($pid, $wh, (float) $q, (float) $cost, 'initial', 'demo', null, 'Stock initial [DÉMO]');
+                    } else {
+                        foreach ($recipe as $ingName => $q) {
+                            DB::insert('product_recipes', ['product_id' => $pid, 'ingredient_id' => $ing[$ingName], 'quantity' => $q]);
+                        }
+                        DB::run('UPDATE products SET cost_price = ? WHERE id = ?', [ProductService::recipeCost($pid), $pid]);
                     }
                 }
             }

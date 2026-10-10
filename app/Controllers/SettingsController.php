@@ -24,6 +24,7 @@ final class SettingsController extends Controller
         'invoice_footer' => ['Pied de facture (mentions légales)', 'textarea'],
         'ticket_width' => ['Largeur du ticket', 'select', ['80' => '80 mm', '58' => '58 mm']],
         'pos_auto_print' => ['Impression automatique du ticket après vente', 'bool'],
+        'restaurant_print_kitchen' => ['Restaurant : impression automatique des bons cuisine', 'bool'],
         'max_discount_percent' => ['Seuil de remise sans autorisation (%)', 'number'],
         'default_tax_rate' => ['Taux de taxe par défaut des nouveaux articles (%)', 'number'],
         'allow_negative_stock' => ['Autoriser la vente en stock négatif (déconseillé)', 'bool'],
