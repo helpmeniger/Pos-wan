@@ -1,0 +1,9 @@
+/config/config.php
+/config/*.key
+/storage/photos/*
+/storage/documents/*
+/storage/backups/*
+/storage/logs/*
+/storage/tmp/*
+!/storage/*/.gitkeep
+/tests/.tmp/

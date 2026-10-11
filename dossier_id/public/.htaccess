@@ -1,0 +1,30 @@
+# DOSSIER ID — répertoire public (seul répertoire accessible depuis le navigateur)
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+
+# Seul index.php peut être exécuté
+<FilesMatch "\.php$">
+    Require all denied
+</FilesMatch>
+<Files "index.php">
+    Require all granted
+</Files>
+
+# Fichiers cachés et de sauvegarde interdits
+<FilesMatch "(^\.|\.(bak|old|orig|sql|log|ini|sh|inc|dist|swp)$)">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "no-referrer"
+    Header unset X-Powered-By
+</IfModule>
+
+<IfModule mod_php.c>
+    php_flag display_errors Off
+    php_flag expose_php Off
+    php_value upload_max_filesize 12M
+    php_value post_max_size 14M
+</IfModule>

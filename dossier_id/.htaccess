@@ -1,0 +1,9 @@
+# DOSSIER ID — racine du projet.
+# Les sous-répertoires sensibles (app, config, database, storage, scripts, tests, docs)
+# contiennent chacun un .htaccess « Require all denied ». Seul public/ est servi.
+# Recommandé : VirtualHost dont le DocumentRoot pointe directement sur public/ (voir docs/INSTALLATION.md).
+Options -Indexes
+DirectoryIndex index.php
+<FilesMatch "(^\.|\.(md|sql|json|lock|log|key|txt|dist|didbak|bin)$)">
+    Require all denied
+</FilesMatch>
