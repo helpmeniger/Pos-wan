@@ -79,9 +79,19 @@ final class ParcelQuery
             $p[] = $f['max_area'];
         }
         if ($f['lat'] !== null && $f['lng'] !== null) {
-            // Parcelles contenant le point (pré-filtre bbox, affiné ensuite si besoin)
-            $w[] = 'p.min_lat <= ? AND p.max_lat >= ? AND p.min_lng <= ? AND p.max_lng >= ?';
-            array_push($p, $f['lat'], $f['lat'], $f['lng'], $f['lng']);
+            // Parcelles contenant exactement le point : pré-filtre par emprise (index), puis test géométrique
+            $ids = [];
+            $cands = db_all('SELECT p.id, g.geojson FROM parcels p JOIN parcel_geometries g ON g.parcel_id = p.id
+                             AND g.geometry_version = p.current_geometry_version
+                             WHERE p.min_lat <= ? AND p.max_lat >= ? AND p.min_lng <= ? AND p.max_lng >= ? LIMIT 500',
+                [$f['lat'], $f['lat'], $f['lng'], $f['lng']]);
+            foreach ($cands as $c) {
+                $ring = json_decode($c['geojson'], true)['coordinates'][0] ?? null;
+                if ($ring && Geo::pointInRing([$f['lng'], $f['lat']], $ring)) {
+                    $ids[] = (int) $c['id'];
+                }
+            }
+            $w[] = $ids ? 'p.id IN (' . implode(',', $ids) . ')' : '0 = 1';
         }
         if (!empty($f['date_from'])) {
             $w[] = 'p.created_at >= ?';
