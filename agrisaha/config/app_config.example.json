@@ -1,0 +1,8 @@
+{
+  "_comment": "Exemple SANS secret. Aucune de ces valeurs n'est utilisée par la version 0.1 (fonctionnement 100 % local). Elles seront transmises au build via --dart-define-from-file=config/app_config.json (fichier non versionné) lorsque les modules météo et marché seront ajoutés.",
+  "WEATHER_PROVIDER": "open-meteo",
+  "WEATHER_BASE_URL": "https://api.open-meteo.com/v1/forecast",
+  "WEATHER_API_KEY": "",
+  "BACKEND_BASE_URL": "https://api.example.org",
+  "ASSISTANT_API_URL": ""
+}

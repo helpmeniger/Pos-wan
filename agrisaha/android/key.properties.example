@@ -1,0 +1,5 @@
+# Copier ce fichier en android/key.properties (non versionné) puis renseigner :
+storePassword=VOTRE_MOT_DE_PASSE_KEYSTORE
+keyPassword=VOTRE_MOT_DE_PASSE_CLE
+keyAlias=agrisaha
+storeFile=/chemin/absolu/vers/agrisaha-release.jks
