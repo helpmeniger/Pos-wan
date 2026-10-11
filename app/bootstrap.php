@@ -23,6 +23,7 @@ spl_autoload_register(static function (string $class): void {
 });
 
 require APP_PATH . '/helpers.php';
+App\Core\Addons::registerAutoload(); // modules du dossier addons/
 
 App\Core\Env::load(BASE_PATH . '/.env');
 App\Core\Config::load(BASE_PATH . '/config');

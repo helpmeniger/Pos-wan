@@ -4,7 +4,7 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
     # Tout est redirigé vers public/ ; app/, config/, storage/, database/... ne sont jamais servis.
-    RewriteRule ^(app|config|database|storage|routes|tests|bin|docs|vendor)(/|$) - [F,L]
+    RewriteRule ^(app|addons|config|database|storage|routes|tests|bin|docs|vendor|lang)(/|$) - [F,L]
     RewriteRule ^$ public/ [L]
     RewriteCond %{REQUEST_URI} !/public/
     RewriteRule ^(.*)$ public/$1 [L]

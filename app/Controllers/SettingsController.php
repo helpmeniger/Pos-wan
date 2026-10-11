@@ -29,6 +29,8 @@ final class SettingsController extends Controller
         'pos_quick_validate' => ['Caisse : « Valider » encaisse directement en espèces (fenêtre de paiement via le bouton Espèces)', 'bool'],
         'quote_validity_days' => ['Validité des devis (jours)', 'number'],
         'default_locale' => ['Langue par défaut', 'select', 'LANG'],
+        'menu_position' => ['Position du menu de gestion', 'select', ['right' => 'À droite', 'left' => 'À gauche']],
+        'support_contact' => ['Assistance affichée sur l\'écran de connexion (téléphones séparés par /)', 'text'],
         'pos_auto_print' => ['Impression automatique du ticket après vente', 'bool'],
         'restaurant_print_kitchen' => ['Restaurant : impression automatique des bons cuisine (navigateur)', 'bool'],
         'restaurant_default_station' => ['Restaurant : poste par défaut des catégories sans poste (« aucun » = servi sans ticket)', 'text'],

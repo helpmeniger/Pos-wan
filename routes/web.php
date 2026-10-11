@@ -191,6 +191,8 @@ $router->get('/settings', [C\SettingsController::class, 'index'], 'settings.mana
 $router->post('/settings', [C\SettingsController::class, 'update'], 'settings.manage');
 $router->post('/settings/business', [C\SettingsController::class, 'business'], 'settings.manage');
 $router->get('/settings/template-preview', [C\SettingsController::class, 'templatePreview'], 'settings.manage');
+$router->get('/addons', [C\AddonController::class, 'index'], 'addons.manage');
+$router->post('/addons', [C\AddonController::class, 'action'], 'addons.manage');
 $router->post('/settings/vat', [C\SettingsController::class, 'vat'], 'settings.manage');
 $router->post('/settings/currency', [C\SettingsController::class, 'currency'], 'settings.manage');
 $router->post('/settings/mobile-money', [C\SettingsController::class, 'mobileMoney'], 'settings.manage');

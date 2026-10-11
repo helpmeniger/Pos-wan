@@ -8,7 +8,7 @@ final class View
     /** Rendu d'un template (app/Views/<name>.php) dans un layout. Les variables sont échappées dans les vues via e(). */
     public static function render(string $template, array $data = [], ?string $layout = 'layouts/admin'): string
     {
-        $file = APP_PATH . '/Views/' . $template . '.php';
+        $file = str_contains($template, '::') ? (Addons::viewFile($template) ?? '') : APP_PATH . '/Views/' . $template . '.php';
         if (!is_file($file)) {
             throw new \RuntimeException("Vue introuvable : $template");
         }

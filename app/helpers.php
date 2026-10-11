@@ -225,6 +225,25 @@ function payment_methods(): array
     return array_intersect_key($all, array_flip($enabled)) ?: ['cash' => 'Espèces'];
 }
 
+/**
+ * Contact d'assistance (Paramètres) : « +227 92 08 12 82 / 87 22 52 02 ».
+ * @return array<int, array{label:string, tel:string}> numéros avec lien tel: (indicatif +227 par défaut)
+ */
+function support_numbers(): array
+{
+    $out = [];
+    foreach (preg_split('#[/,;]#', (string) setting('support_contact', '+227 92 08 12 82 / 87 22 52 02')) as $part) {
+        $label = trim($part);
+        $digits = preg_replace('/\D/', '', $label);
+        if ($digits === '' || strlen($digits) < 8) {
+            continue;
+        }
+        $tel = str_starts_with($label, '+') ? '+' . $digits : (strlen($digits) === 8 ? '+227' . $digits : $digits);
+        $out[] = ['label' => $label, 'tel' => $tel];
+    }
+    return $out;
+}
+
 /** Opérateurs de mobile money configurés dans les paramètres (liste ordonnée). */
 function mobile_money_providers(): array
 {

@@ -90,6 +90,15 @@ Le menu en haut du tableau applique le même choix à toutes les lignes. La colo
 **Nouveau prix de vente** (droit « Modifier les prix de vente ») met à jour le prix en caisse ;
 le changement est historisé.
 
+## Modules complémentaires
+Pour ajouter une fonction (ex. Livraisons) : copier le dossier du module dans `addons/`,
+puis **Gestion → Modules complémentaires → Installer**. *Désactiver* masque le module sans
+effacer ses données. Détails : `docs/MODULES.md`.
+
+## Affichage
+- Le **menu de gestion** est à droite ; le remettre à gauche : Paramètres → Position du menu.
+- L'écran de connexion affiche le numéro d'**assistance** (modifiable dans les paramètres).
+
 ## TVA et rapport de TVA
 - **Paramètres → TVA** : choisir *Pas de TVA*, *TVA générale* (taux au choix : 19 %, 18 %…,
   boutons rapides) ou *Taux défini article par article*. Les prix de vente restent saisis

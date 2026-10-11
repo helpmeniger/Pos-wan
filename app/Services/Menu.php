@@ -60,6 +60,7 @@ final class Menu
                 ['Rôles & permissions', 'bi-shield-lock', '/roles', 'roles.manage', '#8e44ad'],
                 ['Paramètres entreprise', 'bi-gear', '/settings', 'settings.manage', '#566573'],
                 ['Imprimantes', 'bi-printer', '/printers', 'settings.manage', '#2c3e50'],
+                ['Modules complémentaires', 'bi-puzzle', '/addons', 'addons.manage', '#6c3483'],
                 ['Boutiques, entrepôts, caisses', 'bi-shop', '/stores', 'stores.manage', '#28b463'],
                 ['Sauvegardes', 'bi-hdd-stack', '/backups', 'backup.manage', '#b03a2e'],
                 ['Journal d\'audit', 'bi-journal-check', '/audit', 'audit.view', '#34495e'],
@@ -68,11 +69,15 @@ final class Menu
         ];
     }
 
-    /** Menu filtré selon les permissions et fonctionnalités actives. */
+    /** Menu filtré selon les permissions et fonctionnalités actives (modules complémentaires inclus). */
     public static function visible(): array
     {
         $out = [];
-        foreach (self::groups() as $g => $items) {
+        $groups = self::groups();
+        foreach (\App\Core\Addons::menu() as $g => $items) {
+            $groups[$g] = array_merge($groups[$g] ?? [], $items);
+        }
+        foreach ($groups as $g => $items) {
             $f = array_values(array_filter($items, fn($i) => ($i[3] === null || can($i[3])) && (!isset($i[5]) || feature($i[5]))));
             if ($f) {
                 $out[$g] = $f;

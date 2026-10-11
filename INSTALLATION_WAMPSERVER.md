@@ -324,6 +324,11 @@ Les photos se restaurent en décompressant le `.zip` dans `public\uploads`.
 
 ---
 
+### Modules complémentaires
+Copier le dossier du module dans `addons/` (ex. `C:\wamp64\www\pos-wan\addons\livraisons\`),
+puis **Gestion → Modules complémentaires → Installer** (ou `php bin/addons.php install livraisons`).
+Voir [docs/MODULES.md](docs/MODULES.md).
+
 ## 12. Dépannage
 
 | Symptôme | Cause probable / solution |

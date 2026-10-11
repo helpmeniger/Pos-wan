@@ -130,3 +130,24 @@ body { background: var(--wan-bg); font-size: .95rem; }
 .floor-legend .lg { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; margin: 0 .25rem 0 .8rem; }
 .lg.free { background: #27ae60; } .lg.busy { background: #e67e22; } .lg.billed { background: #2e86c1; } .lg.ready { background: #8e44ad; } .lg.unsent { background: #ffd27a; }
 .cover-key { width: 42px; }
+
+/* ---------- Menu de gestion à droite (Paramètres → Position du menu) ---------- */
+html[dir="ltr"] .menu-right .app-shell { flex-direction: row-reverse; }
+html[dir="rtl"] .menu-left .app-shell { flex-direction: row-reverse; }
+.menu-right .side-link, html[dir="rtl"] .menu-left .side-link { border-left: 0; border-right: 3px solid transparent; }
+.menu-right .side-link.active, html[dir="rtl"] .menu-left .side-link.active { border-right-color: var(--wan-orange); }
+html[dir="rtl"] .menu-right .side-link { border-right: 0; border-left: 3px solid transparent; }
+html[dir="rtl"] .menu-right .side-link.active { border-left-color: var(--wan-orange); }
+.menu-right .topbar { flex-direction: row; }
+@media (max-width: 991.98px) {
+  .menu-right .sidebar { left: auto; right: calc(-1 * var(--sidebar-w)); transition: right .2s; }
+  .menu-right .sidebar.open { right: 0; left: auto; }
+}
+
+/* ---------- Écran de connexion : assistance ---------- */
+.login-support { color: #b8c6dc; }
+.login-support a { color: var(--wan-orange); text-decoration: none; font-weight: 600; }
+.login-support a:hover { text-decoration: underline; }
+
+/* ---------- Modules complémentaires ---------- */
+.addon-icon { width: 42px; height: 42px; border-radius: .7rem; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem; flex: 0 0 42px; }

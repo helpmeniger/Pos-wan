@@ -80,7 +80,7 @@ final class Lang
         if (!isset(self::$dict[$code])) {
             $file = BASE_PATH . '/lang/' . $code . '.php';
             $d = is_file($file) ? require $file : [];
-            self::$dict[$code] = is_array($d) ? $d : [];
+            self::$dict[$code] = (is_array($d) ? $d : []) + Addons::dictionary($code);
         }
         return self::$dict[$code];
     }

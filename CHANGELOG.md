@@ -2,6 +2,25 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [1.4.0] — 2026-10-11
+
+### Ajouté
+- **Modules complémentaires (addons)** : déposer le dossier d'un module dans `addons/`,
+  puis **Gestion → Modules complémentaires → Installer** (sauvegarde automatique,
+  tables, permissions, menu, paramètres, traductions, fichiers publics). Activation /
+  désactivation sans perte de données, mise à jour quand la version augmente, commande
+  `php bin/addons.php`. Permission `addons.manage` (administrateur général).
+- Module d'exemple **Livraisons** (`addons/livraisons/`) : suivi des livraisons à domicile,
+  modèle à copier pour créer ses propres modules. Guide développeur : `docs/MODULES.md`.
+- **Menu de gestion à droite** (Paramètres → Position du menu : droite par défaut, gauche
+  en option ; sur téléphone le menu s'ouvre depuis la droite).
+- **Assistance** affichée sur l'écran de connexion : +227 92 08 12 82 / 87 22 52 02
+  (numéros cliquables, modifiables dans les paramètres).
+
+### Sécurité
+- Le dossier `addons/` n'est jamais servi par Apache (`.htaccess`) ; codes de module
+  contrôlés (pas de chemin arbitraire) ; aucun envoi de module par le navigateur.
+
 ## [1.3.0] — 2026-10-10
 
 ### Ajouté

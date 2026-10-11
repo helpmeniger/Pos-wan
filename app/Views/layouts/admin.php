@@ -23,7 +23,7 @@ $notes = $u ? Notifications::get() : [];
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
-<body class="admin-body">
+<body class="admin-body <?= setting('menu_position', 'right') === 'left' ? 'menu-left' : 'menu-right' ?>">
 <div class="app-shell">
   <aside class="sidebar d-print-none" id="sidebar">
     <a class="brand" href="<?= e(url('/')) ?>">

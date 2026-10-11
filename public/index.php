@@ -28,4 +28,5 @@ if (!InstallService::isInstalled() && !str_starts_with($path, '/install')) {
 
 $router = new Router();
 require BASE_PATH . '/routes/web.php';
+App\Core\Addons::registerRoutes($router); // routes des modules actifs (addons/)
 $router->dispatch(Request::method(), $path);

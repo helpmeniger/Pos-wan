@@ -929,6 +929,64 @@ test('Restaurant : articles non envoyés partent en cuisine à l\'encaissement',
     ok(count(array_filter(S\RestaurantService::kitchenFeed('cuisine'), fn($t) => (int) $t['order_id'] === $o)) === 1, 'visible sur l\'écran cuisine');
 });
 
+echo "\n== Version 1.4 : modules complémentaires, menu, assistance ==\n";
+test('Modules : découverte, manifestes invalides refusés', function () {
+    $bad = App\Core\Addons::dir() . '/zz_test_invalide';
+    $old = App\Core\Addons::dir() . '/zz_test_ancien';
+    @mkdir($bad);
+    @mkdir($old);
+    file_put_contents($bad . '/manifest.json', '{"code": "autre", "name": "", "version": "x"');
+    file_put_contents($old . '/manifest.json', json_encode(['code' => 'zz_test_ancien', 'name' => 'Ancien', 'version' => '1.0.0', 'requires' => '99.0.0']));
+    @mkdir(App\Core\Addons::dir() . '/Mauvais-Nom');
+    try {
+        $all = App\Core\Addons::discover(true);
+        ok(isset($all['livraisons']) && $all['livraisons']['errors'] === [], 'module exemple valide');
+        ok(!empty($all['zz_test_invalide']['errors']), 'JSON invalide signalé');
+        ok(str_contains(implode(' ', $all['zz_test_ancien']['errors']), 'Nécessite POS Wan 99.0.0'), 'version requise contrôlée');
+        ok(!isset($all['Mauvais-Nom']), 'nom de dossier invalide ignoré');
+        eq('error', App\Core\Addons::status('zz_test_ancien'));
+        throws(fn() => App\Core\Addons::install('zz_test_ancien', false), 'invalide');
+        throws(fn() => App\Core\Addons::install('../app', false), 'Code de module invalide');
+    } finally {
+        @unlink($bad . '/manifest.json');
+        @rmdir($bad);
+        @unlink($old . '/manifest.json');
+        @rmdir($old);
+        @rmdir(App\Core\Addons::dir() . '/Mauvais-Nom');
+        App\Core\Addons::reset();
+    }
+});
+test('Module exemple « Livraisons » : installation, permissions, données, réinstallation sans effet', function () {
+    actingAs('admin');
+    eq('available', App\Core\Addons::status('livraisons'));
+    $applied = App\Core\Addons::install('livraisons', false);
+    eq(['0001_livraisons'], $applied, 'migration du module');
+    ok((bool) DB::value("SHOW TABLES LIKE 'livraisons'"), 'table créée');
+    eq('active', App\Core\Addons::status('livraisons'));
+    eq('1000', setting('livraisons_frais_defaut'), 'paramètre par défaut');
+    ok(is_file(PUBLIC_PATH . '/assets/addons/livraisons/livraisons.css'), 'fichiers publics copiés');
+    actingAs('caissier');
+    ok(Auth::can('livraisons.manage'), 'droit accordé au rôle prévu');
+    actingAs('auditeur');
+    ok(!Auth::can('livraisons.view'), 'pas de droit pour les autres rôles');
+    actingAs('caissier');
+    $id = Addons\Livraisons\LivraisonService::create(['customer_name' => 'Awa', 'phone' => '+227 90 11 22 33', 'address' => 'Plateau', 'fee' => '1 000']);
+    throws(fn() => Addons\Livraisons\LivraisonService::create(['customer_name' => 'X', 'phone' => '', 'address' => '']), 'obligatoires');
+    Addons\Livraisons\LivraisonService::setStatus($id, 'livree');
+    throws(fn() => Addons\Livraisons\LivraisonService::setStatus($id, 'en_route'), 'non autorisé');
+    eq(1000.0, (float) DB::value('SELECT fee FROM livraisons WHERE id = ?', [$id]));
+    eq([], App\Core\Addons::install('livraisons', false), 'réinstallation idempotente');
+    $menu = App\Core\Addons::menu();
+    ok(isset($menu['Gestion des ventes']) && $menu['Gestion des ventes'][0][2] === '/livraisons', 'entrée de menu');
+});
+test('Menu à droite par défaut ; numéros d\'assistance', function () {
+    eq('right', setting('menu_position'));
+    $n = support_numbers();
+    eq(2, count($n));
+    eq('+22792081282', $n[0]['tel']);
+    eq('+22787225202', $n[1]['tel'], 'indicatif +227 ajouté au second numéro');
+});
+
 echo "\n== Sauvegarde & restauration ==\n";
 test('Sauvegarde vérifiée, altération détectée, restauration fidèle', function () {
     actingAs('admin');
@@ -1159,7 +1217,7 @@ test('Toutes les pages principales répondent sans erreur (admin)', function () 
     $h = new Http();
     $h->login($B, 'admin', 'Essai-Niamey-2026');
     $sale = (int) DB::value('SELECT MAX(id) FROM sales');
-    $pages = ['/dashboard', '/menu', '/pos', '/sales', "/sales/$sale", "/sales/$sale/invoice", '/returns', '/cash', '/cash/sessions', '/products', '/products/create', '/products/1', '/products/1/edit', '/products/import', '/products/labels', '/products/duplicates', '/categories', '/stock', '/stock/movements', '/stock/adjust?product=1', '/stock/transfers', '/stock/transfers/create', '/stock/expiry', '/stock/lots?q=L', '/inventories', '/suppliers', '/suppliers/1', '/purchases', '/purchases/create', '/receptions', '/receptions/create', '/supplier-returns', '/customers', '/customers/1', '/customers/1/statement', '/expenses', '/reports/sales', '/reports/products', '/reports/profit', '/reports/stock', '/reports/debts', '/reports/prescriptions', '/users', '/roles', '/settings', '/stores', '/audit', '/backups', '/account/password', '/printers', '/quotes', '/quotes/create', '/verify', '/reports/vat', "/sales/$sale/delivery"];
+    $pages = ['/dashboard', '/menu', '/pos', '/sales', "/sales/$sale", "/sales/$sale/invoice", '/returns', '/cash', '/cash/sessions', '/products', '/products/create', '/products/1', '/products/1/edit', '/products/import', '/products/labels', '/products/duplicates', '/categories', '/stock', '/stock/movements', '/stock/adjust?product=1', '/stock/transfers', '/stock/transfers/create', '/stock/expiry', '/stock/lots?q=L', '/inventories', '/suppliers', '/suppliers/1', '/purchases', '/purchases/create', '/receptions', '/receptions/create', '/supplier-returns', '/customers', '/customers/1', '/customers/1/statement', '/expenses', '/reports/sales', '/reports/products', '/reports/profit', '/reports/stock', '/reports/debts', '/reports/prescriptions', '/users', '/roles', '/settings', '/stores', '/audit', '/backups', '/account/password', '/printers', '/quotes', '/quotes/create', '/verify', '/reports/vat', '/addons', "/sales/$sale/delivery"];
     $bad = [];
     foreach ($pages as $p) {
         $r = $h->req('GET', $B . $p);
@@ -1326,6 +1384,35 @@ test('v1.3 (HTTP) : paramètres TVA, rapport TVA, exports PDF, bon cuisine réim
     $r = $w->req('POST', "$B/restaurant/orders/$oid/print-kitchen", '{}', ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]]);
     $d = json_decode($r['body'], true);
     ok(($d['ok'] ?? false) && count($d['print']) >= 1, 'réimpression du bon : ' . $r['body']);
+});
+test('v1.4 (HTTP) : page Modules, module actif / désactivé, connexion, menu', function () use ($B) {
+    $login = (new Http())->req('GET', "$B/login");
+    ok(str_contains($login['body'], 'href="tel:+22792081282"') && str_contains($login['body'], '87 22 52 02'), 'assistance sur la connexion');
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $page = $a->req('GET', "$B/addons");
+    ok($page['code'] === 200 && str_contains($page['body'], 'Livraisons'), 'page Modules');
+    ok(str_contains($a->req('GET', "$B/dashboard")['body'], 'menu-right'), 'menu à droite');
+    $g = new Http();
+    $g->login($B, 'gerant', 'Mot-de-passe-2026');
+    eq(403, $g->req('GET', "$B/addons")['code'], 'installation réservée à l\'administrateur');
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    $l = $c->req('GET', "$B/livraisons");
+    ok($l['code'] === 200 && str_contains($l['body'], 'Nouvelle livraison'), 'page du module');
+    ok(str_contains($c->req('GET', "$B/sales")['body'], 'href="/livraisons"'), 'lien dans le menu');
+    $t = $c->token("$B/livraisons");
+    $c->req('POST', "$B/livraisons", http_build_query(['_csrf' => $t, 'customer_name' => 'Client HTTP', 'phone' => '96000000', 'address' => 'Yantala', 'fee' => '500']));
+    eq(1, (int) DB::value("SELECT COUNT(*) FROM livraisons WHERE customer_name = 'Client HTTP'"));
+    $ta = $a->token("$B/addons");
+    $a->req('POST', "$B/addons", http_build_query(['_csrf' => $ta, 'code' => 'livraisons', 'do' => 'disable']));
+    eq(404, $c->req('GET', "$B/livraisons")['code'], 'module désactivé : page inaccessible');
+    ok(!str_contains($c->req('GET', "$B/sales")['body'], 'href="/livraisons"'), 'menu masqué');
+    eq(1, (int) DB::value("SELECT COUNT(*) FROM livraisons WHERE customer_name = 'Client HTTP'"), 'données conservées');
+    $a->req('POST', "$B/addons", http_build_query(['_csrf' => $ta, 'code' => 'livraisons', 'do' => 'enable']));
+    eq(200, $c->req('GET', "$B/livraisons")['code'], 'réactivé');
+    $a->req('POST', "$B/addons", http_build_query(['_csrf' => $ta, 'code' => '../../app', 'do' => 'install']));
+    eq(null, DB::value("SELECT code FROM addons WHERE code LIKE '%app%'"), 'code de module malveillant refusé');
 });
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);

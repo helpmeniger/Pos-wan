@@ -64,6 +64,10 @@ Rôles Serveur et Cuisinier.
 pharmacien ; registre des délivrances ; lots, FEFO, rappels. *(Conformité réglementaire à
 faire valider par un professionnel : voir SECURITE.md.)*
 
+**Modules complémentaires** — comme dans Odoo : déposer un module dans le dossier
+`addons/` puis l'installer en un clic (Gestion → Modules complémentaires). Module
+d'exemple « Livraisons » fourni ; guide de création : [docs/MODULES.md](docs/MODULES.md).
+
 **Administration** — utilisateurs, 11 rôles prédéfinis et **52 permissions** modifiables,
 connexion par mot de passe, **PIN** ou badge RFID, journal d'audit, paramètres de
 l'entreprise (logo, NIF, RCCM, pieds de ticket/facture), multi-boutiques, sauvegarde et
@@ -91,6 +95,7 @@ sont choisis pendant l'installation.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Structure du code, modèle de données, règles métier (CMP, FEFO, caisse, crédit) |
 | [docs/GUIDE_UTILISATEUR.md](docs/GUIDE_UTILISATEUR.md) | Utilisation de la caisse et des modules |
 | [docs/ETAT_DU_PROJET.md](docs/ETAT_DU_PROJET.md) | Ce qui est terminé, testé, et ce qui reste à faire |
+| [docs/MODULES.md](docs/MODULES.md) | Ajouter / créer un module complémentaire |
 | [CHANGELOG.md](CHANGELOG.md) | Historique des versions |
 
 ## Technique
@@ -99,7 +104,7 @@ PHP 8.1+ (testé en 8.3), MySQL 8 / MariaDB 10.4+ (testé en 10.11), Apache 2.4 
 Bootstrap 5.3, Chart.js 4.4 — aucune dépendance à télécharger, aucun appel réseau externe.
 
 ```
-php tests/run.php     # 88 tests automatisés (base de test dédiée, voir INSTALLATION § 13)
+php tests/run.php     # 92 tests automatisés (base de test dédiée, voir INSTALLATION § 13)
 php bin/backup.php    # sauvegarde en ligne de commande (planifiable)
 php bin/migrate.php   # mise à jour du schéma sans perte de données
 ```

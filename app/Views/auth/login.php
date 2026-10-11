@@ -67,6 +67,12 @@
       <?php endif; ?>
     </div>
     <p class="text-center small text-secondary mt-4 mb-1"><i class="bi bi-shield-lock"></i> Connexion protégée · tentatives limitées</p>
+    <?php if ($support = support_numbers()): ?>
+    <div class="login-support text-center small mb-2">
+      <i class="bi bi-headset"></i> <?= e(t('Assistance')) ?> :
+      <?php foreach ($support as $i => $n): ?><?= $i ? ' / ' : '' ?><a href="tel:<?= e($n['tel']) ?>"><?= e($n['label']) ?></a><?php endforeach; ?>
+    </div>
+    <?php endif; ?>
     <div class="text-center small"><i class="bi bi-translate"></i> <?php foreach (App\Core\Lang::LANGUAGES as $code => [$label]): ?><a class="mx-1 <?= App\Core\Lang::locale() === $code ? 'text-warning fw-bold' : 'text-secondary' ?>" href="<?= e(url('/login', ['lang' => $code])) ?>"><?= e($label) ?></a><?php endforeach; ?></div>
   </div>
 </div>

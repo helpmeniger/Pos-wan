@@ -171,6 +171,13 @@ les vues/services concernés.
   défaut, `aucun` = sans ticket) ; `pay()` envoie d'abord les lignes `new` si
   `restaurant_send_on_pay`.
 
+### Version 1.4 — modules complémentaires
+`App\Core\Addons` : découverte des dossiers `addons/<code>/manifest.json`, table `addons`
+(version installée, actif), chargement automatique `Addons\<Code>\` → `addons/<code>/src/`,
+routes (`routes.php`, modules actifs seulement), vues `code::nom`, menu, traductions,
+permissions (accordées à l'installation), migrations `addon:<code>:<fichier>`, fichiers
+publics copiés dans `public/assets/addons/<code>/`. Voir `docs/MODULES.md`.
+
 ## 7. Rôles par défaut
 
 | Rôle | Périmètre |

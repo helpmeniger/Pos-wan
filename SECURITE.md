@@ -84,6 +84,15 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
   (prix et remises protégés par permission, opérateur limité à la liste paramétrée,
   nouveau prix de vente soumis à `products.price_edit`).
 
+### Modules complémentaires (v1.4)
+- Installation réservée à `addons.manage` (administrateur général) ; aucun envoi de module
+  par le navigateur : il faut un accès au dossier `addons/` du serveur.
+- Dossier `addons/` interdit par Apache ; codes de module validés (`[a-z][a-z0-9_]`) : pas
+  de traversée de répertoire ; seuls les fichiers statiques (CSS, JS, images) sont publiés.
+- Sauvegarde automatique avant installation et mise à jour ; désactiver ne supprime rien.
+- **Limite** : un module installé exécute du PHP avec tous les droits de l'application ;
+  n'installer que des modules de confiance (aucun « bac à sable »).
+
 ### Intégrité métier
 - **Transactions SQL** pour ventes, paiements, stocks, retours, réceptions, inventaires, caisse.
 - Verrous de ligne (`SELECT … FOR UPDATE`) sur stocks, lots, sessions de caisse, comptes
@@ -104,7 +113,7 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
 
 Exécutées réellement dans l'environnement de développement (PHP 8.3, MariaDB 10.11) :
 
-1. **`php tests/run.php` : 88 tests, 0 échec**, dont :
+1. **`php tests/run.php` : 92 tests, 0 échec**, dont :
    CSRF (formulaire, API JSON), connexion/échec/verrouillage/PIN, régénération de session,
    en-têtes HTTP, redirection des pages protégées, contrôle d'accès par rôle (403),
    accès aux ventes d'autrui (IDOR), injections SQL dans la recherche, les filtres et le tri,

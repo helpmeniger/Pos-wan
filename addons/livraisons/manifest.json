@@ -1,0 +1,25 @@
+{
+    "code": "livraisons",
+    "name": "Livraisons",
+    "version": "1.0.0",
+    "requires": "1.4.0",
+    "author": "POS Wan",
+    "description": "Suivi des livraisons à domicile : client, adresse, livreur, frais, statut (à livrer, en route, livrée), lien avec la vente. Module d'exemple à copier pour créer vos propres modules.",
+    "icon": "bi-truck",
+    "color": "#16a085",
+    "permissions": {
+        "livraisons.view": "Voir les livraisons",
+        "livraisons.manage": "Créer et mettre à jour les livraisons"
+    },
+    "roles": {
+        "owner": ["livraisons.view", "livraisons.manage"],
+        "store_manager": ["livraisons.view", "livraisons.manage"],
+        "cashier": ["livraisons.view", "livraisons.manage"]
+    },
+    "menu": [
+        { "group": "Gestion des ventes", "label": "Livraisons", "icon": "bi-truck", "url": "/livraisons", "permission": "livraisons.view", "color": "#16a085" }
+    ],
+    "settings": {
+        "livraisons_frais_defaut": "1000"
+    }
+}
