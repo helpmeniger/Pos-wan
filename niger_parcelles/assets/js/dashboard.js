@@ -5,6 +5,7 @@
     const palette = ['#e05206', '#0d8b3e', '#5c6670', '#f4a261', '#2a9d8f', '#8d99ae', '#e76f51', '#264653', '#a8dadc', '#6d597a'];
     const statusColors = { brouillon: '#adb5bd', soumise: '#4fc3f7', en_verification: '#ffb74d', verifiee: '#66bb6a', anomalie: '#ef5350', rejetee: '#495057' };
     Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+    Chart.defaults.animation = false; // interface sobre, sans animation superflue
     const empty = (id) => {
         const c = document.getElementById(id);
         c.replaceWith(Object.assign(document.createElement('div'), { className: 'text-muted small', textContent: 'Aucune donnée.' }));

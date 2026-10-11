@@ -169,13 +169,13 @@
         $('panelTitle').textContent = title;
         $('panelBody').innerHTML = html;
         panel.hidden = false;
-        setTimeout(() => map.invalidateSize(), 50);
+        setTimeout(() => map.invalidateSize({ pan: false }), 50);
     }
     function hidePanel() {
         panel.hidden = true;
         selectedId = null;
         highlightLayer.clearLayers();
-        setTimeout(() => map.invalidateSize(), 50);
+        setTimeout(() => map.invalidateSize({ pan: false }), 50);
     }
     $('panelClose').addEventListener('click', () => {
         if (editing && !window.confirm('Abandonner la saisie en cours ? Les modifications non enregistrées seront perdues.')) return;

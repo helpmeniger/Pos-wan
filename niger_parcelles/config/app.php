@@ -34,7 +34,7 @@ $config = [
 
     // Anti force brute
     'login_max_attempts_user' => 5,   // échecs max par identifiant
-    'login_max_attempts_ip'   => 20,  // échecs max par adresse IP
+    'login_max_attempts_ip'   => 50,  // échecs max par adresse IP (bureau partageant une IP)
     'login_lockout_minutes'   => 15,
 
     // Documents : extensions et types MIME autorisés
