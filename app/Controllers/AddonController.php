@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Core\Addons;
 use App\Core\BusinessException;
+use App\Core\Logger;
 use App\Core\Request;
 
 /** Gestion → Modules complémentaires (dossier addons/). */
@@ -13,6 +14,9 @@ final class AddonController extends Controller
     public function index(): void
     {
         Addons::reset();
+        foreach (Addons::normalizeFolders() as $note) {
+            flash('info', $note);
+        }
         $mods = Addons::discover(true);
         // Modules installés dont le dossier a été retiré
         foreach (Addons::installed() as $code => $row) {
@@ -34,6 +38,12 @@ final class AddonController extends Controller
             };
         } catch (BusinessException $e) {
             $this->fail($e->getMessage(), '/addons');
+        } catch (\Throwable $e) {
+            // Erreur technique (base de données, droits d'écriture…) : message réel affiché à
+            // l'administrateur (page réservée) et journalisé, au lieu d'une page « Erreur 500 ».
+            Logger::error('Installation du module « ' . $code . ' » impossible : ' . $e->getMessage(), ['file' => $e->getFile() . ':' . $e->getLine()]);
+            $this->fail('Installation du module « ' . $code . ' » impossible : ' . $e->getMessage()
+                . ' — Une sauvegarde a été faite avant l\'opération (Paramètres → Sauvegardes). Détail : storage/logs.', '/addons');
         }
         flash('success', match ($do) {
             'install' => 'Module installé et activé (sauvegarde de sécurité effectuée). Il apparaît dans le menu selon les droits de chaque rôle.',

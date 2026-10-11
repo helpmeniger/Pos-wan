@@ -2,6 +2,19 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [1.5.1] — 2026-10-12
+
+### Corrigé
+- **Installation des modules en erreur (« Erreur 500 ») après une mise à jour par copie des
+  fichiers** : la migration 1.4 (table `addons`) n'était appliquée que par
+  `php bin/migrate.php`. La base est désormais **mise à jour automatiquement** au premier
+  affichage (sauvegarde de sécurité avant, verrou contre les exécutions simultanées), et
+  l'installation d'un module applique d'abord les migrations en attente.
+- Une erreur technique pendant l'installation d'un module affiche maintenant sa cause à
+  l'administrateur (et la journalise) au lieu d'une page d'erreur 500.
+- Modules décompressés par Windows dans un sous-dossier (`addons/module-x-1.0.0/x/`) ou
+  renommés (`addons/x (1)/`) : rangés automatiquement en `addons/x/`.
+
 ## [1.5.0] — 2026-10-11
 
 ### Ajouté — module « Clinique » (`addons/clinique/`)

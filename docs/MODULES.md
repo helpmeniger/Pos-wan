@@ -22,6 +22,10 @@ on dépose le dossier du module dans `addons/`, puis on l'installe en un clic.
 | Désactiver | Pages et menu masqués (404), **données conservées** |
 | Activer | Le module revient tel quel |
 
+En cas d'échec, la cause exacte s'affiche en rouge sur la page des modules (une sauvegarde a
+été faite avant). Un dossier décompressé dans un sous-dossier ou mal nommé est rangé
+automatiquement (`addons/module-x-1.0.0/x/` → `addons/x/`).
+
 Pour retirer un module : le désactiver, puis supprimer son dossier. Ses tables restent dans
 la base (aucune donnée n'est effacée automatiquement).
 

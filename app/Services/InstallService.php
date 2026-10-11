@@ -20,6 +20,56 @@ final class InstallService
         return is_file(self::lockFile());
     }
 
+    /** Migrations du logiciel (database/migrations) pas encore appliquées à la base. */
+    public static function pendingMigrations(): array
+    {
+        $files = array_map(fn($f) => basename($f, '.sql'), glob(BASE_PATH . '/database/migrations/*.sql') ?: []);
+        sort($files);
+        try {
+            $done = array_column(DB::all("SELECT version FROM schema_migrations WHERE version NOT LIKE 'addon:%'"), 'version');
+        } catch (\Throwable) {
+            return []; // base non encore installée
+        }
+        return array_values(array_diff($files, $done));
+    }
+
+    /**
+     * Mise à jour automatique après remplacement des fichiers (WampServer, sans ligne de
+     * commande) : si des migrations sont en attente, sauvegarde de sécurité puis migration.
+     * Un verrou MySQL évite deux exécutions simultanées ; en cas d'échec, nouvel essai
+     * au plus tôt 10 minutes plus tard (l'erreur est journalisée).
+     */
+    public static function autoMigrate(): array
+    {
+        if (!self::isInstalled() || !self::pendingMigrations()) {
+            return [];
+        }
+        $flag = STORAGE_PATH . '/cache/migration_failed';
+        if (is_file($flag) && filemtime($flag) > time() - 600) {
+            return [];
+        }
+        if ((int) DB::value("SELECT GET_LOCK('poswan_migrate', 30)") !== 1) {
+            return [];
+        }
+        try {
+            if (!self::pendingMigrations()) {
+                return [];
+            }
+            @set_time_limit(600);
+            BackupService::create('avant_migration');
+            $applied = self::migrate();
+            \App\Core\Logger::info('Migrations appliquées automatiquement', ['migrations' => $applied]);
+            @unlink($flag);
+            return $applied;
+        } catch (\Throwable $e) {
+            \App\Core\Logger::error('Échec de la migration automatique : ' . $e->getMessage());
+            @file_put_contents($flag, $e->getMessage());
+            return [];
+        } finally {
+            DB::value("SELECT RELEASE_LOCK('poswan_migrate')");
+        }
+    }
+
     public static function runSqlFile(string $file): void
     {
         $sql = (string) file_get_contents($file);

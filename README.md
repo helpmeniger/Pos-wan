@@ -104,9 +104,9 @@ PHP 8.1+ (testé en 8.3), MySQL 8 / MariaDB 10.4+ (testé en 10.11), Apache 2.4 
 Bootstrap 5.3, Chart.js 4.4 — aucune dépendance à télécharger, aucun appel réseau externe.
 
 ```
-php tests/run.php     # 100 tests automatisés (base de test dédiée, voir INSTALLATION § 13)
+php tests/run.php     # 103 tests automatisés (base de test dédiée, voir INSTALLATION § 13)
 php bin/backup.php    # sauvegarde en ligne de commande (planifiable)
-php bin/migrate.php   # mise à jour du schéma sans perte de données
+php bin/migrate.php   # mise à jour du schéma (aussi faite automatiquement au premier affichage)
 ```
 
 ## Captures

@@ -1,4 +1,4 @@
-# État du projet — version 1.5.0
+# État du projet — version 1.5.1
 
 ## Terminé et vérifié
 
@@ -42,9 +42,10 @@
 | **v1.5** Module Clinique (patients, rendez-vous, consultations, ordonnances → pharmacie, hospitalisation, plan de soins, facturation avec prise en charge, rapport) | ✅ | 5 tests (dont HTTP : confidentialité, droits, délivrance → vente + registre) + scénario Chromium |
 | **v1.5** Écran de supervision des malades (alertes, soins dus, bouton « Fait ») | ✅ | Tests (flux JSON, CSRF) + Chromium (bureau et téléphone) ; **non testé en conditions réelles de service** |
 | **v1.4** Menu à droite (option gauche), assistance sur l'écran de connexion | ✅ | Tests + Chromium (bureau et téléphone) |
+| **v1.5.1** Mise à jour automatique de la base après copie des fichiers ; modules : erreurs affichées, dossiers mal décompressés rangés | ✅ | 3 tests + reproduction de la panne (installation 1.4 sans migration → erreur 500, puis corrigée) |
 | Protections Apache (.htaccess) en sous-dossier | ✅ | Testé sous Apache 2.4 + mod_php |
 
-**Résultat de la suite de tests : 100 réussis, 0 échec** (`php tests/run.php`).
+**Résultat de la suite de tests : 103 réussis, 0 échec** (`php tests/run.php`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 

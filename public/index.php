@@ -25,6 +25,8 @@ $path = Request::path();
 if (!InstallService::isInstalled() && !str_starts_with($path, '/install')) {
     redirect('/install');
 }
+// Fichiers mis à jour (nouvelle version copiée) : la base est mise à jour automatiquement
+InstallService::autoMigrate();
 
 $router = new Router();
 require BASE_PATH . '/routes/web.php';

@@ -242,6 +242,54 @@ final class Addons
         return self::dir() . '/' . $code . '/views/' . $name . '.php';
     }
 
+    /**
+     * Range les dossiers de modules mal placés (cas fréquent sous Windows avec « Extraire
+     * tout ») : addons/module-clinique-1.0.0/clinique/manifest.json → addons/clinique/, ou
+     * addons/Clinique (1)/manifest.json → addons/clinique/ (nom tiré du manifeste).
+     * Ne remplace jamais un dossier existant. @return string[] messages pour l'administrateur
+     */
+    public static function normalizeFolders(): array
+    {
+        $notes = [];
+        foreach (glob(self::dir() . '/*', GLOB_ONLYDIR) ?: [] as $path) {
+            $folder = basename($path);
+            $manifest = $path . '/manifest.json';
+            $src = null;
+            if (!is_file($manifest)) {
+                $inner = array_values(array_filter(glob($path . '/*', GLOB_ONLYDIR) ?: [], fn($d) => is_file($d . '/manifest.json')));
+                if (count($inner) !== 1) {
+                    continue;
+                }
+                $src = $inner[0];
+                $manifest = $src . '/manifest.json';
+            } elseif (preg_match(self::CODE_REGEX, $folder)) {
+                continue; // dossier déjà correct
+            }
+            $data = json_decode((string) file_get_contents($manifest), true);
+            $code = is_array($data) ? (string) ($data['code'] ?? '') : '';
+            if (!preg_match(self::CODE_REGEX, $code) || $code === $folder) {
+                continue;
+            }
+            $target = self::dir() . '/' . $code;
+            if (file_exists($target)) {
+                $notes[] = 'Le dossier « ' . $folder . ' » contient le module « ' . $code . ' », mais addons/' . $code . ' existe déjà : supprimez le doublon.';
+                continue;
+            }
+            if (@rename($src ?? $path, $target)) {
+                if ($src) {
+                    @rmdir($path); // dossier d'emballage vide
+                }
+                $notes[] = 'Dossier « ' . $folder . ($src ? '/' . basename($src) : '') . ' » rangé automatiquement en addons/' . $code . '.';
+            } else {
+                $notes[] = 'Déplacez le dossier « ' . $folder . ($src ? '/' . basename($src) : '') . ' » en addons/' . $code . ' (renommage impossible : droits du dossier).';
+            }
+        }
+        if ($notes) {
+            self::reset();
+        }
+        return $notes;
+    }
+
     // ------------------------------------------------------------------ gestion
 
     private static function manifestOrFail(string $code): array
@@ -262,11 +310,18 @@ final class Addons
     /** Installe ou met à jour un module : sauvegarde, migrations, paramètres, permissions, fichiers publics. */
     public static function install(string $code, bool $backup = true): array
     {
+        @set_time_limit(600);
         $m = self::manifestOrFail($code);
-        $row = self::installed()[$code] ?? null;
         if ($backup) {
-            BackupService::create(($row ? 'avant_maj_module_' : 'avant_module_') . $code);
+            BackupService::create((self::installed()[$code] ?? null ? 'avant_maj_module_' : 'avant_module_') . $code);
         }
+        // Logiciel mis à jour par simple copie des fichiers : la base doit d'abord être à jour
+        // (table « addons » de la 1.4, etc.), sinon l'installation échouerait.
+        if (InstallService::pendingMigrations()) {
+            InstallService::migrate();
+            self::$installed = null;
+        }
+        $row = self::installed()[$code] ?? null;
         $done = array_column(DB::all('SELECT version FROM schema_migrations WHERE version LIKE ?', ['addon:' . $code . ':%']), 'version');
         $applied = [];
         $files = glob(self::dir() . '/' . $code . '/migrations/*.sql') ?: [];

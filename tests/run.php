@@ -1179,6 +1179,46 @@ test('Module Clinique : hospitalisation, plan de soins, écran de supervision, s
     $CL['stay'] = $sid2;
     $CL['care2'] = (int) DB::value('SELECT id FROM clinic_care_plan WHERE stay_id = ?', [$sid2]);
 });
+test('Mise à jour par copie des fichiers : base mise à jour automatiquement, modules installables', function () {
+    actingAs('admin');
+    // Installation 1.3 mise à jour sans « php bin/migrate.php » : table addons absente
+    DB::connection()->exec('RENAME TABLE addons TO addons_sauve');
+    DB::run("DELETE FROM schema_migrations WHERE version = '0005_modules_menu'");
+    App\Core\Addons::reset();
+    eq(['0005_modules_menu'], S\InstallService::pendingMigrations(), 'migration en attente détectée');
+    App\Core\Addons::install('livraisons', false);
+    eq([], S\InstallService::pendingMigrations(), 'migration appliquée avant l\'installation du module');
+    eq('1', (string) DB::value("SELECT active FROM addons WHERE code = 'livraisons'"), 'module installé');
+    DB::connection()->exec('DROP TABLE addons');
+    DB::connection()->exec('RENAME TABLE addons_sauve TO addons');
+    App\Core\Addons::reset();
+    // Mise à jour automatique au premier affichage d'une page (sauvegarde avant)
+    DB::run("DELETE FROM schema_migrations WHERE version = '0005_modules_menu'");
+    $before = count(glob(S\BackupService::dir() . '/*avant_migration*.sql.gz') ?: []);
+    eq(['0005_modules_menu'], S\InstallService::autoMigrate());
+    eq($before + 1, count(glob(S\BackupService::dir() . '/*avant_migration*.sql.gz') ?: []), 'sauvegarde de sécurité avant migration');
+    eq([], S\InstallService::autoMigrate(), 'rien à faire ensuite');
+    foreach (glob(S\BackupService::dir() . '/*avant_migration*') ?: [] as $f) {
+        @unlink($f);
+    }
+});
+test('Modules : dossiers mal placés après décompression (Windows) rangés automatiquement', function () {
+    $d = App\Core\Addons::dir();
+    @mkdir($d . '/module-demo_range-1.0.0/demo_range', 0775, true);
+    file_put_contents($d . '/module-demo_range-1.0.0/demo_range/manifest.json', json_encode(['code' => 'demo_range', 'name' => 'Demo', 'version' => '1.0.0']));
+    @mkdir($d . '/Demo Nom (1)', 0775, true);
+    file_put_contents($d . '/Demo Nom (1)/manifest.json', json_encode(['code' => 'demo_nom', 'name' => 'Demo 2', 'version' => '1.0.0']));
+    $notes = App\Core\Addons::normalizeFolders();
+    eq(2, count($notes), implode(' | ', $notes));
+    ok(is_file($d . '/demo_range/manifest.json') && !is_dir($d . '/module-demo_range-1.0.0'), 'sous-dossier remonté');
+    ok(is_file($d . '/demo_nom/manifest.json') && !is_dir($d . '/Demo Nom (1)'), 'dossier renommé selon le manifeste');
+    ok(isset(App\Core\Addons::discover(true)['demo_range']), 'module détecté');
+    foreach (['demo_range', 'demo_nom'] as $x) {
+        @unlink("$d/$x/manifest.json");
+        @rmdir("$d/$x");
+    }
+    App\Core\Addons::reset();
+});
 test('Menu à droite par défaut ; numéros d\'assistance', function () {
     eq('right', setting('menu_position'));
     $n = support_numbers();
@@ -1719,6 +1759,22 @@ test('Module Clinique (HTTP) : confidentialité, supervision JSON, soin « Fait 
     $a->req('POST', "$B/clinique/parametres/seuils", http_build_query(['_csrf' => $ts, 'th' => $th]));
     eq('38', DB::value("SELECT svalue FROM settings WHERE skey = 'clinique_alerte_temp_haute'"), 'seuil modifié');
     ok(DB::value("SELECT COUNT(*) FROM audit_logs WHERE action = 'clinique.dossier.view'") > 0, 'accès au dossier médical journalisé');
+});
+test('Modules (HTTP) : erreur technique affichée à l\'administrateur au lieu d\'une erreur 500', function () use ($B) {
+    $d = App\Core\Addons::dir() . '/demo_err';
+    @mkdir($d . '/migrations', 0775, true);
+    file_put_contents($d . '/manifest.json', json_encode(['code' => 'demo_err', 'name' => 'Démo erreur', 'version' => '1.0.0']));
+    file_put_contents($d . '/migrations/0001_x.sql', "CREATE TABLE demo_err (id INT PRIMARY KEY, x TYPE_INCONNU);\n");
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $t = $a->token("$B/addons");
+    $r = $a->req('POST', "$B/addons", http_build_query(['_csrf' => $t, 'code' => 'demo_err', 'do' => 'install']));
+    eq(302, $r['code'], 'pas d\'erreur 500');
+    $page = $a->req('GET', "$B/addons")['body'];
+    ok(str_contains($page, 'Installation du module « demo_err » impossible') && str_contains($page, 'TYPE_INCONNU'), 'cause affichée');
+    eq(null, DB::value("SELECT code FROM addons WHERE code = 'demo_err'"), 'module non enregistré');
+    @unlink($d . '/migrations/0001_x.sql'); @rmdir($d . '/migrations'); @unlink($d . '/manifest.json'); @rmdir($d);
+    foreach (glob(S\BackupService::dir() . '/*avant_module_demo_err*') ?: [] as $f) { @unlink($f); }
 });
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);

@@ -313,20 +313,25 @@ Les photos se restaurent en décompressant le `.zip` dans `public\uploads`.
 
 1. Faites une sauvegarde (menu Sauvegardes) et une copie du dossier complet.
 2. Remplacez les fichiers de l'application **sauf** : `.env`, `storage\`, `public\uploads\`.
-3. Appliquez les évolutions du schéma :
+3. Ouvrez POS Wan dans le navigateur : depuis la version 1.5.1, **la base est mise à jour
+   automatiquement** au premier affichage (sauvegarde de sécurité `avant_migration`, puis
+   application des seuls fichiers de `database\migrations` non encore exécutés).
+   La commande manuelle reste possible :
    ```bat
    cd C:\wamp64\www\pos-wan
    C:\wamp64\bin\php\php8.2.x\php.exe bin\migrate.php
    ```
-   (`migrate.php` crée d'abord une sauvegarde de sécurité, puis applique uniquement les
-   fichiers de `database\migrations` non encore exécutés.)
 4. Videz le cache du navigateur (Ctrl+F5).
 
 ---
 
 ### Modules complémentaires
-Copier le dossier du module dans `addons/` (ex. `C:\wamp64\www\pos-wan\addons\livraisons\`),
-puis **Gestion → Modules complémentaires → Installer** (ou `php bin/addons.php install livraisons`).
+Copier le dossier du module dans `addons/` (ex. `C:\wamp64\www\pos-wan\addons\livraisons\`,
+qui contient directement `manifest.json`), puis **Gestion → Modules complémentaires →
+Installer** (ou `php bin/addons.php install livraisons`). Si Windows a décompressé le module
+dans un sous-dossier (`addons\module-clinique-1.0.0\clinique\`) ou l'a renommé
+(`addons\clinique (1)\`), la page des modules le range automatiquement. En cas d'échec,
+la cause exacte est affichée en rouge sur la page (et dans `storage\logs`).
 Voir [docs/MODULES.md](docs/MODULES.md).
 
 ## 12. Dépannage
