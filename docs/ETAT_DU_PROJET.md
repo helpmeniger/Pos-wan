@@ -1,4 +1,4 @@
-# État du projet — version 1.4.0
+# État du projet — version 1.4.1
 
 ## Terminé et vérifié
 
@@ -38,10 +38,11 @@
 | **v1.3** Écran cuisine : poste par défaut, envoi à l'encaissement, réimpression du bon | ✅ | Tests + scénario Chromium (catégorie sans poste → écran cuisine) |
 | **v1.4** Modules complémentaires (dossier addons/) : installation, mise à jour, activation, CLI | ✅ | Tests (manifestes invalides, version requise, chemin malveillant, permissions, désactivation = 404, données conservées) + Chromium |
 | **v1.4** Module d'exemple Livraisons | ✅ | Tests + rendu |
+| **v1.4.1** Module Pressing (tarifs, dépôts, étiquettes, express, acompte, retrait, annulation remboursée, rapport) | ✅ | 3 tests + scénario Chromium complet (dépôt → prêt → retrait avec monnaie) |
 | **v1.4** Menu à droite (option gauche), assistance sur l'écran de connexion | ✅ | Tests + Chromium (bureau et téléphone) |
 | Protections Apache (.htaccess) en sous-dossier | ✅ | Testé sous Apache 2.4 + mod_php |
 
-**Résultat de la suite de tests : 92 réussis, 0 échec** (`php tests/run.php`).
+**Résultat de la suite de tests : 95 réussis, 0 échec** (`php tests/run.php`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 

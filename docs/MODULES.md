@@ -42,7 +42,9 @@ php bin/addons.php enable livraisons
 
 ## 2. Créer un module (développeur)
 
-Le module d'exemple `addons/livraisons/` est un modèle complet : copiez-le et adaptez-le.
+Le module d'exemple `addons/livraisons/` est un modèle simple ; `addons/pressing/` est un
+module complet (tarifs, paiements en caisse, impressions, rapport, export PDF). Copiez-les
+et adaptez-les.
 
 ```
 addons/

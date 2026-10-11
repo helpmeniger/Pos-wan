@@ -2,6 +2,20 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [1.4.1] — 2026-10-11
+
+### Ajouté — module « Pressing » (`addons/pressing/`)
+- Tarifs par article et par service (lavage + repassage, nettoyage à sec, repassage,
+  teinture), 18 articles et prix indicatifs en FCFA, modifiables.
+- Dépôt tactile : client (rappel des clients connus), articles, couleur / marque / défauts
+  constatés, express (supplément et délai), remise contrôlée, acompte en caisse.
+- Ticket client avec QR code, étiquettes par pièce (n° à reporter sur les vêtements).
+- Suivi : reçu → en cours → prêt → retiré ; retards, linge non retiré, message WhatsApp.
+- Retrait : paiement du solde avec monnaie ; remise sans paiement complet réservée au
+  responsable (motif) ; annulation avec remboursement en caisse.
+- Rapport par période (dépôts, pièces, facturé, encaissé, reste, services, articles,
+  modes de paiement) et export CSV / PDF. 4 permissions dédiées.
+
 ## [1.4.0] — 2026-10-11
 
 ### Ajouté

@@ -1,0 +1,9 @@
+/* Module Pressing */
+.pressing-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .4rem; }
+.pressing-tile { border: 1px solid var(--bs-border-color); background: var(--bs-body-bg); border-radius: .6rem; padding: .55rem .5rem; font-weight: 600; font-size: .88rem; text-align: center; min-height: 54px; }
+.pressing-tile:hover { border-color: #1f77b4; background: rgba(31,119,180,.08); }
+.pressing-tile:active { transform: scale(.97); }
+#pLines input[data-q] { min-width: 64px; }
+#pLines input[data-p] { min-width: 90px; }
+#pLines input[data-color], #pLines input[name$="[brand]"] { min-width: 100px; }
+#pLines input[data-defects] { min-width: 150px; }

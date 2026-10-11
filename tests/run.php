@@ -979,6 +979,57 @@ test('Module exemple « Livraisons » : installation, permissions, données, ré
     $menu = App\Core\Addons::menu();
     ok(isset($menu['Gestion des ventes']) && $menu['Gestion des ventes'][0][2] === '/livraisons', 'entrée de menu');
 });
+$PR = [];
+test('Module Pressing : dépôt express, acompte en caisse, étiquettes, prix protégés', function () use (&$PR) {
+    actingAs('admin');
+    eq(['0001_pressing'], App\Core\Addons::install('pressing', false), 'installation');
+    $PR['chemise'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Chemise'");
+    $PR['boubou'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Boubou simple'");
+    $PR['couverture'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Couverture'");
+    actingAs('caissier');
+    $session = (int) S\CashService::currentSession(Auth::user())['id'];
+    $cash0 = S\CashService::expectedCash($session);
+    $lines = [['article_id' => $PR['chemise'], 'service' => 'lavage', 'quantity' => 2, 'color' => 'blanc'], ['article_id' => $PR['boubou'], 'service' => 'sec', 'quantity' => 1, 'defects' => 'tache au col']];
+    throws(fn() => Addons\Pressing\PressingService::create(['customer_name' => 'Moussa', 'phone' => '9012', 'lines' => $lines]), 'téléphone');
+    throws(fn() => Addons\Pressing\PressingService::create(['customer_name' => 'Moussa', 'phone' => '90121212', 'lines' => [['article_id' => $PR['chemise'], 'service' => 'lavage', 'quantity' => 1, 'unit_price' => 100]]]), 'réservée au responsable');
+    throws(fn() => Addons\Pressing\PressingService::create(['customer_name' => 'Moussa', 'phone' => '90121212', 'lines' => [['article_id' => $PR['couverture'], 'service' => 'repassage', 'quantity' => 1]]]), 'non proposé');
+    $r = Addons\Pressing\PressingService::create(['customer_name' => 'Moussa', 'phone' => '90 12 12 12', 'express' => true, 'lines' => $lines, 'deposit' => ['method' => 'cash', 'amount' => '2000']]);
+    $o = DB::one('SELECT * FROM pressing_orders WHERE id = ?', [$r['id']]);
+    eq(3000.0, (float) $o['subtotal'], '2 × 500 + 2000');
+    eq(1500.0, (float) $o['express_fee'], 'express 50 %');
+    eq(4500.0, (float) $o['total']);
+    eq(2000.0, (float) $o['paid'], 'acompte');
+    eq(3, (int) $o['pieces']);
+    eq(date('Y-m-d', strtotime('+1 day')), $o['due_date'], 'délai express');
+    ok(str_starts_with($o['number'], 'PR'), 'numérotation PR');
+    eq(['1-1', '1-2'], array_column(DB::all('SELECT tag FROM pressing_items WHERE order_id = ? ORDER BY line_no', [$r['id']]), 'tag'), 'étiquettes');
+    eq($cash0 + 2000, S\CashService::expectedCash($session), 'acompte entré dans la caisse');
+    $PR['o1'] = $r['id'];
+});
+test('Module Pressing : traitement, retrait avec solde, monnaie, annulation remboursée', function () use (&$PR) {
+    actingAs('caissier');
+    $id = $PR['o1'];
+    throws(fn() => Addons\Pressing\PressingService::setStatus($id, 'delivered'), 'non autorisé');
+    Addons\Pressing\PressingService::setStatus($id, 'processing');
+    throws(fn() => Addons\Pressing\PressingService::deliver($id), 'pas encore marqué');
+    Addons\Pressing\PressingService::setStatus($id, 'ready');
+    throws(fn() => Addons\Pressing\PressingService::deliver($id), 'Reste à payer');
+    $change = Addons\Pressing\PressingService::deliver($id, ['method' => 'cash', 'amount' => '5000']);
+    eq(2500.0, $change, 'monnaie : 5000 − 2500');
+    $o = DB::one('SELECT * FROM pressing_orders WHERE id = ?', [$id]);
+    eq('delivered', $o['status']);
+    eq(4500.0, (float) $o['paid']);
+    throws(fn() => Addons\Pressing\PressingService::cancel($id, 'erreur'), 'ne peut plus');
+    $r2 = Addons\Pressing\PressingService::create(['customer_name' => 'Aïssa', 'phone' => '96000001', 'lines' => [['article_id' => $PR['chemise'], 'service' => 'repassage', 'quantity' => 4]], 'deposit' => ['method' => 'cash', 'amount' => '500']]);
+    $session = (int) S\CashService::currentSession(Auth::user())['id'];
+    $cash = S\CashService::expectedCash($session);
+    actingAs('gerant');
+    Addons\Pressing\PressingService::cancel($r2['id'], 'Client a renoncé');
+    eq('cancelled', DB::value('SELECT status FROM pressing_orders WHERE id = ?', [$r2['id']]));
+    eq(0.0, (float) DB::value('SELECT paid FROM pressing_orders WHERE id = ?', [$r2['id']]), 'acompte remboursé');
+    eq($cash - 500, S\CashService::expectedCash($session), 'remboursement sorti de la caisse');
+    eq(['received', 'processing', 'ready', 'delivered'], array_column(DB::all('SELECT to_status FROM pressing_status_log WHERE order_id = ? ORDER BY id', [$id]), 'to_status'), 'historique des statuts');
+});
 test('Menu à droite par défaut ; numéros d\'assistance', function () {
     eq('right', setting('menu_position'));
     $n = support_numbers();
@@ -1413,6 +1464,47 @@ test('v1.4 (HTTP) : page Modules, module actif / désactivé, connexion, menu', 
     eq(200, $c->req('GET', "$B/livraisons")['code'], 'réactivé');
     $a->req('POST', "$B/addons", http_build_query(['_csrf' => $ta, 'code' => '../../app', 'do' => 'install']));
     eq(null, DB::value("SELECT code FROM addons WHERE code LIKE '%app%'"), 'code de module malveillant refusé');
+});
+test('Module Pressing (HTTP) : saisie, ticket QR, étiquettes, droits, tarifs, rapport PDF', function () use ($B, &$PR) {
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(200, $c->req('GET', "$B/pressing")['code'], 'tableau de bord');
+    $t = $c->token("$B/pressing/create");
+    $r = $c->req('POST', "$B/pressing", http_build_query(['_csrf' => $t, 'customer_name' => 'Client Web', 'phone' => '+227 93 00 00 00', 'express' => '0', 'discount' => '0',
+        'lines' => [['article_id' => $PR['chemise'], 'service' => 'lavage', 'quantity' => '3'], ['article_id' => $PR['boubou'], 'service' => 'lavage', 'quantity' => '1']],
+        'pay_method' => 'cash', 'pay_amount' => '1000', 'pay_reference' => '']));
+    $id = (int) DB::value("SELECT id FROM pressing_orders WHERE customer_name = 'Client Web'");
+    ok($id > 0 && str_contains($r['headers'], '/pressing/' . $id), 'dépôt créé : ' . substr($r['headers'], 0, 200));
+    eq(2500.0, (float) DB::value('SELECT total FROM pressing_orders WHERE id = ?', [$id]), '3 × 500 + 1000');
+    $show = $c->req('GET', "$B/pressing/$id?print=1");
+    ok($show['code'] === 200 && str_contains($show['body'], 'data-autoprint-url'), 'fiche + impression automatique');
+    $num = DB::value('SELECT number FROM pressing_orders WHERE id = ?', [$id]);
+    $tk = $c->req('GET', "$B/pressing/$id/ticket");
+    ok(str_contains($tk['body'], $num) && str_contains($tk['body'], 'data-qr="' . $num . '"'), 'ticket avec QR');
+    eq(4, substr_count($c->req('GET', "$B/pressing/$id/labels")['body'], 'class="p-label"'), 'une étiquette par pièce');
+    eq(403, $c->req('GET', "$B/pressing/tarifs")['code'], 'tarifs réservés au responsable');
+    $g = new Http();
+    $g->login($B, 'gerant', 'Mot-de-passe-2026');
+    $tg = $g->token("$B/pressing/tarifs");
+    $g->req('POST', "$B/pressing/tarifs", http_build_query(['_csrf' => $tg, 'new_name' => 'Tapis (m²)', 'new_category' => 'Maison']));
+    $tapis = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Tapis (m²)'");
+    ok($tapis > 0, 'article ajouté');
+    $names = array_column(DB::all('SELECT id, name FROM pressing_articles'), 'name', 'id');
+    $active = array_fill_keys(array_keys($names), '1');
+    $prices = [];
+    foreach (DB::all('SELECT * FROM pressing_prices') as $p) {
+        $prices[$p['article_id']][$p['service']] = $p['price'];
+    }
+    $prices[$tapis]['lavage'] = '1500';
+    $g->req('POST', "$B/pressing/tarifs", http_build_query(['_csrf' => $tg, 'names' => $names, 'prices' => $prices, 'active' => $active]));
+    eq(1500.0, (float) DB::value("SELECT price FROM pressing_prices WHERE article_id = ? AND service = 'lavage'", [$tapis]), 'prix enregistré');
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $pdf = $a->req('GET', "$B/pressing/report?export=pdf");
+    ok(str_starts_with($pdf['body'], '%PDF'), 'rapport PDF');
+    eq(200, $a->req('GET', "$B/pressing/report")['code']);
+    eq(200, $a->req('GET', "$B/pressing?f=late")['code']);
+    eq(200, $a->req('GET', "$B/pressing?q=" . urlencode('1-1'))['code'], 'recherche par étiquette');
 });
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);

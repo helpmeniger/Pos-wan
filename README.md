@@ -65,8 +65,8 @@ pharmacien ; registre des délivrances ; lots, FEFO, rappels. *(Conformité rég
 faire valider par un professionnel : voir SECURITE.md.)*
 
 **Modules complémentaires** — comme dans Odoo : déposer un module dans le dossier
-`addons/` puis l'installer en un clic (Gestion → Modules complémentaires). Module
-d'exemple « Livraisons » fourni ; guide de création : [docs/MODULES.md](docs/MODULES.md).
+`addons/` puis l'installer en un clic (Gestion → Modules complémentaires). Modules
+fournis : **Pressing** (gestion complète d'un pressing) et « Livraisons » ; guide de création : [docs/MODULES.md](docs/MODULES.md).
 
 **Administration** — utilisateurs, 11 rôles prédéfinis et **52 permissions** modifiables,
 connexion par mot de passe, **PIN** ou badge RFID, journal d'audit, paramètres de
@@ -104,7 +104,7 @@ PHP 8.1+ (testé en 8.3), MySQL 8 / MariaDB 10.4+ (testé en 10.11), Apache 2.4 
 Bootstrap 5.3, Chart.js 4.4 — aucune dépendance à télécharger, aucun appel réseau externe.
 
 ```
-php tests/run.php     # 92 tests automatisés (base de test dédiée, voir INSTALLATION § 13)
+php tests/run.php     # 95 tests automatisés (base de test dédiée, voir INSTALLATION § 13)
 php bin/backup.php    # sauvegarde en ligne de commande (planifiable)
 php bin/migrate.php   # mise à jour du schéma sans perte de données
 ```

@@ -95,6 +95,10 @@ Pour ajouter une fonction (ex. Livraisons) : copier le dossier du module dans `a
 puis **Gestion → Modules complémentaires → Installer**. *Désactiver* masque le module sans
 effacer ses données. Détails : `docs/MODULES.md`.
 
+### Pressing
+Module fourni (`addons/pressing/`) : à installer depuis Modules complémentaires. Guide :
+`addons/pressing/README.md`.
+
 ## Affichage
 - Le **menu de gestion** est à droite ; le remettre à gauche : Paramètres → Position du menu.
 - L'écran de connexion affiche le numéro d'**assistance** (modifiable dans les paramètres).
