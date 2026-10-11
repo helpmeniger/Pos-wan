@@ -5,9 +5,6 @@ require __DIR__ . '/includes/bootstrap.php';
 
 $user = require_login();
 require_permission('parcel.view');
-if ((int) $user['must_change_password'] === 1) {
-    redirect('profil.php');
-}
 
 $stats = StatsService::compute($_GET);
 $k = $stats['kpi'];

@@ -257,9 +257,12 @@ test('Création de comptes par l\'administrateur (consultation, agent)', functio
 test('Premier accès : changement de mot de passe imposé', function () {
     $h = new Http($GLOBALS['ctx']['BASE']);
     $h->login($GLOBALS['ctx']['user_consultation'], 'Provisoire-2026-ok');
-    $r = $h->get('dashboard.php');
-    assert_same(302, $r['status']);
-    assert_contains('profil.php', location($r));
+    foreach (['dashboard.php', 'carte.php', 'parcelles.php'] as $p) {
+        $r = $h->get($p);
+        assert_same(302, $r['status'], $p);
+        assert_contains('profil.php', location($r), $p);
+    }
+    assert_same(403, $h->get('api/parcelles.php?action=list')['status'], 'API bloquée avant changement');
     $t = $h->csrf('profil.php');
     $r = $h->post('profil.php', ['_csrf' => $t, 'current_password' => 'Provisoire-2026-ok', 'new_password' => 'Nouveau-Mdp-2026', 'confirm_password' => 'Nouveau-Mdp-2026']);
     assert_same(302, $r['status']);

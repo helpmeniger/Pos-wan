@@ -68,6 +68,13 @@ function require_login(): array
         $_SESSION['after_login'] = $_SERVER['REQUEST_URI'] ?? null;
         redirect('login.php');
     }
+    // Mot de passe provisoire : changement obligatoire avant toute autre action
+    if ((int) $u['must_change_password'] === 1 && !in_array(basename((string) ($_SERVER['SCRIPT_NAME'] ?? '')), ['profil.php', 'logout.php'], true)) {
+        if (defined('NP_API')) {
+            json_error('Vous devez d\'abord changer votre mot de passe provisoire.', 403);
+        }
+        redirect('profil.php');
+    }
     return $u;
 }
 
