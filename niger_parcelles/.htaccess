@@ -1,0 +1,34 @@
+# Niger Parcelles - configuration Apache (WampServer)
+# Nécessite "AllowOverride All" (valeur par défaut de WampServer pour www).
+
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+AddDefaultCharset UTF-8
+
+# Fichiers sensibles jamais servis
+<FilesMatch "(^\.|\.(sql|md|log|lock|ini|sh|bak|dist|example\.php)$|^composer\.(json|lock)$)">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Dossiers privés : config, includes, database, storage, tests, tools, docs
+    RewriteRule ^(config|includes|database|storage|tests|tools|docs)(/|$) - [F,L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# Taille maximale des envois (documents, imports)
+<IfModule mod_php.c>
+    php_value upload_max_filesize 20M
+    php_value post_max_size 25M
+    php_flag display_errors Off
+</IfModule>
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 20M
+    php_value post_max_size 25M
+    php_flag display_errors Off
+</IfModule>

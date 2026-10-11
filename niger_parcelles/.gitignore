@@ -1,0 +1,18 @@
+# Paramètres locaux (contiennent des mots de passe)
+config/database.local.php
+config/app.local.php
+
+# Données privées et générées
+storage/installed.lock
+storage/documents/*
+storage/exports/*
+storage/logs/*
+storage/imports/*
+storage/backups/*
+!storage/*/.gitkeep
+!storage/.htaccess
+
+# Tests
+tests/e2e/node_modules/
+tests/e2e/test-results/
+tests/output/
