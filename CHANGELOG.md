@@ -2,6 +2,30 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [1.5.0] — 2026-10-11
+
+### Ajouté — module « Clinique » (`addons/clinique/`)
+- Dossiers patients (n° PAT, allergies, antécédents, groupe sanguin, assurance et taux de
+  prise en charge), rendez-vous par médecin (chevauchements refusés), file d'attente avec
+  urgence et constantes de triage.
+- Consultations : observation, examen, diagnostic obligatoire pour clôturer, constantes
+  contrôlées (valeurs plausibles), historique.
+- **Lien avec la pharmacie** : ordonnance rédigée par le médecin (médicaments du stock ou
+  hors stock), imprimée, transmise à la file « Ordonnances → pharmacie » ; la délivrance
+  (partielle possible) crée une vente normale (stock, lots FEFO, caisse) et remplit le
+  registre des ordonnances.
+- Hospitalisation et mise en observation : lits, plan de soins (fréquence, durée),
+  transmissions, courbe des constantes, transfert de lit, sortie avec facture automatique.
+- **Écran de supervision des malades** (plein écran, actualisé toutes les 20 s) : alertes
+  sur les constantes hors seuils (signal sonore), soins en retard / dus, bouton « Fait »,
+  constantes à reprendre, lits libres, filtre par service. Seuils réglables.
+- Facturation des actes avec tiers payant, encaissement en caisse, rapport CSV / PDF.
+- 7 permissions ; 3 rôles créés (médecin, infirmier, accueil). Accès au dossier médical
+  réservé aux soignants et journalisé.
+
+### Modifié
+- Manifeste des modules : clé `new_roles` (création de rôles à l'installation).
+
 ## [1.4.1] — 2026-10-11
 
 ### Ajouté — module « Pressing » (`addons/pressing/`)

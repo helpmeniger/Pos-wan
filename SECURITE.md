@@ -93,6 +93,18 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
 - **Limite** : un module installé exécute du PHP avec tous les droits de l'application ;
   n'installer que des modules de confiance (aucun « bac à sable »).
 
+### Module Clinique (v1.5) — données de santé
+- Dossier médical (consultations, constantes, hospitalisations, ordonnances) réservé au droit
+  `clinique.medical` ; l'accueil et la caisse ne voient que la partie administrative
+  (vérifié par test HTTP : 403 et contenu masqué).
+- Chaque consultation de dossier médical, de séjour et de l'écran de supervision est journalisée.
+- Délivrance des ordonnances réservée à `clinique.pharmacy`, contrôlée aussi dans le service ;
+  elle passe par la vente standard (droits pharmacien, ordonnancier, idempotence).
+- Écran de supervision : lecture JSON authentifiée, action « Fait » protégée par jeton CSRF.
+- **Limites** : les données ne sont pas chiffrées dans la base (protéger le serveur, les
+  sauvegardes et les postes) ; pas de certification « logiciel médical » ; les seuils d'alerte
+  sont indicatifs et ne remplacent pas la surveillance clinique.
+
 ### Intégrité métier
 - **Transactions SQL** pour ventes, paiements, stocks, retours, réceptions, inventaires, caisse.
 - Verrous de ligne (`SELECT … FOR UPDATE`) sur stocks, lots, sessions de caisse, comptes

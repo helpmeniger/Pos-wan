@@ -1,0 +1,54 @@
+{
+    "code": "clinique",
+    "name": "Clinique",
+    "version": "1.0.0",
+    "requires": "1.5.0",
+    "author": "POS Wan",
+    "description": "Gestion d'une clinique / cabinet médical : dossiers patients, rendez-vous, accueil et constantes, consultations, ordonnances transmises à la pharmacie, hospitalisation et mise en observation (lits, plan de soins), écran de supervision des malades hospitalisés, facturation avec prise en charge, rapport.",
+    "icon": "bi-hospital",
+    "color": "#0b7a75",
+    "permissions": {
+        "clinique.view": "Clinique : accueil, dossiers administratifs, rendez-vous",
+        "clinique.reception": "Clinique : enregistrer patients, rendez-vous, admissions, encaisser",
+        "clinique.medical": "Clinique : consulter le dossier médical (consultations, constantes, hospitalisation)",
+        "clinique.nurse": "Clinique : constantes, soins, écran de supervision",
+        "clinique.doctor": "Clinique : consultations, diagnostics, ordonnances, hospitalisation",
+        "clinique.pharmacy": "Clinique : délivrer les ordonnances de la clinique à la pharmacie",
+        "clinique.manage": "Clinique : tarifs des actes, chambres et lits, annulations, rapport"
+    },
+    "roles": {
+        "owner": ["clinique.view", "clinique.reception", "clinique.manage"],
+        "pharmacist": ["clinique.view", "clinique.pharmacy"],
+        "auditor": ["clinique.view"]
+    },
+    "new_roles": {
+        "clinic_doctor": { "name": "Médecin (clinique)", "description": "Consultations, ordonnances, hospitalisations",
+            "permissions": ["clinique.view", "clinique.medical", "clinique.nurse", "clinique.doctor", "products.view"] },
+        "clinic_nurse": { "name": "Infirmier(ère) (clinique)", "description": "Constantes, soins, supervision des malades",
+            "permissions": ["clinique.view", "clinique.medical", "clinique.nurse"] },
+        "clinic_reception": { "name": "Accueil / caisse (clinique)", "description": "Patients, rendez-vous, admissions, facturation",
+            "permissions": ["clinique.view", "clinique.reception", "cash.open_close"] }
+    },
+    "menu": [
+        { "group": "Clinique", "label": "Accueil clinique", "icon": "bi-hospital", "url": "/clinique", "permission": "clinique.view", "color": "#0b7a75" },
+        { "group": "Clinique", "label": "Patients", "icon": "bi-person-vcard", "url": "/clinique/patients", "permission": "clinique.view", "color": "#1565c0" },
+        { "group": "Clinique", "label": "Rendez-vous", "icon": "bi-calendar-week", "url": "/clinique/rdv", "permission": "clinique.view", "color": "#6a1b9a" },
+        { "group": "Clinique", "label": "Hospitalisation", "icon": "bi-hospital-fill", "url": "/clinique/hospitalisation", "permission": "clinique.medical", "color": "#c62828" },
+        { "group": "Clinique", "label": "Supervision des malades", "icon": "bi-display", "url": "/clinique/supervision", "permission": "clinique.nurse", "color": "#b71c1c" },
+        { "group": "Clinique", "label": "Ordonnances → pharmacie", "icon": "bi-capsule", "url": "/clinique/pharmacie", "permission": "clinique.pharmacy", "color": "#2e7d32" },
+        { "group": "Clinique", "label": "Factures clinique", "icon": "bi-receipt", "url": "/clinique/factures", "permission": "clinique.reception", "color": "#ef6c00" },
+        { "group": "Clinique", "label": "Actes, lits, rapport", "icon": "bi-gear-wide-connected", "url": "/clinique/parametres", "permission": "clinique.manage", "color": "#455a64" }
+    ],
+    "settings": {
+        "clinique_alerte_temp_haute": "38.5",
+        "clinique_alerte_temp_basse": "35.5",
+        "clinique_alerte_tas_haute": "160",
+        "clinique_alerte_tas_basse": "90",
+        "clinique_alerte_pouls_haut": "120",
+        "clinique_alerte_pouls_bas": "50",
+        "clinique_alerte_spo2": "92",
+        "clinique_alerte_glycemie_haute": "2.5",
+        "clinique_alerte_glycemie_basse": "0.6",
+        "clinique_constantes_heures": "6"
+    }
+}

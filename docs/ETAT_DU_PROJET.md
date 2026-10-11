@@ -1,4 +1,4 @@
-# État du projet — version 1.4.1
+# État du projet — version 1.5.0
 
 ## Terminé et vérifié
 
@@ -39,10 +39,12 @@
 | **v1.4** Modules complémentaires (dossier addons/) : installation, mise à jour, activation, CLI | ✅ | Tests (manifestes invalides, version requise, chemin malveillant, permissions, désactivation = 404, données conservées) + Chromium |
 | **v1.4** Module d'exemple Livraisons | ✅ | Tests + rendu |
 | **v1.4.1** Module Pressing (tarifs, dépôts, étiquettes, express, acompte, retrait, annulation remboursée, rapport) | ✅ | 3 tests + scénario Chromium complet (dépôt → prêt → retrait avec monnaie) |
+| **v1.5** Module Clinique (patients, rendez-vous, consultations, ordonnances → pharmacie, hospitalisation, plan de soins, facturation avec prise en charge, rapport) | ✅ | 5 tests (dont HTTP : confidentialité, droits, délivrance → vente + registre) + scénario Chromium |
+| **v1.5** Écran de supervision des malades (alertes, soins dus, bouton « Fait ») | ✅ | Tests (flux JSON, CSRF) + Chromium (bureau et téléphone) ; **non testé en conditions réelles de service** |
 | **v1.4** Menu à droite (option gauche), assistance sur l'écran de connexion | ✅ | Tests + Chromium (bureau et téléphone) |
 | Protections Apache (.htaccess) en sous-dossier | ✅ | Testé sous Apache 2.4 + mod_php |
 
-**Résultat de la suite de tests : 95 réussis, 0 échec** (`php tests/run.php`).
+**Résultat de la suite de tests : 100 réussis, 0 échec** (`php tests/run.php`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 
@@ -57,6 +59,8 @@
 | Prix saisis hors taxe (TVA ajoutée au total) | Prix toujours TTC, TVA extraite | Mode HT si besoin |
 | Conversion d'unités générique (kg ↔ g, etc.) | Conditionnements (N unités de base) uniquement | Table de conversions |
 | Génération automatique de la grille de variantes | Chaque variante est un article lié à son parent (création par « Dupliquer / variante ») | Assistant taille × couleur |
+| Clinique : résultats de laboratoire / imagerie, facturation électronique aux assurances | Examens facturés comme actes ; montants dus par organisme dans le rapport | Module laboratoire |
+| Clinique : certification logiciel médical | Non certifié : outil de gestion, seuils d'alerte indicatifs | — |
 | Mode hors ligne (coupure du serveur local) | Le panier en cours est conservé dans le navigateur, mais la vente nécessite le serveur | File d'attente locale synchronisée |
 | Traductions | Générées et contrôlées automatiquement, non relues par des locuteurs natifs (haoussa en priorité) ; certains messages dynamiques restent en français | Relecture ; ajout des textes manquants dans `lang/<code>.php` |
 | Devise | Changement d'affichage uniquement : aucun taux de change, montants existants non convertis | — |

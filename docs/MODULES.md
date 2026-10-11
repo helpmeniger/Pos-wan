@@ -43,8 +43,10 @@ php bin/addons.php enable livraisons
 ## 2. Créer un module (développeur)
 
 Le module d'exemple `addons/livraisons/` est un modèle simple ; `addons/pressing/` est un
-module complet (tarifs, paiements en caisse, impressions, rapport, export PDF). Copiez-les
-et adaptez-les.
+module complet (tarifs, paiements en caisse, impressions, rapport, export PDF) ;
+`addons/clinique/` montre la création de rôles, un écran plein écran actualisé en JSON et
+l'utilisation des services du noyau (vente pharmacie via `SaleService`). Copiez-les et
+adaptez-les.
 
 ```
 addons/
@@ -99,6 +101,7 @@ addons/
 | `name`, `version` | oui | Version au format `1.0.0` ; l'augmenter pour proposer « Mettre à jour » |
 | `requires` | non | Version minimale de POS Wan (sinon le module est refusé) |
 | `permissions` | non | `module.action` → libellé ; apparaissent dans Rôles & permissions |
+| `new_roles` | non | Rôles créés à l'installation s'ils n'existent pas : `{"code": {"name", "description", "permissions": [...]}}` (POS Wan ≥ 1.5.0 ; ex. module Clinique) |
 | `roles` | non | Droits accordés à l'installation aux rôles système (`owner`, `store_manager`, `cashier`, `stock_manager`, `buyer`, `accountant`, `pharmacist`, `waiter`, `cook`, `auditor`). L'administrateur général reçoit toujours tout |
 | `menu` | non | Entrées ajoutées au menu (groupe existant ou nouveau groupe) |
 | `settings` | non | Paramètres créés à l'installation (jamais écrasés), lus avec `setting('clé')` |

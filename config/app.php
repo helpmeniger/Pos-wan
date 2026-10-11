@@ -3,7 +3,7 @@ use App\Core\Env;
 
 return [
     'name' => 'POS Wan',
-    'version' => '1.4.1',
+    'version' => '1.5.0',
     'env' => Env::get('APP_ENV', 'production'),
     'debug' => (bool) Env::get('APP_DEBUG', false),
     // Laisser vide pour une détection automatique du sous-dossier (ex. /pos-wan/public)

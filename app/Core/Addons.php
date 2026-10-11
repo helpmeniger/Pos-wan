@@ -304,6 +304,17 @@ final class Addons
         foreach ($perms as $p => $label) {
             DB::run('INSERT INTO permissions (code, module, label) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE module = VALUES(module), label = VALUES(label)', [$p, 'Module : ' . $m['name'], (string) $label]);
         }
+        // Nouveaux rôles proposés par le module (créés une seule fois, modifiables ensuite dans
+        // Rôles & permissions ; jamais écrasés lors d'une mise à jour)
+        foreach ((array) ($m['new_roles'] ?? []) as $code => $def) {
+            if (!preg_match('/^[a-z][a-z0-9_]{1,40}$/', (string) $code) || DB::value('SELECT id FROM roles WHERE code = ?', [$code])) {
+                continue;
+            }
+            $roleId = DB::insert('roles', ['code' => $code, 'name' => mb_substr((string) ($def['name'] ?? $code), 0, 100), 'description' => mb_substr((string) ($def['description'] ?? ''), 0, 255) ?: null, 'is_system' => 0]);
+            foreach ((array) ($def['permissions'] ?? []) as $p) {
+                DB::run('INSERT IGNORE INTO role_permissions (role_id, permission_id) SELECT ?, id FROM permissions WHERE code = ?', [$roleId, (string) $p]);
+            }
+        }
         $grants = (array) ($m['roles'] ?? []);
         $grants['admin'] = array_keys($perms); // l'administrateur général reçoit toujours tout
         foreach ($grants as $role => $list) {

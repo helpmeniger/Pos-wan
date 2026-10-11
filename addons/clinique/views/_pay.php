@@ -1,0 +1,4 @@
+<?php /* Choix du mode de paiement (opérateurs mobile money inclus) : champs pay_method, pay_amount, pay_reference. */ ?>
+<div class="col-5"><select name="pay_method" class="form-select form-select-sm"><?php foreach (payment_methods() as $k => $l): ?><?php if ($k === 'mobile_money' && mobile_money_providers()): ?><?php foreach (mobile_money_providers() as $prov): ?><option value="mobile_money|<?= e($prov) ?>"><?= e($prov) ?></option><?php endforeach; ?><?php else: ?><option value="<?= e($k) ?>"><?= e($l) ?></option><?php endif; ?><?php endforeach; ?></select></div>
+<div class="col-4"><input name="pay_amount" class="form-control form-control-sm text-end" inputmode="numeric" placeholder="<?= e(t('Montant')) ?>" value="<?= e($amount ?? '') ?>" data-pay-amount></div>
+<div class="col-3"><input name="pay_reference" class="form-control form-control-sm" placeholder="<?= e(t('Réf.')) ?>" maxlength="100"></div>

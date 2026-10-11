@@ -1,0 +1,1 @@
+<?php $c = ['new' => 'warning text-dark', 'partial' => 'info text-dark', 'dispensed' => 'success', 'cancelled' => 'secondary']; ?><span class="badge bg-<?= e($c[$st] ?? 'secondary') ?>"><?= e(Addons\Clinique\PharmacyLink::STATUSES[$st] ?? $st) ?></span>

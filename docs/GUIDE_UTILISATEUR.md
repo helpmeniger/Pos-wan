@@ -95,6 +95,11 @@ Pour ajouter une fonction (ex. Livraisons) : copier le dossier du module dans `a
 puis **Gestion → Modules complémentaires → Installer**. *Désactiver* masque le module sans
 effacer ses données. Détails : `docs/MODULES.md`.
 
+### Clinique
+Module fourni (`addons/clinique/`) : à installer depuis Modules complémentaires. Patients,
+rendez-vous, consultations, ordonnances délivrées par la pharmacie, hospitalisation,
+écran de supervision des malades. Guide : `addons/clinique/README.md`.
+
 ### Pressing
 Module fourni (`addons/pressing/`) : à installer depuis Modules complémentaires. Guide :
 `addons/pressing/README.md`.
