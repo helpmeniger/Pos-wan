@@ -31,6 +31,6 @@ function require_csrf(): void
     $token = $_POST['_csrf'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
     if (!csrf_valid(is_string($token) ? $token : null)) {
         audit_log('csrf_refuse', null, null, ['uri' => $_SERVER['REQUEST_URI'] ?? '']);
-        throw new UserFacingException('Jeton de sécurité (CSRF) invalide ou expiré. Rechargez la page et réessayez.', 419);
+        throw new UserFacingException('Jeton de sécurité (CSRF) invalide ou expiré. Rechargez la page et réessayez.', 403);
     }
 }
