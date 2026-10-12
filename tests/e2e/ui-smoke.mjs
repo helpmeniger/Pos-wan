@@ -39,10 +39,10 @@ for (const step of plan) {
     errors.length = 0;
     const resp = await page.goto(BASE + p, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1300);
-    if (!resp || resp.status() >= 400) errors.push('HTTP ' + (resp ? resp.status() : 'aucune réponse'));
+    if (resp && resp.status() >= 400) errors.push('HTTP ' + resp.status()); // resp = null : simple changement d'ancre (même document)
     if (!(await page.locator('header.site-header').count())) errors.push('Mise en page absente (erreur serveur ?) : ' + (await page.textContent('body')).slice(0, 200));
-    const alert = await page.locator('#view .alert-error').first().textContent().catch(() => null);
-    if (alert) errors.push('UI error: ' + alert.trim());
+    const alerts = page.locator('#view .alert-error');
+    if (await alerts.count()) errors.push('UI error: ' + (await alerts.first().textContent()).trim());
     const ok = errors.length === 0;
     if (!ok) failures++;
     console.log(`${ok ? 'OK  ' : 'FAIL'} ${(step.user || 'public').padEnd(24)} ${p}${ok ? '' : '\n      ' + errors.join('\n      ')}`);

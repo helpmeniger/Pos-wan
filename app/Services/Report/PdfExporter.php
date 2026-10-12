@@ -26,11 +26,27 @@ final class PdfExporter
         $cols = array_keys($report['columns']);
         $n = count($cols);
         $tableW = self::W - 2 * self::MARGIN;
-        $firstW = $n > 1 ? min(220.0, $tableW * 0.3) : $tableW;
-        $otherW = $n > 1 ? ($tableW - $firstW) / ($n - 1) : 0;
-        $widths = array_map(static fn ($i) => $i === 0 ? $firstW : $otherW, array_keys($cols));
         $fs = $n > 9 ? 7.0 : 8.5;
         $rowH = $fs + 7;
+        // Largeurs proportionnelles au contenu (en-tête et données), puis ajustées à la page
+        $numeric = [];
+        $want = [];
+        foreach ($cols as $i => $c) {
+            $max = $this->width((string) $report['columns'][$c], $fs, true);
+            $isNum = true;
+            foreach (array_slice(array_merge($report['rows'], [$report['totals'] ?? []]), 0, 300) as $row) {
+                $v = $row[$c] ?? '';
+                if ($v !== '' && !is_int($v) && !is_float($v)) {
+                    $isNum = false;
+                }
+                $txt = is_int($v) || is_float($v) ? number_format((float) $v, 0, ',', ' ') : (string) $v;
+                $max = max($max, $this->width($txt, $fs, false));
+            }
+            $numeric[$i] = $isNum && $c !== 'label';
+            $want[$i] = min(260.0, max(42.0, $max + 10));
+        }
+        $scale = $tableW / array_sum($want);
+        $widths = array_map(static fn ($w) => $w * $scale, $want);
 
         $rows = $report['rows'];
         if (!empty($report['totals'])) {
@@ -38,18 +54,18 @@ final class PdfExporter
         }
         $page = 0;
         $y = 0.0;
-        $newPage = function () use (&$page, &$y, $report, $cols, $widths, $fs, $rowH) {
+        $newPage = function () use (&$page, &$y, $report, $cols, $widths, $fs, $rowH, $numeric) {
             if ($this->cur !== '') {
                 $this->pages[] = $this->cur;
             }
             $this->cur = '';
             $page++;
             $this->header($report);
-            $y = self::H - 118;
+            $y = self::H - 136;
             $this->rect(self::MARGIN, $y - 4, self::W - 2 * self::MARGIN, $rowH, [0.043, 0.431, 0.31]);
             $x = self::MARGIN;
             foreach ($cols as $i => $c) {
-                $this->text($x + 3, $y + 1, $this->fit($report['columns'][$c], $widths[$i] - 6, $fs), $fs, true, [1, 1, 1], $i > 0 ? $widths[$i] - 6 : null);
+                $this->text($x + 3, $y + 1, $this->fit($report['columns'][$c], $widths[$i] - 6, $fs), $fs, true, [1, 1, 1], $numeric[$i] ? $widths[$i] - 6 : null);
                 $x += $widths[$i];
             }
             $y -= $rowH;

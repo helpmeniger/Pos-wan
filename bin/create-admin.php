@@ -18,11 +18,12 @@ try {
     $password = $o['password'] ?? null;
     if ($password === null) {
         echo 'Mot de passe (8 caractères min., lettre + chiffre) : ';
-        if (DIRECTORY_SEPARATOR === '/') {
+        $tty = DIRECTORY_SEPARATOR === '/' && function_exists('posix_isatty') && posix_isatty(STDIN);
+        if ($tty) {
             system('stty -echo');
         }
         $password = trim((string) fgets(STDIN));
-        if (DIRECTORY_SEPARATOR === '/') {
+        if ($tty) {
             system('stty echo');
         }
         echo PHP_EOL;

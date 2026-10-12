@@ -250,8 +250,10 @@ final class ReportService
                         c.model, ROUND(c.percent_bp / 100, 2) pct, c.base_amount gmv, c.commission, c.vat_amount, c.partner_net
                       FROM commissions c JOIN orders o ON o.id = c.order_id LEFT JOIN merchants m ON m.id = o.merchant_id LEFT JOIN users u ON u.id = c.party_user_id
                       WHERE $w ORDER BY o.settled_at", $p);
+                $svc = ['taxi' => 'Taxi', 'pro' => 'Transport pro', 'food' => 'Repas', 'shop' => 'Commerce', 'parcel' => 'Colis', 'document' => 'Documents', 'errand' => 'Courses', 'urgent' => 'Urgent'];
                 foreach ($rows as &$r) {
                     $r['pct'] = (float) $r['pct'];
+                    $r['service_type'] = $svc[$r['service_type']] ?? $r['service_type'];
                     $r['party'] = $r['party'] === 'merchant' ? 'Commerce' : 'Prestataire';
                 }
                 unset($r);

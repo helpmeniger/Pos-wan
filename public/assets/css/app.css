@@ -251,7 +251,7 @@ a.list-item:hover { background: var(--sand-50); }
 .map.small { height: 240px; }
 .map-wrap { position: relative; }
 .map-overlay { position: absolute; z-index: 500; left: 10px; right: 10px; bottom: 10px; }
-.map-badge { position: absolute; z-index: 500; top: 10px; left: 10px; background: #fff; border-radius: 10px; padding: 6px 10px; font-size: .82rem; box-shadow: var(--shadow); font-weight: 600; }
+.map-badge { position: absolute; z-index: 500; top: 10px; right: 10px; max-width: calc(100% - 70px); background: #fff; border-radius: 10px; padding: 6px 10px; font-size: .82rem; box-shadow: var(--shadow); font-weight: 600; }
 .map-badge.stale { background: var(--amber-100); color: #6b4300; }
 .services { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 10px; }
 .service-btn {
@@ -404,3 +404,9 @@ a.list-item:hover { background: var(--sand-50); }
   body { background: #fff; }
   .card { box-shadow: none; border: 0; }
 }
+
+/* Icônes en ligne : taille explicite (les SVG sans dimensions s'effondrent dans les conteneurs flex) */
+.btn svg, .list-item > svg, .chip svg, .badge svg, [data-eta] svg, .stat svg, .alert svg, h2 svg, h3 svg, strong > svg, .small > svg { width: 18px; height: 18px; flex: none; vertical-align: -3px; }
+.btn-lg svg { width: 20px; height: 20px; }
+.list-item > svg { color: var(--green-700); }
+.table td:first-child { white-space: nowrap; }
