@@ -162,33 +162,56 @@ C:\wamp64\www\niger_parcelles\
 > Si vous utilisez un hôte virtuel ou un autre chemin web, renseignez `base_url` dans
 > `config/app.local.php` (voir 5.5).
 
-### 5.3 Méthode recommandée : l'installateur web
+### 5.3 Créer la base et son utilisateur MySQL (phpMyAdmin)
+
+Pour une configuration sûre, l'application utilise **sa propre base** et **un utilisateur MySQL
+dédié protégé par mot de passe** (pas le compte `root`). L'installateur ne crée ni ne supprime
+jamais de base de données : c'est vous qui la créez.
+
+1. Clic gauche sur l'icône WampServer › **phpMyAdmin** (`http://localhost/phpmyadmin/`),
+   connectez-vous avec `root` (mot de passe vide par défaut ; choisissez **MySQL** ou **MariaDB**
+   selon le serveur que vous utilisez).
+2. Onglet **Comptes d'utilisateurs** › **Ajouter un compte d'utilisateur**.
+3. Renseignez :
+   * **Nom d'utilisateur** : par exemple `niger_app` ;
+   * **Nom d'hôte** : `Local` (`localhost`) ;
+   * **Mot de passe** : un mot de passe robuste (bouton « Générer » possible) — notez-le.
+4. Dans « Base de données pour ce compte d'utilisateur », cochez
+   **« Créer une base portant son nom et donner à cet utilisateur tous les privilèges »**.
+   La base s'appellera alors `niger_app`.
+   *Variante* : créez d'abord la base `niger_parcelles` (onglet Bases de données, interclassement
+   `utf8mb4_unicode_ci`), puis donnez à l'utilisateur **tous les privilèges sur cette seule base**
+   (Comptes d'utilisateurs › Modifier les privilèges › Base de données).
+5. Ne cochez **aucun privilège global**, puis cliquez sur **Exécuter**.
+6. Conseil : donnez ensuite un mot de passe au compte `root` (Comptes d'utilisateurs › root ›
+   Modifier les privilèges › Changer le mot de passe).
+
+### 5.4 Lancer l'installateur web
 
 1. Ouvrez **`http://localhost/niger_parcelles/`** : vous êtes redirigé vers `install.php`.
-2. Vérifiez la liste des prérequis (tout doit être « OK »).
-3. Saisissez la connexion MySQL. Valeurs WampServer par défaut : hôte `127.0.0.1`,
-   port `3306` (MariaDB peut être sur **`3307`** : vérifiez via le menu WampServer),
-   utilisateur `root`, **mot de passe vide**, base `niger_parcelles`.
-4. Laissez « Créer la base si elle n'existe pas » coché, choisissez « Créer les tables »,
-   cochez éventuellement « données de démonstration fictives », puis cochez
-   **« Je confirme la création des tables »**.
-5. Choisissez l'identifiant, le nom et le **mot de passe de l'administrateur** (10 caractères
-   minimum, lettres et chiffres). Il est haché et n'est jamais affiché ni stocké en clair.
-6. Cliquez sur **Installer**. L'installateur crée les tables, le compte, écrit
-   `config/database.local.php` (non versionné, inaccessible par le web) puis **se verrouille**
-   (`storage/installed.lock`). Une seconde exécution est refusée.
+2. Vérifiez que tous les prérequis sont « OK ».
+3. Saisissez **le nom de la base**, **l'utilisateur MySQL** et **son mot de passe** créés à
+   l'étape 5.3 (hôte `localhost`, port `3306` ; MariaDB sous WampServer utilise souvent **`3307`**).
+4. Cliquez sur **« Tester la connexion »** : l'installateur indique si la connexion fonctionne et si
+   la base est vide. Les messages d'erreur expliquent la cause (base inexistante, droits
+   insuffisants, mot de passe incorrect, serveur arrêté, mauvais port).
+5. Re-saisissez le mot de passe MySQL, puis renseignez le **compte administrateur** de
+   l'application (identifiant, nom, mot de passe d'au moins 10 caractères avec lettres et
+   chiffres, différent du mot de passe MySQL). Cochez éventuellement les données de
+   démonstration **fictives**.
+6. Cliquez sur **« Installer »** et confirmez. L'installateur :
+   * **crée automatiquement toutes les tables** si la base est vide (si vous avez déjà importé
+     `database/schema.sql` avec phpMyAdmin, il les conserve et crée seulement l'administrateur) ;
+   * refuse de toucher une base qui contient déjà des utilisateurs Niger Parcelles ou une
+     installation incomplète ;
+   * annule tout (suppression des seules tables qu'il vient de créer) en cas d'erreur ;
+   * enregistre la connexion dans `config/database.local.php` (fichier privé, exclu de Git,
+     inaccessible depuis le navigateur ; le mot de passe n'est jamais affiché) ;
+   * crée le compte administrateur (mot de passe haché bcrypt) puis **se verrouille**
+     (`storage/installed.lock`) : une seconde exécution est refusée.
 
-### 5.4 Méthode alternative : phpMyAdmin
-
-1. Ouvrez `http://localhost/phpmyadmin/` (utilisateur `root`, mot de passe vide).
-2. Onglet **Bases de données** › créez `niger_parcelles` avec l'interclassement
-   `utf8mb4_unicode_ci`.
-3. Sélectionnez la base › onglet **Importer** › choisissez `database/schema.sql` › **Importer**.
-4. (Facultatif) Importez de même `database/demo_data.sql` — données **fictives** de démonstration.
-5. Si vos identifiants MySQL diffèrent de `root` / vide, copiez
-   `config/database.local.example.php` en `config/database.local.php` et adaptez-le.
-6. Ouvrez `http://localhost/niger_parcelles/install.php`, choisissez
-   **« Les tables ont déjà été importées »** et créez le compte administrateur.
+Un mot de passe MySQL vide est refusé. L'utilisation du compte `root` est possible mais
+signalée par un avertissement.
 
 ### 5.5 Configuration (facultatif)
 
