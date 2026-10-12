@@ -2,6 +2,17 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [1.6.1] — 2026-10-12
+
+### Corrigé
+- **Activation de la licence en « Erreur 500 » sous WampServer** : la vérification de la
+  signature utilisait l'extension PHP `sodium`, qui n'est pas activée par défaut sous Windows.
+  POS Wan utilise maintenant l'extension si elle est présente, sinon la bibliothèque PHP pure
+  `sodium_compat` (paragonie, licence ISC) intégrée dans `app/Lib/`. Même correction pour
+  `bin/licence.php`.
+- Une erreur technique pendant l'activation affiche sa cause au lieu d'une page d'erreur 500.
+- La page Licence indique le mode de vérification utilisé (extension ou bibliothèque intégrée).
+
 ## [1.6.0] — 2026-10-12
 
 ### Corrigé

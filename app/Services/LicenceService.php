@@ -23,6 +23,34 @@ use App\Core\DB;
 final class LicenceService
 {
     private static ?array $status = null;
+    /** Tests : forcer l'implémentation PHP pure (comme sur un serveur sans extension sodium). */
+    public static bool $forceCompat = false;
+
+    /**
+     * Fonctions Ed25519 : extension PHP « sodium » si elle est active, sinon bibliothèque PHP
+     * pure sodium_compat (app/Lib) — l'extension n'est pas activée par défaut sous WampServer.
+     */
+    public static function sodium(string $fn, mixed ...$args): mixed
+    {
+        if (!self::$forceCompat && function_exists('sodium_' . $fn)) {
+            return ('sodium_' . $fn)(...$args);
+        }
+        if (!class_exists('ParagonIE_Sodium_Compat', false)) {
+            $base = BASE_PATH . '/app/Lib/sodium_compat/src/';
+            spl_autoload_register(static function (string $class) use ($base): void {
+                if (str_starts_with($class, 'ParagonIE_Sodium_')) {
+                    $file = $base . str_replace('_', '/', substr($class, 17)) . '.php';
+                    if (is_file($file)) {
+                        require_once $file;
+                    }
+                }
+            });
+            require_once $base . 'SodiumException.php';
+            require_once $base . 'Compat.php';
+        }
+        \ParagonIE_Sodium_Compat::$disableFallbackForUnitTests = self::$forceCompat;
+        return \ParagonIE_Sodium_Compat::{$fn}(...$args);
+    }
 
     /** Chemins accessibles même en lecture seule (activation, sauvegardes, déconnexion…). */
     public const ALWAYS_ALLOWED = ['/login', '/logout', '/licence', '/about', '/backups', '/session/ping', '/account/password', '/update'];
@@ -51,11 +79,11 @@ final class LicenceService
     public static function sign(array $payload, string $secretKeyB64): string
     {
         $sk = base64_decode(trim($secretKeyB64), true);
-        if ($sk === false || strlen($sk) !== SODIUM_CRYPTO_SIGN_SECRETKEYBYTES) {
+        if ($sk === false || strlen($sk) !== 64) {
             throw new BusinessException('Clé privée invalide.');
         }
         $data = self::b64u((string) json_encode($payload, JSON_UNESCAPED_UNICODE));
-        return 'PWL1.' . $data . '.' . self::b64u(sodium_crypto_sign_detached('PWL1.' . $data, $sk));
+        return 'PWL1.' . $data . '.' . self::b64u(self::sodium('crypto_sign_detached', 'PWL1.' . $data, $sk));
     }
 
     /** Vérifie une clé pour CETTE installation. @return array données de la licence */
@@ -69,8 +97,13 @@ final class LicenceService
         $pk = base64_decode((string) config('licence.public_key'), true);
         $sig = self::unb64u($parts[2]);
         $json = self::unb64u($parts[1]);
-        if ($pk === false || strlen($pk) !== SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES || $sig === false || $json === false
-            || strlen($sig) !== SODIUM_CRYPTO_SIGN_BYTES || !sodium_crypto_sign_verify_detached($sig, 'PWL1.' . $parts[1], $pk)) {
+        try {
+            $valid = $pk !== false && strlen($pk) === 32 && $sig !== false && $json !== false && strlen($sig) === 64
+                && self::sodium('crypto_sign_verify_detached', $sig, 'PWL1.' . $parts[1], $pk);
+        } catch (\Throwable) {
+            $valid = false;
+        }
+        if (!$valid) {
             throw new BusinessException('Clé de licence non authentique (signature invalide).');
         }
         $p = json_decode($json, true);

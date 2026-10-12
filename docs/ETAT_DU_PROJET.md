@@ -1,4 +1,4 @@
-# État du projet — version 1.6.0
+# État du projet — version 1.6.1
 
 ## Terminé et vérifié
 

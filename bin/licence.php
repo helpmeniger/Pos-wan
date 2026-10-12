@@ -39,11 +39,11 @@ try {
         if (is_file($file)) {
             throw new RuntimeException('Une clé privée existe déjà dans ce dossier : elle n\'est pas écrasée.');
         }
-        $kp = sodium_crypto_sign_keypair();
-        file_put_contents($file, base64_encode(sodium_crypto_sign_secretkey($kp)));
+        $kp = LicenceService::sodium('crypto_sign_keypair');
+        file_put_contents($file, base64_encode(LicenceService::sodium('crypto_sign_secretkey', $kp)));
         @chmod($file, 0600);
         echo "Clé privée : $file (À GARDER SECRÈTE — quiconque la possède peut créer des licences)\n";
-        echo "Clé publique à copier dans config/licence.php ('public_key') :\n" . base64_encode(sodium_crypto_sign_publickey($kp)) . "\n";
+        echo "Clé publique à copier dans config/licence.php ('public_key') :\n" . base64_encode(LicenceService::sodium('crypto_sign_publickey', $kp)) . "\n";
     } elseif ($cmd === 'generer') {
         $sk = is_file((string) ($o['cle'] ?? '')) ? (string) file_get_contents($o['cle']) : '';
         $client = trim((string) ($o['client'] ?? ''));
@@ -54,7 +54,7 @@ try {
         }
         $key = LicenceService::sign(['n' => (string) ($o['numero'] ?? ('L' . date('YmdHis'))), 'c' => $client, 'i' => $inst, 'e' => $fin ?: null, 't' => date('Y-m-d')], $sk);
         // Contrôle avec la clé publique correspondante
-        $pub = base64_encode(sodium_crypto_sign_publickey_from_secretkey(base64_decode(trim($sk))));
+        $pub = base64_encode(LicenceService::sodium('crypto_sign_publickey_from_secretkey', base64_decode(trim($sk))));
         if ($pub !== config('licence.public_key')) {
             fwrite(STDERR, "Attention : cette clé privée ne correspond pas à la clé publique de config/licence.php.\n");
         }

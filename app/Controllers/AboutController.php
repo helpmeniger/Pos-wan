@@ -27,7 +27,13 @@ final class AboutController extends Controller
 
     public function activate(): void
     {
-        $p = $this->attempt(fn() => LicenceService::activate(Request::str('licence_key')), '/licence');
+        try {
+            $p = $this->attempt(fn() => LicenceService::activate(Request::str('licence_key')), '/licence');
+        } catch (\Throwable $e) {
+            // Erreur technique (extension PHP, base…) : message affiché au lieu d'une erreur 500
+            \App\Core\Logger::error('Activation de licence impossible : ' . $e->getMessage(), ['file' => $e->getFile() . ':' . $e->getLine()]);
+            $this->fail('Activation impossible : ' . $e->getMessage() . ' (détail dans storage/logs). Assistance : ' . implode(' / ', (array) config('licence.author.phones')) . '.', '/licence');
+        }
         flash('success', 'Licence activée pour « ' . $p['c'] . ' »' . (!empty($p['e']) ? ' jusqu\'au ' . fdate($p['e'], false) : ' (sans limite de durée)') . '. Merci !');
         redirect('/licence');
     }

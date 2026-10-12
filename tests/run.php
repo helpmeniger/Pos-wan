@@ -1235,6 +1235,12 @@ test('Licence : clé signée liée à l\'installation, falsification refusée, e
     ok(!S\LicenceService::blocks('POST', '/pos/sale'), 'ventes autorisées pendant l\'essai');
     $key = S\LicenceService::sign(['n' => 'L-TEST', 'c' => 'Boutique Test', 'i' => $id, 'e' => null, 't' => date('Y-m-d')], $LIC_SK);
     eq('Boutique Test', S\LicenceService::verify($key)['c']);
+    // Serveur sans extension sodium (WampServer par défaut) : bibliothèque PHP pure
+    S\LicenceService::$forceCompat = true;
+    eq('Boutique Test', S\LicenceService::verify($key)['c'], 'vérification sans extension sodium');
+    $k2 = S\LicenceService::sign(['c' => 'Sans sodium', 'i' => $id], $LIC_SK);
+    S\LicenceService::$forceCompat = false;
+    eq('Sans sodium', S\LicenceService::verify($k2)['c'], 'signature PHP pure vérifiée par l\'extension');
     [$h, $data, $sig] = explode('.', $key);
     $forged = json_decode(base64_decode(strtr($data, '-_', '+/')), true);
     $forged['c'] = 'Pirate';

@@ -1,0 +1,2 @@
+paragonie/sodium_compat v1.21.1 (ISC) — https://github.com/paragonie/sodium_compat
+Utilisé uniquement si l'extension PHP « sodium » est absente (vérification des licences).

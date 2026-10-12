@@ -26,6 +26,7 @@
       <ol class="ps-3 mb-3"><li>Contactez l'auteur : <b><?= e($author['name']) ?></b>, <?= e(implode(' / ', $author['phones'])) ?>.</li><li>Communiquez le nom de votre entreprise et l'identifiant d'installation ci-contre.</li><li>Collez la clé reçue et cliquez sur « Activer ».</li></ol>
       <div class="text-secondary">La clé est liée à cette installation : copiée sur un autre ordinateur, elle est refusée. Changement d'ordinateur : demandez une nouvelle clé.</div>
       <a class="btn btn-sm btn-outline-primary mt-3" href="<?= e(url('/about/contrat')) ?>">Lire le contrat de licence</a>
+      <div class="text-secondary mt-3" style="font-size:.75rem">Vérification des signatures : <?= function_exists('sodium_crypto_sign_verify_detached') ? 'extension PHP sodium' : 'bibliothèque PHP intégrée (extension sodium non activée)' ?> · POS Wan v<?= e(config('app.version')) ?></div>
     </div></div>
   </div>
 </div>
