@@ -34,11 +34,25 @@ final class Database
         self::$pdo = null;
     }
 
+    /**
+     * Requête préparée. Hors transaction, une instruction victime d'un interblocage est rejouée
+     * (InnoDB n'a annulé que cette instruction). Dans une transaction, c'est transaction() qui rejoue l'ensemble.
+     */
     public static function run(string $sql, array $params = []): \PDOStatement
     {
-        $stmt = self::pdo()->prepare($sql);
-        $stmt->execute($params);
-        return $stmt;
+        $pdo = self::pdo();
+        for ($attempt = 1; ; $attempt++) {
+            try {
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
+                return $stmt;
+            } catch (\PDOException $e) {
+                if ($attempt > 3 || $pdo->inTransaction() || !self::isDeadlock($e)) {
+                    throw $e;
+                }
+                usleep(random_int(5_000, 40_000) * $attempt);
+            }
+        }
     }
 
     public static function one(string $sql, array $params = []): ?array
@@ -76,20 +90,35 @@ final class Database
         return (int) self::pdo()->lastInsertId();
     }
 
-    public static function transaction(callable $fn): mixed
+    /**
+     * Exécute $fn dans une transaction. Un interblocage InnoDB (1213) ou un dépassement d'attente de verrou (1205)
+     * entre processus concurrents (workers, sessions) fait rejouer la transaction, jusqu'à $retries fois.
+     */
+    public static function transaction(callable $fn, int $retries = 3): mixed
     {
         $pdo = self::pdo();
-        $pdo->beginTransaction();
-        try {
-            $r = $fn($pdo);
-            $pdo->commit();
-            return $r;
-        } catch (\Throwable $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
+        for ($attempt = 1; ; $attempt++) {
+            $pdo->beginTransaction();
+            try {
+                $r = $fn($pdo);
+                $pdo->commit();
+                return $r;
+            } catch (\Throwable $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                if ($attempt <= $retries && self::isDeadlock($e)) {
+                    usleep(random_int(10_000, 60_000) * $attempt);
+                    continue;
+                }
+                throw $e;
             }
-            throw $e;
         }
+    }
+
+    public static function isDeadlock(\Throwable $e): bool
+    {
+        return $e instanceof \PDOException && in_array((int) ($e->errorInfo[1] ?? 0), [1213, 1205], true);
     }
 
     /** Heure courante UTC au format DATETIME (toutes les dates sont stockées en UTC). */

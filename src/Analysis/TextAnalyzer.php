@@ -157,7 +157,8 @@ final class TextAnalyzer
                 }
             }
         }
-        $topic = $this->matches($norm, Lexicon::CATEGORIES[$best])[0] ?? null;
+        // Le lexique « actualité » ne contient que des marqueurs temporels : il ne désigne pas un sujet.
+        $topic = $best === 'actualite' ? null : ($this->matches($norm, Lexicon::CATEGORIES[$best])[0] ?? null);
         return [$best, $topic, $scores];
     }
 

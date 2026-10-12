@@ -13,10 +13,10 @@ $cards = [
     'image_matches' => 'Images similaires retrouvées', 'pending_verifications' => 'Vérifications en attente', 'navigation_errors' => 'Erreurs (24 h)',
 ];
 ?>
-<div id="emergency-banner" class="alert alert-danger d-flex justify-content-between align-items-center" hidden>
+<div id="emergency-banner" class="alert alert-danger" hidden><div class="d-flex justify-content-between align-items-center">
   <span><b>Arrêt immédiat actif.</b> Toutes les sessions sont arrêtées ; aucun démarrage n'est possible.</span>
   <?php if (Auth::can('analyst')): ?><button class="btn btn-light btn-sm" id="btn-release">Lever l'arrêt immédiat</button><?php endif; ?>
-</div>
+</div></div>
 <div class="row g-2 mb-3" id="stat-cards">
 <?php foreach ($cards as $k => $label): ?>
   <div class="col-6 col-md-4 col-xl"><div class="card stat-card h-100"><div class="card-body p-2">

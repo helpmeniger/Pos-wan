@@ -133,7 +133,13 @@ final class AnalysisEngine
         $confidence = PriorityScorer::confidence($ta['word_count'], count($indicators), (bool) $matchedEarlier);
 
         $resultId = Database::transaction(function () use ($publicationId, $category, $ta, $scored, $confidence, $indicators, $similar, $limitations, $claimRows) {
-            Database::run('DELETE FROM claims WHERE publication_id = ? AND verdict = \'unverified\' AND verified_by IS NULL', [$publicationId]);
+            // Suppression par clé primaire : un DELETE sur un intervalle vide poserait des verrous d'intervalle
+            // (gap locks) source d'interblocages entre workers parallèles.
+            $old = Database::all("SELECT id FROM claims WHERE publication_id = ? AND verdict = 'unverified' AND verified_by IS NULL", [$publicationId]);
+            if ($old) {
+                $ids = array_map('intval', array_column($old, 'id'));
+                Database::run('DELETE FROM claims WHERE id IN (' . implode(',', $ids) . ')');
+            }
             foreach ($claimRows as $c) {
                 Database::insert('claims', [
                     'publication_id' => $publicationId,

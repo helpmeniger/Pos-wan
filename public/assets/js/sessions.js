@@ -25,7 +25,10 @@
 
   function card(s) {
     const run = s.run_state, desired = s.desired_state;
-    const pending = run !== desired && !(desired === 'stopped' && run === 'error') && desired !== 'closed';
+    const blocked = ['captcha', 'login_required', 'blocked'].includes(s.connection_state);
+    // Transition en cours d'application par le moteur (hors suspension automatique pour intervention manuelle)
+    const pending = run !== desired && !(desired === 'stopped' && run === 'error') && desired !== 'closed' && !(blocked && run === 'paused')
+      && !(desired === 'running' && run === 'paused' && /Limite|Durée maximale/.test(s.status_message || ''));
     const act = (a, label, cls = 'outline-light', title = '') => canEdit ? `<button class="btn btn-${cls}" data-act="${a}" data-id="${s.id}" title="${V.esc(title)}">${label}</button>` : '';
     let buttons = '';
     if (desired === 'closed') {

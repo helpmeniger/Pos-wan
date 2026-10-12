@@ -78,7 +78,9 @@ function extractVisiblePosts(opts) {
       const a = links.find((l) => abs(l.getAttribute('href')) === permalink);
       published = a ? clean(a.getAttribute('aria-label') || a.innerText).slice(0, 120) || null : null;
     }
-    const authorEl = adapter === 'x' ? el.querySelector('[data-testid="User-Name"]') : el.querySelector('h2, h3, h4, strong, [class*="author"]');
+    const authorEl = adapter === 'x' ? el.querySelector('[data-testid="User-Name"]')
+      : adapter === 'facebook' ? el.querySelector('h2, h3, h4, strong')
+      : el.querySelector('[rel="author"], [itemprop="author"], [class*="author"], [class*="byline"]');
     const author = authorEl ? clean(authorEl.innerText).split('\n')[0].slice(0, 255) : null;
 
     const outLinks = [...new Set(links.map((l) => abs(l.getAttribute('href'))).filter((u) => u && /^https?:/.test(u) && !u.startsWith(location.origin)))].slice(0, 20);

@@ -66,8 +66,16 @@ while (true) {
         $processed++;
         fwrite(STDOUT, sprintf("[%s] publication #%d : %s (score %d)%s en %d ms\n", gmdate('H:i:s'), $job['publication_id'], $r['priority'], $r['score'], $r['alert_id'] ? " → alerte #{$r['alert_id']}" : '', (microtime(true) - $t0) * 1000));
     } catch (\Throwable $e) {
-        $outcome = JobQueue::fail($job, $e->getMessage());
-        fwrite(STDERR, "[VERIFIA] Échec tâche #{$job['id']} ($outcome) : {$e->getMessage()}\n");
+        // Emplacement de l'erreur dans le code de VERIFIA (diagnostic)
+        $where = '';
+        foreach ($e->getTrace() as $f) {
+            if (isset($f['file']) && str_contains($f['file'], DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR) && basename($f['file']) !== 'Database.php') {
+                $where = ' [' . basename($f['file']) . ':' . $f['line'] . ']';
+                break;
+            }
+        }
+        $outcome = JobQueue::fail($job, $e->getMessage() . $where);
+        fwrite(STDERR, "[VERIFIA] Échec tâche #{$job['id']} ($outcome) : {$e->getMessage()}$where\n");
     }
 }
 EventLog::log('info', 'worker', "Moteur d'analyse arrêté ($workerId, $processed tâches)");
