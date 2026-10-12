@@ -61,6 +61,8 @@ final class Menu
                 ['Paramètres entreprise', 'bi-gear', '/settings', 'settings.manage', '#566573'],
                 ['Imprimantes', 'bi-printer', '/printers', 'settings.manage', '#2c3e50'],
                 ['Modules complémentaires', 'bi-puzzle', '/addons', 'addons.manage', '#6c3483'],
+                ['Mise à jour du logiciel', 'bi-cloud-arrow-up', '/update', 'system.update', '#1f618d'],
+                ['Licence et activation', 'bi-key-fill', '/licence', 'licence.manage', '#b7950b'],
                 ['Boutiques, entrepôts, caisses', 'bi-shop', '/stores', 'stores.manage', '#28b463'],
                 ['Sauvegardes', 'bi-hdd-stack', '/backups', 'backup.manage', '#b03a2e'],
                 ['Journal d\'audit', 'bi-journal-check', '/audit', 'audit.view', '#34495e'],

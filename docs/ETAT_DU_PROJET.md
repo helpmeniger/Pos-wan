@@ -1,4 +1,4 @@
-# État du projet — version 1.5.1
+# État du projet — version 1.6.0
 
 ## Terminé et vérifié
 
@@ -43,9 +43,12 @@
 | **v1.5** Écran de supervision des malades (alertes, soins dus, bouton « Fait ») | ✅ | Tests (flux JSON, CSRF) + Chromium (bureau et téléphone) ; **non testé en conditions réelles de service** |
 | **v1.4** Menu à droite (option gauche), assistance sur l'écran de connexion | ✅ | Tests + Chromium (bureau et téléphone) |
 | **v1.5.1** Mise à jour automatique de la base après copie des fichiers ; modules : erreurs affichées, dossiers mal décompressés rangés | ✅ | 3 tests + reproduction de la panne (installation 1.4 sans migration → erreur 500, puis corrigée) |
+| **v1.6** Correction « Action inconnue » (confirmation des modules) | ✅ | Chromium : panne reproduite sur l'ancien code, corrigée |
+| **v1.6** Mise à jour par sélection du dossier (lots, intégrité, sauvegardes, retour arrière) | ✅ | Tests + Chromium : installation 1.6.0 mise à jour en 1.6.1 par le navigateur, migration appliquée |
+| **v1.6** À propos, contrat, licence signée (essai, lecture seule), outils de l'auteur | ✅ | Tests (falsification, autre installation, expiration) + activation réelle dans Chromium |
 | Protections Apache (.htaccess) en sous-dossier | ✅ | Testé sous Apache 2.4 + mod_php |
 
-**Résultat de la suite de tests : 103 réussis, 0 échec** (`php tests/run.php`).
+**Résultat de la suite de tests : 106 réussis, 0 échec** (`php tests/run.php`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 
@@ -62,6 +65,7 @@
 | Génération automatique de la grille de variantes | Chaque variante est un article lié à son parent (création par « Dupliquer / variante ») | Assistant taille × couleur |
 | Clinique : résultats de laboratoire / imagerie, facturation électronique aux assurances | Examens facturés comme actes ; montants dus par organisme dans le rapport | Module laboratoire |
 | Clinique : certification logiciel médical | Non certifié : outil de gestion, seuils d'alerte indicatifs | — |
+| Protection anti-copie | Clé signée liée à l'installation + lecture seule ; code PHP lisible, donc contournable par un informaticien | Encodage ionCube / SourceGuardian (payant) |
 | Mode hors ligne (coupure du serveur local) | Le panier en cours est conservé dans le navigateur, mais la vente nécessite le serveur | File d'attente locale synchronisée |
 | Traductions | Générées et contrôlées automatiquement, non relues par des locuteurs natifs (haoussa en priorité) ; certains messages dynamiques restent en français | Relecture ; ajout des textes manquants dans `lang/<code>.php` |
 | Devise | Changement d'affichage uniquement : aucun taux de change, montants existants non convertis | — |

@@ -2,6 +2,28 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [1.6.0] — 2026-10-12
+
+### Corrigé
+- **« Action inconnue » en cliquant sur Installer un module** : après la fenêtre de
+  confirmation, le formulaire était renvoyé sans le bouton cliqué. Corrigé pour toutes les
+  confirmations (le bouton est transmis), et les boutons ne restent plus grisés après
+  « Annuler ». Vérifié dans Chromium (clic → confirmation → module installé).
+
+### Ajouté
+- **Mise à jour du logiciel depuis le navigateur** (Configuration → Mise à jour du logiciel) :
+  sélection du dossier complet de la nouvelle version, envoi par lots (limites PHP de Wamp
+  respectées), vérification (version, fichiers essentiels, empreintes `release.json`),
+  sauvegarde de la base et du code, copie, mise à jour automatique de la base, page de
+  maintenance pendant la copie, retour au code précédent. Mot de passe exigé.
+- **À propos** (lien en bas du menu) : auteur Mahamadou Hamidou (Mohamed), ingénieur
+  informaticien nigérien, contacts, version, licence. Mention de l'auteur à la connexion.
+- **Contrat de licence d'utilisation** (10 articles, `LICENCE.md`), accepté à l'installation.
+- **Licence et activation** : clé signée Ed25519 liée à l'installation, essai 30 jours puis
+  lecture seule, bandeaux d'information ; outils de l'auteur `bin/licence.php` (création des
+  clés et des licences) et `bin/release.php` (préparation d'une version).
+- Permissions `system.update` et `licence.manage` (administrateur général).
+
 ## [1.5.1] — 2026-10-12
 
 ### Corrigé

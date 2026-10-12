@@ -104,6 +104,21 @@ rendez-vous, consultations, ordonnances délivrées par la pharmacie, hospitalis
 Module fourni (`addons/pressing/`) : à installer depuis Modules complémentaires. Guide :
 `addons/pressing/README.md`.
 
+## Mise à jour du logiciel (Configuration → Mise à jour du logiciel)
+1. Décompressez le fichier ZIP de la nouvelle version reçu de l'auteur (dossier `pos-wan`).
+2. Ouvrez **Configuration → Mise à jour du logiciel**, cliquez sur « Choisir », sélectionnez le
+   dossier `pos-wan` et saisissez votre mot de passe.
+3. **Envoyer et vérifier** : les fichiers sont envoyés et contrôlés (version, fichiers complets).
+4. **Sauvegarder puis installer** : sauvegarde de la base et du code, copie, puis mise à jour
+   automatique de la base. Vos données, `.env`, photos et sauvegardes ne sont pas touchés.
+En cas de problème : « Revenir à la version précédente » sur la même page.
+
+## Licence, contrat, À propos
+- **À propos de POS Wan** (en bas du menu) : auteur, version, contacts, contrat de licence.
+- **Licence et activation** : communiquez l'identifiant d'installation à l'auteur
+  (+227 92 08 12 82 / 87 22 52 02), collez la clé reçue, cliquez sur « Activer ».
+- Sans licence, après 30 jours d'essai, POS Wan passe en lecture seule (données conservées).
+
 ## Affichage
 - Le **menu de gestion** est à droite ; le remettre à gauche : Paramètres → Position du menu.
 - L'écran de connexion affiche le numéro d'**assistance** (modifiable dans les paramètres).

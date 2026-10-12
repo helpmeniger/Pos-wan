@@ -24,6 +24,10 @@ $env = [
     'DB_HOST' => getenv('TEST_DB_HOST') ?: '127.0.0.1', 'DB_DATABASE' => $dbName,
     'DB_USERNAME' => getenv('TEST_DB_USER') ?: 'root', 'DB_PASSWORD' => getenv('TEST_DB_PASS') ?: '',
 ];
+// Paire de clés de licence propre aux tests (la vraie clé privée de l'auteur n'est jamais ici)
+$licKp = sodium_crypto_sign_keypair();
+$LIC_SK = base64_encode(sodium_crypto_sign_secretkey($licKp));
+$env['LICENCE_TEST_PUBLIC_KEY'] = base64_encode(sodium_crypto_sign_publickey($licKp));
 foreach ($env as $k => $v) {
     putenv("$k=$v");
 }
@@ -1219,6 +1223,109 @@ test('Modules : dossiers mal placés après décompression (Windows) rangés aut
     }
     App\Core\Addons::reset();
 });
+test('Licence : clé signée liée à l\'installation, falsification refusée, essai puis lecture seule', function () use ($LIC_SK) {
+    actingAs('admin');
+    S\LicenceService::reset();
+    $id = S\LicenceService::installId();
+    ok((bool) preg_match('/^PW(-[A-F0-9]{4}){4}$/', $id), 'identifiant d\'installation');
+    eq($id, S\LicenceService::installId(), 'identifiant stable');
+    $st = S\LicenceService::status();
+    eq('trial', $st['state']);
+    eq(30, $st['days_left']);
+    ok(!S\LicenceService::blocks('POST', '/pos/sale'), 'ventes autorisées pendant l\'essai');
+    $key = S\LicenceService::sign(['n' => 'L-TEST', 'c' => 'Boutique Test', 'i' => $id, 'e' => null, 't' => date('Y-m-d')], $LIC_SK);
+    eq('Boutique Test', S\LicenceService::verify($key)['c']);
+    [$h, $data, $sig] = explode('.', $key);
+    $forged = json_decode(base64_decode(strtr($data, '-_', '+/')), true);
+    $forged['c'] = 'Pirate';
+    throws(fn() => S\LicenceService::verify($h . '.' . rtrim(strtr(base64_encode(json_encode($forged)), '+/', '-_'), '=') . '.' . $sig), 'non authentique');
+    throws(fn() => S\LicenceService::verify(S\LicenceService::sign(['c' => 'X', 'i' => 'PW-0000-0000-0000-0000'], $LIC_SK)), 'autre installation');
+    throws(fn() => S\LicenceService::verify(S\LicenceService::sign(['c' => 'X', 'i' => $id, 'e' => '2020-01-01'], $LIC_SK)), 'expirée');
+    $other = base64_encode(sodium_crypto_sign_secretkey(sodium_crypto_sign_keypair()));
+    throws(fn() => S\LicenceService::verify(S\LicenceService::sign(['c' => 'X', 'i' => $id], $other)), 'non authentique', BusinessException::class);
+    throws(fn() => S\LicenceService::verify('n importe quoi'), 'mal formée');
+    // Fin de l'essai : lecture seule (consultation, licence, sauvegardes toujours possibles)
+    DB::run("UPDATE audit_logs SET created_at = NOW() - INTERVAL 40 DAY WHERE action = 'licence.trial_start'");
+    setting_set('trial_started', '0');
+    S\LicenceService::reset();
+    eq('expired', S\LicenceService::status()['state'], 'essai terminé');
+    ok(S\LicenceService::blocks('POST', '/pos/sale'), 'vente bloquée');
+    ok(!S\LicenceService::blocks('GET', '/sales'), 'consultation possible');
+    ok(!S\LicenceService::blocks('POST', '/licence') && !S\LicenceService::blocks('POST', '/backups/create') && !S\LicenceService::blocks('POST', '/login'), 'activation, sauvegarde, connexion possibles');
+    S\LicenceService::activate($key);
+    S\LicenceService::reset();
+    eq('licensed', S\LicenceService::status()['state']);
+    ok(!S\LicenceService::blocks('POST', '/pos/sale'), 'licence activée : ventes autorisées');
+    // Copie de la base sur une autre installation : la clé n'est plus valable
+    setting_set('install_id', 'PW-AAAA-BBBB-CCCC-DDDD');
+    S\LicenceService::reset();
+    eq('expired', S\LicenceService::status()['state'], 'clé copiée refusée');
+    ok(str_contains((string) S\LicenceService::status()['error'], 'autre installation'));
+    setting_set('install_id', $id);
+    S\LicenceService::reset();
+    eq('licensed', S\LicenceService::status()['state']);
+    $md = S\Contract::markdown();
+    ok(str_contains($md, 'Mahamadou Hamidou') && str_contains($md, 'Article 10'), 'contrat');
+});
+test('Mise à jour du logiciel : chemins contrôlés, version, intégrité, sauvegardes, copie', function () {
+    actingAs('admin');
+    foreach (['../etc/passwd' => null, 'app/../../x' => null, 'storage/backups/a.sql' => null, '.env' => null, 'public/uploads/x.jpg' => null, 'C:/Windows/x' => null,
+              'evil.php' => null, 'app\\Core\\DB.php' => 'app/Core/DB.php', 'README.md' => 'README.md', '.htaccess' => '.htaccess', 'addons/clinique/manifest.json' => 'addons/clinique/manifest.json'] as $in => $out) {
+        eq($out, S\UpdateService::normalizePath($in), "chemin $in");
+    }
+    $t = S\UpdateService::start();
+    $dir = S\UpdateService::stagingDir($t);
+    throws(fn() => S\UpdateService::stagingDir('../x'), 'invalide');
+    // Copie de la version actuelle + un nouveau fichier, envoyée comme le ferait le navigateur
+    @unlink(BASE_PATH . '/release.json');
+    $files = S\UpdateService::listFiles(BASE_PATH);
+    ok(count($files) > 200 && !in_array('.env', $files, true), 'fichiers du logiciel (sans .env)');
+    $up = ['tmp_name' => [], 'error' => [], 'size' => []];
+    $paths = [];
+    foreach ($files as $f) {
+        $up['tmp_name'][] = BASE_PATH . '/' . $f; $up['error'][] = 0; $up['size'][] = filesize(BASE_PATH . '/' . $f); $paths[] = $f;
+    }
+    $tmpNew = tempnam(sys_get_temp_dir(), 'maj');
+    file_put_contents($tmpNew, 'nouveau fichier');
+    $up['tmp_name'][] = $tmpNew; $up['error'][] = 0; $up['size'][] = 15; $paths[] = 'docs/TEST_MISE_A_JOUR.txt';
+    $up['tmp_name'][] = $tmpNew; $up['error'][] = 0; $up['size'][] = 15; $paths[] = '../../pirate.php';
+    $r = S\UpdateService::receive($t, $paths, $up, false);
+    eq(1, $r['skipped'], 'chemin malveillant ignoré');
+    $i = S\UpdateService::inspect($t);
+    eq([], $i['errors']);
+    ok(!$i['verified'] && str_contains(implode(' ', $i['warnings']), 'release.json'), 'sans release.json : avertissement');
+    throws(fn() => S\UpdateService::apply($t, false), 'Intégrité non vérifiée');
+    // Manifeste d'intégrité : fichier altéré détecté
+    file_put_contents($dir . '/release.json', json_encode(S\UpdateService::buildManifest($dir)));
+    eq(true, S\UpdateService::inspect($t)['verified'], 'intégrité vérifiée');
+    $orig = file_get_contents($dir . '/routes/web.php');
+    file_put_contents($dir . '/routes/web.php', $orig . "\n// modifié");
+    ok(str_contains(implode(' ', S\UpdateService::inspect($t)['errors']), 'modifié'), 'altération détectée');
+    file_put_contents($dir . '/routes/web.php', $orig);
+    unlink($dir . '/app/bootstrap.php');
+    ok(str_contains(implode(' ', S\UpdateService::inspect($t)['errors']), 'app/bootstrap.php'), 'dossier incomplet refusé');
+    copy(BASE_PATH . '/app/bootstrap.php', $dir . '/app/bootstrap.php');
+    // Version plus ancienne refusée
+    $cfg = file_get_contents($dir . '/config/app.php');
+    file_put_contents($dir . '/config/app.php', preg_replace("/'version' => '[0-9.]+'/", "'version' => '1.0.0'", $cfg));
+    ok(str_contains(implode(' ', S\UpdateService::inspect($t)['errors']), 'plus ancienne'), 'retour en arrière refusé');
+    file_put_contents($dir . '/config/app.php', $cfg);
+    // Application (même version : réparation) : sauvegardes base + code, nouveau fichier copié
+    $before = count(S\UpdateService::codeBackups());
+    $res = S\UpdateService::apply($t);
+    ok($res['files'] > 200 && is_file(BASE_PATH . '/docs/TEST_MISE_A_JOUR.txt'), 'fichiers copiés');
+    ok(!is_file(BASE_PATH . '/pirate.php') && !is_file(dirname(BASE_PATH, 2) . '/pirate.php'), 'aucun fichier hors du logiciel');
+    eq($before + 1, count(S\UpdateService::codeBackups()), 'sauvegarde du code');
+    ok(is_file(S\BackupService::path($res['db_backup'])), 'sauvegarde de la base');
+    ok(!is_dir($dir) && !is_file(STORAGE_PATH . '/maintenance.lock'), 'préparation et verrou nettoyés');
+    throws(fn() => S\UpdateService::restoreCode('../../.env'), 'introuvable');
+    unlink(BASE_PATH . '/docs/TEST_MISE_A_JOUR.txt');
+    ok(is_file(BASE_PATH . '/release.json'), 'manifeste copié avec la version');
+    unlink(BASE_PATH . '/release.json');
+    unlink($tmpNew);
+    @unlink(S\BackupService::dir() . '/' . $res['code_backup']);
+    foreach (glob(S\BackupService::dir() . '/*avant_maj_*') ?: [] as $f) { @unlink($f); }
+});
 test('Menu à droite par défaut ; numéros d\'assistance', function () {
     eq('right', setting('menu_position'));
     $n = support_numbers();
@@ -1775,6 +1882,45 @@ test('Modules (HTTP) : erreur technique affichée à l\'administrateur au lieu d
     eq(null, DB::value("SELECT code FROM addons WHERE code = 'demo_err'"), 'module non enregistré');
     @unlink($d . '/migrations/0001_x.sql'); @rmdir($d . '/migrations'); @unlink($d . '/manifest.json'); @rmdir($d);
     foreach (glob(S\BackupService::dir() . '/*avant_module_demo_err*') ?: [] as $f) { @unlink($f); }
+});
+test('HTTP : confirmation renvoie l\'action, licence en lecture seule, mise à jour (mot de passe, lots), À propos', function () use ($B, $LIC_SK) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $page = $a->req('GET', "$B/addons")['body'];
+    ok(str_contains($page, 'name="do" value="disable"') || str_contains($page, 'name="do" value="install"'), 'action transmise par un champ caché (confirmation)');
+    $about = $a->req('GET', "$B/about")['body'];
+    ok(str_contains($about, 'Mahamadou Hamidou') && str_contains($about, '92 08 12 82') && str_contains($about, 'Ingénieur informaticien nigérien'), 'page À propos');
+    ok(str_contains($a->req('GET', "$B/sales")['body'], 'href="/about"'), 'lien À propos en bas du menu');
+    ok(str_contains($a->req('GET', "$B/about/contrat")['body'], 'Article 4'), 'contrat');
+    // Licence retirée et essai terminé : modifications refusées, consultation possible
+    $key = DB::value("SELECT svalue FROM settings WHERE skey = 'licence_key'");
+    DB::run("DELETE FROM settings WHERE skey = 'licence_key'");
+    $r = $a->req('POST', "$B/pos/sale", json_encode(['items' => []]), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $a->token("$B/licence")]);
+    ok($r['code'] === 403 && str_contains($r['body'], 'lecture seule'), 'vente refusée sans licence : ' . $r['code']);
+    eq(200, $a->req('GET', "$B/sales")['code'], 'consultation possible');
+    ok(str_contains($a->req('GET', "$B/dashboard")['body'], 'Licence non activée'), 'bandeau');
+    $t = $a->token("$B/licence");
+    $a->req('POST', "$B/licence", http_build_query(['_csrf' => $t, 'licence_key' => 'PWL1.faux.faux']));
+    eq(null, DB::value("SELECT svalue FROM settings WHERE skey = 'licence_key'"), 'fausse clé refusée');
+    $a->req('POST', "$B/licence", http_build_query(['_csrf' => $t, 'licence_key' => $key]));
+    eq($key, DB::value("SELECT svalue FROM settings WHERE skey = 'licence_key'"), 'clé activée par la page');
+    // Mise à jour : mot de passe exigé, envoi par lots, contrôle
+    $c = new Http();
+    $c->login($B, 'gerant', 'Mot-de-passe-2026');
+    eq(403, $c->req('GET', "$B/update")['code'], 'mise à jour réservée à l\'administrateur');
+    $hdr = ['Accept: application/json', 'X-CSRF-Token: ' . $a->token("$B/update")];
+    $bad = json_decode($a->req('POST', "$B/update/start", json_encode(['password' => 'faux']), array_merge($hdr, ['Content-Type: application/json']))['body'], true);
+    ok(!$bad['ok'] && str_contains($bad['error'], 'Mot de passe'), 'mot de passe exigé');
+    $st = json_decode($a->req('POST', "$B/update/start", json_encode(['password' => 'Essai-Niamey-2026']), array_merge($hdr, ['Content-Type: application/json']))['body'], true);
+    ok($st['ok'] && strlen($st['token']) === 32, 'préparation créée');
+    $up = $a->req('POST', "$B/update/upload", ['token' => $st['token'], 'paths[0]' => 'config/app.php', 'paths[1]' => '../x.php', 'files[0]' => new CURLFile(BASE_PATH . '/config/app.php'), 'files[1]' => new CURLFile(BASE_PATH . '/config/app.php')], $hdr);
+    $u = json_decode($up['body'], true);
+    ok($u['ok'] && $u['saved'] === 1 && $u['skipped'] === 1, 'lot reçu : ' . $up['body']);
+    $chk = json_decode($a->req('POST', "$B/update/check", json_encode(['token' => $st['token']]), array_merge($hdr, ['Content-Type: application/json']))['body'], true);
+    ok($chk['ok'] && str_contains(implode(' ', $chk['errors']), 'app/bootstrap.php'), 'dossier incomplet signalé');
+    $x = json_decode($a->req('POST', "$B/update/check", json_encode(['token' => str_repeat('a', 32)]), array_merge($hdr, ['Content-Type: application/json']))['body'], true);
+    ok(!$x['ok'], 'jeton d\'une autre session refusé');
+    ok(str_contains($a->req('GET', "$B/update")['body'], 'webkitdirectory'), 'page de mise à jour');
 });
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);

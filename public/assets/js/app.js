@@ -32,6 +32,14 @@
       if (f.dataset.confirmed === '1') return;
       ev.preventDefault();
       pendingForm = f;
+      // Bouton cliqué (ex. name="do" value="install") : il n'est pas renvoyé par requestSubmit()
+      // sans lui, on le recopie donc dans un champ caché pour que le serveur reçoive l'action.
+      const sb = ev.submitter;
+      let keep = f.querySelector('input[data-submitter]');
+      if (sb && sb.name) {
+        if (!keep) { keep = document.createElement('input'); keep.type = 'hidden'; keep.dataset.submitter = '1'; f.appendChild(keep); }
+        keep.name = sb.name; keep.value = sb.value;
+      } else if (keep) { keep.remove(); }
       $('[data-confirm-text]', modalEl).textContent = f.dataset.confirm;
       const needReason = f.dataset.reason === '1';
       const box = $('[data-confirm-reason]', modalEl);
@@ -55,7 +63,8 @@
   }
 
   // Empêche la double soumission des formulaires
-  $$('form').forEach((f) => f.addEventListener('submit', () => {
+  $$('form').forEach((f) => f.addEventListener('submit', (ev) => {
+    if (ev.defaultPrevented) return; // envoi suspendu (confirmation, validation) : boutons laissés actifs
     setTimeout(() => $$('button[type="submit"], button:not([type])', f).forEach((b) => { b.disabled = true; }), 0);
   }));
 
@@ -210,4 +219,12 @@ document.querySelectorAll('[data-cost-mode-all]').forEach((g) => g.addEventListe
 document.querySelectorAll('[data-set-value]').forEach((b) => b.addEventListener('click', () => {
   const f = document.querySelector(b.dataset.setValue);
   if (f) { f.value = b.dataset.value; f.dispatchEvent(new Event('input', { bubbles: true })); }
+}));
+// Copier un texte dans le presse-papiers : <button data-copy="#id">
+document.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => {
+  const el = document.querySelector(b.dataset.copy);
+  if (!el) return;
+  const txt = el.textContent.trim();
+  const done = () => { const o = b.innerHTML; b.innerHTML = '<i class="bi bi-check2"></i>'; setTimeout(() => { b.innerHTML = o; }, 1500); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done).catch(() => {}); else { const r = document.createRange(); r.selectNodeContents(el); getSelection().removeAllRanges(); getSelection().addRange(r); document.execCommand('copy'); done(); }
 }));

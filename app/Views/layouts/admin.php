@@ -43,7 +43,10 @@ $notes = $u ? Notifications::get() : [];
         <?php endforeach; ?>
       <?php endforeach; ?>
     </nav>
-    <div class="side-footer">v<?= e(config('app.version')) ?> · <?= e(setting('company_name', '')) ?></div>
+    <a class="side-about" href="<?= e(url('/about')) ?>" title="À propos, contrat de licence, assistance">
+      <i class="bi bi-info-circle"></i>
+      <span><b>À propos de POS Wan</b><small>v<?= e(config('app.version')) ?> · © <?= e(config('licence.author.name')) ?><br>Ingénieur informaticien nigérien · <?= e(implode(' / ', (array) config('licence.author.phones'))) ?></small></span>
+    </a>
   </aside>
   <div class="main">
     <header class="topbar d-print-none">
@@ -80,6 +83,14 @@ $notes = $u ? Notifications::get() : [];
       </div>
     </header>
     <main class="content">
+      <?php $lic = App\Services\LicenceService::status(); ?>
+      <?php if ($lic['state'] === 'expired'): ?>
+        <div class="alert alert-danger py-2 small d-print-none"><i class="bi bi-lock-fill"></i> <b>Licence non activée : lecture seule.</b> Ventes et modifications suspendues (vos données sont conservées). <a href="<?= e(url('/licence')) ?>">Activer la licence</a> · <?= e(implode(' / ', (array) config('licence.author.phones'))) ?></div>
+      <?php elseif ($lic['state'] === 'trial' && ($lic['days_left'] <= 7 || can('licence.manage'))): ?>
+        <div class="alert alert-warning py-2 small d-print-none"><i class="bi bi-hourglass-split"></i> Version d'essai : <b><?= (int) $lic['days_left'] ?> jour(s)</b> restant(s). <a href="<?= e(url('/licence')) ?>">Activer la licence</a></div>
+      <?php elseif ($lic['state'] === 'licensed' && $lic['days_left'] !== null && $lic['days_left'] <= 15): ?>
+        <div class="alert alert-warning py-2 small d-print-none"><i class="bi bi-calendar-x"></i> La licence expire dans <?= (int) $lic['days_left'] ?> jour(s). <a href="<?= e(url('/licence')) ?>">Renouveler</a></div>
+      <?php endif; ?>
       <?php if (setting('demo_data') === '1'): ?>
         <div class="alert alert-warning py-2 small d-print-none"><i class="bi bi-info-circle"></i> Des <b>données de démonstration</b> (préfixe « [DÉMO] ») sont présentes. Archivez-les depuis <a href="<?= e(url('/settings')) ?>">Paramètres</a> avant l'exploitation réelle.</div>
       <?php endif; ?>

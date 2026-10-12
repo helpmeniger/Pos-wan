@@ -47,6 +47,11 @@
         <div class="col-12 form-text">Au moins 10 caractères, lettres et chiffres, sans l'identifiant. Aucun mot de passe par défaut n'existe.</div>
       </div>
       <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="demo" value="1" id="demo"><label class="form-check-label" for="demo">Charger des données de démonstration (articles « [DÉMO] », à archiver avant l'exploitation réelle)</label></div>
+      <details class="mb-2 small"><summary class="fw-semibold">Contrat de licence d'utilisation (à lire)</summary>
+        <div class="border rounded p-2 mt-2" style="max-height:260px;overflow:auto">
+          <?php foreach (App\Services\Contract::clauses() as [$ct, $cp]): ?><div class="fw-semibold mt-2"><?= e($ct) ?></div><?php foreach ($cp as $p): ?><p class="mb-1"><?= e($p) ?></p><?php endforeach; ?><?php endforeach; ?>
+        </div></details>
+      <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="accept_contract" value="1" id="acceptContract" required><label class="form-check-label" for="acceptContract">J'ai lu et j'accepte le contrat de licence d'utilisation de POS Wan (© <?= e(config('licence.author.name')) ?>).</label></div>
       <button class="btn btn-warning btn-lg w-100"><i class="bi bi-rocket-takeoff"></i> Installer POS Wan</button>
     </form>
   </div>

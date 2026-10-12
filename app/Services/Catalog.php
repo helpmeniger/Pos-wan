@@ -82,12 +82,14 @@ final class Catalog
             'audit.view' => 'Consulter le journal d\'audit',
             'backup.manage' => 'Sauvegarder / restaurer',
             'addons.manage' => 'Installer / activer les modules complémentaires',
+            'system.update' => 'Mettre à jour le logiciel (nouvelle version)',
+            'licence.manage' => 'Activer la licence du logiciel',
         ],
     ];
 
     public const ROLES = [
         'admin' => ['Administrateur général', 'Accès complet au système', '*'],
-        'owner' => ['Propriétaire / gérant', 'Pilotage complet de l\'activité', '*except:roles.manage,backup.manage,addons.manage'],
+        'owner' => ['Propriétaire / gérant', 'Pilotage complet de l\'activité', '*except:roles.manage,backup.manage,addons.manage,system.update,licence.manage'],
         'store_manager' => ['Responsable de magasin', 'Gestion quotidienne de la boutique', [
             'dashboard.view', 'pos.sell', 'pos.discount', 'pos.discount_high', 'pos.price_override', 'pos.credit_sale', 'pos.cancel_sale', 'pos.reprint', 'pos.wholesale',
             'sales.view', 'sales.view_all', 'returns.create', 'quotes.manage', 'products.view', 'products.manage', 'products.cost_view', 'products.price_edit', 'products.import', 'categories.manage',

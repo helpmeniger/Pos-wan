@@ -192,6 +192,16 @@ $router->post('/settings', [C\SettingsController::class, 'update'], 'settings.ma
 $router->post('/settings/business', [C\SettingsController::class, 'business'], 'settings.manage');
 $router->get('/settings/template-preview', [C\SettingsController::class, 'templatePreview'], 'settings.manage');
 $router->get('/addons', [C\AddonController::class, 'index'], 'addons.manage');
+$router->get('/update', [C\UpdateController::class, 'index'], 'system.update');
+$router->post('/update/start', [C\UpdateController::class, 'start'], 'system.update');
+$router->post('/update/upload', [C\UpdateController::class, 'upload'], 'system.update');
+$router->post('/update/check', [C\UpdateController::class, 'check'], 'system.update');
+$router->post('/update/apply', [C\UpdateController::class, 'apply'], 'system.update');
+$router->post('/update/rollback', [C\UpdateController::class, 'rollback'], 'system.update');
+$router->get('/about', [C\AboutController::class, 'about']);
+$router->get('/about/contrat', [C\AboutController::class, 'contract']);
+$router->get('/licence', [C\AboutController::class, 'licence']);
+$router->post('/licence', [C\AboutController::class, 'activate'], 'licence.manage');
 $router->post('/addons', [C\AddonController::class, 'action'], 'addons.manage');
 $router->post('/settings/vat', [C\SettingsController::class, 'vat'], 'settings.manage');
 $router->post('/settings/currency', [C\SettingsController::class, 'currency'], 'settings.manage');

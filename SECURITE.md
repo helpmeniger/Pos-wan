@@ -105,6 +105,30 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
   sauvegardes et les postes) ; pas de certification « logiciel médical » ; les seuils d'alerte
   sont indicatifs et ne remplacent pas la surveillance clinique.
 
+### Mise à jour du logiciel depuis le navigateur (v1.6)
+- Réservée à la permission `system.update` (administrateur général) **et** à la saisie du mot
+  de passe ; jeton de préparation lié à la session ; CSRF sur chaque envoi.
+- Chemins contrôlés côté serveur : pas de `..`, pas de chemin absolu, seuls les dossiers du
+  logiciel sont acceptés ; `.env`, `storage/`, `public/uploads/` ne sont jamais remplacés.
+- Version plus ancienne refusée ; fichiers essentiels exigés ; empreintes SHA-256 de
+  `release.json` vérifiées (fichier manquant ou modifié → refus).
+- Sauvegarde de la base **et** du code actuel avant la copie ; retour au code précédent possible.
+- **Limite** : `release.json` prouve l'intégrité (copie complète, non endommagée), pas
+  l'origine : un administrateur qui installe un dossier piégé exécute ce code. N'installer que
+  les versions reçues de l'auteur.
+
+### Licence et protection contre l'utilisation non autorisée (v1.6)
+- Clé d'activation **signée (Ed25519)** par l'auteur et liée à l'identifiant de l'installation :
+  une clé copiée sur une autre installation, modifiée ou expirée est refusée ; la clé privée
+  n'est jamais livrée avec le logiciel.
+- Essai de 30 jours (date inscrite au journal d'audit), puis **lecture seule** : consultation,
+  sauvegardes, activation restent possibles ; aucune donnée n'est bloquée ni effacée.
+- Mentions de l'auteur dans le menu, à la connexion et à l'installation ; contrat de licence
+  accepté à l'installation.
+- **Limite honnête** : le code PHP est lisible ; ces mesures empêchent la copie simple et
+  l'usage sans clé, pas un informaticien qui modifie le code. Pour aller plus loin : encodage
+  du code PHP (ionCube, SourceGuardian — outils payants) et recours au contrat (article 4).
+
 ### Intégrité métier
 - **Transactions SQL** pour ventes, paiements, stocks, retours, réceptions, inventaires, caisse.
 - Verrous de ligne (`SELECT … FOR UPDATE`) sur stocks, lots, sessions de caisse, comptes

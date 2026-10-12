@@ -311,6 +311,13 @@ Les photos se restaurent en décompressant le `.zip` dans `public\uploads`.
 
 ## 11. Mise à jour sans perte de données
 
+**Depuis la version 1.6 (le plus simple)** : décompressez la nouvelle version, puis
+**Configuration → Mise à jour du logiciel** → sélectionnez le dossier `pos-wan` → mot de passe
+→ « Envoyer et vérifier » → « Sauvegarder puis installer ». Rien d'autre à faire (sauvegardes
+et mise à jour de la base automatiques). L'extension PHP **zip** doit être active.
+
+**Méthode manuelle** (versions antérieures à 1.6) :
+
 1. Faites une sauvegarde (menu Sauvegardes) et une copie du dossier complet.
 2. Remplacez les fichiers de l'application **sauf** : `.env`, `storage\`, `public\uploads\`.
 3. Ouvrez POS Wan dans le navigateur : depuis la version 1.5.1, **la base est mise à jour

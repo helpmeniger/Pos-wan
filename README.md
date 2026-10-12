@@ -5,6 +5,9 @@ supermarchés, boutiques, pharmacies, restaurants et maquis, quincailleries, dé
 en FCFA (devise modifiable), fonctionnant en local sur **WampServer** — sans Internet.
 Interface en **français, anglais, arabe, haoussa, espagnol, portugais et turc**.
 
+Conçu et développé par **Mahamadou Hamidou (Mohamed)**, ingénieur informaticien nigérien —
++227 92 08 12 82 / 87 22 52 02. Logiciel propriétaire : voir le [contrat de licence](LICENCE.md).
+
 ![Caisse](docs/captures/caisse.png)
 
 ## Fonctionnalités
@@ -104,10 +107,19 @@ PHP 8.1+ (testé en 8.3), MySQL 8 / MariaDB 10.4+ (testé en 10.11), Apache 2.4 
 Bootstrap 5.3, Chart.js 4.4 — aucune dépendance à télécharger, aucun appel réseau externe.
 
 ```
-php tests/run.php     # 103 tests automatisés (base de test dédiée, voir INSTALLATION § 13)
+php tests/run.php     # 106 tests automatisés (base de test dédiée, voir INSTALLATION § 13)
 php bin/backup.php    # sauvegarde en ligne de commande (planifiable)
 php bin/migrate.php   # mise à jour du schéma (aussi faite automatiquement au premier affichage)
 ```
+
+## Licence et mises à jour
+
+- Activation : **Configuration → Licence et activation** (clé délivrée par l'auteur pour
+  l'identifiant de l'installation ; 30 jours d'essai, puis lecture seule sans clé).
+- Mise à jour : **Configuration → Mise à jour du logiciel** (sélection du dossier de la
+  nouvelle version ; sauvegardes et mise à jour de la base automatiques).
+- Auteur : `php bin/licence.php keygen|generer|verifier` (clés et licences) et
+  `php bin/release.php` (prépare `release.json` et `LICENCE.md` d'une version).
 
 ## Captures
 

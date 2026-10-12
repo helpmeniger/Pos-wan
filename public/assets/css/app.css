@@ -35,6 +35,12 @@ body { background: var(--wan-bg); font-size: .95rem; }
 .side-link:hover { background: rgba(255,255,255,.05); color: #fff; }
 .side-link.active { background: rgba(243,156,18,.12); color: #fff; border-left-color: var(--wan-orange); }
 .side-footer { font-size: .72rem; color: #6c7a99; padding: .8rem 1.2rem; border-top: 1px solid rgba(255,255,255,.06); }
+.side-about { display: flex; gap: .6rem; align-items: flex-start; padding: .8rem 1.2rem; border-top: 1px solid rgba(255,255,255,.08); color: #c9d3e8; text-decoration: none; font-size: .78rem; line-height: 1.3; }
+.side-about i { color: #f5b041; font-size: 1.1rem; margin-top: 1px; }
+.side-about b { display: block; color: #fff; }
+.side-about small { display: block; color: #8c9ab8; font-size: .7rem; margin-top: 2px; }
+.side-about:hover { background: rgba(255,255,255,.05); color: #fff; }
+.contract p { text-align: justify; }
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .topbar { display: flex; align-items: center; gap: .5rem; padding: .6rem 1.2rem; background: var(--wan-card); border-bottom: 1px solid var(--wan-border); position: sticky; top: 0; z-index: 1030; }
 .page-title { font-size: 1.15rem; margin: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
