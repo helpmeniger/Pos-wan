@@ -1,0 +1,57 @@
+/* VERIFIA — styles de l'interface (Bootstrap 5, thème sombre) */
+body { background: #11151a; }
+body.bare main { padding-top: .5rem; }
+.auth-box { max-width: 420px; margin: 8vh auto; }
+.stat-card .stat-value { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+.stat-card .stat-label { font-size: .75rem; color: var(--bs-secondary-color); }
+.legend { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; }
+.l-pub { background: #4dabf7; } .l-alert { background: #ff922b; } .l-err { background: #fa5252; }
+
+/* Sessions */
+.session-grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.session-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.session-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.session-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.session-grid.cols-6 { grid-template-columns: repeat(6, 1fr); }
+@media (max-width: 992px) { .session-grid[class*="cols-"] { grid-template-columns: 1fr; } }
+.session-grid.list { grid-template-columns: 1fr; }
+.session-grid.list .preview { display: none; }
+.session-card .preview { aspect-ratio: 16/10; background: #0b0e12; display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid var(--bs-border-color); }
+.session-card .preview img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.session-card .counters span { margin-right: .75rem; }
+.session-card.state-error { border-color: var(--bs-danger); }
+.session-card.state-running { border-color: var(--bs-success); }
+.session-card.state-paused { border-color: var(--bs-warning); }
+.session-card .btn { padding: .1rem .4rem; font-size: .75rem; }
+
+/* Alertes */
+.alert-item { display: grid; grid-template-columns: 96px 1fr auto; gap: .75rem; padding: .6rem; border: 1px solid var(--bs-border-color); border-left-width: 5px; border-radius: .4rem; margin-bottom: .5rem; background: var(--bs-body-bg); }
+.alert-item.p-critical { border-left-color: var(--bs-danger); }
+.alert-item.p-high { border-left-color: var(--bs-warning); }
+.alert-item.p-normal { border-left-color: var(--bs-info); }
+.alert-item.p-low { border-left-color: var(--bs-secondary); }
+.alert-item.st-new { box-shadow: 0 0 0 1px rgba(255,255,255,.15) inset; }
+.alert-item.st-new .a-title::before { content: "● "; color: var(--bs-danger); }
+.alert-item.st-ignored { opacity: .55; }
+.alert-item.fresh { animation: flash 2s ease-out 1; }
+@keyframes flash { from { background: rgba(255,146,43,.35); } to { background: var(--bs-body-bg); } }
+.alert-item .thumb { width: 96px; height: 72px; object-fit: cover; border-radius: .25rem; background: #0b0e12; }
+.alert-item .excerpt { font-size: .85rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.alert-item .actions .btn { padding: .1rem .35rem; font-size: .72rem; }
+@media (max-width: 768px) { .alert-item { grid-template-columns: 1fr; } .alert-item .thumb { width: 100%; height: 140px; } }
+
+.pub-text { white-space: normal; background: rgba(255,255,255,.03); padding: .6rem; border-radius: .3rem; }
+.thumb-lg { max-height: 420px; }
+.thumb-sm { width: 110px; height: 80px; object-fit: cover; }
+.timeline { list-style: none; padding-left: 1rem; border-left: 2px solid var(--bs-border-color); }
+.timeline li { margin-bottom: .35rem; position: relative; }
+.timeline li::before { content: ""; position: absolute; left: -1.38rem; top: .35rem; width: .6rem; height: .6rem; border-radius: 50%; background: var(--bs-secondary); }
+.timeline li.tl-publication_actuelle::before { background: var(--bs-warning); }
+.timeline li.tl-source_analyste::before { background: var(--bs-info); }
+.lvl-error td, .lvl-critical td { color: #ff8787; }
+.lvl-warning td { color: #ffd43b; }
+.toast-zone { position: fixed; right: 1rem; bottom: 1rem; z-index: 2000; display: flex; flex-direction: column; gap: .5rem; max-width: 380px; }
+.toast-zone .vtoast { background: #212529; border: 1px solid var(--bs-border-color); border-left: 5px solid var(--bs-info); padding: .6rem .8rem; border-radius: .4rem; box-shadow: 0 4px 16px rgba(0,0,0,.5); font-size: .85rem; cursor: pointer; }
+.toast-zone .vtoast.critical { border-left-color: var(--bs-danger); }
+.toast-zone .vtoast.high { border-left-color: var(--bs-warning); }
+.toast-zone .vtoast.error { border-left-color: var(--bs-danger); }

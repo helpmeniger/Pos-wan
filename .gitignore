@@ -1,18 +1,25 @@
-# Build and Release Folders
-bin-debug/
-bin-release/
-[Oo]bj/
-[Bb]in/
+# Dépendances
+/vendor/
+/monitor/node_modules/
 
-# Other files and folders
-.settings/
+# Configuration locale (contient le jeton du moteur et les identifiants MySQL)
+/config/config.php
 
-# Executables
-*.swf
-*.air
-*.ipa
-*.apk
+# Données d'exécution
+/storage/images/*
+/storage/reports/*
+/storage/logs/*
+/storage/profiles/*
+/storage/run/*
+!/storage/**/.gitkeep
+!/storage/.htaccess
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+# Résultats de tests
+/.phpunit.cache/
+/monitor/test-results/
+
+# Fichiers système
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,13 @@
+# VERIFIA — seul le dossier public/ est exposé par Apache (WampServer).
+DirectoryIndex index.php
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(vendor|src|config|database|bin|storage|tests|monitor|scripts|docs)(/|$) - [F,L]
+    RewriteRule ^(composer\.(json|lock)|phpunit\.xml|README\.md)$ - [F,L]
+</IfModule>
+
+<FilesMatch "\.(sql|md|lock|json|xml|bat|ps1|log|sh)$">
+    Require all denied
+</FilesMatch>

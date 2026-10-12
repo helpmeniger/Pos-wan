@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         failOnWarning="true">
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <!-- Base de test dédiée : elle est EFFACÉE et recréée à chaque exécution. -->
+        <env name="VERIFIA_TEST_DSN" value="mysql:host=127.0.0.1;port=3306;dbname=verifia_test;charset=utf8mb4" force="false"/>
+        <env name="VERIFIA_TEST_DB_USER" value="root" force="false"/>
+        <env name="VERIFIA_TEST_DB_PASS" value="" force="false"/>
+    </php>
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+</phpunit>
