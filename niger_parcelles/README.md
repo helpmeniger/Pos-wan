@@ -336,7 +336,7 @@ C:\wamp64\bin\php\php8.3.x\php.exe tests\run_tests.php
 
 | Fichier | Contenu | Exécution |
 |---|---|---|
-| `tests/run_tests.php` | 20 tests unitaires + 27 tests d'intégration MySQL | `php tests\run_tests.php` |
+| `tests/run_tests.php` | 21 tests unitaires + 27 tests d'intégration MySQL | `php tests\run_tests.php` |
 | `tests/http_test.php` | 19 tests HTTP « boîte noire » (auth, CSRF, rôles, XSS, injection SQL, documents privés, accès direct, blocage des connexions) | `set NP_TEST_ADMIN_PASS=...` puis `php tests\http_test.php` (extension curl) |
 | `tests/e2e/map_e2e.js` | 11 tests navigateur (carte, dessin, superficie, enregistrement, rechargement, modification, mesure, recherche, mobile) | facultatif, nécessite Node.js + Playwright (outil de développement uniquement) |
 
@@ -345,8 +345,10 @@ C:\wamp64\bin\php\php8.3.x\php.exe tests\run_tests.php
 > bloquée (comportement voulu) : patientez 15 minutes ou videz la table `login_attempts`
 > dans phpMyAdmin.
 
-Résultats obtenus lors du développement (Linux, Apache 2.4 + PHP 8.3 + MariaDB 10.11) :
-47/47 (unitaires + intégration), 19/19 (HTTP), 11/11 (navigateur). L'exécution sur votre
+Résultats obtenus lors du développement (Linux, Apache 2.4 + PHP 8.3), sur **MySQL 8.0**
+(mode strict, `ONLY_FULL_GROUP_BY`, configuration par défaut de WampServer) et sur
+**MariaDB 10.11** : 48/48 (unitaires + intégration), 19/19 (HTTP), 11/11 (navigateur), ainsi que
+l'installateur web sur une base et un utilisateur créés manuellement. L'exécution sur votre
 installation WampServer reste à faire : lancez les commandes ci-dessus après installation.
 
 Couverture : connexion MySQL, création des tables, relations propriétaires/parcelles,

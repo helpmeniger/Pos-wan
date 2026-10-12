@@ -42,7 +42,7 @@ test('Création d\'une parcelle : référence unique NIG-NIA-AAAA-NNNNNN et géo
     $u = as_user('agent_terrain', 'agent1');
     $niamey = (int) db_value("SELECT id FROM administrative_areas WHERE name = 'Niamey I'");
     // La séquence n'est jamais remise à zéro (même après purge des données de démonstration)
-    $GLOBALS['seq0'] = (int) db_value('SELECT COALESCE(MAX(last_value), 0) FROM parcel_reference_sequences WHERE year = ?', [(int) date('Y')]);
+    $GLOBALS['seq0'] = (int) db_value('SELECT COALESCE(MAX(seq_value), 0) FROM parcel_reference_sequences WHERE year = ?', [(int) date('Y')]);
     $r = ParcelService::create(['category' => 'residentiel', 'administrative_area_id' => $niamey, 'locality_description' => 'Test'], rect_geom(2.10, 13.50), $u['id']);
     assert_same(sprintf('NIG-NIA-%s-%06d', date('Y'), $GLOBALS['seq0'] + 1), $r['parcel_reference']);
     assert_near(600, $r['area_m2'], 5);

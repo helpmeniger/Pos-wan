@@ -70,6 +70,6 @@ INSERT INTO parcel_owners (parcel_id, owner_id, ownership_role, share_percentage
 (9006, 9005, 'ayant_droit', NULL, NULL, NULL, 'conteste', NULL, NULL, NULL),
 (9008, 9003, 'proprietaire', NULL, '2021-07-01', NULL, 'verifie', 'DEMO-TF-0008', NULL, NULL);
 
-INSERT INTO parcel_reference_sequences (year, last_value) VALUES (2026, 11)
-  ON DUPLICATE KEY UPDATE last_value = GREATEST(last_value, VALUES(last_value));
+INSERT INTO parcel_reference_sequences (year, seq_value) VALUES (2026, 11)
+  ON DUPLICATE KEY UPDATE seq_value = GREATEST(seq_value, VALUES(seq_value));
 

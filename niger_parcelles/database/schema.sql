@@ -154,7 +154,7 @@ CREATE TABLE owners (
 -- incrémenté de façon atomique ; jamais décrémenté => aucune réattribution.
 CREATE TABLE parcel_reference_sequences (
     year       SMALLINT UNSIGNED NOT NULL,
-    last_value INT UNSIGNED      NOT NULL,
+    seq_value INT UNSIGNED      NOT NULL,
     PRIMARY KEY (year)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

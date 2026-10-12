@@ -107,8 +107,8 @@ final class ParcelService
     {
         $year = $year ?? (int) date('Y');
         // Incrément atomique : verrou de ligne jusqu'à la fin de la transaction
-        db_query('INSERT INTO parcel_reference_sequences (year, last_value) VALUES (?, LAST_INSERT_ID(1))
-                  ON DUPLICATE KEY UPDATE last_value = LAST_INSERT_ID(last_value + 1)', [$year]);
+        db_query('INSERT INTO parcel_reference_sequences (year, seq_value) VALUES (?, LAST_INSERT_ID(1))
+                  ON DUPLICATE KEY UPDATE seq_value = LAST_INSERT_ID(seq_value + 1)', [$year]);
         $n = (int) db_value('SELECT LAST_INSERT_ID()');
         $code = self::locationCode($areaId);
         return $code !== null

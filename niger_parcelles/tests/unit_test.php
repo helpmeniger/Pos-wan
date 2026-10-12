@@ -242,3 +242,18 @@ function geo_bounds_default(): array
 {
     return ['min_lat' => 11.3, 'max_lat' => 23.6, 'min_lng' => 0.0, 'max_lng' => 16.1];
 }
+
+suite('Compatibilité MySQL 8 / MariaDB');
+
+test('schema.sql n\'utilise aucun mot réservé de MySQL 8 comme nom de colonne', function () {
+    // Mots devenus réservés dans MySQL 8 (fonctions de fenêtrage, etc.), acceptés par MariaDB
+    $reserved = ['cume_dist', 'dense_rank', 'empty', 'except', 'first_value', 'grouping', 'groups', 'json_table', 'lag', 'last_value',
+        'lateral', 'lead', 'nth_value', 'ntile', 'of', 'over', 'percent_rank', 'rank', 'recursive', 'row', 'rows', 'row_number',
+        'system', 'window', 'manual', 'parallel', 'qualify', 'intersect', 'function', 'key', 'order', 'group', 'range', 'interval',
+        'usage', 'condition', 'desc', 'read', 'write', 'release', 'require', 'signal', 'virtual', 'generated', 'stored'];
+    $sql = (string) file_get_contents(APP_ROOT . '/database/schema.sql');
+    preg_match_all('/^\s{4}([a-z_]+)\s+(?:INT|BIGINT|SMALLINT|TINYINT|VARCHAR|CHAR|TEXT|LONGTEXT|DATE|DATETIME|DECIMAL|ENUM)\b/mi', $sql, $m);
+    assert_true(count($m[1]) > 100, 'colonnes détectées : ' . count($m[1]));
+    $bad = array_values(array_intersect(array_map('strtolower', $m[1]), $reserved));
+    assert_same([], $bad, 'colonnes portant un mot réservé');
+});

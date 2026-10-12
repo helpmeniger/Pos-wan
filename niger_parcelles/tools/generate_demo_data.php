@@ -111,8 +111,8 @@ $out[] = "INSERT INTO parcel_owners (parcel_id, owner_id, ownership_role, share_
 (9006, 9005, 'ayant_droit', NULL, NULL, NULL, 'conteste', NULL, NULL, NULL),
 (9008, 9003, 'proprietaire', NULL, '" . (YEAR - 5) . "-07-01', NULL, 'verifie', 'DEMO-TF-0008', NULL, NULL);";
 $out[] = "";
-$out[] = "INSERT INTO parcel_reference_sequences (year, last_value) VALUES (" . YEAR . ", " . count($parcels) . ")
-  ON DUPLICATE KEY UPDATE last_value = GREATEST(last_value, VALUES(last_value));";
+$out[] = "INSERT INTO parcel_reference_sequences (year, seq_value) VALUES (" . YEAR . ", " . count($parcels) . ")
+  ON DUPLICATE KEY UPDATE seq_value = GREATEST(seq_value, VALUES(seq_value));";
 $out[] = "";
 
 file_put_contents(dirname(__DIR__) . '/database/demo_data.sql', implode("\n", $out) . "\n");
