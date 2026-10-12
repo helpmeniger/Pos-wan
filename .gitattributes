@@ -1,0 +1,2 @@
+# Outils réservés à l'auteur : exclus des archives livrées aux clients (git archive)
+outils-auteur/ export-ignore

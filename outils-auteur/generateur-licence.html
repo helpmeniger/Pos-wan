@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Générateur de licences POS Wan</title>
+<!--
+  Outil de l'AUTEUR (Mahamadou Hamidou) — ne pas donner aux clients.
+  Fonctionne hors ligne, dans Chrome / Edge / Firefox récents (signature Ed25519 du navigateur).
+  La clé privée est lue depuis votre fichier au moment de la signature : elle n'est jamais
+  enregistrée dans cette page ni dans le navigateur. Seul l'historique des licences délivrées
+  (client, identifiant, date, numéro, clé) est gardé dans ce navigateur.
+  Format identique à bin/licence.php : PWL1.<données base64url>.<signature base64url>
+-->
+<style>
+  :root { --bg:#f4f6fb; --card:#fff; --text:#1c2333; --muted:#5f6b85; --line:#dfe4ee; --brand:#0b3d91; --accent:#f5a623; --ok:#1e8e3e; --err:#c62828; --warn-bg:#fff6e0; --field:#fff; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f141c; --card:#171e2a; --text:#e6ebf5; --muted:#9aa6bd; --line:#2a3446; --brand:#6ea8ff; --accent:#f5b041; --ok:#4cc26b; --err:#ff6b6b; --warn-bg:#2d2614; --field:#0f141c; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--text); font-size:15px; }
+  header { background:#0d1b3d; color:#fff; padding:14px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  header h1 { font-size:1.2rem; margin:0; } header h1 b { color:var(--accent); }
+  header small { color:#aab6d3; margin-left:auto; }
+  main { max-width:980px; margin:20px auto; padding:0 16px; display:grid; gap:16px; grid-template-columns: 1fr; }
+  @media (min-width: 900px) { main { grid-template-columns: 1.1fr .9fr; } .wide { grid-column: 1 / -1; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+  .card h2 { font-size:1rem; margin:0 0 12px; }
+  label { display:block; font-size:.85rem; color:var(--muted); margin:10px 0 4px; }
+  input, textarea, select { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--field); color:var(--text); font:inherit; }
+  input:focus, textarea:focus { outline:2px solid var(--brand); outline-offset:-1px; }
+  .mono { font-family: ui-monospace, Consolas, monospace; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .row > * { flex:1; min-width:140px; }
+  button { border:0; border-radius:8px; padding:10px 14px; font:inherit; font-weight:600; cursor:pointer; background:var(--line); color:var(--text); }
+  button.primary { background:var(--brand); color:#fff; } button.ok { background:var(--ok); color:#fff; }
+  button.small { padding:5px 9px; font-size:.82rem; font-weight:500; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; } .chips button { flex:0 0 auto; }
+  .msg { margin-top:10px; padding:9px 11px; border-radius:8px; font-size:.9rem; display:none; }
+  .msg.show { display:block; } .msg.err { background:#fdecea; color:#8e1c1c; } .msg.ok { background:#e8f5e9; color:#1b5e20; } .msg.warn { background:var(--warn-bg); color:var(--text); }
+  @media (prefers-color-scheme: dark) { .msg.err { background:#3a1717; color:#ffb4b4; } .msg.ok { background:#16301d; color:#a8e6b5; } }
+  .hint { font-size:.8rem; color:var(--muted); margin-top:4px; }
+  #result textarea { height:110px; font-size:.82rem; word-break:break-all; }
+  table { width:100%; border-collapse:collapse; font-size:.85rem; } th, td { text-align:left; padding:7px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; } td.k { max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tablewrap { overflow-x:auto; }
+  .status { font-size:.85rem; margin-top:8px; } .status.good { color:var(--ok); } .status.bad { color:var(--err); }
+  footer { text-align:center; color:var(--muted); font-size:.8rem; padding:10px 16px 30px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Générateur de licences POS <b>Wan</b></h1>
+  <small>Outil de l'auteur — Mahamadou Hamidou (Mohamed) · +227 92 08 12 82 / 87 22 52 02</small>
+</header>
+<main>
+  <section class="card">
+    <h2>1. Votre clé privée</h2>
+    <label for="keyFile">Fichier <span class="mono">poswan_licence_PRIVEE.key</span></label>
+    <input type="file" id="keyFile" accept=".key,.txt">
+    <label for="keyText">… ou collez son contenu</label>
+    <textarea id="keyText" class="mono" rows="2" placeholder="Contenu base64 de la clé privée" autocomplete="off" spellcheck="false"></textarea>
+    <div class="status" id="keyStatus">Aucune clé chargée.</div>
+    <div class="hint">La clé reste dans votre ordinateur : elle n'est ni envoyée, ni enregistrée. Elle est oubliée à la fermeture de la page.</div>
+  </section>
+
+  <section class="card">
+    <h2>2. Licence du client</h2>
+    <label for="client">Nom du client (entreprise)</label>
+    <input id="client" maxlength="150" placeholder="ex. Pharmacie Espoir">
+    <label for="installId">Identifiant d'installation (affiché dans POS Wan → Licence et activation)</label>
+    <input id="installId" class="mono" maxlength="40" placeholder="PW-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
+    <div class="row">
+      <div><label for="expires">Date de fin (vide = sans limite)</label><input type="date" id="expires"></div>
+      <div><label for="number">N° de licence</label><input id="number" class="mono" maxlength="40"></div>
+    </div>
+    <div class="chips">
+      <button class="small" type="button" data-years="1">1 an</button>
+      <button class="small" type="button" data-years="2">2 ans</button>
+      <button class="small" type="button" data-years="0">Sans limite</button>
+    </div>
+    <div style="margin-top:14px"><button class="primary" id="generate" type="button">Générer la licence</button></div>
+    <div class="msg" id="formMsg"></div>
+  </section>
+
+  <section class="card wide" id="result" hidden>
+    <h2>3. Clé de licence à envoyer au client</h2>
+    <textarea id="licence" class="mono" readonly></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="ok" id="copy" type="button">Copier la clé</button>
+      <button id="copyMsg" type="button">Copier le message pour le client</button>
+      <a id="wa" target="_blank" rel="noopener"><button type="button" style="width:100%">Envoyer par WhatsApp</button></a>
+    </div>
+    <div class="hint" id="resultInfo"></div>
+  </section>
+
+  <section class="card wide">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0;flex:0 0 auto">Licences délivrées (ce navigateur)</h2>
+      <div class="row" style="flex:0 0 auto"><button class="small" id="exportCsv" type="button">Exporter (CSV)</button><button class="small" id="clearHist" type="button">Effacer l'historique</button></div>
+    </div>
+    <div class="tablewrap"><table><thead><tr><th>Date</th><th>N°</th><th>Client</th><th>Identifiant</th><th>Fin</th><th>Clé</th></tr></thead><tbody id="hist"></tbody></table></div>
+  </section>
+</main>
+<footer>© Mahamadou Hamidou (Mohamed) — POS Wan. Ne jamais transmettre ce fichier ni la clé privée.</footer>
+
+<script>
+(function () {
+  'use strict';
+  // Clé PUBLIQUE officielle (config/licence.php) : sert à vérifier que la clé privée chargée est la bonne.
+  const OFFICIAL_PUBLIC = 'dngSoqpL/lpXPbhyegoWVWjOP7H7g7rOaBizE5e/MTo=';
+  const $ = (s) => document.querySelector(s);
+  const ID_RE = /^PW(-[A-F0-9]{4}){4}$/;
+  let secret = null; // Uint8Array(64) = graine (32) + clé publique (32), format libsodium
+
+  const b64ToBytes = (b64) => Uint8Array.from(atob(b64.replace(/\s+/g, '')), (c) => c.charCodeAt(0));
+  const bytesToB64 = (u8) => btoa(String.fromCharCode(...u8));
+  const b64url = (u8) => bytesToB64(u8).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const pad = (n) => String(n).padStart(2, '0');
+  const today = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  function msg(el, type, text) { el.className = 'msg show ' + type; el.textContent = text; }
+  function newNumber() { const d = new Date(); $('#number').value = 'L' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()); }
+
+  function loadKey(text) {
+    const st = $('#keyStatus');
+    secret = null;
+    try {
+      const k = b64ToBytes(text.trim());
+      if (k.length !== 64) throw new Error('taille');
+      secret = k;
+      const pub = bytesToB64(k.slice(32));
+      if (pub === OFFICIAL_PUBLIC) { st.className = 'status good'; st.textContent = '✔ Clé privée chargée : elle correspond à la clé publique de POS Wan.'; }
+      else { st.className = 'status bad'; st.textContent = '⚠ Clé chargée, mais elle ne correspond pas à la clé publique de cette version de POS Wan : les licences seront refusées (sauf si vous avez mis sa clé publique dans config/licence.php).'; }
+    } catch (e) {
+      st.className = 'status bad'; st.textContent = '✖ Contenu invalide : ce n\'est pas une clé privée POS Wan (64 octets en base64).';
+    }
+  }
+  $('#keyFile').addEventListener('change', async (e) => { const f = e.target.files[0]; if (f) { const t = await f.text(); $('#keyText').value = ''; loadKey(t); } });
+  $('#keyText').addEventListener('input', (e) => { if (e.target.value.trim()) loadKey(e.target.value); });
+
+  $('#installId').addEventListener('input', (e) => {
+    const v = e.target.value.toUpperCase().replace(/[^A-F0-9-PW]/g, '');
+    if (v !== e.target.value) e.target.value = v;
+  });
+  document.querySelectorAll('[data-years]').forEach((b) => b.addEventListener('click', () => {
+    const y = +b.dataset.years;
+    if (!y) { $('#expires').value = ''; return; }
+    const d = new Date(); d.setFullYear(d.getFullYear() + y);
+    $('#expires').value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }));
+
+  async function sign(message) {
+    if (!window.crypto || !crypto.subtle) throw new Error('Signature impossible : ouvrez ce fichier dans Chrome, Edge ou Firefox à jour.');
+    let key;
+    try {
+      key = await crypto.subtle.importKey('jwk', { kty: 'OKP', crv: 'Ed25519', d: b64url(secret.slice(0, 32)), x: b64url(secret.slice(32)), ext: false }, { name: 'Ed25519' }, false, ['sign']);
+    } catch (e) {
+      throw new Error('Ce navigateur ne sait pas signer en Ed25519 : utilisez Chrome ou Edge (version 137 ou plus), Firefox 129+ ou Safari 17+.');
+    }
+    return new Uint8Array(await crypto.subtle.sign({ name: 'Ed25519' }, key, new TextEncoder().encode(message)));
+  }
+
+  $('#generate').addEventListener('click', async () => {
+    const m = $('#formMsg');
+    const client = $('#client').value.trim();
+    const id = $('#installId').value.trim().toUpperCase();
+    const exp = $('#expires').value;
+    if (!$('#number').value.trim()) newNumber();
+    const num = $('#number').value.trim();
+    if (!secret) return msg(m, 'err', 'Chargez d\'abord votre clé privée (étape 1).');
+    if (!client) return msg(m, 'err', 'Indiquez le nom du client.');
+    if (!ID_RE.test(id)) return msg(m, 'err', 'Identifiant invalide : il a la forme PW-1A2B-3C4D-5E6F-7A8B (copiez-le depuis POS Wan → Licence et activation).');
+    if (exp && exp < today()) return msg(m, 'err', 'La date de fin est déjà passée.');
+    try {
+      $('#generate').disabled = true;
+      const payload = { n: num, c: client, i: id, e: exp || null, t: today() };
+      const data = b64url(new TextEncoder().encode(JSON.stringify(payload)));
+      const sig = await sign('PWL1.' + data);
+      const lic = 'PWL1.' + data + '.' + b64url(sig);
+      $('#licence').value = lic;
+      $('#result').hidden = false;
+      $('#resultInfo').textContent = 'Licence n° ' + num + ' pour « ' + client + ' » (' + id + ')' + (exp ? ', valable jusqu\'au ' + exp.split('-').reverse().join('/') : ', sans limite de durée') + '. Elle ne fonctionne que sur cette installation.';
+      const text = 'Bonjour, voici votre licence POS Wan (' + client + ').\nDans POS Wan : Configuration → Licence et activation → collez la clé puis cliquez sur « Activer ».\n\n' + lic + '\n\nMahamadou Hamidou — +227 92 08 12 82 / 87 22 52 02';
+      $('#copyMsg').dataset.text = text;
+      $('#wa').href = 'https://wa.me/?text=' + encodeURIComponent(text);
+      saveHistory({ date: new Date().toLocaleString('fr-FR'), n: num, c: client, i: id, e: exp || '', k: lic });
+      msg(m, 'ok', 'Licence générée.');
+      newNumber();
+      $('#result').scrollIntoView({ behavior: 'smooth' });
+    } catch (e) {
+      msg(m, 'err', e.message);
+    } finally {
+      $('#generate').disabled = false;
+    }
+  });
+
+  async function copy(text, btn) {
+    try { await navigator.clipboard.writeText(text); } catch (e) { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+    const o = btn.textContent; btn.textContent = 'Copié ✔'; setTimeout(() => { btn.textContent = o; }, 1500);
+  }
+  $('#copy').addEventListener('click', (e) => copy($('#licence').value, e.target));
+  $('#copyMsg').addEventListener('click', (e) => copy(e.target.dataset.text || '', e.target));
+
+  // Historique (sans la clé privée) dans ce navigateur
+  const HKEY = 'poswan-licences';
+  const readHist = () => { try { return JSON.parse(localStorage.getItem(HKEY) || '[]'); } catch (e) { return []; } };
+  function saveHistory(row) { const h = readHist(); h.unshift(row); try { localStorage.setItem(HKEY, JSON.stringify(h.slice(0, 500))); } catch (e) { /* stockage indisponible */ } renderHist(); }
+  function renderHist() {
+    const h = readHist();
+    $('#hist').innerHTML = h.length ? h.map((r, idx) => '<tr><td>' + esc(r.date) + '</td><td class="mono">' + esc(r.n) + '</td><td>' + esc(r.c) + '</td><td class="mono">' + esc(r.i) + '</td><td>' + esc(r.e || 'sans limite') + '</td><td class="k mono" title="' + esc(r.k) + '"><button class="small" type="button" data-copyrow="' + idx + '">Copier</button> ' + esc(r.k.slice(0, 22)) + '…</td></tr>').join('')
+      : '<tr><td colspan="6" style="color:var(--muted)">Aucune licence délivrée depuis ce navigateur.</td></tr>';
+  }
+  $('#hist').addEventListener('click', (e) => { const b = e.target.closest('[data-copyrow]'); if (b) copy(readHist()[+b.dataset.copyrow].k, b); });
+  $('#exportCsv').addEventListener('click', () => {
+    const rows = [['Date', 'Numéro', 'Client', 'Identifiant', 'Fin', 'Clé']].concat(readHist().map((r) => [r.date, r.n, r.c, r.i, r.e || 'sans limite', r.k]));
+    const csv = '﻿' + rows.map((r) => r.map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'licences-poswan-' + today() + '.csv'; a.click();
+  });
+  $('#clearHist').addEventListener('click', () => { if (confirm('Effacer l\'historique des licences de ce navigateur ? (pensez à l\'exporter avant)')) { try { localStorage.removeItem(HKEY); } catch (e) { /* */ } renderHist(); } });
+
+  newNumber();
+  renderHist();
+})();
+</script>
+</body>
+</html>

@@ -118,7 +118,8 @@ php bin/migrate.php   # mise à jour du schéma (aussi faite automatiquement au 
   l'identifiant de l'installation ; 30 jours d'essai, puis lecture seule sans clé).
 - Mise à jour : **Configuration → Mise à jour du logiciel** (sélection du dossier de la
   nouvelle version ; sauvegardes et mise à jour de la base automatiques).
-- Auteur : `php bin/licence.php keygen|generer|verifier` (clés et licences) et
+- Auteur : `outils-auteur/generateur-licence.html` (créer une licence depuis l'identifiant, dans
+  le navigateur, hors ligne ; non livré aux clients), `php bin/licence.php keygen|generer|verifier` et
   `php bin/release.php` (prépare `release.json` et `LICENCE.md` d'une version).
 
 ## Captures
