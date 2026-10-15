@@ -148,6 +148,7 @@
       const data = ct.includes('application/json') ? await res.json() : await res.text();
       if (!res.ok) {
         if (res.status >= 500 && method === 'GET' && i < attempts - 1) { await new Promise((r) => setTimeout(r, 1000)); continue; }
+        if (res.status === 403 && data && data.error && data.error.code === 'two_factor_setup_required' && location.hash !== '#/profil') { MW.toast(data.error.message, 'warn', 8000); location.hash = '#/profil'; }
         throw new ApiError(res.status, data);
       }
       if (method === 'GET' && opts.cache) { try { localStorage.setItem(cacheKey(path), JSON.stringify(data)); } catch (e) { /* quota */ } }
@@ -480,10 +481,29 @@
     });
   };
 
+  // ------------------------------------------------------------------ Choix de la langue
+  MW.languages = () => { try { return JSON.parse(meta('mw-languages') || '[]'); } catch (e) { return [['fr', 'Français']]; } };
+  MW.setLanguage = async function (code) {
+    try { document.cookie = `mw_lang=${encodeURIComponent(code)}; path=${MW.base || ''}/; max-age=31536000; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`; } catch (e) { /* cookies bloqués */ }
+    try { await MW.post('/account/locale', { locale: code }, { silent401: true }); } catch (e) { /* hors ligne : le cookie suffit */ }
+    location.reload();
+  };
+  MW.languagePicker = function (first) {
+    const cur = document.documentElement.lang || 'fr';
+    const sub = { fr: 'Langue de l\'application', ha: 'Harshen manhaja', dje: 'Zarma ciine', en: 'Application language' };
+    const m = MW.modal(first ? 'Choisissez votre langue' : 'Langue', `<div class="lang-list" translate="no">${MW.languages().map(([c, n]) => `<button class="lang-item ${c === cur ? 'active' : ''}" data-code="${c}"><strong>${MW.esc(n)}</strong>${sub[c] ? `<span class="small muted">${MW.esc(sub[c])}</span>` : ''}</button>`).join('')}</div>
+      <p class="small muted" style="margin-top:12px">Les traductions en haoussa et en zarma sont en cours de relecture par des locuteurs natifs : signalez toute erreur à l'assistance.</p>`);
+    m.el.querySelectorAll('[data-code]').forEach((b) => b.addEventListener('click', () => { if (b.dataset.code === cur && !first) { m.close(); return; } MW.setLanguage(b.dataset.code); }));
+    if (first) { try { document.cookie = `mw_lang=${cur}; path=${MW.base || ''}/; max-age=31536000; SameSite=Lax`; } catch (e) { /* ignore */ } }
+  };
+
   // ------------------------------------------------------------------ Démarrage commun
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('[data-notif-btn]')?.addEventListener('click', (e) => { e.stopPropagation(); MW.notifCenter.open(); });
     document.querySelector('[data-user-btn]')?.addEventListener('click', MW.userMenu);
+    document.querySelector('[data-lang-btn]')?.addEventListener('click', () => MW.languagePicker(false));
+    // Première visite : proposer la langue (une seule fois)
+    if (!MW.user && MW.languages().length > 1 && !/(^|; )mw_lang=/.test(document.cookie) && document.body.classList.contains('page-home')) setTimeout(() => MW.languagePicker(true), 600);
     if (MW.user) { MW.notifCenter.load(); MW.realtime.start(); }
     const sw = meta('mw-sw');
     if (sw && 'serviceWorker' in navigator && location.protocol !== 'file:') {

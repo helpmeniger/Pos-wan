@@ -22,11 +22,48 @@ final class I18n
     ];
 
     private static array $dicts = [];
+    private static string $current = 'fr';
+
+    /** Langue de la requête : choix fait sur cet appareil (cookie « mw_lang »), sinon celle du compte, sinon français. */
+    public static function detect(?array $user, array $cookies): string
+    {
+        $candidates = [$cookies['mw_lang'] ?? null, $user['locale'] ?? null];
+        foreach ($candidates as $c) {
+            if (is_string($c) && $c !== '' && self::valid($c)) {
+                return self::$current = $c;
+            }
+        }
+        return self::$current = 'fr';
+    }
+
+    public static function current(): string
+    {
+        return self::$current;
+    }
+
+    public static function setCurrent(string $code): void
+    {
+        self::$current = self::valid($code) ? $code : 'fr';
+    }
+
+    /** Version du dictionnaire (fichier + corrections) pour le cache du navigateur. */
+    public static function version(string $locale): string
+    {
+        $file = MARWA_ROOT . '/public/assets/i18n/' . $locale . '.json';
+        $db = '';
+        try {
+            $db = (string) Database::value('SELECT CONCAT(COUNT(*), MAX(updated_at)) FROM translations WHERE locale = :l', ['l' => $locale]);
+        } catch (\Throwable $e) {
+            // base indisponible
+        }
+        return substr(md5((is_file($file) ? (string) filemtime($file) : '0') . $db), 0, 10);
+    }
 
     /** Langues proposées aux utilisateurs (paramètre i18n.languages). */
     public static function languages(): array
     {
-        $list = json_decode((string) Settings::get('i18n.languages', '["fr","ha","dje","en"]'), true);
+        $list = Settings::get('i18n.languages', ['fr', 'ha', 'dje', 'en']);
+        $list = is_string($list) ? json_decode($list, true) : $list;
         $list = is_array($list) ? array_values(array_filter($list, fn ($c) => isset(self::NAMES[$c]))) : ['fr'];
         return in_array('fr', $list, true) ? $list : array_merge(['fr'], $list);
     }

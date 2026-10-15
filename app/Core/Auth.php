@@ -42,6 +42,12 @@ final class Auth
                 return;
             }
             self::loadUser($uid, 'session');
+            // « Déconnecter tous les appareils » / changement de mot de passe : sessions antérieures invalidées
+            if (self::$user !== null && (int) (self::$user['session_version'] ?? 0) !== (int) Session::get('sv', 0)) {
+                self::$user = null;
+                self::$permissions = [];
+                self::$via = 'none';
+            }
             if (self::$user === null) {
                 Session::destroy();
             }
@@ -71,6 +77,7 @@ final class Auth
         Session::regenerate();
         Session::set('uid', (int) $user['id']);
         Session::set('ua', hash('sha256', $request->userAgent()));
+        Session::set('sv', (int) ($user['session_version'] ?? 0));
         self::loadUser((int) $user['id'], 'session');
     }
 

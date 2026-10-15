@@ -15,19 +15,19 @@ final class AuthTest extends TestCase
         $this->assertTrue(isset(json_decode($r->body, true)['error']['fields']['password']), 'Erreur de champ explicite');
         // Inscription valide (via jeton : pas de session dans ce test)
         $email = 'nouveau' . random_int(1, 99999) . '@test.invalid';
-        $r = $this->call('POST', '/api/auth/register', ['full_name' => 'Nouvel Utilisateur', 'email' => $email, 'phone' => '9' . random_int(1000000, 9999999), 'password' => 'Motdepasse1', 'role' => 'client', 'accept_terms' => true], null, ['X-CSRF-Token' => \App\Core\Csrf::token()]);
+        $r = $this->call('POST', '/api/auth/register', ['full_name' => 'Nouvel Utilisateur', 'email' => $email, 'phone' => '9' . random_int(1000000, 9999999), 'password' => 'Sahel#Kora77', 'role' => 'client', 'accept_terms' => true], null, ['X-CSRF-Token' => \App\Core\Csrf::token()]);
         $this->assertStatus(201, $r);
         $hash = Database::value('SELECT password_hash FROM users WHERE email = :e', ['e' => $email]);
         $this->assertTrue(str_starts_with((string) $hash, '$argon2id$') || str_starts_with((string) $hash, '$2y$'), 'Mot de passe haché (Argon2id ou bcrypt)');
-        $this->assertFalse(str_contains((string) $hash, 'Motdepasse1'));
+        $this->assertFalse(str_contains((string) $hash, 'Sahel#Kora77'));
         // Doublon refusé
-        $r = $this->call('POST', '/api/auth/register', ['full_name' => 'Doublon', 'email' => $email, 'password' => 'Motdepasse1', 'role' => 'client', 'accept_terms' => true], null, ['X-CSRF-Token' => \App\Core\Csrf::token()]);
+        $r = $this->call('POST', '/api/auth/register', ['full_name' => 'Doublon', 'email' => $email, 'password' => 'Sahel#Kora77', 'role' => 'client', 'accept_terms' => true], null, ['X-CSRF-Token' => \App\Core\Csrf::token()]);
         $this->assertStatus(422, $r);
     }
 
     public function testProviderRegistrationStartsPending(): void
     {
-        $r = $this->call('POST', '/api/auth/register', ['full_name' => 'Chauffeur Nouveau', 'phone' => '9' . random_int(1000000, 9999999), 'password' => 'Motdepasse1', 'role' => 'driver', 'accept_terms' => true], null, ['X-CSRF-Token' => \App\Core\Csrf::token()]);
+        $r = $this->call('POST', '/api/auth/register', ['full_name' => 'Chauffeur Nouveau', 'phone' => '9' . random_int(1000000, 9999999), 'password' => 'Sahel#Kora77', 'role' => 'driver', 'accept_terms' => true], null, ['X-CSRF-Token' => \App\Core\Csrf::token()]);
         $this->assertStatus(201, $r);
         $id = $this->data($r)['user']['id'];
         $this->assertSame('pending', Database::value('SELECT verification_status FROM provider_profiles WHERE user_id = :u', ['u' => $id]));

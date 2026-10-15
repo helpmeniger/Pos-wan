@@ -125,6 +125,13 @@
             { name: 'password', label: 'Nouveau mot de passe', type: 'password', required: true, hint: '8 caractères minimum, lettre et chiffre.' }])}
             <button class="btn btn-primary" type="submit">Changer le mot de passe</button></form>
           <hr class="divider">
+          <h3>Double authentification</h3>
+          <div data-twofa class="small muted">…</div>
+          <hr class="divider">
+          <h3>Appareils connectés</h3>
+          <p class="small muted">En cas de perte du téléphone ou de doute, déconnectez tous les autres appareils (sessions, applications et notifications).</p>
+          <button class="btn btn-outline btn-sm" data-everywhere>Déconnecter tous les autres appareils</button>
+          <hr class="divider">
           <h3>Notifications sur cet appareil</h3>
           <p class="small muted">Alertes reçues même lorsque MARWA est fermé ou le téléphone en veille (nouvelle demande, chauffeur arrivé, commande prête…).</p>
           <div data-pushbox class="small muted">…</div>
@@ -141,6 +148,39 @@
       const fd = new FormData(); fd.append('file', e.target.files[0]);
       try { await MW.api('POST', '/account/photo', fd); MW.toast('Photo mise à jour.', 'success'); MW.views.profile(el); } catch (err) { MW.error(err); }
     });
+    el.querySelector('[data-everywhere]').addEventListener('click', async (e) => {
+      if (!(await MW.confirm('Déconnecter tous les autres appareils ? Vous restez connecté sur celui-ci.', { ok: 'Déconnecter' }))) return;
+      MW.busy(e.target, async () => { await MW.post('/account/logout-everywhere'); MW.toast('Tous les autres appareils ont été déconnectés.', 'success'); });
+    });
+    const twofa = el.querySelector('[data-twofa]');
+    const loadQr = () => new Promise((res) => { if (window.qrcode) return res(); const s = document.createElement('script'); s.src = MW.publicBase + '/assets/vendor/qrcode/qrcode.js'; s.onload = res; s.onerror = res; document.head.appendChild(s); });
+    const renderTwofa = async () => {
+      const sec = await MW.get('/account/security');
+      twofa.innerHTML = sec.two_factor
+        ? `<p><span class="badge green">Activée</span> Un code est demandé à chaque connexion. Codes de secours restants : <strong>${sec.recovery_codes_left}</strong>.</p>${sec.two_factor_required ? '<p class="small">Obligatoire pour les comptes de l\'équipe MARWA.</p>' : '<button class="btn btn-ghost btn-sm" data-off>Désactiver</button>'}`
+        : `<p>${sec.two_factor_required ? '<span class="badge red">Obligatoire pour votre compte</span> ' : ''}Protégez votre compte : en plus du mot de passe, un code à 6 chiffres de votre téléphone (Google Authenticator, Microsoft Authenticator, Aegis…) sera demandé.</p><button class="btn btn-primary btn-sm" data-on>Activer la double authentification</button>`;
+      twofa.querySelector('[data-on]')?.addEventListener('click', (e) => MW.busy(e.currentTarget, async () => {
+        const r = (await MW.post('/account/2fa/begin')).data;
+        await loadQr();
+        let qr = '';
+        try { const q = window.qrcode(0, 'M'); q.addData(r.uri); q.make(); qr = q.createSvgTag({ cellSize: 4, margin: 2, scalable: true }); } catch (x) { qr = ''; }
+        MW.formModal('Activer la double authentification', [
+          { html: `<ol class="small" style="padding-left:18px"><li>Installez une application d'authentification sur votre téléphone.</li><li>Scannez ce code QR (ou saisissez la clé).</li><li>Entrez le code à 6 chiffres affiché.</li></ol>
+            <div class="qr-box">${qr || ''}</div><p class="small">Clé : <code translate="no" style="word-break:break-all">${MW.esc(r.secret)}</code></p>
+            <p><a class="btn btn-sm btn-outline" href="${MW.esc(r.uri)}">Ouvrir dans l'application d'authentification</a></p>` },
+          { name: 'code', label: 'Code à 6 chiffres', required: true, maxlength: 6 }],
+        async (v) => {
+          const c = (await MW.post('/account/2fa/confirm', v)).data.recovery_codes;
+          MW.modal('Codes de secours', `<div class="alert alert-warn">Notez ces codes et gardez-les en lieu sûr. Chacun permet une connexion si vous perdez votre téléphone. Ils ne seront plus affichés.</div>
+            <div class="recovery-codes" translate="no">${c.map((x) => `<code>${MW.esc(x)}</code>`).join('')}</div>`);
+          renderTwofa();
+        }, { ok: 'Activer' });
+      }));
+      twofa.querySelector('[data-off]')?.addEventListener('click', () => MW.formModal('Désactiver la double authentification', [
+        { name: 'password', label: 'Mot de passe', type: 'password', required: true }, { name: 'code', label: 'Code de vérification', required: true, maxlength: 9 }],
+      async (v) => { await MW.post('/account/2fa/disable', v); MW.toast('Double authentification désactivée.', 'success'); renderTwofa(); }, { ok: 'Désactiver' }));
+    };
+    renderTwofa();
     const pushBox = el.querySelector('[data-pushbox]');
     const renderPush = async () => {
       const st = await MW.push.state();

@@ -12,10 +12,19 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     const login = document.getElementById('login-form');
+    const done = (r) => { const back = login.dataset.back; location.href = back && !r.data.two_factor_setup_required ? MW.base + back : r.data.redirect; };
     submit(login, async (v) => {
       const r = await MW.post('/auth/login', v);
-      const back = login.dataset.back;
-      location.href = back ? MW.base + back : r.data.redirect;
+      if (!r.data.two_factor) return done(r);
+      // Double authentification : code de l'application (ou code de secours)
+      MW.csrf = r.data.csrf || MW.csrf;
+      login.hidden = true;
+      const f = document.createElement('form'); f.id = 'twofa-form'; f.noValidate = true;
+      f.innerHTML = `<div class="alert alert-info">Saisissez le code à 6 chiffres affiché par votre application d'authentification (ou un code de secours).</div>
+        <div class="field" data-field="code"><label for="code">Code de vérification</label><input class="input" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="9" required autofocus></div>
+        <button class="btn btn-primary btn-block btn-lg" type="submit">Vérifier</button>`;
+      login.after(f); f.querySelector('input').focus();
+      submit(f, async (c) => done(await MW.post('/auth/2fa', c)));
     });
 
     const reg = document.getElementById('register-form');

@@ -35,6 +35,7 @@ final class Kernel
                 Session::start();
             }
             Auth::resolve($request);
+            \App\Support\I18n::detect(Auth::user(), $request->cookies);
 
             // CSRF : obligatoire pour toute requête modifiante authentifiée par cookie.
             $exempt = str_starts_with($request->path, '/api/webhooks/') || $request->path === '/api/auth/token';
@@ -100,10 +101,14 @@ final class Kernel
             'X-Content-Type-Options' => 'nosniff',
             'X-Frame-Options' => 'DENY',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
-            'Permissions-Policy' => 'geolocation=(self), camera=(self), microphone=()',
+            'Permissions-Policy' => 'geolocation=(self), camera=(self), microphone=(), payment=(), usb=(), interest-cohort=()',
+            'Cross-Origin-Opener-Policy' => 'same-origin',
+            'Cross-Origin-Resource-Policy' => 'same-origin',
+            'X-Permitted-Cross-Domain-Policies' => 'none',
             'Content-Security-Policy' => "default-src 'self'; img-src 'self' data: blob: {$tiles} https://*.tile.openstreetmap.org; "
                 . "script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; font-src 'self'; "
-                . "frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+                . "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+                . (Config::get('security.cookie_secure') ? '; upgrade-insecure-requests' : ''),
         ];
         if (Config::get('security.cookie_secure')) {
             $response->headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';

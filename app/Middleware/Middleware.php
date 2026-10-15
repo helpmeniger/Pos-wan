@@ -14,6 +14,7 @@ use App\Core\Response;
  *  throttle:nom,max,secondes  limitation de débit par utilisateur ou IP
  *  verified_provider          chauffeur/livreur validé par l'administration
  *  active                     compte actif (pas en attente)
+ *  staff_guard                IP autorisées + double authentification du personnel
  */
 abstract class Middleware
 {
@@ -30,6 +31,8 @@ abstract class Middleware
             'perm' => new RequirePermission($args),
             'throttle' => new Throttle($args[0] ?? 'global', (int) ($args[1] ?? 60), (int) ($args[2] ?? 60)),
             'verified_provider' => new RequireVerifiedProvider(),
+            'staff_guard' => new StaffGuard(),
+            'staff_ip' => new StaffGuard(false),
             default => throw new \LogicException("Middleware inconnu : $alias"),
         };
     }

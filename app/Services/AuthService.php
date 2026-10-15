@@ -34,6 +34,9 @@ final class AuthService
             'merchant_lat' => 'nullable|lat',
             'merchant_lng' => 'nullable|lng',
         ]);
+        if (($weak = SecurityService::weakPassword($v['password'], [$v['full_name'], $v['email'] ?? '', $v['phone'] ?? ''])) !== null) {
+            throw \App\Core\ValidationException::field('password', $weak);
+        }
         if (!$v['accept_terms']) {
             throw \App\Core\ValidationException::field('accept_terms', 'Vous devez accepter les conditions d\'utilisation.');
         }
@@ -114,6 +117,7 @@ final class AuthService
 
         $generic = new HttpException(401, 'Identifiant ou mot de passe incorrect.', 'invalid_credentials');
         if (!$user) {
+            \App\Core\Logger::warning('Échec de connexion', ['ip' => $request->ip()]); // exploité par fail2ban
             password_verify($password, '$argon2id$v=19$m=65536,t=4,p=1$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG'); // temps constant
             throw $generic;
         }
@@ -121,6 +125,7 @@ final class AuthService
             throw new HttpException(423, 'Compte temporairement verrouillé après plusieurs échecs. Réessayez plus tard ou réinitialisez votre mot de passe.', 'account_locked');
         }
         if (!password_verify($password, $user['password_hash'])) {
+            \App\Core\Logger::warning('Échec de connexion', ['ip' => $request->ip()]); // exploité par fail2ban
             $fails = (int) $user['failed_logins'] + 1;
             $max = (int) Config::get('security.login_max_attempts', 5);
             Database::update('users', [
@@ -254,8 +259,8 @@ final class AuthService
         if (!$userId) {
             throw new HttpException(422, 'Lien ou code invalide ou expiré.', 'invalid_reset');
         }
-        Database::update('users', ['password_hash' => Auth::hashPassword($v['password']), 'failed_logins' => 0, 'locked_until' => null], 'id = :id', ['id' => $userId]);
-        Database::execute('UPDATE api_tokens SET revoked_at = NOW() WHERE user_id = :u AND revoked_at IS NULL', ['u' => $userId]);
+        Database::update('users', ['password_hash' => Auth::hashPassword($v['password']), 'failed_logins' => 0, 'locked_until' => null, 'password_changed_at' => date('Y-m-d H:i:s')], 'id = :id', ['id' => $userId]);
+        SecurityService::logoutEverywhere($userId); // toutes les sessions et tous les jetons existants sont invalidés
         Audit::log('auth.password_reset', 'user', $userId, null, null, $userId);
         NotificationService::notify($userId, 'security', 'Mot de passe modifié', 'Votre mot de passe vient d\'être modifié. Si ce n\'est pas vous, contactez immédiatement l\'assistance.', [], ['sms', 'email']);
     }

@@ -203,7 +203,7 @@ select.input { background-image: linear-gradient(45deg, transparent 50%, var(--i
 @media (min-width: 560px) { .form-row { grid-template-columns: repeat(2, 1fr); } .form-row.three { grid-template-columns: repeat(3, 1fr); } }
 
 .segmented { display: flex; background: var(--sand-100); border-radius: 12px; padding: 4px; gap: 4px; }
-.segmented button, .segmented label {
+.segmented button, .segmented label, .segmented a {
   flex: 1; border: 0; background: transparent; padding: 9px 8px; border-radius: 9px; font: inherit; font-weight: 700; font-size: .88rem; color: var(--ink-500); cursor: pointer; text-align: center;
 }
 .segmented .active, .segmented input:checked + span { background: #fff; color: var(--green-700); box-shadow: var(--shadow); }
@@ -475,3 +475,23 @@ body.nav-open { overflow: hidden; }
 .push-offer-ic svg { width: 24px; height: 24px; }
 @keyframes mw-up { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (min-width: 900px) { .push-offer { bottom: 20px; left: auto; right: 20px; } }
+
+/* ---- Langues ---- */
+.lang-btn { width: auto !important; padding: 0 10px; gap: 4px; display: inline-flex; align-items: center; }
+.lang-btn svg { width: 20px; height: 20px; }
+.lang-code { font-weight: 800; font-size: .78rem; }
+.lang-list { display: grid; gap: 8px; }
+.lang-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 14px 16px; border-radius: 14px; border: 1.5px solid var(--sand-200); background: #fff; font: inherit; cursor: pointer; min-height: 56px; }
+.lang-item.active { border-color: var(--green-700); background: var(--green-50); }
+.lang-item strong { font-size: 1.05rem; }
+.tr-list { display: grid; gap: 8px; }
+.tr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; padding: 8px 0; border-bottom: 1px solid var(--sand-200); }
+.tr-src { font-size: .92rem; color: var(--ink-700, #2b3a33); padding-top: 8px; word-break: break-word; }
+.tr-edit textarea { min-height: 40px; resize: vertical; }
+.tr-edit textarea.saved { border-color: var(--green-700); }
+@media (max-width: 640px) { .tr-row { grid-template-columns: 1fr; } }
+.segmented a { text-decoration: none; }
+.qr-box { display: grid; place-items: center; margin: 10px 0; }
+.qr-box svg { width: 200px; height: 200px; background: #fff; }
+.recovery-codes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.recovery-codes code { font-size: 1.05rem; text-align: center; padding: 8px; background: var(--sand-100); border-radius: 8px; }

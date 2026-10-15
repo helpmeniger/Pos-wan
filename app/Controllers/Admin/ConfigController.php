@@ -246,6 +246,8 @@ final class ConfigController extends Controller
             ],
             'ledger' => \App\Services\LedgerService::trialBalance(),
             'outbox_failed' => (int) Database::value("SELECT COUNT(*) FROM outbound_messages WHERE status = 'failed'"),
+            'security' => \App\Support\SecurityCheck::run(),
+            'push' => \App\Services\PushService::stats(),
         ]);
     }
 

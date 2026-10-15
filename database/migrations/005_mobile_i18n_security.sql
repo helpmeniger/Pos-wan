@@ -35,7 +35,8 @@ ALTER TABLE users
   ADD COLUMN totp_last_step BIGINT NULL AFTER totp_enabled_at,
   ADD COLUMN totp_recovery_json TEXT NULL AFTER totp_last_step,
   ADD COLUMN session_version INT UNSIGNED NOT NULL DEFAULT 0 AFTER totp_recovery_json,
-  ADD COLUMN password_changed_at DATETIME NULL AFTER session_version;
+  ADD COLUMN password_changed_at DATETIME NULL AFTER session_version,
+  ADD COLUMN known_devices_json TEXT NULL AFTER password_changed_at;
 
 -- Abonnements aux notifications push (Web Push, norme W3C / RFC 8030)
 CREATE TABLE push_subscriptions (
@@ -74,6 +75,6 @@ INSERT INTO settings (k, v) VALUES
  ('nearby.max_vehicles', '20'),
  ('catalog.max_photos_per_product', '6'),
  ('i18n.languages', '["fr","ha","dje","en"]'),
- ('security.staff_2fa_required', '0'),
- ('push.enabled', '1')
+ ('security.staff_2fa_required', 'false'),
+ ('push.enabled', 'true')
 ON DUPLICATE KEY UPDATE v = v;

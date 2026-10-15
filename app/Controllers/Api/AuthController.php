@@ -13,6 +13,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Str;
 use App\Services\AuthService;
+use App\Services\SecurityService;
 use App\Services\UploadService;
 
 final class AuthController extends Controller
@@ -35,18 +36,112 @@ final class AuthController extends Controller
     {
         $v = $this->validate($r, ['identifier' => 'required|string|max:190', 'password' => 'required|string|max:200']);
         $user = AuthService::attempt($v['identifier'], $v['password'], $r);
+        if (SecurityService::totpEnabled($user)) {
+            // Deuxième étape : le code de l'application d'authentification est exigé avant d'ouvrir la session
+            \App\Core\Session::regenerate();
+            \App\Core\Session::set('2fa', ['uid' => (int) $user['id'], 'exp' => time() + 300, 'tries' => 0, 'ua' => hash('sha256', $r->userAgent())]);
+            return $this->json(['two_factor' => true, 'csrf' => Csrf::token()]);
+        }
+        return $this->completeLogin($user, $r);
+    }
+
+    /** POST /api/auth/2fa — code à 6 chiffres ou code de secours. */
+    public function twoFactor(Request $r): Response
+    {
+        $v = $this->validate($r, ['code' => 'required|string|max:20']);
+        $c = \App\Core\Session::get('2fa');
+        if (!is_array($c) || $c['exp'] < time() || $c['ua'] !== hash('sha256', $r->userAgent())) {
+            \App\Core\Session::set('2fa', null);
+            throw new \App\Core\HttpException(401, 'Délai dépassé. Reconnectez-vous.', 'two_factor_expired');
+        }
+        if (!SecurityService::checkSecondFactor((int) $c['uid'], $v['code'])) {
+            $c['tries']++;
+            \App\Core\Session::set('2fa', $c['tries'] >= 5 ? null : $c);
+            Audit::log('auth.2fa_failed', 'user', (int) $c['uid'], null, ['ip' => $r->ip()], (int) $c['uid']);
+            throw \App\Core\ValidationException::field('code', $c['tries'] >= 5 ? 'Trop d\'essais. Reconnectez-vous.' : 'Code incorrect.');
+        }
+        \App\Core\Session::set('2fa', null);
+        return $this->completeLogin(AuthService::findUser((int) $c['uid']), $r);
+    }
+
+    private function completeLogin(array $user, Request $r): Response
+    {
         Auth::login($user, $r);
-        return $this->json(['user' => AuthService::present($user), 'csrf' => Csrf::token(), 'redirect' => self::home($user)]);
+        SecurityService::recordDevice($user, $r);
+        // La langue choisie sur l'appareil devient celle du compte (notifications push comprises)
+        $lang = (string) ($r->cookies['mw_lang'] ?? '');
+        if ($lang !== '' && $lang !== ($user['locale'] ?? 'fr') && \App\Support\I18n::valid($lang)) {
+            Database::update('users', ['locale' => $lang], 'id = :id', ['id' => $user['id']]);
+        }
+        $out = ['user' => AuthService::present($user), 'csrf' => Csrf::token(), 'redirect' => self::home($user)];
+        if (SecurityService::totpRequired($user) && !SecurityService::totpEnabled($user)) {
+            $out['redirect'] = url('admin') . '#/profil';
+            $out['two_factor_setup_required'] = true;
+        }
+        return $this->json($out);
     }
 
     /** Jeton Bearer pour les futures applications mobiles (pas de cookie, pas de CSRF). */
     public function token(Request $r): Response
     {
-        $v = $this->validate($r, ['identifier' => 'required|string|max:190', 'password' => 'required|string|max:200', 'device_name' => 'nullable|string|max:80']);
+        $v = $this->validate($r, ['identifier' => 'required|string|max:190', 'password' => 'required|string|max:200', 'device_name' => 'nullable|string|max:80', 'code' => 'nullable|string|max:20']);
         $user = AuthService::attempt($v['identifier'], $v['password'], $r);
+        if (SecurityService::totpEnabled($user)) {
+            if (empty($v['code'])) {
+                return $this->json(['two_factor' => true, 'message' => 'Renvoyez la requête avec « code » (application d\'authentification).'], 401);
+            }
+            if (!SecurityService::checkSecondFactor((int) $user['id'], $v['code'])) {
+                throw \App\Core\ValidationException::field('code', 'Code incorrect.');
+            }
+        }
+        SecurityService::recordDevice($user, $r);
         $token = Auth::issueToken((int) $user['id'], $v['device_name'] ?? 'mobile');
         Auth::actingAs((int) $user['id']);
         return $this->json(['token' => $token, 'token_type' => 'Bearer', 'expires_in_days' => 30, 'user' => AuthService::present($user)]);
+    }
+
+    // ------------------------------------------------------------------ Sécurité du compte
+
+    public function security(Request $r): Response
+    {
+        $u = AuthService::findUser((int) $this->user()['id']);
+        $devices = json_decode((string) ($u['known_devices_json'] ?? ''), true) ?: [];
+        return $this->json([
+            'two_factor' => SecurityService::totpEnabled($u),
+            'two_factor_required' => SecurityService::totpRequired($u),
+            'recovery_codes_left' => count(json_decode((string) $u['totp_recovery_json'], true) ?: []),
+            'password_changed_at' => $u['password_changed_at'],
+            'devices_count' => count($devices),
+            'last_login_at' => $u['last_login_at'],
+        ]);
+    }
+
+    public function totpBegin(Request $r): Response
+    {
+        return $this->json(SecurityService::beginTotp(AuthService::findUser((int) $this->user()['id'])));
+    }
+
+    public function totpConfirm(Request $r): Response
+    {
+        $v = $this->validate($r, ['code' => 'required|string|max:10']);
+        return $this->json(['recovery_codes' => SecurityService::confirmTotp(AuthService::findUser((int) $this->user()['id']), $v['code'])]);
+    }
+
+    public function totpDisable(Request $r): Response
+    {
+        $v = $this->validate($r, ['password' => 'required|string|max:200', 'code' => 'required|string|max:20']);
+        SecurityService::disableTotp($this->user(), $v['password'], $v['code']);
+        return $this->ok('Double authentification désactivée.');
+    }
+
+    /** Déconnecte tous les autres appareils (sessions, jetons, notifications push). */
+    public function logoutEverywhere(Request $r): Response
+    {
+        $u = $this->user();
+        SecurityService::logoutEverywhere((int) $u['id']);
+        \App\Core\Session::regenerate();
+        \App\Core\Session::set('sv', (int) Database::value('SELECT session_version FROM users WHERE id = :id', ['id' => $u['id']]));
+        return $this->ok('Tous les autres appareils ont été déconnectés.');
     }
 
     public function logout(Request $r): Response
@@ -127,8 +222,14 @@ final class AuthController extends Controller
         if (!password_verify($v['current_password'], $u['password_hash'])) {
             throw \App\Core\ValidationException::field('current_password', 'Mot de passe actuel incorrect.');
         }
-        Database::update('users', ['password_hash' => Auth::hashPassword($v['password'])], 'id = :id', ['id' => $u['id']]);
+        if (($weak = SecurityService::weakPassword($v['password'], [$u['full_name'], $u['email'] ?? '', $u['phone'] ?? ''])) !== null) {
+            throw \App\Core\ValidationException::field('password', $weak);
+        }
+        Database::update('users', ['password_hash' => Auth::hashPassword($v['password']), 'password_changed_at' => date('Y-m-d H:i:s')], 'id = :id', ['id' => $u['id']]);
+        // Les autres appareils sont déconnectés ; cette session reste ouverte
+        SecurityService::logoutEverywhere((int) $u['id']);
         \App\Core\Session::regenerate();
+        \App\Core\Session::set('sv', (int) Database::value('SELECT session_version FROM users WHERE id = :id', ['id' => $u['id']]));
         Audit::log('auth.password_changed', 'user', (int) $u['id']);
         return $this->ok('Mot de passe modifié.');
     }

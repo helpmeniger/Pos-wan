@@ -33,7 +33,7 @@ final class PushService
 
     public static function enabled(): bool
     {
-        return Settings::get('push.enabled', '1') !== '0' && function_exists('openssl_pkey_derive');
+        return filter_var(Settings::get('push.enabled', true), FILTER_VALIDATE_BOOLEAN) && function_exists('openssl_pkey_derive');
     }
 
     public static function keys(): array

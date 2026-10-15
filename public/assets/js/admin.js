@@ -524,11 +524,15 @@
       'orders.merchant_accept_timeout_min': 'Délai de confirmation des commerces (min)', 'orders.customer_free_cancel_seconds': 'Annulation sans motif après affectation (s)', 'pricing.rounding_step': 'Arrondi des prix (FCFA)',
       'tracking.history_retention_days': 'Conservation de l\'historique GPS (jours)', 'tracking.stale_after_seconds': 'Position considérée obsolète après (s)', 'tracking.min_interval_seconds': 'Intervalle minimal entre deux positions (s)',
       'finance.vat_rate_bp': 'TVA sur commissions (points de base, 0 = non appliquée)', 'finance.cash_discrepancy_tolerance': 'Tolérance d\'écart de caisse (FCFA)', 'zones.enforce': 'Refuser les commandes hors zones actives', 'ratings.moderation': 'Modérer les avis avant publication',
-      'payments.demo_fee_bp': 'Frais simulés de la passerelle démo (points de base)', 'support.phone': 'Téléphone de l\'assistance', 'support.email': 'E-mail de l\'assistance', 'emergency.message': 'Message affiché lors d\'une alerte' };
+      'payments.demo_fee_bp': 'Frais simulés de la passerelle démo (points de base)', 'support.phone': 'Téléphone de l\'assistance', 'support.email': 'E-mail de l\'assistance', 'emergency.message': 'Message affiché lors d\'une alerte',
+      'nearby.radius_km': 'Rayon d\'affichage des véhicules proches (km)', 'nearby.max_vehicles': 'Véhicules proches affichés au maximum', 'nearby.location_max_age_s': 'Âge maximal de la position d\'un véhicule affiché (s)',
+      'catalog.max_photos_per_product': 'Photos maximum par produit', 'security.staff_2fa_required': 'Double authentification obligatoire pour le personnel', 'push.enabled': 'Notifications push activées' };
     const simple = Object.keys(LABELS).filter((k) => k in s);
     el.innerHTML = `<div class="container">${head('Paramètres de la plateforme')}
       <div class="card"><h2>État des fournisseurs externes</h2>${MW.table([{ key: 'k', label: 'Service' }, { key: 'status', label: 'État', fmt: (r) => `<span class="badge">${MW.esc(r.status)}</span>` }, { key: 'detail', label: 'Détail' }], Object.entries(sys.providers).map(([k, v]) => ({ k: { maps: 'Cartographie', routing: 'Itinéraires', geocoding: 'Recherche d\'adresses', sms: 'SMS', email: 'E-mail', whatsapp: 'WhatsApp', payments: 'Paiements électroniques' }[k] || k, ...v })))}
         <p class="small muted" style="margin-top:8px">PHP ${MW.esc(sys.php)} · Base ${MW.esc(sys.database)} · environnement ${MW.esc(sys.env)} · cookies sécurisés : ${sys.https_cookies ? 'oui' : '<strong>non (activer en production HTTPS)</strong>'} · messages en échec : ${sys.outbox_failed}. La configuration des fournisseurs se fait dans le fichier <code>.env</code> (voir docs/SERVICES_EXTERNES.md).</p></div>
+      <div class="card"><h2>Contrôle de sécurité</h2><div class="list">${sys.security.map((c) => `<div class="list-item"><span class="badge ${c.status === 'ok' ? 'green' : c.status === 'warn' ? 'amber' : 'red'}">${c.status === 'ok' ? 'OK' : c.status === 'warn' ? 'À voir' : 'Critique'}</span><div class="grow"><div class="title">${MW.esc(c.label)}</div>${c.detail ? `<div class="meta">${MW.esc(c.detail)}</div>` : ''}</div></div>`).join('')}</div>
+        <p class="small muted">Notifications push : ${sys.push.subscriptions} appareil(s) abonné(s) pour ${sys.push.users} utilisateur(s). Contrôle complet depuis le serveur : <code>php bin/security-check.php --url=https://votre-domaine</code>.</p></div>
       <form class="card" data-form novalidate><h2>Règles métier</h2><div class="form-row">${simple.map((k) => typeof s[k] === 'boolean'
         ? MW.fields([{ name: k, label: LABELS[k], type: 'checkbox', value: s[k] }]) : MW.fields([{ name: k, label: LABELS[k], type: typeof s[k] === 'number' ? 'number' : 'text', value: s[k], step: 'any' }])).join('')}</div>
         <div class="field"><label>Moyens de paiement proposés</label>${['cash', 'demo_mobile_money', 'business_account'].map((m) => `<label class="check"><input type="checkbox" data-pm value="${m}" ${(s['payments.methods'] || []).includes(m) ? 'checked' : ''} ${m === 'cash' ? 'disabled' : ''}> ${MW.esc(MW.L.payment[m])}</label>`).join('')}</div>
@@ -567,6 +571,36 @@
     el.querySelector('[data-f]').addEventListener('submit', (e) => { e.preventDefault(); location.hash = '#/audit?action=' + encodeURIComponent(MW.values(e.target).action || ''); });
   }
 
+  // ------------------------------------------------------------------ Langues et traductions
+  async function translations(el, params) {
+    const locale = params.langue || 'ha';
+    const q = new URLSearchParams({ locale, q: params.q || '', missing: params.manquants ? '1' : '', page: params.page || '1' });
+    const d = await MW.get('/admin/translations?' + q);
+    const pct = d.progress.total ? Math.round(100 * d.progress.done / d.progress.total) : 0;
+    const langs = Object.entries(d.all_languages).filter(([c]) => c !== 'fr');
+    el.innerHTML = `<div class="container">${head('Langues et traductions', '')}
+      <div class="card" style="margin-bottom:14px"><h2>Langues proposées aux utilisateurs</h2>
+        <form data-langs class="row" style="flex-wrap:wrap;gap:14px">${Object.entries(d.all_languages).map(([c, n]) => `<label class="check"><input type="checkbox" name="${c}" ${d.languages.includes(c) ? 'checked' : ''} ${c === 'fr' ? 'disabled' : ''}> ${MW.esc(n)}</label>`).join('')}
+        <button class="btn btn-primary btn-sm">Enregistrer</button></form>
+        <p class="small muted">Une langue sans traduction s'affiche en français. Ajoutez ou corrigez les traductions ci-dessous : elles priment sur les fichiers livrés.</p></div>
+      <div class="card"><div class="row between" style="flex-wrap:wrap;gap:10px"><div class="segmented" translate="no">${langs.map(([c, n]) => `<a class="${c === locale ? 'active' : ''}" href="#/traductions?langue=${c}">${MW.esc(n)}</a>`).join('')}</div>
+        <span class="badge ${pct === 100 ? 'green' : 'amber'}">${d.progress.done} / ${d.progress.total} textes traduits (${pct} %)</span></div>
+        ${['ha', 'dje'].includes(locale) && !d.reviewed_by_native ? '<div class="alert alert-warn" style="margin-top:10px">Traduction proposée automatiquement : faites-la relire par un locuteur natif avant l\'ouverture au public et corrigez ici les formulations.</div>' : ''}
+        <form data-f class="row" style="margin:12px 0;flex-wrap:wrap"><input class="input" name="q" placeholder="Rechercher un texte" value="${MW.esc(params.q || '')}" style="flex:1;min-width:180px">
+          <label class="check"><input type="checkbox" name="manquants" ${params.manquants ? 'checked' : ''}> Non traduits seulement</label><button class="btn btn-outline">Filtrer</button></form>
+        <div class="tr-list" translate="no">${d.items.map((it, i) => `<div class="tr-row"><div class="tr-src">${MW.esc(it.source)}</div>
+          <div class="tr-edit"><textarea class="input" rows="1" data-i="${i}">${MW.esc(it.target)}</textarea>${it.edited ? '<span class="badge blue">corrigé</span>' : ''}</div></div>`).join('') || MW.empty('Aucun texte.')}</div>
+        <div class="row between" style="margin-top:12px"><span class="small muted">${d.count} texte(s)</span>
+          <span class="row">${Number(params.page || 1) > 1 ? `<a class="btn btn-sm btn-outline" href="#/traductions?${new URLSearchParams({ ...params, page: Number(params.page || 1) - 1 })}">Précédent</a>` : ''}
+          ${Number(params.page || 1) * 50 < d.count ? `<a class="btn btn-sm btn-outline" href="#/traductions?${new URLSearchParams({ ...params, langue: locale, page: Number(params.page || 1) + 1 })}">Suivant</a>` : ''}</span></div></div></div>`;
+    el.querySelector('[data-f]').addEventListener('submit', (e) => { e.preventDefault(); const v = MW.values(e.target); location.hash = '#/traductions?' + new URLSearchParams({ langue: locale, q: v.q || '', ...(v.manquants ? { manquants: '1' } : {}) }); });
+    el.querySelector('[data-langs]').addEventListener('submit', (e) => { e.preventDefault(); const v = MW.values(e.target); MW.busy(e.submitter || e.target.querySelector('button'), async () => { await MW.put('/admin/languages', { languages: ['fr', ...Object.keys(v).filter((k) => v[k])] }); MW.toast('Langues enregistrées.', 'success'); }); });
+    el.querySelectorAll('[data-i]').forEach((ta) => {
+      const it = d.items[Number(ta.dataset.i)];
+      ta.addEventListener('change', async () => { try { await MW.put('/admin/translations', { locale, source: it.source, target: ta.value }); ta.classList.add('saved'); MW.toast('Traduction enregistrée.', 'success', 1500); } catch (e) { MW.error(e); } });
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const items = [
       { key: '', label: 'Tableau de bord', short: 'Accueil', icon: 'chart', perm: 'admin.dashboard', primary: true, section: 'Pilotage' },
@@ -590,6 +624,7 @@
       { key: 'promotions', label: 'Promotions', icon: 'tag', perm: 'promotions.manage' },
       { key: 'notifications', label: 'Notifications', icon: 'bell', perm: 'notifications.send' },
       { key: 'parametres', label: 'Paramètres', icon: 'gear', perm: 'settings.manage' },
+      { key: 'traductions', label: 'Langues et traductions', icon: 'book', perm: 'settings.manage' },
       { key: 'audit', label: 'Journal d\'audit', icon: 'shield', perm: 'audit.view' },
       { key: 'profil', label: 'Mon profil', icon: 'user' }
     ].filter((i) => !i.perm || can(i.perm));
@@ -600,7 +635,7 @@
       '/carte': liveMap, '/utilisateurs': users, '/chauffeurs': (el, p) => providers(el, p, 'driver'), '/livreurs': (el, p) => providers(el, p, 'courier'),
       '/commerces': merchants, '/entreprises': businesses, '/commandes': orders, '/commande/:id': order, '/tarifs': pricing, '/commissions': commissions, '/zones': zones,
       '/promotions': promotions, '/paiements': payments, '/versements': payouts, '/grand-livre': ledger, '/depenses': expenses, '/remboursements': refunds,
-      '/reclamations': complaints, '/rapports': reports, '/notifications': broadcast, '/parametres': settings, '/audit': audit, '/profil': (el) => MW.views.profile(el)
+      '/reclamations': complaints, '/rapports': reports, '/notifications': broadcast, '/parametres': settings, '/traductions': translations, '/audit': audit, '/profil': (el) => MW.views.profile(el)
     }, document.getElementById('view'));
   });
 })();

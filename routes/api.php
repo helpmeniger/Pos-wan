@@ -30,6 +30,7 @@ $router->group('/api', [], function ($router) {
     $router->post('/auth/register', [AuthController::class, 'register'], ['throttle:register,10,3600']);
     $router->post('/auth/login', [AuthController::class, 'login'], ['throttle:login,20,300']);
     $router->post('/auth/token', [AuthController::class, 'token'], ['throttle:login,20,300']);
+    $router->post('/auth/2fa', [AuthController::class, 'twoFactor'], ['throttle:twofa,10,300']);
     $router->post('/auth/logout', [AuthController::class, 'logout']);
     $router->post('/auth/password/forgot', [AuthController::class, 'forgot'], ['throttle:forgot,10,3600']);
     $router->post('/auth/password/reset', [AuthController::class, 'reset'], ['throttle:reset,10,3600']);
@@ -41,6 +42,7 @@ $router->group('/api', [], function ($router) {
     $router->get('/geo/zones', [GeoController::class, 'zones']);
     $router->get('/geo/landmarks', [GeoController::class, 'landmarks']);
     $router->post('/estimate', [GeoController::class, 'estimate'], ['throttle:estimate,40,60']);
+    $router->post('/account/locale', [App\Controllers\I18nController::class, 'setLocale'], ['throttle:locale,30,60']);
     $router->get('/nearby', [GeoController::class, 'nearby'], ['auth', 'throttle:nearby,40,60']);
     $router->get('/merchants', [CatalogController::class, 'merchants']);
     $router->get('/merchants/{id}', [CatalogController::class, 'show']);
@@ -56,6 +58,11 @@ $router->group('/api', [], function ($router) {
         $router->post('/auth/otp/verify', [AuthController::class, 'verifyOtp'], ['throttle:otp_verify,10,600']);
         $router->put('/account/profile', [AuthController::class, 'updateProfile']);
         $router->post('/account/password', [AuthController::class, 'changePassword'], ['throttle:pwd,10,3600']);
+        $router->get('/account/security', [AuthController::class, 'security']);
+        $router->post('/account/2fa/begin', [AuthController::class, 'totpBegin'], ['throttle:twofa_setup,10,3600']);
+        $router->post('/account/2fa/confirm', [AuthController::class, 'totpConfirm'], ['throttle:twofa_setup,20,3600']);
+        $router->post('/account/2fa/disable', [AuthController::class, 'totpDisable'], ['throttle:twofa_setup,10,3600']);
+        $router->post('/account/logout-everywhere', [AuthController::class, 'logoutEverywhere'], ['throttle:pwd,10,3600']);
         $router->post('/account/photo', [AuthController::class, 'photo'], ['throttle:upload,20,3600']);
         $router->post('/account/delete', [AuthController::class, 'deleteAccount'], ['throttle:pwd,10,3600']);
 
@@ -167,7 +174,7 @@ $router->group('/api', [], function ($router) {
     });
 
     // --- Administration (permissions fines) -------------------------------------------
-    $router->group('/admin', ['auth', 'role:admin,support,finance'], function ($router) {
+    $router->group('/admin', ['auth', 'role:admin,support,finance', 'staff_guard'], function ($router) {
         $router->get('/dashboard', [AdminController::class, 'dashboard'], ['perm:admin.dashboard']);
         $router->get('/map', [AdminController::class, 'map'], ['perm:orders.view']);
         $router->get('/users', [AdminController::class, 'users'], ['perm:users.view']);
@@ -211,6 +218,9 @@ $router->group('/api', [], function ($router) {
         $router->post('/promotions', [ConfigController::class, 'savePromotion'], ['perm:promotions.manage']);
         $router->put('/promotions/{id}', [ConfigController::class, 'savePromotion'], ['perm:promotions.manage']);
         $router->get('/settings', [ConfigController::class, 'settings'], ['perm:settings.manage']);
+        $router->get('/translations', [App\Controllers\I18nController::class, 'list'], ['perm:settings.manage']);
+        $router->put('/translations', [App\Controllers\I18nController::class, 'save'], ['perm:settings.manage']);
+        $router->put('/languages', [App\Controllers\I18nController::class, 'languages'], ['perm:settings.manage']);
         $router->post('/settings', [ConfigController::class, 'saveSettings'], ['perm:settings.manage']);
         $router->post('/content', [ConfigController::class, 'saveContent'], ['perm:settings.manage']);
         $router->get('/system', [ConfigController::class, 'system'], ['perm:settings.manage']);

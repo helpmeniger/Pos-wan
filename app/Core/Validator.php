@@ -109,6 +109,9 @@ final class Validator
                     if (mb_strlen($v) < 8 || !preg_match('/\pL/u', $v) || !preg_match('/\d/', $v)) {
                         self::fail($f, 'Le mot de passe doit contenir au moins 8 caractères, dont une lettre et un chiffre.');
                     }
+                    if (($weak = \App\Services\SecurityService::weakPassword($v)) !== null) {
+                        self::fail($f, $weak);
+                    }
                     if (strlen($v) > 200) {
                         self::fail($f, 'Mot de passe trop long.');
                     }
