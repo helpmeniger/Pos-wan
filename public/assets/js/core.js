@@ -447,11 +447,13 @@
     const html = `<div class="list">
       ${MW.user.role === 'business' ? `<a class="list-item" href="${MW.base}/client">${MW.icon('car')} Commander</a><a class="list-item" href="${MW.base}/entreprise">${MW.icon('briefcase')} Espace entreprise</a>` : ''}
       ${MW.user.businesses && MW.user.businesses.length && MW.user.role === 'client' ? `<a class="list-item" href="${MW.base}/entreprise">${MW.icon('briefcase')} Espace entreprise</a>` : ''}
+      ${MW.install.available() && !MW.push.standalone() ? `<button class="list-item" style="width:100%;border:0;background:none;font:inherit;cursor:pointer" data-install>${MW.icon('plus')} Installer l'application</button>` : ''}
       <a class="list-item" href="${MW.base}/pages/securite">${MW.icon('shield')} Règles de sécurité</a>
       <a class="list-item" href="${MW.base}/pages/confidentialite">${MW.icon('file')} Confidentialité</a>
       <button class="list-item btn-ghost" style="width:100%;border:0;background:none;font:inherit;cursor:pointer" data-logout>${MW.icon('logout')} Se déconnecter</button></div>`;
     const m = MW.modal(MW.user.full_name, `<p class="muted">${MW.esc(MW.L.role[MW.user.role] || MW.user.role)} · ${MW.esc(MW.user.phone || MW.user.email || '')}</p>${html}`);
     m.el.querySelector('[data-logout]').onclick = MW.logout;
+    m.el.querySelector('[data-install]')?.addEventListener('click', () => { m.close(); MW.install.run(); });
   };
   MW.logout = async function () {
     await MW.push.disable(); // l'appareil ne reçoit plus les notifications de ce compte
@@ -481,6 +483,33 @@
     });
   };
 
+  // ------------------------------------------------------------------ Installation sur l'écran d'accueil (PWA)
+  let installEvent = null;
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvent = e; document.dispatchEvent(new Event('mw:installable')); });
+  window.addEventListener('appinstalled', () => { installEvent = null; MW.toast('MARWA est installé sur votre écran d\'accueil.', 'success'); });
+  MW.install = {
+    available: () => !!installEvent || (MW.push.isIos() && !MW.push.standalone()),
+    async run() {
+      if (installEvent) { installEvent.prompt(); const r = await installEvent.userChoice; installEvent = null; return r.outcome === 'accepted'; }
+      MW.modal('Installer MARWA', `<ol style="padding-left:18px"><li>Touchez le bouton <strong>Partager</strong> de Safari (carré avec une flèche).</li><li>Choisissez <strong>« Sur l'écran d'accueil »</strong>.</li><li>Ouvrez MARWA depuis la nouvelle icône : l'application s'affiche en plein écran et peut recevoir les notifications.</li></ol>`);
+      return false;
+    },
+    /** Bandeau discret sur téléphone (au plus une fois par semaine). */
+    offer() {
+      if (MW.push.standalone() || window.innerWidth > 900 || !MW.install.available()) return;
+      let snooze = 0; try { snooze = Number(localStorage.getItem('mw:installOffer') || 0); } catch (e) { /* privé */ }
+      if (Date.now() - snooze < 7 * 86400000 || document.querySelector('.push-offer')) return;
+      const box = document.createElement('div'); box.className = 'push-offer install-offer';
+      box.innerHTML = `<img src="${MW.publicBase}/assets/img/icon-192.png" alt="" width="44" height="44" style="border-radius:12px"><div class="grow"><strong>Installer l'application MARWA</strong>
+        <div class="small">Accès en un geste depuis l'écran d'accueil, plein écran, moins de données consommées.</div>
+        <div class="row" style="margin-top:8px"><button class="btn btn-primary btn-sm" data-yes>Installer</button><button class="btn btn-ghost btn-sm" data-no>Plus tard</button></div></div>`;
+      document.body.appendChild(box);
+      const close = () => { try { localStorage.setItem('mw:installOffer', String(Date.now())); } catch (e) { /* privé */ } box.remove(); };
+      box.querySelector('[data-no]').onclick = close;
+      box.querySelector('[data-yes]').onclick = async () => { close(); await MW.install.run(); };
+    }
+  };
+
   // ------------------------------------------------------------------ Choix de la langue
   MW.languages = () => { try { return JSON.parse(meta('mw-languages') || '[]'); } catch (e) { return [['fr', 'Français']]; } };
   MW.setLanguage = async function (code) {
@@ -503,6 +532,8 @@
     document.querySelector('[data-user-btn]')?.addEventListener('click', MW.userMenu);
     document.querySelector('[data-lang-btn]')?.addEventListener('click', () => MW.languagePicker(false));
     // Première visite : proposer la langue (une seule fois)
+    document.addEventListener('mw:installable', () => setTimeout(() => MW.install.offer(), 20000), { once: true });
+    if (MW.push.isIos() && !MW.push.standalone()) setTimeout(() => MW.install.offer(), 20000);
     if (!MW.user && MW.languages().length > 1 && !/(^|; )mw_lang=/.test(document.cookie) && document.body.classList.contains('page-home')) setTimeout(() => MW.languagePicker(true), 600);
     if (MW.user) { MW.notifCenter.load(); MW.realtime.start(); }
     const sw = meta('mw-sw');

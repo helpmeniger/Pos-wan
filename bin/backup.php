@@ -43,8 +43,16 @@ if (class_exists(ZipArchive::class)) {
             $zip->addFile($file->getPathname(), substr($file->getPathname(), strlen($base) + 1));
         }
     }
+    // Clés indispensables : sans elles, les doubles authentifications et les abonnements
+    // aux notifications push ne fonctionneraient plus après une restauration.
+    foreach (['app.key', 'vapid.json'] as $k) {
+        if (is_file(MARWA_ROOT . '/storage/' . $k)) {
+            $zip->addFile(MARWA_ROOT . '/storage/' . $k, '_cles/' . $k);
+        }
+    }
     $zip->close();
-    echo "Fichiers sauvegardés : $zipFile\n";
+    @chmod($zipFile, 0600);
+    echo "Fichiers et clés sauvegardés : $zipFile\n";
 }
 $keep = (int) ($o['keep'] ?? 14);
 $files = glob("$dir/marwa-*") ?: [];

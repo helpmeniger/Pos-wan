@@ -94,7 +94,7 @@
   };
 
   /** Galerie de photos défilable (fiche produit côté client). */
-  MW.gallery = (photos, alt = '') => photos.length ? `<div class="gallery" tabindex="0">${photos.map((u) => `<img src="${MW.esc(u)}" alt="${MW.esc(alt)}" loading="lazy">`).join('')}</div>
+  MW.gallery = (photos, alt = '') => photos.length ? `<div class="gallery" tabindex="0">${photos.map((u) => `<img src="${MW.esc(u)}" alt="${MW.esc(alt)}" decoding="async">`).join('')}</div>
     ${photos.length > 1 ? `<div class="gallery-dots">${photos.map((_, i) => `<span class="${i ? '' : 'on'}"></span>`).join('')}</div>` : ''}` : '';
   MW.bindGallery = (root) => root.querySelectorAll('.gallery').forEach((g) => {
     const dots = g.nextElementSibling && g.nextElementSibling.classList.contains('gallery-dots') ? [...g.nextElementSibling.children] : [];

@@ -129,6 +129,7 @@ try {
   await browser.close();
   process.exit(0);
 } catch (e) {
+  if (SHOTS) for (const c of browser.contexts()) for (const [i, p] of c.pages().entries()) await p.screenshot({ path: SHOTS + '/fj-echec-' + browser.contexts().indexOf(c) + '-' + i + '.png' }).catch(() => {});
   console.error('ÉCHEC : ' + e.message + (errors.length ? '\n' + errors.join('\n') : ''));
   await browser.close();
   process.exit(1);

@@ -155,6 +155,7 @@ try {
   const card = client.locator('.product-card:has-text("Brochettes test photo")');
   await card.locator('.thumb').click();
   await client.waitForSelector('.modal .gallery img >> nth=1');
+  await client.waitForFunction(() => [...document.querySelectorAll('.modal .gallery img')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 10000 }).catch(() => {});
   const n = await client.locator('.modal .gallery img').count();
   const ok = await client.evaluate(() => [...document.querySelectorAll('.modal .gallery img')].every((i) => i.complete && i.naturalWidth > 0));
   check(n === 2 && ok, `Le client voit la vitrine et la galerie du produit (${n} photos chargées)`);

@@ -495,3 +495,48 @@ body.nav-open { overflow: hidden; }
 .qr-box svg { width: 200px; height: 200px; background: #fff; }
 .recovery-codes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .recovery-codes code { font-size: 1.05rem; text-align: center; padding: 8px; background: var(--sand-100); border-radius: 8px; }
+
+/* =====================================================================
+   Smartphones : confort tactile (cibles ≥ 44 px), pas de zoom automatique
+   des champs sur iPhone (police ≥ 16 px), pas de débordement horizontal.
+   ===================================================================== */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { overflow-x: hidden; -webkit-tap-highlight-color: rgba(11, 110, 79, .15); }
+.input, select.input, textarea.input { font-size: 16px; }
+code, .small code { overflow-wrap: anywhere; }
+.bottom-nav a { min-width: 0; padding: 0 2px; }
+.bottom-nav a span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.place-input .place-tools button { width: 44px; height: 44px; }
+.place-input .place-tools { top: 1px; right: 2px; }
+.chip { min-height: 36px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 4px; }
+.chip button { min-width: 40px; min-height: 40px; font-size: 1rem; }
+.check { min-height: 40px; align-items: center; }
+.check input { width: 22px; height: 22px; margin-top: 0; }
+.segmented { flex-wrap: wrap; }
+.btn-sm { min-height: 40px; }
+.user-chip { min-height: 44px; }
+.icon-btn { width: 44px; height: 44px; }
+@media (max-width: 420px) {
+  .site-header { gap: 6px; padding: 0 10px; }
+  .brand { gap: 6px; font-size: 1.05rem; letter-spacing: .04em; }
+  .brand img { width: 32px; height: 32px; }
+  .header-actions { gap: 6px; }
+  .header-actions .btn-sm { padding: 0 10px; font-size: .85rem; }
+  .user-chip span.name { max-width: 70px; }
+  .lang-btn { padding: 0 8px; }
+}
+@media (max-width: 374px) {
+  .brand small { display: none; }
+  .header-actions .btn-ghost.btn-sm { display: none; } /* « Connexion » reste accessible depuis la page d'accueil */
+  .user-chip span.name { display: none; }
+}
+/* Les messages n'occultent pas les boutons principaux en bas d'écran */
+@media (max-width: 899px) { .toasts { top: calc(var(--header-h) + 10px); bottom: auto; } }
+/* Mode application installée (écran d'accueil) */
+@media (display-mode: standalone) { .site-header { padding-top: env(safe-area-inset-top); height: calc(var(--header-h) + env(safe-area-inset-top)); } }
+.card, .container, .stack, .grid-2 > *, .grid-3 > *, .grid-4 > * { min-width: 0; }
+.table-wrap { max-width: 100%; }
+.table td { overflow-wrap: anywhere; }
+.list-item .grow, .list-item .title, .list-item .meta { min-width: 0; overflow-wrap: anywhere; }
+.place-input .input { padding-right: 56px; text-overflow: ellipsis; }
+.place-input:has(.place-tools button + button) .input { padding-right: 100px; }

@@ -14,6 +14,11 @@ $lang = App\Support\I18n::current();
   <title><?= e($title ?? 'MARWA') ?></title>
   <meta name="description" content="MARWA : taxi, livraison de repas, colis et courses au Niger. Paiement en FCFA.">
   <meta name="theme-color" content="#0b6e4f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="MARWA">
+  <meta name="format-detection" content="telephone=no">
   <meta name="csrf-token" content="<?= e($csrf) ?>">
   <meta name="mw-base" content="<?= e(url('')) ?>">
   <meta name="mw-public" content="<?= e(public_url('')) ?>">
