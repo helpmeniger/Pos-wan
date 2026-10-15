@@ -31,6 +31,7 @@ do {
             $lastPurge = time();
             echo date('d/m/Y H:i:s') . " purge : $purged positions GPS supprimées\n";
         }
+        App\Services\PushService::flush(); // notifications push créées par les tâches de fond
         if (array_sum($stats) > 0) {
             echo date('d/m/Y H:i:s') . ' ' . json_encode($stats) . "\n";
         }

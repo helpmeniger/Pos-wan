@@ -369,12 +369,75 @@
       const d = await this.load();
       const box = document.createElement('div'); box.className = 'dropdown';
       box.innerHTML = `<div class="row between" style="padding:12px 14px;border-bottom:1px solid var(--sand-200)"><strong>Notifications</strong>
-        <span class="row">${'Notification' in window && Notification.permission === 'default' ? '<button class="btn btn-sm btn-outline" data-perm>Activer</button>' : ''}<button class="btn btn-sm btn-ghost" data-readall>Tout lire</button></span></div>
+        <span class="row">${'Notification' in window && Notification.permission !== 'denied' ? '<button class="btn btn-sm btn-outline" data-perm hidden>Activer</button>' : ''}<button class="btn btn-sm btn-ghost" data-readall>Tout lire</button></span></div>
         ${d && d.items.length ? d.items.map((n) => `<div class="list-item ${n.read_at ? '' : 'unread'}"><div class="grow"><div class="title">${MW.esc(n.title)}</div><div class="meta">${MW.esc(n.body)}</div><div class="meta">${MW.datetime(n.created_at)}</div></div></div>`).join('') : MW.empty('Aucune notification.', 'bell')}`;
       document.body.appendChild(box);
       box.querySelector('[data-readall]').onclick = async () => { await MW.post('/notifications/read', {}); this.count = 0; this.render(); box.remove(); };
-      const perm = box.querySelector('[data-perm]'); if (perm) perm.onclick = () => Notification.requestPermission().then(() => box.remove());
+      const perm = box.querySelector('[data-perm]');
+      if (perm) {
+        MW.push.state().then((st) => { perm.hidden = st === 'on' || st === 'unsupported'; });
+        perm.onclick = () => MW.busy(perm, async () => { try { await MW.push.enable(); MW.toast('Notifications activées sur cet appareil.', 'success'); box.remove(); } catch (e) { MW.modal('Notifications', `<p>${MW.esc(e.message)}</p>`); } });
+      }
       setTimeout(() => document.addEventListener('click', function h(e) { if (!box.contains(e.target)) { box.remove(); document.removeEventListener('click', h); } }), 0);
+    }
+  };
+
+  // ------------------------------------------------------------------ Notifications push (téléphone en veille)
+  const b64uToBytes = (s) => { const b = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - s.length % 4) % 4)); return Uint8Array.from(b, (c) => c.charCodeAt(0)); };
+  const bytesToB64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  MW.push = {
+    supported: () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && !!meta('mw-sw') && window.isSecureContext,
+    isIos: () => /iphone|ipad|ipod/i.test(navigator.userAgent),
+    standalone: () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)),
+    async registration() { return navigator.serviceWorker.getRegistration(MW.base + '/').then((r) => r || navigator.serviceWorker.ready); },
+    async state() {
+      if (!this.supported()) return this.isIos() && !this.standalone() ? 'ios-install' : 'unsupported';
+      if (Notification.permission === 'denied') return 'denied';
+      try { const reg = await this.registration(); const sub = reg && await reg.pushManager.getSubscription(); return sub && Notification.permission === 'granted' ? 'on' : 'off'; } catch (e) { return 'off'; }
+    },
+    async enable() {
+      if (!this.supported()) throw new Error(this.isIos() && !this.standalone() ? 'Sur iPhone, installez d\'abord MARWA sur l\'écran d\'accueil (bouton Partager → « Sur l\'écran d\'accueil »), puis ouvrez-le depuis cette icône.' : 'Ce navigateur ne prend pas en charge les notifications push.');
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') throw new Error('Notifications refusées. Vous pouvez les autoriser dans les réglages du navigateur (cadenas à côté de l\'adresse → Notifications).');
+      const { public_key: key } = await MW.get('/push/key');
+      const reg = await this.registration();
+      let sub = await reg.pushManager.getSubscription();
+      if (sub && sub.options && sub.options.applicationServerKey && bytesToB64u(sub.options.applicationServerKey) !== key) { await sub.unsubscribe(); sub = null; }
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(key) });
+      const j = sub.toJSON();
+      await MW.post('/push/subscribe', { endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth });
+      try { localStorage.setItem('mw:pushSync', String(Date.now())); } catch (e) { /* privé */ }
+      return true;
+    },
+    async disable() {
+      try {
+        const reg = await this.registration(); const sub = reg && await reg.pushManager.getSubscription();
+        if (sub) { await MW.post('/push/unsubscribe', { endpoint: sub.endpoint }, { silent401: true }).catch(() => {}); await sub.unsubscribe(); }
+      } catch (e) { /* rien à désactiver */ }
+    },
+    /** Réenregistre l'abonnement de l'appareil une fois par jour (renouvellement par le navigateur). */
+    async sync() {
+      if (!MW.user || !this.supported() || Notification.permission !== 'granted') return;
+      let last = 0; try { last = Number(localStorage.getItem('mw:pushSync') || 0); } catch (e) { /* privé */ }
+      if (Date.now() - last < 86400000) return;
+      try { const reg = await this.registration(); if (await reg.pushManager.getSubscription()) await this.enable(); } catch (e) { /* plus tard */ }
+    },
+    /** Proposition discrète d'activer les notifications (au plus une fois par semaine). */
+    async offer() {
+      if (!MW.user) return;
+      let snooze = 0; try { snooze = Number(localStorage.getItem('mw:pushOffer') || 0); } catch (e) { /* privé */ }
+      if (Date.now() - snooze < 7 * 86400000) return;
+      const st = await this.state();
+      if (!['off', 'ios-install'].includes(st) || ('Notification' in window && Notification.permission === 'denied')) return;
+      const provider = ['driver', 'courier', 'merchant'].includes(MW.user.role);
+      const box = document.createElement('div'); box.className = 'push-offer'; box.setAttribute('role', 'dialog');
+      box.innerHTML = `<div class="push-offer-ic">${MW.icon('bell')}</div><div class="grow"><strong>${provider ? 'Ne manquez aucune demande' : 'Suivez vos commandes en direct'}</strong>
+        <div class="small">${st === 'ios-install' ? 'Sur iPhone : touchez Partager puis « Sur l\'écran d\'accueil », ouvrez MARWA depuis l\'icône, puis activez les notifications.' : (provider ? 'Recevez les nouvelles demandes même téléphone en veille ou application fermée.' : 'Soyez prévenu de l\'arrivée du chauffeur ou du livreur, même téléphone en veille.')}</div>
+        <div class="row" style="margin-top:8px">${st === 'off' ? '<button class="btn btn-primary btn-sm" data-on>Activer</button>' : ''}<button class="btn btn-ghost btn-sm" data-later>Plus tard</button></div></div>`;
+      document.body.appendChild(box);
+      const later = () => { try { localStorage.setItem('mw:pushOffer', String(Date.now())); } catch (e) { /* privé */ } box.remove(); };
+      box.querySelector('[data-later]').onclick = later;
+      box.querySelector('[data-on]')?.addEventListener('click', (e) => MW.busy(e.currentTarget, async () => { await MW.push.enable(); MW.toast('Notifications activées sur cet appareil.', 'success'); box.remove(); }));
     }
   };
 
@@ -390,6 +453,7 @@
     m.el.querySelector('[data-logout]').onclick = MW.logout;
   };
   MW.logout = async function () {
+    await MW.push.disable(); // l'appareil ne reçoit plus les notifications de ce compte
     try { await MW.post('/auth/logout'); } catch (e) { /* ignore */ }
     Object.keys(localStorage).filter((k) => k.startsWith('mw:')).forEach((k) => localStorage.removeItem(k));
     location.href = MW.base + '/';
@@ -423,7 +487,7 @@
     if (MW.user) { MW.notifCenter.load(); MW.realtime.start(); }
     const sw = meta('mw-sw');
     if (sw && 'serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register(sw, { scope: MW.base + '/' }).catch(() => { /* non bloquant */ });
+      navigator.serviceWorker.register(sw, { scope: MW.base + '/' }).then(() => { if (MW.user) { MW.push.sync(); setTimeout(() => MW.push.offer(), 4000); } }).catch(() => { /* non bloquant */ });
     }
   });
 })();

@@ -165,6 +165,32 @@ try {
   await client.waitForSelector('[data-cartbar]:not([hidden])');
   check(true, 'Ajout au panier depuis la fiche produit');
 
+  // --- Notifications push : réception par le service worker (téléphone en veille / onglet fermé)
+  // L'abonnement réel passe par le service de push du navigateur (Google FCM…), inaccessible ici :
+  // on délivre le message directement au service worker par le protocole DevTools de Chromium.
+  // (le mode « headless shell » ne gère pas les notifications : Chromium complet en mode sans écran)
+  const fullBrowser = await chromium.launch({ channel: 'chromium' });
+  const pushCtx = await fullBrowser.newContext({ locale: 'fr-FR', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, permissions: ['notifications'] });
+  const pp = await pushCtx.newPage(); watch(pp, 'push');
+  const cdp = await pushCtx.newCDPSession(pp);
+  const regs = [];
+  cdp.on('ServiceWorker.workerRegistrationUpdated', (e) => regs.push(...e.registrations));
+  await cdp.send('ServiceWorker.enable');
+  await login(pp, 'livreur@marwa.demo');
+  await pp.evaluate(() => navigator.serviceWorker.ready);
+  await pp.waitForTimeout(500);
+  const reg = regs.find((r) => !r.isDeleted);
+  if (reg) {
+    await cdp.send('ServiceWorker.deliverPushMessage', { origin: new URL(BASE).origin, registrationId: reg.registrationId,
+      data: JSON.stringify({ type: 'new_request', title: 'Nouvelle demande', body: 'Livraison · 2 km · 1 200 FCFA', tag: 'order-9', url: BASE + '/prestataire#/' }) });
+    await pp.waitForTimeout(800);
+    const shown = await pp.evaluate(async () => (await (await navigator.serviceWorker.ready).getNotifications()).map((n) => n.title + ' | ' + n.body + ' | ' + n.requireInteraction));
+    check(shown.length === 1 && shown[0].startsWith('Nouvelle demande'), 'Notification push affichée par le service worker : « ' + shown[0] + ' »');
+    await fullBrowser.close();
+  } else {
+    throw new Error('Service worker non enregistré');
+  }
+
   if (errors.length) throw new Error('Erreurs JavaScript :\n' + errors.join('\n'));
   log('TESTS DES FONCTIONNALITÉS RÉUSSIS');
   await browser.close();

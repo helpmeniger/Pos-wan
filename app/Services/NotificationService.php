@@ -24,6 +24,16 @@ final class NotificationService
             'data' => $data ? json_encode($data, JSON_UNESCAPED_UNICODE) : null,
         ]);
         RealtimeService::push($userId, 'notification', $data['order_id'] ?? null, ['id' => $id, 'type' => $type, 'title' => $title, 'body' => $body] + $data);
+        // Notification push sur le téléphone (même en veille ou application fermée)
+        try {
+            if (PushService::enabled() && Database::value('SELECT 1 FROM push_subscriptions WHERE user_id = :u LIMIT 1', ['u' => $userId])) {
+                $u = Database::first('SELECT r.code role, u.locale FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = :id', ['id' => $userId]);
+                $locale = (string) ($u['locale'] ?? 'fr');
+                PushService::queue($userId, PushService::message($id, $type, \App\Support\I18n::translate($title, $locale), \App\Support\I18n::translate($body, $locale), $data, (string) ($u['role'] ?? 'client')));
+            }
+        } catch (\Throwable $e) {
+            Logger::warning('Notification push non programmée', ['error' => $e->getMessage()]);
+        }
         if ($channels) {
             $u = Database::first('SELECT phone, email, status FROM users WHERE id = :id', ['id' => $userId]);
             if ($u && $u['status'] !== 'deleted') {

@@ -120,4 +120,39 @@ final class CommunicationController extends Controller
         NotificationService::staff('complaints.manage', 'emergency', 'ALERTE DE SÉCURITÉ', $u['full_name'] . ' a déclenché le bouton d\'urgence.', ['alert_id' => $id, 'order_id' => $v['order_id'] ?? null]);
         return $this->json(['alert_id' => $id, 'message' => Settings::get('emergency.message'), 'numbers' => Settings::get('emergency.numbers', [])], 201);
     }
+
+    // ------------------------------------------------------------------ Notifications push
+
+    public function pushKey(Request $r): Response
+    {
+        \App\Services\PushService::assertEnabled();
+        return $this->json(['public_key' => \App\Services\PushService::publicKey()]);
+    }
+
+    public function pushSubscribe(Request $r): Response
+    {
+        \App\Services\PushService::assertEnabled();
+        $v = $this->validate($r, ['endpoint' => 'required|string|max:1000', 'p256dh' => 'required|string|max:255', 'auth' => 'required|string|max:64']);
+        \App\Services\PushService::subscribe((int) $this->user()['id'], $v, $r->userAgent());
+        return $this->ok('Notifications activées sur cet appareil.');
+    }
+
+    public function pushUnsubscribe(Request $r): Response
+    {
+        $v = $this->validate($r, ['endpoint' => 'required|string|max:1000']);
+        \App\Services\PushService::unsubscribe((int) $this->user()['id'], $v['endpoint']);
+        return $this->ok('Notifications désactivées sur cet appareil.');
+    }
+
+    /** Notification d'essai envoyée sur les appareils de l'utilisateur. */
+    public function pushTest(Request $r): Response
+    {
+        \App\Services\PushService::assertEnabled();
+        $n = (int) \App\Core\Database::value('SELECT COUNT(*) FROM push_subscriptions WHERE user_id = :u', ['u' => $this->user()['id']]);
+        if (!$n) {
+            throw new \App\Core\HttpException(409, 'Aucun appareil abonné : activez d\'abord les notifications.', 'no_subscription');
+        }
+        \App\Services\NotificationService::notify((int) $this->user()['id'], 'test', 'Notifications MARWA actives', 'Vous serez prévenu ici même lorsque l\'application est fermée.');
+        return $this->json(['devices' => $n]);
+    }
 }

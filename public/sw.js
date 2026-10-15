@@ -1,7 +1,7 @@
 /* MARWA — service worker : mise en cache des ressources statiques uniquement.
    Les appels API ne sont jamais servis depuis le cache par le service worker :
    aucune commande ni aucun paiement ne peut être « confirmé » hors ligne. */
-const VERSION = 'marwa-v1';
+const VERSION = 'marwa-v2';
 const STATIC = ['assets/css/app.css', 'assets/js/core.js', 'assets/js/map.js', 'assets/vendor/leaflet/leaflet.js', 'assets/vendor/leaflet/leaflet.css', 'assets/img/logo.svg', 'assets/img/icon-192.png', 'hors-ligne'];
 
 self.addEventListener('install', (e) => {
@@ -25,4 +25,32 @@ self.addEventListener('fetch', (e) => {
   if (e.request.mode === 'navigate') {
     e.respondWith(fetch(e.request).catch(async () => (await caches.match(new URL('hors-ligne', self.registration.scope).toString())) || Response.error()));
   }
+});
+
+// ------------------------------------------------------------------ Notifications push
+// Reçues même lorsque l'application est fermée ou le téléphone en veille.
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { title: 'MARWA', body: e.data ? e.data.text() : '' }; }
+  const urgent = ['new_request', 'order_assigned', 'counter_offer', 'sos'].includes(d.type);
+  const icon = new URL('assets/img/icon-192.png', self.registration.scope).toString();
+  e.waitUntil(self.registration.showNotification(d.title || 'MARWA', {
+    body: d.body || '', icon, badge: icon, tag: d.tag || undefined, renotify: !!d.tag,
+    requireInteraction: urgent, vibrate: urgent ? [300, 120, 300, 120, 300] : [200],
+    data: { url: d.url || self.registration.scope, id: d.id }, lang: 'fr'
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const target = (e.notification.data && e.notification.data.url) || self.registration.scope;
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) {
+      if (c.url.split('#')[0] === target.split('#')[0] && 'focus' in c) { c.navigate(target).catch(() => {}); return c.focus(); }
+    }
+    return clients.openWindow(target);
+  }));
+});
+self.addEventListener('pushsubscriptionchange', (e) => {
+  // Le navigateur a renouvelé l'abonnement : l'application le réenregistrera à la prochaine ouverture.
+  e.waitUntil(Promise.resolve());
 });

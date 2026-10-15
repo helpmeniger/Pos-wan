@@ -468,3 +468,10 @@ body.nav-open { overflow: hidden; }
 .cat-title { display: flex; align-items: center; gap: 10px; }
 .cat-title img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
 .merchant-card.has-cover { background-image: linear-gradient(rgba(255,255,255,.88), rgba(255,255,255,.96)), var(--cover); background-size: cover; background-position: center; }
+
+/* ---- Proposition d'activer les notifications ---- */
+.push-offer { position: fixed; z-index: 1500; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); max-width: 460px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 10px 34px rgba(0, 0, 0, .18); padding: 14px; display: flex; gap: 12px; animation: mw-up .25s ease-out; }
+.push-offer-ic { width: 44px; height: 44px; border-radius: 12px; background: var(--green-50); color: var(--green-700); display: grid; place-items: center; flex: none; }
+.push-offer-ic svg { width: 24px; height: 24px; }
+@keyframes mw-up { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (min-width: 900px) { .push-offer { bottom: 20px; left: auto; right: 20px; } }

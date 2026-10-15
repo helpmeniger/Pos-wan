@@ -125,9 +125,9 @@
             { name: 'password', label: 'Nouveau mot de passe', type: 'password', required: true, hint: '8 caractères minimum, lettre et chiffre.' }])}
             <button class="btn btn-primary" type="submit">Changer le mot de passe</button></form>
           <hr class="divider">
-          <h3>Notifications du navigateur</h3>
-          <p class="small muted">Recevez une alerte lorsque l'application est en arrière-plan (selon le navigateur et l'appareil).</p>
-          <button class="btn btn-outline btn-sm" data-notif>${'Notification' in window && Notification.permission === 'granted' ? 'Activées' : 'Activer'}</button>
+          <h3>Notifications sur cet appareil</h3>
+          <p class="small muted">Alertes reçues même lorsque MARWA est fermé ou le téléphone en veille (nouvelle demande, chauffeur arrivé, commande prête…).</p>
+          <div data-pushbox class="small muted">…</div>
           ${u.is_staff ? '' : `<hr class="divider"><h3>Supprimer mon compte</h3>
           <p class="small muted">Vos données personnelles seront anonymisées. Les écritures financières sont conservées de manière anonyme conformément aux obligations légales.</p>
           <button class="btn btn-danger btn-sm" data-delete>Supprimer mon compte</button>`}
@@ -141,7 +141,21 @@
       const fd = new FormData(); fd.append('file', e.target.files[0]);
       try { await MW.api('POST', '/account/photo', fd); MW.toast('Photo mise à jour.', 'success'); MW.views.profile(el); } catch (err) { MW.error(err); }
     });
-    el.querySelector('[data-notif]').addEventListener('click', () => 'Notification' in window ? Notification.requestPermission().then((p) => MW.toast(p === 'granted' ? 'Notifications activées.' : 'Notifications refusées par le navigateur.')) : MW.toast('Non pris en charge par ce navigateur.'));
+    const pushBox = el.querySelector('[data-pushbox]');
+    const renderPush = async () => {
+      const st = await MW.push.state();
+      const label = { on: '<span class="badge green">Activées</span>', off: '<span class="badge gray">Désactivées</span>', denied: '<span class="badge red">Bloquées par le navigateur</span>',
+        unsupported: '<span class="badge gray">Non prises en charge par ce navigateur</span>', 'ios-install': '<span class="badge amber">Installez d\'abord MARWA sur l\'écran d\'accueil</span>' }[st];
+      pushBox.innerHTML = `<div style="margin-bottom:8px">${label}</div><div class="row">
+        ${st === 'off' ? '<button class="btn btn-primary btn-sm" data-pon>Activer</button>' : ''}
+        ${st === 'on' ? '<button class="btn btn-outline btn-sm" data-ptest>Envoyer un essai</button><button class="btn btn-ghost btn-sm" data-poff>Désactiver</button>' : ''}</div>
+        ${st === 'denied' ? '<p class="small">Pour les débloquer : cadenas à gauche de l\'adresse → Autorisations → Notifications → Autoriser.</p>' : ''}
+        ${st === 'ios-install' ? '<p class="small">Sur iPhone (iOS 16.4 ou plus) : bouton Partager → « Sur l\'écran d\'accueil », puis ouvrez MARWA depuis cette icône.</p>' : ''}`;
+      pushBox.querySelector('[data-pon]')?.addEventListener('click', (e) => MW.busy(e.currentTarget, async () => { await MW.push.enable(); MW.toast('Notifications activées sur cet appareil.', 'success'); renderPush(); }));
+      pushBox.querySelector('[data-poff]')?.addEventListener('click', (e) => MW.busy(e.currentTarget, async () => { await MW.push.disable(); renderPush(); }));
+      pushBox.querySelector('[data-ptest]')?.addEventListener('click', (e) => MW.busy(e.currentTarget, async () => { const r = await MW.post('/push/test'); MW.toast(`Notification d'essai envoyée (${r.data.devices} appareil(s)).`, 'success'); }));
+    };
+    renderPush();
     el.querySelector('[data-otp]')?.addEventListener('click', async (e) => MW.busy(e.currentTarget, async () => {
       const r = await MW.post('/auth/otp/send');
       if (r.debug_code) MW.toast('Mode développement (aucun SMS réel) — code : ' + r.debug_code, 'warn', 15000);

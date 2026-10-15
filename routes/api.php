@@ -62,6 +62,10 @@ $router->group('/api', [], function ($router) {
         $router->get('/notifications', [CommunicationController::class, 'notifications']);
         $router->post('/notifications/read', [CommunicationController::class, 'markRead']);
         $router->get('/events', [CommunicationController::class, 'events']);
+        $router->get('/push/key', [CommunicationController::class, 'pushKey']);
+        $router->post('/push/subscribe', [CommunicationController::class, 'pushSubscribe'], ['throttle:push,20,3600']);
+        $router->post('/push/unsubscribe', [CommunicationController::class, 'pushUnsubscribe']);
+        $router->post('/push/test', [CommunicationController::class, 'pushTest'], ['throttle:pushtest,5,600']);
         $router->get('/complaints', [CommunicationController::class, 'complaints']);
         $router->post('/complaints', [CommunicationController::class, 'createComplaint']);
         $router->get('/complaints/{id}', [CommunicationController::class, 'complaint']);
