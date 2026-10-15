@@ -33,7 +33,7 @@ final class Session
         ini_set('session.gc_maxlifetime', (string) ((int) Config::get('security.session_idle_minutes', 120) * 60));
         session_set_cookie_params([
             'lifetime' => 0,
-            'path' => url('/'),
+            'path' => Paths::base() . '/',
             'secure' => $secure,
             'httponly' => true,
             'samesite' => 'Lax',

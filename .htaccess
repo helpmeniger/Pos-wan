@@ -1,15 +1,20 @@
-# MARWA — racine du projet.
-# Utilisé uniquement si Apache pointe sur la racine (ex. http://localhost/marwa/).
-# Tout est redirigé vers public/ ; config/, storage/, database/, .env… restent inaccessibles.
+# MARWA — racine du projet (ex. C:\wamp64\www\marwa → http://localhost/marwa/).
+# Avec rewrite_module : tout est servi depuis public/.
+# Sans rewrite_module : index.php (racine) prend le relais, adresses en /index.php/…
+# Dans les deux cas, app/, config/, storage/, database/, .env… restent inaccessibles
+# (chaque dossier sensible contient aussi son propre .htaccess « Require all denied »).
 Options -Indexes
+DirectoryIndex index.php
+
+<FilesMatch "(^\.|\.(env|md|json|lock|log|sql|gz|bak|ini|sh|bat|example|dist|xml)$)">
+    Require all denied
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-    RewriteRule ^(app|bin|bootstrap|config|database|deploy|docs|routes|storage|tests|vendor)(/.*)?$ - [F,L]
+    RewriteRule ^(app|bin|bootstrap|config|database|deploy|docs|node_modules|routes|storage|tests|vendor)(/.*)?$ - [F,L]
     RewriteRule ^\.  - [F,L]
-    RewriteRule ^(.*)$ public/$1 [L]
-</IfModule>
-<IfModule !mod_rewrite.c>
-    Require all denied
+    RewriteRule ^(.*)$ public/$1 [L,E=MARWA_REWRITE:1]
 </IfModule>

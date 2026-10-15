@@ -14,22 +14,21 @@ paramétrable, **grand livre en partie double**, rapports CSV / Excel / PDF.
 > espèces et le compte entreprise fonctionnent dès maintenant ; une passerelle de **démonstration**
 > clairement signalée permet de tester tout le cycle d'un paiement électronique (webhook signé HMAC).
 
-## Démarrage rapide (WampServer)
+## Démarrage rapide (WampServer) — installation automatique
 
-```bat
-cd C:\wamp64\www
-git clone <dépôt> marwa
-cd marwa
-copy .env.example .env          :: puis renseigner DB_USERNAME / DB_PASSWORD / APP_URL
-php bin\migrate.php             :: crée la base « marwa » et applique les migrations
-php bin\seed.php                :: (facultatif) comptes et restaurant de DÉMONSTRATION
-php bin\create-admin.php --email=vous@domaine.ne --name="Votre Nom"
-```
+1. WampServer démarré (icône **verte**).
+2. Décompresser le projet dans `C:\wamp64\www\` → `C:\wamp64\www\marwa\index.php`.
+3. Double-cliquer sur **`DEMARRER-MARWA.bat`**, ou ouvrir **http://localhost/marwa/**.
 
-Puis ouvrir `http://marwa.local` (VirtualHost recommandé) ou `http://localhost/marwa`.
-Guide détaillé : [docs/INSTALLATION_WAMP.md](docs/INSTALLATION_WAMP.md).
+Au premier lancement, la base de données, les tables, le fichier `.env` et les comptes de
+démonstration sont créés automatiquement (MySQL/MariaDB de Wamp détecté tout seul). L'adresse
+de l'application est détectée automatiquement (nom de dossier libre, `rewrite_module` facultatif).
+`DEMARRAGE-AUTO-WINDOWS.bat` lance MARWA à chaque ouverture de session Windows.
 
-### Comptes de démonstration (après `php bin/seed.php`)
+Installation en ligne de commande (équivalente) : `php bin\install.php`.
+Guide détaillé et dépannage : [docs/INSTALLATION_WAMP.md](docs/INSTALLATION_WAMP.md).
+
+### Comptes de démonstration (créés à l'installation locale)
 
 Mot de passe commun : `Demo2026!` — données **fictives**, numéros `+227 90 00 00 xx` fictifs.
 
@@ -72,7 +71,7 @@ Résultats et procédure manuelle : [docs/PROCEDURE_DE_TEST.md](docs/PROCEDURE_D
 
 ```
 app/            Core (noyau HTTP, sécurité), Controllers (API, admin, pages), Services (métier), Middleware, Views
-bin/            migrate, seed, create-admin, worker, backup, import-landmarks, dev-router
+bin/            install, migrate, seed, create-admin, worker, backup, import-landmarks, dev-router
 config/         configuration (lit .env) — inaccessible depuis le Web
 database/       migrations SQL, marwa_install.sql (import phpMyAdmin), seeds de démonstration
 public/         SEUL dossier exposé : index.php, assets (CSS/JS/Leaflet), sw.js, manifest

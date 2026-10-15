@@ -13,9 +13,11 @@ $demo = (bool) App\Core\Config::get('app.demo_mode');
   <meta name="theme-color" content="#0b6e4f">
   <meta name="csrf-token" content="<?= e($csrf) ?>">
   <meta name="mw-base" content="<?= e(url('')) ?>">
+  <meta name="mw-public" content="<?= e(public_url('')) ?>">
+  <meta name="mw-sw" content="<?= App\Core\Paths::rewrite() ? e(url('sw.js')) : '' ?>">
   <link rel="icon" href="<?= asset('img/favicon.svg') ?>" type="image/svg+xml">
   <link rel="apple-touch-icon" href="<?= asset('img/icon-192.png') ?>">
-  <link rel="manifest" href="<?= e(url('manifest.webmanifest')) ?>">
+  <link rel="manifest" href="<?= e(public_url('manifest.webmanifest')) ?>">
   <?php if ($needsMap): ?><link rel="stylesheet" href="<?= asset('vendor/leaflet/leaflet.css') ?>"><?php endif; ?>
   <link rel="stylesheet" href="<?= asset('css/app.css') ?>">
 </head>

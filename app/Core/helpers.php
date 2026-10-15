@@ -14,8 +14,15 @@ if (!function_exists('e')) {
 if (!function_exists('url')) {
     function url(string $path = ''): string
     {
-        $base = rtrim((string) parse_url((string) Config::get('app.url', ''), PHP_URL_PATH), '/');
-        return $base . '/' . ltrim($path, '/');
+        return \App\Core\Paths::routes() . '/' . ltrim($path, '/');
+    }
+}
+
+if (!function_exists('public_url')) {
+    /** Fichier du dossier public/ (sans numéro de version). */
+    function public_url(string $path = ''): string
+    {
+        return \App\Core\Paths::publicBase() . '/' . ltrim($path, '/');
     }
 }
 
@@ -24,7 +31,7 @@ if (!function_exists('asset')) {
     {
         $file = MARWA_ROOT . '/public/assets/' . ltrim($path, '/');
         $v = is_file($file) ? substr(md5((string) filemtime($file)), 0, 8) : '0';
-        return url('assets/' . ltrim($path, '/')) . '?v=' . $v;
+        return public_url('assets/' . ltrim($path, '/')) . '?v=' . $v;
     }
 }
 

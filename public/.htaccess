@@ -4,6 +4,8 @@ DirectoryIndex index.php
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    # Signale à l'application que les adresses propres (sans index.php) fonctionnent
+    RewriteRule ^ - [E=MARWA_REWRITE:1]
     # Transmettre l'en-tête Authorization (jetons API) à PHP
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

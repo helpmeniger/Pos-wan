@@ -10,6 +10,12 @@
   const meta = (n) => (document.querySelector(`meta[name="${n}"]`) || {}).content || '';
   const MW = (window.MW = window.MW || {});
   MW.base = meta('mw-base').replace(/\/$/, '');
+  MW.publicBase = meta('mw-public').replace(/\/$/, '');
+  /** Chemin de la page courante relatif à l'application (ex. « /client »). */
+  MW.here = () => {
+    const p = location.pathname;
+    return MW.base && p.startsWith(MW.base) ? (p.slice(MW.base.length) || '/') : p;
+  };
   MW.csrf = meta('csrf-token');
   MW.user = null;
   try { MW.user = JSON.parse(document.getElementById('mw-user')?.textContent || 'null'); } catch (e) { MW.user = null; }
@@ -135,7 +141,7 @@
         return MW.api(method, path, body, Object.assign({}, opts, { _csrfRetried: true }));
       }
       if (res.status === 401 && !opts.silent401) {
-        location.href = MW.base + '/connexion?retour=' + encodeURIComponent(location.pathname);
+        location.href = MW.base + '/connexion?retour=' + encodeURIComponent(MW.here());
         throw new ApiError(401, { error: { message: 'Session expirée.' } });
       }
       const ct = res.headers.get('Content-Type') || '';
@@ -345,7 +351,7 @@
     MW.toast(`${n.title} — ${n.body}`, 'info', 6000);
     MW.notifCenter.bump();
     if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
-      try { new Notification(n.title, { body: n.body, icon: MW.base + '/assets/img/icon-192.png', tag: 'mw-' + (n.order_id || n.id) }); } catch (e) { /* mobile */ }
+      try { new Notification(n.title, { body: n.body, icon: MW.publicBase + '/assets/img/icon-192.png', tag: 'mw-' + (n.order_id || n.id) }); } catch (e) { /* mobile */ }
     }
     if (navigator.vibrate && ['new_request', 'order_assigned', 'new_order', 'counter_offer'].includes(n.type)) navigator.vibrate([200, 100, 200]);
   };
@@ -411,8 +417,9 @@
     document.querySelector('[data-notif-btn]')?.addEventListener('click', (e) => { e.stopPropagation(); MW.notifCenter.open(); });
     document.querySelector('[data-user-btn]')?.addEventListener('click', MW.userMenu);
     if (MW.user) { MW.notifCenter.load(); MW.realtime.start(); }
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register(MW.base + '/sw.js', { scope: MW.base + '/' }).catch(() => { /* non bloquant */ });
+    const sw = meta('mw-sw');
+    if (sw && 'serviceWorker' in navigator && location.protocol !== 'file:') {
+      navigator.serviceWorker.register(sw, { scope: MW.base + '/' }).catch(() => { /* non bloquant */ });
     }
   });
 })();

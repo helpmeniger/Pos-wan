@@ -1,5 +1,54 @@
 # Installation sur WampServer (Windows 10/11)
 
+## Installation express (automatique, recommandée)
+
+1. Démarrez **WampServer** et attendez que l'icône soit **verte**.
+2. Décompressez `marwa.zip` **directement dans `C:\wamp64\www\`**. Vous devez obtenir
+   `C:\wamp64\www\marwa\index.php` (et **pas** `C:\wamp64\www\marwa\marwa\…` : dans la fenêtre
+   « Extraire tout » de Windows, effacez le `\marwa` final proposé dans le chemin de destination).
+3. Double-cliquez sur **`DEMARRER-MARWA.bat`** — ou ouvrez simplement **http://localhost/marwa/**.
+
+C'est tout. Au premier lancement, MARWA :
+
+- trouve tout seul MySQL ou MariaDB de WampServer (utilisateur `root` sans mot de passe,
+  ports 3306, 3307 et 3308 essayés) ;
+- crée la base `marwa`, toutes les tables, les comptes de démonstration et le fichier `.env` ;
+- affiche « Installation terminée » avec la liste des comptes (mot de passe : `Demo2026!`).
+
+Si la base n'est pas trouvée (mot de passe MySQL personnalisé, autre port…), un formulaire
+s'affiche pour saisir les paramètres ; l'installation se fait ensuite en un clic.
+
+L'adresse est détectée automatiquement : le dossier peut porter n'importe quel nom
+(`http://localhost/<nom-du-dossier>/`), aucune modification de `APP_URL` n'est nécessaire.
+Si le module Apache `rewrite_module` est désactivé, MARWA fonctionne quand même
+(adresses de la forme `http://localhost/marwa/index.php/connexion`) ; pour des adresses propres,
+activez-le : clic gauche Wamp → Apache → Modules Apache → `rewrite_module`.
+
+**Démarrage automatique avec Windows** : double-cliquez une fois sur `DEMARRAGE-AUTO-WINDOWS.bat`.
+À chaque ouverture de session, WampServer et MARWA se lancent et le navigateur s'ouvre
+(désactivation : `DEMARRAGE-AUTO-WINDOWS.bat /retirer`).
+
+`DEMARRER-MARWA.bat` lance aussi, dans une fenêtre réduite, les tâches de fond
+(`bin\worker.php` : vagues d'attribution, expirations, relance des messages). Sans elles,
+l'application fonctionne, ces tâches étant aussi déclenchées pendant l'utilisation.
+
+**Mises à jour** : remplacez les fichiers du projet en conservant `.env` et `storage\`.
+Les nouvelles migrations sont appliquées automatiquement à l'ouverture suivante.
+
+### Dépannage rapide
+
+| Symptôme | Cause / solution |
+|---|---|
+| Liste de fichiers ou « Index of /marwa » | Le projet est dans un sous-dossier en trop (`www\marwa\marwa`) : remontez son contenu d'un niveau, ou ouvrez `http://localhost/marwa/marwa/` |
+| Page « Installation de MARWA » avec « serveur injoignable » | MySQL/MariaDB non démarré : icône Wamp verte ? |
+| « accès refusé » | Mot de passe MySQL personnalisé : saisissez-le dans le formulaire |
+| 403 sur toutes les pages | `AllowOverride` désactivé dans la configuration Apache de `www` (Wamp l'active par défaut) |
+| 404 sur `http://localhost/marwa/connexion` mais l'accueil fonctionne | `rewrite_module` désactivé : utilisez les liens de l'application (ils passent par `index.php`) ou activez le module |
+
+---
+
+## Installation manuelle (détaillée)
+
 ## 1. Prérequis
 
 | Élément | Version | Vérification |
@@ -46,7 +95,7 @@ Valeurs minimales :
 ```ini
 APP_ENV=local
 APP_DEBUG=true
-APP_URL=http://marwa.local          # ou http://localhost/marwa sans VirtualHost
+APP_URL=http://marwa.local          # adresse utilisée dans les e-mails ; les pages détectent l'adresse automatiquement
 DB_HOST=127.0.0.1
 DB_PORT=3306                         # 3307 si vous utilisez MariaDB sous Wamp
 DB_DATABASE=marwa

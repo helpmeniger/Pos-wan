@@ -25,15 +25,16 @@ final class Request
     public static function fromGlobals(): self
     {
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
-        $uri = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-        $base = rtrim((string) parse_url((string) Config::get('app.url', ''), PHP_URL_PATH), '/');
-        if ($base !== '' && str_starts_with($uri, $base)) {
+        $uri = rawurldecode((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH));
+        // Dossier d'installation détecté automatiquement (voir Paths), indépendant de APP_URL.
+        $base = Paths::base();
+        if ($base !== '' && ($uri === $base || str_starts_with($uri, $base . '/'))) {
             $uri = substr($uri, strlen($base));
         }
         // Accès direct via /public/index.php (WampServer sans VirtualHost)
         $uri = preg_replace('#^/public(?=/|$)#', '', $uri);
         $uri = preg_replace('#^/index\.php(?=/|$)#', '', (string) $uri);
-        $path = '/' . trim(rawurldecode((string) $uri), '/');
+        $path = '/' . trim((string) $uri, '/');
 
         $headers = [];
         foreach ($_SERVER as $k => $v) {
