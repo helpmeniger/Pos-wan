@@ -17,3 +17,6 @@ Thumbs.db
 /storage/installed.lock
 /storage/install.running
 /storage/app.key
+/storage/vapid.json
+/storage/*.key
+/storage/*.json

@@ -31,8 +31,23 @@ npm install && npx playwright install chromium
 php bin/migrate.php --fresh && php bin/seed.php        # base de démonstration fraîche
 php -S 127.0.0.1:8080 -t public bin/dev-router.php     # ou Apache/WampServer
 BASE_URL=http://127.0.0.1:8080 node tests/e2e/ui-smoke.mjs      # 55 écrans des 6 rôles
-BASE_URL=http://127.0.0.1:8080 node tests/e2e/full-journey.mjs  # parcours complet
+BASE_URL=http://127.0.0.1:8080 node tests/e2e/full-journey.mjs  # parcours complet (base fraîche)
+php -S 127.0.0.1:8099 tests/e2e/fake-osrm.php                   # faux OSRM si pas d'accès Internet (OSRM_URL=http://127.0.0.1:8099)
+BASE_URL=http://127.0.0.1:8080 node tests/e2e/features.mjs      # téléphone : autorisation GPS, taxis proches, navigation, photos, push
+BASE_URL=http://127.0.0.1:8080 node tests/e2e/i18n.mjs          # interface en haoussa, zarma, anglais
+BASE_URL=http://127.0.0.1:8080 node tests/e2e/mobile.mjs        # 29 écrans sur Android 360 px et iPhone
 ```
+
+Exécutez `full-journey.mjs` puis `features.mjs` sur une base fraîche (le second laisse une course
+en cours). La limitation de débit des connexions s'applique aussi aux tests : videz la table
+`rate_limits` entre deux campagnes rapprochées.
+
+`features.mjs` vérifie : la fenêtre explicative avant la demande d'autorisation de localisation,
+les véhicules proches (icônes), la navigation intégrée (consignes, recalcul après écart, arrivée,
+bouton « Je suis arrivé »), l'itinéraire restant côté client, l'ajout de 2 photos à un produit
+(compressées sur le téléphone), la photo principale, la couverture, la galerie côté client et
+l'affichage d'une notification push par le service worker (message délivré par le protocole
+DevTools de Chromium, l'abonnement réel nécessitant le service de push de Google).
 
 `full-journey.mjs` ouvre **deux navigateurs** (client sur ordinateur, chauffeur sur téléphone
 Android simulé) : passage en ligne, choix de la destination sur la carte, commande, réception et

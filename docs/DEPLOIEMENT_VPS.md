@@ -109,7 +109,23 @@ sudo systemctl reload php8.*-fpm && sudo systemctl restart marwa-worker
 - Console d'administration → *Paramètres* : état réel des fournisseurs, balance du grand livre,
   messages en échec. → *Paiements* : rapprochement, doublons, écarts de caisse.
 
-## 9. Liste de contrôle avant ouverture au public
+## 9. Sécurisation du serveur (recommandé, 5 minutes)
+
+```bash
+cd /var/www/marwa
+sudo bash deploy/securiser-serveur.sh          # pare-feu, fail2ban, mises à jour auto., SSH, PHP, droits
+sudo -u www-data php bin/security-check.php --url=https://marwa.example.ne
+```
+
+Gardez votre session SSH ouverte pendant l'exécution et testez une nouvelle connexion avant de
+la fermer. Ensuite, dans l'administration : activez la double authentification sur votre compte,
+puis *Paramètres* → « Double authentification obligatoire pour le personnel ». Facultatif :
+`ADMIN_ALLOWED_IPS=ip.du.bureau,autre.ip` dans `.env` limite l'administration à ces adresses.
+
+Pour des consignes de navigation routières (« Tournez à droite sur… »), un serveur **OSRM** est
+nécessaire (voir SERVICES_EXTERNES.md) ; sans lui, la navigation indique la direction à vol d'oiseau.
+
+## 10. Liste de contrôle avant ouverture au public
 
 Voir la section « Mise en production » de [SECURITE.md](SECURITE.md) et les points juridiques de
 [CONFORMITE.md](CONFORMITE.md).

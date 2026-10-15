@@ -28,6 +28,16 @@ de l'application est détectée automatiquement (nom de dossier libre, `rewrite_
 Installation en ligne de commande (équivalente) : `php bin\install.php`.
 Guide détaillé et dépannage : [docs/INSTALLATION_WAMP.md](docs/INSTALLATION_WAMP.md).
 
+### Nouveautés
+- Taxis et livreurs libres affichés sur la carte autour du client (icônes de véhicules).
+- Navigation intégrée pour chauffeurs et livreurs (consignes, recalcul, voix), itinéraire en direct côté client.
+- Demande d'autorisation de localisation expliquée, notifications push même téléphone en veille.
+- Photos multiples des produits, photo de couverture, logos.
+- Langues : français, haoussa, zarma, anglais ([docs/LANGUES.md](docs/LANGUES.md)).
+- Sécurité : double authentification, déconnexion de tous les appareils, script de durcissement
+  du serveur, contrôle de sécurité (voir [docs/SECURITE.md](docs/SECURITE.md)).
+- Application installable sur l'écran d'accueil, écrans vérifiés sur Android 360 px et iPhone.
+
 ### Comptes de démonstration (créés à l'installation locale)
 
 Mot de passe commun : `Demo2026!` — données **fictives**, numéros `+227 90 00 00 xx` fictifs.

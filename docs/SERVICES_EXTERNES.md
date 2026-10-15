@@ -17,7 +17,7 @@ des **ordres de grandeur à vérifier** auprès des fournisseurs : aucun tarif n
 | **Mobile Money** | **Non intégré** (interface `PaymentGateway` prête) | nouvelle classe implémentant `PaymentGateway` + webhook | Contrat marchand avec un opérateur Mobile Money actif au Niger ou un agrégateur de paiement couvrant l'UEMOA ; **commission par transaction** + éventuels frais d'intégration. Vérifier l'existence et les conditions de l'API auprès du fournisseur avant tout développement |
 | **Carte bancaire** | Non intégré | idem | Prestataire de paiement agréé (PSP) : frais par transaction, exigences PCI-DSS (déléguer la saisie de carte au PSP, ne jamais stocker de numéro de carte) |
 | **Passerelle de démonstration** | Fonctionnelle, **aucun argent réel** | `PAYMENT_DEMO_ENABLED`, `PAYMENT_DEMO_SECRET` | Gratuit — à désactiver en production |
-| **Notifications push (Web Push)** | Non implémenté (notifications navigateur quand l'onglet est ouvert) | — | Gratuit (VAPID) mais nécessite HTTPS et un développement complémentaire |
+| **Notifications push (Web Push)** | **Fonctionnel** (téléphone en veille, application fermée) | clés VAPID générées automatiquement (`storage/vapid.json`) ; HTTPS obligatoire | **Gratuit** : passe par les services des navigateurs (Google, Apple, Mozilla). Sur iPhone : iOS 16.4+, MARWA installé sur l'écran d'accueil |
 | **Sauvegarde externe** | Script fourni (`bin/backup.php`) | copie hors serveur à organiser | Stockage objet / second serveur (faible coût mensuel) |
 
 ## Intégrer un vrai prestataire de paiement

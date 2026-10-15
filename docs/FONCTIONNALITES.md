@@ -14,7 +14,9 @@ Légende : **✅ Opérationnel** (codé et vérifié par des tests automatisés 
 | Mot de passe oublié : lien e-mail / code SMS | ✅ ; 🔌 e-mail SMTP à configurer, SMS fournisseur |
 | Profil, photo, changement de mot de passe, suppression de compte (anonymisation) | ✅ |
 | Rôles et permissions côté serveur (6 profils + 3 rôles du personnel) | ✅ testé |
-| Double authentification du personnel | ❌ recommandé |
+| Double authentification (TOTP + codes de secours), obligatoire pour le personnel si activée | ✅ testé |
+| Déconnexion de tous les appareils, alerte de connexion depuis un nouvel appareil | ✅ testé |
+| Choix de la langue : français, haoussa, zarma, anglais (+ éditeur de traductions) | ✅ ; ⚠️ haoussa/zarma à faire relire par des locuteurs natifs |
 
 ## Client
 
@@ -80,7 +82,11 @@ Légende : **✅ Opérationnel** (codé et vérifié par des tests automatisés 
 | Fonctionnalité | État |
 |---|---|
 | Notifications in-app + navigateur (onglet ouvert) | ✅ |
-| Notifications push hors onglet (Web Push) | ❌ |
+| Notifications push téléphone en veille / application fermée (Web Push VAPID) | ✅ chiffrement vérifié avec les bibliothèques de référence ; ⚠️ réception réelle via Google/Apple/Mozilla non testable ici (iPhone : application installée sur l'écran d'accueil, iOS 16.4+) |
+| Application installable sur l'écran d'accueil (PWA) | ✅ |
+| Taxis / livreurs disponibles à proximité sur la carte | ✅ testé |
+| Navigation intégrée chauffeur/livreur (consignes, recalcul, voix) | ✅ testé avec un OSRM simulé ; 🔌 OSRM réel requis pour les consignes routières |
+| Photos multiples des produits, couverture, logos | ✅ testé |
 | E-mail | ✅ SMTP intégré ; 🔌 compte à configurer |
 | SMS / WhatsApp | 🔌 / ❌ (voir SERVICES_EXTERNES) |
 | Paiement Mobile Money / carte réels | 🔌 interface prête, **aucune API simulée comme réelle** |

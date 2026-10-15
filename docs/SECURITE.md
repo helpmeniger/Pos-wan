@@ -15,6 +15,12 @@
 | Rôles du personnel | `admin` (tout), `support` (utilisateurs, commandes, réclamations, validations — **sans** finance), `finance` (paiements, remboursements, versements, rapports — **sans** paramétrage) | migration 004 — testé |
 | Limitation de débit | Connexion, inscription, OTP, mot de passe oublié, estimation, géocodage, création de commande (12/h), messages, contre-propositions, GPS, webhooks | `RateLimiter`, `throttle:` — testé |
 | Anti-abus | Commandes simultanées limitées, bornes de prix négocié, nombre de contre-propositions/modifications limité, filtrage des numéros et liens dans la messagerie | services — testé |
+| Double authentification | TOTP (RFC 6238, vérifié avec les vecteurs officiels) + 8 codes de secours à usage unique, anti-rejeu, secret chiffré AES-256-GCM ; obligatoire pour le personnel via *Paramètres* | `SecurityService` — testé |
+| Appareils | Déconnexion de tous les appareils, sessions invalidées au changement de mot de passe, alerte « connexion depuis un nouvel appareil » | testé |
+| Mots de passe faibles | Refus des mots de passe courants (azerty, niamey2026…) et de ceux contenant le nom, l'e-mail ou le téléphone | testé |
+| Administration | Accès limitable à des adresses IP (`ADMIN_ALLOWED_IPS`, CIDR accepté) | testé |
+| Notifications push | Services de push officiels uniquement (anti-SSRF), messages chiffrés de bout en bout (RFC 8291), désabonnement à la déconnexion | testé |
+| Serveur | `deploy/securiser-serveur.sh` : pare-feu, fail2ban (SSH, échecs de connexion MARWA, Nginx), mises à jour automatiques, SSH, noyau, MariaDB local, PHP ; `bin/security-check.php` | |
 | Téléversements | Taille max. (4 Mo), type vérifié **par le contenu** (`finfo`), liste blanche JPEG/PNG/WebP/PDF, nom aléatoire, stockage hors `public/`, images **ré-encodées** (suppression EXIF/GPS), servis par PHP après contrôle d'accès | `UploadService` — testé |
 | Paiements | Confirmation **uniquement** par notification serveur signée (HMAC-SHA256, comparaison à temps constant), contrôle du montant, journal des webhooks, idempotence (`Idempotency-Key`, `event_id` unique, une seule intention active par commande), aucune capture d'écran acceptée comme preuve | `PaymentService` — testé |
 | Grand livre | Écritures équilibrées obligatoires, clés de déduplication, **triggers SQL interdisant modification et suppression** | migration 002 — testé |
@@ -38,11 +44,12 @@
 - [ ] Mises à jour de sécurité du système, de PHP et de MariaDB planifiées
 - [ ] Revue des textes CGU / confidentialité / numéros d'urgence par un juriste (voir CONFORMITE.md)
 - [ ] Test d'intrusion recommandé avant l'ouverture d'un paiement électronique réel
-- [ ] Ajout d'une double authentification pour les comptes du personnel (recommandé, non implémenté)
+- [ ] Activer la double authentification pour chaque compte du personnel, puis *Paramètres* → « Double authentification obligatoire »
+- [ ] Lancer `sudo bash deploy/securiser-serveur.sh` puis `php bin/security-check.php --url=https://votre-domaine` (aucun point « CRITIQUE »)
+- [ ] Sauvegarder hors serveur `storage/app.key` et `storage/vapid.json` (inclus dans `bin/backup.php`) : sans eux, les doubles authentifications et les notifications push cessent de fonctionner
 
 ## Points connus / améliorations recommandées
 
-- Double authentification (TOTP) pour l'administration : non implémentée.
 - Le limiteur de débit est stocké en base (fenêtre fixe) ; en forte charge, préférer Redis.
 - L'empreinte de session repose sur le User-Agent (protection partielle contre le vol de cookie ;
   la vraie protection reste HTTPS + HttpOnly).
