@@ -85,7 +85,7 @@ final class PageController extends Controller
     public function provider(Request $r): Response
     {
         $type = Auth::role() === 'driver' ? 'chauffeur' : 'livreur';
-        return $this->renderPage('pages/app', 'Espace ' . $type, ['space' => 'provider', 'bodyClass' => 'space-provider', 'scripts' => ['map.js', 'shared.js', 'provider.js']]);
+        return $this->renderPage('pages/app', 'Espace ' . $type, ['space' => 'provider', 'bodyClass' => 'space-provider', 'scripts' => ['map.js', 'navigation.js', 'shared.js', 'provider.js']]);
     }
 
     public function merchant(Request $r): Response

@@ -68,7 +68,10 @@
     toggle.addEventListener('change', async () => {
       try {
         let pos = {};
-        if (toggle.checked) { try { const p = await MW.locate({ timeout: 10000 }); pos = { lat: p.lat, lng: p.lng }; } catch (e) { MW.toast(e.message + ' Vous ne recevrez des demandes qu\'une fois localisé.', 'warn', 8000); } }
+        if (toggle.checked) {
+          const p = await MW.askLocation({ reason: 'Pour recevoir des demandes, MARWA doit connaître votre position pendant que vous êtes en ligne. Elle n\'est plus suivie dès que vous passez hors ligne.', silent: true });
+          if (p) pos = { lat: p.lat, lng: p.lng }; else MW.toast('Position indisponible : vous ne recevrez des demandes qu\'une fois localisé.', 'warn', 8000);
+        }
         await MW.post('/provider/online', Object.assign({ online: toggle.checked }, pos));
         P.online = toggle.checked;
         if (P.online) GPS.start(); else GPS.stop();
@@ -163,7 +166,9 @@
       side.innerHTML = `<div class="card"><div class="small muted">Statut</div><h2 style="margin:0 0 6px">${MW.esc(o.status_label)}</h2>
           ${o.flow === 'merchant' && o.provider_stage ? `<div class="small">Votre étape : ${MW.esc({ assigned: 'affecté', en_route_pickup: 'en route vers le commerce', arrived_pickup: 'au commerce', picked_up: 'commande récupérée' }[o.provider_stage] || '')}</div>` : ''}
           <div class="big-actions" style="margin-top:12px">${acts.map((a) => `<button class="btn ${['release', 'cancelled', 'delivery_failed'].includes(a) ? 'btn-outline' : 'btn-primary'} btn-lg" data-act="${a}">${MW.esc(ACTION_LABEL[a](o))}</button>`).join('')}</div></div>
-        <div class="card"><h3>${toPickup ? (o.flow === 'merchant' ? 'Récupérer au commerce' : 'Prise en charge') : 'Destination'}</h3><p><strong>${MW.esc(target.text)}</strong>${target.notes ? `<br><span class="small">${MW.esc(target.notes)}</span>` : ''}</p>${MW.navLinks(target.lat, target.lng)}</div>
+        <div class="card"><h3>${toPickup ? (o.flow === 'merchant' ? 'Récupérer au commerce' : 'Prise en charge') : 'Destination'}</h3><p><strong>${MW.esc(target.text)}</strong>${target.notes ? `<br><span class="small">${MW.esc(target.notes)}</span>` : ''}</p>
+          ${o.status && !['completed', 'delivered', 'returned'].includes(o.status) ? `<button class="btn btn-primary btn-block btn-lg" data-navigate>${MW.icon('nav')} Naviguer dans MARWA</button>` : ''}
+          <details style="margin-top:8px"><summary class="small muted" style="cursor:pointer">Ouvrir dans une autre application</summary>${MW.navLinks(target.lat, target.lng)}</details></div>
         <div class="card"><dl class="kv">
           ${o.customer ? `<dt>Client</dt><dd>${MW.esc(o.customer.name)}</dd>` : ''}
           ${o.delivery ? `<dt>Destinataire</dt><dd>${MW.esc(o.delivery.recipient_name)}${o.delivery.recipient_phone ? `<br><a href="tel:${MW.esc(o.delivery.recipient_phone)}">${MW.esc(o.delivery.recipient_phone)}</a>` : ''}</dd>
@@ -175,11 +180,21 @@
           <dt>Paiement</dt><dd>${MW.esc(MW.L.payment[o.payment_method])}${o.payment_method === 'cash' ? ` — <strong>à encaisser : ${MW.fcfa(o.total)}</strong>` : ''}</dd></dl></div>
         <div class="card"><h3>Messagerie</h3><div data-chat></div></div>`;
       side.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => act(b, b.dataset.act)));
+      side.querySelector('[data-navigate]')?.addEventListener('click', () => openNav());
       if (!chat) chat = MW.chat(side.querySelector('[data-chat]'), o.id); else chat = MW.chat(side.querySelector('[data-chat]'), o.id);
       if (routeLine) routeLine.remove();
       if (GPS.last) routeLine = L.polyline([[GPS.last.lat, GPS.last.lng], [target.lat, target.lng]], { color: '#1f6fb2', weight: 3, dashArray: '6 8' }).addTo(map);
     };
 
+    // Navigation intégrée : l'action principale (ex. « Je suis arrivé ») reste accessible en plein écran
+    let nav = null;
+    const openNav = () => {
+      const main = (o.actions || []).find((a) => ACTION_LABEL[a] && !['release', 'cancelled', 'delivery_failed', 'declare_cash'].includes(a));
+      nav = new MW.Navigator({ orderId: o.id, gps: GPS, vehicle,
+        action: main ? { label: ACTION_LABEL[main](o), run: () => { const b = el.querySelector(`[data-act="${main}"]`); if (b) act(b, main); } } : null,
+        onClose: () => { nav = null; } });
+      nav.open();
+    };
     const after = (r) => { o = r.data; if (['paid'].includes(o.status) || (o.payment_status === 'paid' && ['completed', 'delivered', 'returned'].includes(o.status))) { MW.toast('Commande terminée et réglée. Merci !', 'success'); location.hash = '#/'; return; } render(); };
     const post = (action, extra = {}) => MW.post(`/provider/orders/${o.id}/action`, Object.assign({ action }, extra));
 
@@ -242,7 +257,7 @@
     const refresh = async () => { try { const n = await MW.get('/provider/current', { retries: 0 }); if (!n) { location.hash = '#/'; return; } if (n.status !== o.status || n.provider_stage !== o.provider_stage || n.payment_status !== o.payment_status) { o = n; render(); } } catch (e) { /* réseau */ } };
     const t = setInterval(refresh, 8000);
     MW.realtime.setFast(true);
-    MW.onLeave(() => { clearInterval(t); MW.realtime.setFast(false); chat && chat.stop(); GPS.listeners = GPS.listeners.filter((f) => f !== updateMe); });
+    MW.onLeave(() => { clearInterval(t); MW.realtime.setFast(false); chat && chat.stop(); nav && nav.close(); GPS.listeners = GPS.listeners.filter((f) => f !== updateMe); });
   }
 
   // ------------------------------------------------------------------ Historique, revenus, documents

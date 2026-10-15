@@ -36,7 +36,7 @@
     const color = opts.color || (type === 'moto' || type === 'bicycle' ? '#d98a0b' : '#0b6e4f');
     const svg = (VEH[type] || VEH.car)(color);
     return L.divIcon({ className: 'mw-marker', iconSize: [44, 44], iconAnchor: [22, 22],
-      html: `<div class="mw-vehicle ${opts.stale ? 'stale' : ''}" style="transform:rotate(${Number(heading) || 0}deg)">${svg}</div>` });
+      html: `<div class="mw-vehicle ${opts.stale ? 'stale' : ''} ${opts.nearby ? 'nearby' : ''}" style="transform:rotate(${Number(heading) || 0}deg)">${svg}</div>` });
   };
   MW.pinIcon = function (kind) {
     const c = kind === 'dropoff' ? '#f4a623' : kind === 'merchant' ? '#1f6fb2' : '#0b6e4f';
@@ -66,6 +66,83 @@
       (e) => reject(new Error(e.code === 1 ? 'Autorisation de localisation refusée. Saisissez l\'adresse ou touchez la carte.' : 'Position introuvable. Saisissez l\'adresse ou touchez la carte.')),
       { enableHighAccuracy: true, timeout: opts.timeout || 12000, maximumAge: 30000 });
   });
+
+  // ------------------------------------------------------------------ Autorisation de localisation
+  /** État de l'autorisation : 'granted' | 'prompt' | 'denied' | 'unsupported'. */
+  MW.geoPermission = async function () {
+    if (!navigator.geolocation) return 'unsupported';
+    try { if (navigator.permissions) return (await navigator.permissions.query({ name: 'geolocation' })).state; } catch (e) { /* Safari ancien */ }
+    return 'prompt';
+  };
+  const deniedHelp = () => `<p>La localisation est <strong>bloquée</strong> pour MARWA. Pour l'activer :</p>
+    <ol class="small" style="padding-left:18px">
+      <li><strong>Android (Chrome)</strong> : touchez le cadenas à gauche de l'adresse → <em>Autorisations</em> → <em>Position</em> → <em>Autoriser</em>.</li>
+      <li><strong>iPhone (Safari)</strong> : Réglages → <em>Safari</em> → <em>Position</em> → <em>Demander</em> ou <em>Autoriser</em> ; vérifiez aussi Réglages → Confidentialité → Service de localisation.</li>
+      <li>Vérifiez que la <strong>localisation (GPS)</strong> du téléphone est activée.</li></ol>
+    <p class="small muted">Vous pouvez aussi saisir l'adresse ou toucher la carte.</p>`;
+  /**
+   * Explique pourquoi la position est demandée, puis déclenche la demande du navigateur.
+   * Retourne la position, ou null si refusée / indisponible. opts.reason : texte affiché.
+   */
+  MW.askLocation = async function (opts = {}) {
+    const state = await MW.geoPermission();
+    if (state === 'unsupported') { if (!opts.silent) MW.toast('Cet appareil ne permet pas la géolocalisation.', 'warn'); return null; }
+    if (state === 'denied') { if (!opts.silent) MW.modal('Activer la localisation', deniedHelp()); return null; }
+    if (state === 'prompt' && !opts.skipExplain) {
+      const ok = await new Promise((resolve) => {
+        const m = MW.modal('Autoriser la localisation', `<div class="perm-explain">${MW.icon('locate')}
+          <p>${MW.esc(opts.reason || 'MARWA utilise votre position pour trouver les taxis et livreurs les plus proches et vous situer sur la carte.')}</p>
+          <p class="small muted">Votre position n'est partagée qu'avec le prestataire de votre commande. Votre téléphone va vous demander l'autorisation : choisissez <strong>Autoriser</strong>.</p></div>
+          <div class="modal-actions"><button class="btn btn-outline" data-no>Plus tard</button><button class="btn btn-primary" data-yes>${MW.icon('locate')} Activer ma position</button></div>`, { onClose: () => resolve(false) });
+        m.el.querySelector('[data-no]').onclick = () => m.close();
+        m.el.querySelector('[data-yes]').onclick = () => { resolve(true); m.close(); };
+      });
+      if (!ok) return null;
+    }
+    try { return await MW.locate({ timeout: opts.timeout || 15000 }); } catch (e) {
+      if ((await MW.geoPermission()) === 'denied') { if (!opts.silent) MW.modal('Activer la localisation', deniedHelp()); } else if (!opts.silent) MW.toast(e.message, 'warn');
+      return null;
+    }
+  };
+
+  // ------------------------------------------------------------------ Véhicules à proximité
+  /**
+   * Affiche en direct les véhicules libres autour d'un point (positions GPS réelles des
+   * prestataires, approximatives à ~100 m, sans identité). center() → [lat, lng] ou null.
+   */
+  MW.NearbyLayer = class {
+    constructor(map, { center, service = 'taxi', badge = null, every = 10000 }) {
+      this.map = map; this.center = center; this.service = service; this.badge = badge; this.markers = new Map();
+      this.timer = null; this.every = every; this.stopped = false;
+      this.tick();
+    }
+    async tick() {
+      if (this.stopped) return;
+      const c = this.center();
+      if (c && !document.hidden && this.map) {
+        try {
+          const d = await MW.get(`/nearby?lat=${c[0]}&lng=${c[1]}&service=${encodeURIComponent(this.service)}`, { retries: 0 });
+          if (this.stopped) return;
+          const seen = new Set();
+          d.vehicles.forEach((v) => {
+            seen.add(v.k);
+            const icon = MW.vehicleIcon(v.icon, v.heading, { color: v.icon === 'moto' ? '#d98a0b' : '#1d6f5a', nearby: true });
+            const m = this.markers.get(v.k);
+            if (m) { m.setIcon(icon); MW.glide(m, [v.lat, v.lng], 1500); } else this.markers.set(v.k, L.marker([v.lat, v.lng], { icon, interactive: false, keyboard: false, zIndexOffset: 200 }).addTo(this.map));
+          });
+          this.markers.forEach((m, k) => { if (!seen.has(k)) { m.remove(); this.markers.delete(k); } });
+          if (this.badge) {
+            const label = this.service === 'taxi' || this.service === 'pro' ? (d.count > 1 ? 'taxis disponibles' : 'taxi disponible') : (d.count > 1 ? 'livreurs disponibles' : 'livreur disponible');
+            this.badge.hidden = false;
+            this.badge.innerHTML = d.count ? `${MW.icon('car')} <strong>${d.count}</strong> ${label} à proximité · ~${d.nearest_eta_min} min` : `${MW.icon('clock')} Aucun véhicule libre à proximité pour le moment`;
+          }
+        } catch (e) { /* réseau : nouvel essai au prochain cycle */ }
+      }
+      this.timer = setTimeout(() => this.tick(), this.every);
+    }
+    refresh() { clearTimeout(this.timer); this.tick(); }
+    stop() { this.stopped = true; clearTimeout(this.timer); this.markers.forEach((m) => m.remove()); this.markers.clear(); if (this.badge) this.badge.hidden = true; }
+  };
 
   MW.navLinks = (lat, lng) => `<div class="row"><a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="geo:${lat},${lng}?q=${lat},${lng}">${MW.icon('nav')} Navigation</a>
     <a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://www.openstreetmap.org/directions?route=%3B${lat}%2C${lng}#map=16/${lat}/${lng}">OpenStreetMap</a>
@@ -119,12 +196,11 @@
     }
     async useGps() {
       this.setHint('Localisation en cours…');
-      try {
-        const p = await MW.locate();
-        this.set({ text: 'Ma position', lat: p.lat, lng: p.lng }, true);
-        this.setHint(`Précision ≈ ${Math.round(p.accuracy)} m. Déplacez le point si besoin.`);
-        this.reverse(p.lat, p.lng);
-      } catch (e) { this.setHint(e.message, true); }
+      const p = await MW.askLocation({ skipExplain: true });
+      if (!p) { this.setHint('Position indisponible. Saisissez l\'adresse ou touchez la carte.', true); return; }
+      this.set({ text: 'Ma position', lat: p.lat, lng: p.lng }, true);
+      this.setHint(`Précision ≈ ${Math.round(p.accuracy)} m. Déplacez le point si besoin.`);
+      this.reverse(p.lat, p.lng);
     }
     armMapPick() {
       const map = this.opts.map;

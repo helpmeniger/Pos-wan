@@ -14,6 +14,8 @@ final class RouteResult
         public readonly array $geometry,
         public readonly string $source,      // osrm | estimate
         public readonly bool $approximate,
+        /** Étapes de navigation (manœuvres), vides si le fournisseur ne les donne pas. */
+        public readonly array $steps = [],
     ) {
     }
 
@@ -25,6 +27,7 @@ final class RouteResult
             'geometry' => $this->geometry,
             'source' => $this->source,
             'approximate' => $this->approximate,
+            'steps' => $this->steps,
         ];
     }
 }

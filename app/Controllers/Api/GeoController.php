@@ -154,4 +154,14 @@ final class GeoController extends Controller
         }
         return $this->json($out);
     }
+
+    /** Véhicules libres à proximité (positions approximatives, sans identité). */
+    public function nearby(Request $r): Response
+    {
+        $v = $this->validate($r, [
+            'lat' => 'required|lat', 'lng' => 'required|lng',
+            'service' => 'nullable|in:taxi,pro,food,parcel,document,errand,shop,urgent',
+        ]);
+        return $this->json(\App\Services\NearbyService::around((float) $v['lat'], (float) $v['lng'], (string) ($v['service'] ?? 'taxi')));
+    }
 }

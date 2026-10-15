@@ -16,6 +16,7 @@ use App\Services\NegotiationService;
 use App\Services\NotificationService;
 use App\Services\OrderPolicy;
 use App\Services\OrderService;
+use App\Services\OrderStateMachine;
 use App\Services\PaymentService;
 use App\Services\PricingService;
 use App\Services\TrackingService;
@@ -192,6 +193,17 @@ final class ProviderController extends Controller
         }
         $o = DispatchService::fresh((int) $p['current_order_id']);
         return $this->json(OrderPolicy::present($o, 'provider'));
+    }
+
+    /** Itinéraire guidé depuis la position actuelle du prestataire (navigation dans l'application). */
+    public function navigation(Request $r): Response
+    {
+        $order = OrderPolicy::load($r->intParam('id'), $this->user(), ['provider']);
+        $v = $this->validate($r, ['lat' => 'required|lat', 'lng' => 'required|lng']);
+        if (!in_array($order['status'], OrderStateMachine::TRACKABLE, true)) {
+            throw new \App\Core\HttpException(409, 'Cette commande n\'est plus en cours.', 'not_active');
+        }
+        return $this->json(\App\Services\NavigationService::forProvider($order, (float) $v['lat'], (float) $v['lng']));
     }
 
     public function action(Request $r): Response

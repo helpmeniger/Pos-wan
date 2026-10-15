@@ -74,7 +74,7 @@
             <p class="small muted" data-disclaimer style="margin-top:8px"></p>
           </div>
         </form>
-        <div class="card" style="padding:8px"><div id="taxi-map" class="map tall"></div></div>
+        <div class="card" style="padding:8px"><div class="map-wrap"><div id="taxi-map" class="map tall"></div><div class="nearby-badge" data-nearby hidden></div></div></div>
       </div></div>`;
     const map = await MW.createMap(el.querySelector('#taxi-map'));
     let estimates = []; let selected = null; let mode = 'auto'; let line = null;
@@ -115,8 +115,13 @@
     else {
       const fav = params.to && favorites.find((f) => String(f.id) === params.to);
       if (fav && fav.lat) dropoff.set({ text: fav.address_text, lat: fav.lat, lng: fav.lng }, true);
-      MW.locate({ timeout: 8000 }).then((p) => { if (!pickup.valid()) { pickup.set({ text: 'Ma position', lat: p.lat, lng: p.lng }, true); pickup.reverse(p.lat, p.lng); } }).catch(() => {});
+      MW.askLocation({ reason: 'MARWA utilise votre position comme point de départ et pour afficher les taxis libres autour de vous.', silent: true })
+        .then((p) => { if (p && !pickup.valid()) { pickup.set({ text: 'Ma position', lat: p.lat, lng: p.lng }, true); pickup.reverse(p.lat, p.lng); nearby && nearby.refresh(); } });
     }
+    // Taxis libres autour du point de départ (ou du centre de la carte), mis à jour toutes les 10 s
+    const nearby = map ? new MW.NearbyLayer(map, { service, badge: el.querySelector('[data-nearby]'),
+      center: () => { if (pickup.valid()) { const p = pickup.get(); return [p.lat, p.lng]; } const c = map.getCenter(); return [c.lat, c.lng]; } }) : null;
+    MW.onLeave(() => nearby && nearby.stop());
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!selected) { MW.toast('Choisissez le départ et la destination.', 'warn'); return; }
@@ -169,7 +174,7 @@
         ${MW.fields([{ name: 'accept_rules', label: 'Je certifie que l\'envoi ne contient aucun objet interdit ou réglementé.', type: 'checkbox' }])}
         <div data-estimate class="alert alert-info" hidden></div>
         <button class="btn btn-accent btn-block btn-lg" type="submit">Demander un livreur</button>
-      </form><div class="card" style="padding:8px"><div id="parcel-map" class="map tall"></div></div></div></div>`;
+      </form><div class="card" style="padding:8px"><div class="map-wrap"><div id="parcel-map" class="map tall"></div><div class="nearby-badge" data-nearby hidden></div></div></div></div></div>`;
     const map = await MW.createMap(el.querySelector('#parcel-map'));
     const form = el.querySelector('[data-form]');
     let line = null;
@@ -191,6 +196,11 @@
     form.querySelector('[name=vehicle_category]').addEventListener('change', estimate);
     const draft = JSON.parse(sessionStorage.getItem('mw:draft') || 'null');
     if (draft && draft.pickup) { sessionStorage.removeItem('mw:draft'); pickup.set(draft.pickup); dropoff.set(draft.dropoff, true); }
+    else MW.askLocation({ reason: 'MARWA utilise votre position comme lieu de récupération et pour afficher les livreurs disponibles autour de vous.', silent: true })
+      .then((p) => { if (p && !pickup.valid()) { pickup.set({ text: 'Ma position', lat: p.lat, lng: p.lng }, true); pickup.reverse(p.lat, p.lng); } });
+    const nearby = map ? new MW.NearbyLayer(map, { service: 'parcel', badge: el.querySelector('[data-nearby]'),
+      center: () => { if (pickup.valid()) { const p = pickup.get(); return [p.lat, p.lng]; } const c = map.getCenter(); return [c.lat, c.lng]; } }) : null;
+    MW.onLeave(() => nearby && nearby.stop());
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!pickup.valid() || !dropoff.valid()) { MW.toast('Indiquez les lieux de récupération et de livraison (recherche, GPS ou carte).', 'warn'); return; }
@@ -351,10 +361,14 @@
     el.innerHTML = `<div class="container"><div class="page-head"><div><a href="#/historique">← Mes commandes</a><h1 style="margin-top:6px">${MW.esc(MW.L.service[order.service_type])} · ${MW.esc(order.reference)}</h1></div>
         <button class="btn btn-danger btn-sm" data-sos>${MW.icon('sos')} Urgence</button></div>
       <div class="order-layout"><div class="stack" data-side></div>
-      <div class="card" style="padding:8px"><div class="map-wrap"><div id="track-map" class="map tall"></div><div class="map-badge" data-mapbadge hidden></div></div></div></div></div>`;
+      <div class="card" style="padding:8px"><div class="map-wrap"><div id="track-map" class="map tall"></div><div class="map-badge" data-mapbadge hidden></div><button class="map-fab" data-follow hidden aria-label="Suivre le véhicule" title="Suivre le véhicule">${MW.icon('locate')}</button></div></div></div></div>`;
     el.querySelector('[data-sos]').addEventListener('click', () => MW.sos(id));
     const map = await MW.createMap(el.querySelector('#track-map'));
-    const layers = { route: null, trail: null, vehicle: null, pickup: null, dropoff: null };
+    const layers = { route: null, trail: null, vehicle: null, pickup: null, dropoff: null, live: null };
+    // Suivi du véhicule : la carte le garde au centre jusqu'à ce que le client la déplace
+    let follow = true;
+    if (map) map.on('dragstart', () => { follow = false; const b = el.querySelector('[data-follow]'); if (b && layers.vehicle) b.hidden = false; });
+    el.querySelector('[data-follow]').addEventListener('click', (e) => { follow = true; e.currentTarget.hidden = true; if (layers.vehicle) map.setView(layers.vehicle.getLatLng(), Math.max(map.getZoom(), 15)); });
     layers.pickup = L.marker([order.pickup.lat, order.pickup.lng], { icon: MW.pinIcon(order.flow === 'merchant' ? 'merchant' : 'pickup') }).addTo(map).bindTooltip(order.flow === 'merchant' ? 'Commerce' : 'Départ');
     layers.dropoff = L.marker([order.dropoff.lat, order.dropoff.lng], { icon: MW.pinIcon('dropoff') }).addTo(map).bindTooltip('Arrivée');
     MW.fitTo(map, [[order.pickup.lat, order.pickup.lng], [order.dropoff.lat, order.dropoff.lng]]);
@@ -457,13 +471,21 @@
         if (!layers.vehicle) layers.vehicle = L.marker(ll, { icon: MW.vehicleIcon(t.vehicle.icon, t.position.heading, { stale: t.position.stale }), zIndexOffset: 1000 }).addTo(map);
         else { layers.vehicle.setIcon(MW.vehicleIcon(t.vehicle.icon, t.position.heading, { stale: t.position.stale })); MW.glide(layers.vehicle, ll); }
         if (t.trail && t.trail.length > 1) { if (layers.trail) layers.trail.setLatLngs(t.trail); else layers.trail = L.polyline(t.trail, { color: '#f4a623', weight: 4 }).addTo(map); }
-        if (!fitted) { MW.fitTo(map, [ll, [t.eta.target === 'pickup' ? t.pickup.lat : t.dropoff.lat, t.eta.target === 'pickup' ? t.pickup.lng : t.dropoff.lng]]); fitted = true; }
+        // Itinéraire restant en temps réel, du véhicule jusqu'au point à atteindre
+        const tgt = t.eta && t.eta.target === 'pickup' ? [t.pickup.lat, t.pickup.lng] : [t.dropoff.lat, t.dropoff.lng];
+        const live = t.remaining_route && t.remaining_route.length > 1 ? t.remaining_route : [ll, tgt];
+        const liveStyle = { color: '#1f6fb2', weight: 6, opacity: .9, dashArray: t.remaining_route ? null : '8 10' };
+        if (layers.live) { layers.live.setLatLngs(live); layers.live.setStyle(liveStyle); } else layers.live = L.polyline(live, liveStyle).addTo(map);
+        map.getContainer().dataset.liveRoute = t.remaining_route ? 'road' : 'direct';
+        if (layers.route) layers.route.setStyle({ opacity: .25 });
+        if (!fitted) { MW.fitTo(map, [ll, tgt]); fitted = true; } else if (follow && !t.position.stale) map.panTo(ll, { animate: true });
         badge.hidden = false; badge.classList.toggle('stale', t.position.stale);
         badge.textContent = t.position.stale ? `⚠ Position non actualisée — dernière mise à jour à ${MW.time(t.position.updated_at)} (${MW.ago(t.position.age_seconds)})` : `Position mise à jour à ${MW.time(t.position.updated_at)}`;
         const etaEl = el.querySelector('[data-eta]');
         if (etaEl && t.eta) etaEl.innerHTML = `${MW.icon('clock', '')} ${t.eta.target === 'pickup' ? (order.flow === 'merchant' ? 'Arrivée au commerce' : 'Arrivée au point de départ') : 'Arrivée à destination'} vers <strong>${MW.time(t.eta.arrival_at)}</strong> · ${MW.dist(t.eta.remaining_m)} restants${t.eta.approximate ? ' (estimation approximative)' : ''}`;
       } else if (layers.vehicle && !['assigned', 'en_route_pickup', 'arrived_pickup', 'in_progress', 'picked_up', 'in_delivery', 'accepted', 'preparing', 'ready'].includes(t.order.status)) {
         layers.vehicle.remove(); layers.vehicle = null; badge.hidden = true;
+        if (layers.live) { layers.live.remove(); layers.live = null; }
       } else if (order.provider && !t.position) {
         badge.hidden = false; badge.classList.add('stale'); badge.textContent = 'En attente de la position GPS du prestataire…';
       }

@@ -308,11 +308,15 @@
           document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === pattern.split('/')[1] || (pattern === '/' && a.dataset.nav === '')));
           MW.cleanup && MW.cleanup(); MW.cleanup = null;
           outlet.scrollTop = 0; window.scrollTo(0, 0);
-          try { await handler(outlet, params); } catch (e) { outlet.innerHTML = `<div class="alert alert-error">${MW.esc(e.message || e)}</div>`; }
+          // Chaque affichage reçoit son propre conteneur : un écran encore en chargement
+          // (réseau lent) ne peut plus écraser l'écran demandé ensuite.
+          const view = document.createElement('div'); view.className = 'view-page';
+          outlet.replaceChildren(view);
+          try { await handler(view, params); } catch (e) { if (view.isConnected) view.innerHTML = `<div class="alert alert-error">${MW.esc(e.message || e)}</div>`; }
           return;
         }
       }
-      outlet.innerHTML = '<div class="card">Page introuvable. <a href="#/">Retour à l\'accueil</a></div>';
+      outlet.replaceChildren(); outlet.innerHTML = '<div class="card">Page introuvable. <a href="#/">Retour à l\'accueil</a></div>';
     };
     window.addEventListener('hashchange', run);
     run();

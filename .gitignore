@@ -16,3 +16,4 @@ Thumbs.db
 /package-lock.json
 /storage/installed.lock
 /storage/install.running
+/storage/app.key

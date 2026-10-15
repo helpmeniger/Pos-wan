@@ -17,11 +17,12 @@ final class OsrmRouter implements RoutingProvider
     {
     }
 
-    public function route(float $fromLat, float $fromLng, float $toLat, float $toLng, string $profile = 'car'): RouteResult
+    public function route(float $fromLat, float $fromLng, float $toLat, float $toLng, string $profile = 'car', bool $withSteps = false): RouteResult
     {
         $osrmProfile = $profile === 'bicycle' ? 'bike' : 'driving';
-        $url = sprintf('%s/route/v1/%s/%F,%F;%F,%F?overview=simplified&geometries=geojson&alternatives=false',
-            rtrim($this->baseUrl, '/'), $osrmProfile, $fromLng, $fromLat, $toLng, $toLat);
+        $url = sprintf('%s/route/v1/%s/%F,%F;%F,%F?overview=%s&geometries=geojson&alternatives=false%s',
+            rtrim($this->baseUrl, '/'), $osrmProfile, $fromLng, $fromLat, $toLng, $toLat,
+            $withSteps ? 'full' : 'simplified', $withSteps ? '&steps=true' : '');
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
@@ -47,6 +48,24 @@ final class OsrmRouter implements RoutingProvider
         if ($profile === 'moto') {
             $duration = (int) round($duration * 0.85);
         }
-        return new RouteResult((int) round((float) $r['distance']), $duration, $geometry, 'osrm', false);
+        $steps = [];
+        if ($withSteps) {
+            $factor = (float) $r['duration'] > 0 ? $duration / (float) $r['duration'] : 1.0;
+            foreach ($r['legs'] ?? [] as $leg) {
+                foreach ($leg['steps'] ?? [] as $st) {
+                    $m = $st['maneuver'] ?? [];
+                    $steps[] = [
+                        'type' => (string) ($m['type'] ?? 'continue'),
+                        'modifier' => isset($m['modifier']) ? (string) $m['modifier'] : null,
+                        'exit' => isset($m['exit']) ? (int) $m['exit'] : null,
+                        'name' => (string) ($st['name'] ?? ''),
+                        'distance_m' => (int) round((float) ($st['distance'] ?? 0)),
+                        'duration_s' => (int) round((float) ($st['duration'] ?? 0) * $factor),
+                        'location' => isset($m['location']) ? [round((float) $m['location'][1], 6), round((float) $m['location'][0], 6)] : null,
+                    ];
+                }
+            }
+        }
+        return new RouteResult((int) round((float) $r['distance']), $duration, $geometry, 'osrm', false, $steps);
     }
 }

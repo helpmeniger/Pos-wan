@@ -41,6 +41,7 @@ $router->group('/api', [], function ($router) {
     $router->get('/geo/zones', [GeoController::class, 'zones']);
     $router->get('/geo/landmarks', [GeoController::class, 'landmarks']);
     $router->post('/estimate', [GeoController::class, 'estimate'], ['throttle:estimate,40,60']);
+    $router->get('/nearby', [GeoController::class, 'nearby'], ['auth', 'throttle:nearby,40,60']);
     $router->get('/merchants', [CatalogController::class, 'merchants']);
     $router->get('/merchants/{id}', [CatalogController::class, 'show']);
     $router->get('/promotions', [CatalogController::class, 'promotions']);
@@ -119,6 +120,7 @@ $router->group('/api', [], function ($router) {
         $router->post('/requests/{id}/counter', [ProviderController::class, 'counter'], ['verified_provider']);
         $router->get('/current', [ProviderController::class, 'current']);
         $router->post('/orders/{id}/action', [ProviderController::class, 'action']);
+        $router->get('/orders/{id}/navigation', [ProviderController::class, 'navigation'], ['throttle:navigation,30,60']);
         $router->post('/orders/{id}/cash', [ProviderController::class, 'declareCash']);
         $router->post('/proof', function (App\Core\Request $r) {
             $f = App\Services\UploadService::store($r->file('file'), (int) App\Core\Auth::id(), 'delivery_proof', true);
