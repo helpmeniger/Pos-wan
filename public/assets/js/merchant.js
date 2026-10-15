@@ -88,14 +88,19 @@
     const catName = (id) => (d.categories.find((c) => c.id === id) || {}).name || '—';
     el.innerHTML = `<div class="container"><div class="page-head"><h1>Catalogue</h1><div class="row">
         <button class="btn btn-outline" data-cat>${MW.icon('plus')} Catégorie</button><button class="btn btn-outline" data-import>Importer (CSV)</button><button class="btn btn-primary" data-prod>${MW.icon('plus')} Produit</button></div></div>
-      <div class="card" style="margin-bottom:14px"><strong>Catégories :</strong> ${d.categories.map((c) => `<span class="chip">${MW.esc(c.name)} <button class="btn-ghost" style="border:0;background:none;cursor:pointer" data-delcat="${c.id}" aria-label="Supprimer">×</button></span>`).join(' ') || '<span class="muted">aucune</span>'}</div>
-      <div class="grid-2">${d.products.map((p) => `<div class="product-card"><div class="thumb" ${p.photo_url ? `style="background-image:url('${MW.esc(p.photo_url)}')"` : ''}>${p.photo_url ? '' : MW.icon('food')}</div>
+      <div class="card" style="margin-bottom:14px"><strong>Catégories :</strong> ${d.categories.map((c) => `<span class="chip">${c.photo_file_id ? '🖼 ' : ''}${MW.esc(c.name)} <button class="btn-ghost" style="border:0;background:none;cursor:pointer" data-catphoto="${c.id}" aria-label="Photo de la catégorie">📷</button><button class="btn-ghost" style="border:0;background:none;cursor:pointer" data-delcat="${c.id}" aria-label="Supprimer">×</button></span>`).join(' ') || '<span class="muted">aucune</span>'}</div>
+      <div class="grid-2">${d.products.map((p) => `<div class="product-card"><div class="thumb" style="position:relative;${p.photo_url ? `background-image:url('${MW.esc(p.photo_url)}')` : ''}" data-edit="${p.id}">${p.photo_url ? (p.photos.length > 1 ? `<span class="thumb-count">${p.photos.length}</span>` : '') : MW.icon('food')}</div>
         <div class="grow"><strong>${MW.esc(p.name)}</strong> ${Number(p.is_available) ? '<span class="badge green">Disponible</span>' : '<span class="badge red">Rupture</span>'}
           <div class="small muted">${MW.esc(catName(p.category_id))}${p.stock_qty !== null ? ' · stock ' + p.stock_qty : ''} · ${p.options.length} option(s)</div>
           <div><strong>${MW.fcfa(p.promo_price ?? p.price)}</strong>${p.promo_price ? `<span class="price-old">${MW.fcfa(p.price)}</span>` : ''}</div></div>
         <div class="stack" style="flex:none"><button class="btn btn-sm btn-outline" data-edit="${p.id}">Modifier</button><button class="btn btn-sm btn-ghost" data-toggle="${p.id}">${Number(p.is_available) ? 'Rupture' : 'Remettre'}</button></div></div>`).join('') || MW.empty('Ajoutez vos premiers produits.', 'food')}</div></div>`;
     const reload = () => catalog(el);
     el.querySelector('[data-cat]').addEventListener('click', () => MW.formModal('Nouvelle catégorie', [{ name: 'name', label: 'Nom', required: true, maxlength: 80 }, { name: 'sort_order', label: 'Ordre', type: 'number', value: 0 }], async (v) => { await MW.post('/merchant/categories', v); reload(); }));
+    el.querySelectorAll('[data-catphoto]').forEach((b) => b.addEventListener('click', () => {
+      const c = d.categories.find((x) => String(x.id) === b.dataset.catphoto);
+      const md = MW.modal('Photo de la catégorie « ' + c.name + ' »', '<div data-img></div>');
+      MW.singleImage(md.el.querySelector('[data-img]'), { label: 'Image affichée dans le menu', url: c.photo_file_id ? `${MW.base}/fichiers/${c.photo_file_id}` : null, path: `/merchant/categories/${c.id}/photo`, shape: 'wide', onDone: () => { md.close(); reload(); } });
+    }));
     el.querySelectorAll('[data-delcat]').forEach((b) => b.addEventListener('click', async () => { if (await MW.confirm('Supprimer cette catégorie ?', { danger: true })) { await MW.del('/merchant/categories/' + b.dataset.delcat); reload(); } }));
     el.querySelectorAll('[data-toggle]').forEach((b) => b.addEventListener('click', () => MW.busy(b, async () => { const p = d.products.find((x) => String(x.id) === b.dataset.toggle); await MW.post(`/merchant/products/${p.id}/availability`, { is_available: !Number(p.is_available) }); reload(); })));
     const edit = (p = {}) => {
@@ -107,17 +112,18 @@
         { name: 'promo_price', label: 'Prix promotionnel (facultatif)', type: 'number', value: p.promo_price },
         { name: 'stock_qty', label: 'Stock (si suivi du stock activé)', type: 'number', value: p.stock_qty, min: 0 },
         { name: 'is_available', label: 'Disponible', type: 'checkbox', value: p.id ? Number(p.is_available) : true },
-        ...(p.id ? [{ html: `<div class="field"><label>Photo</label><input type="file" accept="image/*" class="input" data-photo></div>
-          <h3>Variantes et suppléments</h3><div class="list">${p.options.map((o) => `<div class="list-item"><div class="grow">${MW.esc(o.group_name)} · ${MW.esc(o.name)} <span class="muted">(${o.kind === 'variant' ? 'variante' : 'supplément'}, ${o.price_delta >= 0 ? '+' : ''}${MW.fcfa(o.price_delta)})</span></div><button type="button" class="btn btn-sm btn-ghost" data-delopt="${o.id}">Supprimer</button></div>`).join('') || '<p class="small muted">Aucune option.</p>'}</div>
+        { html: '<div data-photos></div>' },
+        ...(p.id ? [{ html: `<h3>Variantes et suppléments</h3><div class="list">${p.options.map((o) => `<div class="list-item"><div class="grow">${MW.esc(o.group_name)} · ${MW.esc(o.name)} <span class="muted">(${o.kind === 'variant' ? 'variante' : 'supplément'}, ${o.price_delta >= 0 ? '+' : ''}${MW.fcfa(o.price_delta)})</span></div><button type="button" class="btn btn-sm btn-ghost" data-delopt="${o.id}">Supprimer</button></div>`).join('') || '<p class="small muted">Aucune option.</p>'}</div>
           <button type="button" class="btn btn-sm btn-outline" data-addopt>${MW.icon('plus')} Ajouter une option</button>
           <hr class="divider"><button type="button" class="btn btn-sm btn-danger" data-delprod>Supprimer le produit</button>` }] : [])],
       async (v, form) => {
         v.category_id = v.category_id ? Number(v.category_id) : null;
         const r = p.id ? await MW.put('/merchant/products/' + p.id, v) : await MW.post('/merchant/products', v);
-        const f = form.querySelector('[data-photo]')?.files[0];
-        if (f) { const fd = new FormData(); fd.append('file', f); await MW.api('POST', `/merchant/products/${r.data.id}/photo`, fd); }
+        if (photos.pending.length) await photos.flush(r.data.id);
+        photos.changed = false;
         MW.toast('Produit enregistré.', 'success'); reload();
-      }, { wide: true });
+      }, { wide: true, onClose: () => { if (photos && photos.changed) reload(); } });
+      const photos = new MW.PhotoManager(m.el.querySelector('[data-photos]'), { productId: p.id || null, photos: p.photos || [], max: d.max_photos || 6 });
       m.el.querySelector('[data-addopt]')?.addEventListener('click', () => MW.formModal('Nouvelle option', [
         { name: 'kind', label: 'Type', type: 'select', options: [['extra', 'Supplément (cumulable)'], ['variant', 'Variante (un seul choix par groupe)']] },
         { name: 'group_name', label: 'Groupe (ex. Taille, Accompagnement)', required: true, maxlength: 60 }, { name: 'name', label: 'Nom', required: true, maxlength: 80 },
@@ -193,7 +199,7 @@
     let closures = d.closures.map((c) => ({ closed_on: c.closed_on, reason: c.reason }));
     el.innerHTML = `<div class="container"><div class="page-head"><h1>Paramètres du commerce</h1></div>
       <form class="grid-2" data-form novalidate><div class="card"><h2>Informations</h2>
-        <div class="row" style="margin-bottom:12px"><span class="merchant-card" style="border:0;padding:0"><span class="logo" ${s.logo_url ? `style="background-image:url('${MW.esc(s.logo_url)}')"` : ''}>${s.logo_url ? '' : MW.esc(s.name[0])}</span></span><label class="btn btn-outline btn-sm">Changer le logo<input type="file" accept="image/*" hidden data-logo></label></div>
+        <div class="form-row"><div data-logo></div><div data-cover></div></div>
         ${MW.fields([{ name: 'name', label: 'Nom commercial', required: true, value: s.name, maxlength: 150 }, { name: 'cuisine', label: 'Type de cuisine / activité', value: s.cuisine, maxlength: 80 },
           { name: 'description', label: 'Description', type: 'textarea', value: s.description, maxlength: 500 }, { name: 'phone', label: 'Téléphone', type: 'tel', value: s.phone },
           { name: 'rccm', label: 'RCCM', value: s.rccm, maxlength: 60 }, { name: 'tax_id', label: 'NIF', value: s.tax_id, maxlength: 60 }])}
@@ -227,7 +233,8 @@
     renderHours(); renderClosures();
     el.querySelector('[data-addhour]').addEventListener('click', () => { hours.push({ weekday: 1, open_time: '08:00', close_time: '22:00' }); renderHours(); });
     el.querySelector('[data-addclosure]').addEventListener('click', () => { closures.push({ closed_on: MW.isoDate(new Date()), reason: '' }); renderClosures(); });
-    el.querySelector('[data-logo]').addEventListener('change', async (e) => { const fd = new FormData(); fd.append('file', e.target.files[0]); try { await MW.api('POST', '/merchant/store/logo', fd); settings(el); } catch (err) { MW.error(err); } });
+    MW.singleImage(el.querySelector('[data-logo]'), { label: 'Logo', url: s.logo_url, path: '/merchant/store/logo' });
+    MW.singleImage(el.querySelector('[data-cover]'), { label: 'Photo de couverture (vitrine)', url: s.cover_url, path: '/merchant/store/cover', shape: 'wide' });
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const v = {}; form.querySelectorAll('[name]').forEach((i) => { v[i.name] = i.type === 'checkbox' ? i.checked : (i.type === 'number' ? Number(i.value) : i.value); });

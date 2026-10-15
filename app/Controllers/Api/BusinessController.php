@@ -34,7 +34,7 @@ final class BusinessController extends Controller
                     AND o.status NOT IN ('cancelled','expired','refused','refunded') AND o.created_at >= :mo) month_spend
               FROM business_members m JOIN users u ON u.id = m.user_id WHERE m.business_id = :b ORDER BY m.member_role, u.full_name", ['b' => $b['id'], 'mo' => date('Y-m-01')]);
         return $this->json([
-            'business' => $b,
+            'business' => $b + ['logo_url' => !empty($b['logo_file_id']) ? url('fichiers/' . $b['logo_file_id']) : null],
             'members' => $members,
             'month_spend' => BusinessService::monthSpend((int) $b['id']),
             'outstanding' => max(0, -LedgerService::partnerBalance('business', (int) $b['id'])),
@@ -121,6 +121,18 @@ final class BusinessController extends Controller
         }
         return $this->json($report + ['by_employee' => Database::select("SELECT u.full_name, COUNT(*) orders, SUM(o.total) amount FROM orders o JOIN users u ON u.id = o.customer_id
                 WHERE o.business_id = :b AND o.created_at BETWEEN :f AND :t AND o.status NOT IN ('cancelled','expired','refused') GROUP BY u.id, u.full_name ORDER BY amount DESC", ['b' => $b['id'], 'f' => $from, 't' => $to])]);
+    }
+
+    /** Logo de l'entreprise (propriétaire ou responsable). */
+    public function logo(Request $r): Response
+    {
+        $b = $this->business();
+        if (!in_array($b['member_role'], ['owner', 'manager'], true)) {
+            throw HttpException::forbidden();
+        }
+        $f = \App\Services\UploadService::store($r->file('file'), (int) $this->user()['id'], 'logo', true);
+        Database::update('businesses', ['logo_file_id' => $f['id']], 'id = :id', ['id' => $b['id']]);
+        return $this->json(['logo_url' => url('fichiers/' . $f['id'])]);
     }
 
     public function saveAddress(Request $r): Response

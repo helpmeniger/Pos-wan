@@ -213,7 +213,7 @@
   /** Formulaire en modale : fields = [{name,label,type,options,required,value,hint}] ; onSubmit(values) → Promise */
   MW.formModal = function (title, fields, onSubmit, opts = {}) {
     const m = MW.modal(title, `<form novalidate>${MW.fields(fields, opts.values || {})}
-      <div class="modal-actions"><button type="button" class="btn btn-outline" data-close>Annuler</button><button class="btn btn-primary" type="submit">${MW.esc(opts.ok || 'Enregistrer')}</button></div></form>`, { wide: opts.wide });
+      <div class="modal-actions"><button type="button" class="btn btn-outline" data-close>Annuler</button><button class="btn btn-primary" type="submit">${MW.esc(opts.ok || 'Enregistrer')}</button></div></form>`, { wide: opts.wide, onClose: opts.onClose });
     const form = m.el.querySelector('form');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

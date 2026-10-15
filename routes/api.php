@@ -100,6 +100,7 @@ $router->group('/api', [], function ($router) {
         $router->get('/business/statement', [BusinessController::class, 'statement']);
         $router->post('/business/addresses', [BusinessController::class, 'saveAddress']);
         $router->delete('/business/addresses/{id}', [BusinessController::class, 'deleteAddress']);
+        $router->post('/business/logo', [BusinessController::class, 'logo'], ['throttle:upload,20,3600']);
     });
 
     // --- Chauffeurs et livreurs -------------------------------------------------------
@@ -143,6 +144,11 @@ $router->group('/api', [], function ($router) {
         $router->delete('/products/{id}', [MerchantController::class, 'deleteProduct']);
         $router->post('/products/{id}/availability', [MerchantController::class, 'availability']);
         $router->post('/products/{id}/photo', [MerchantController::class, 'productPhoto'], ['throttle:upload,60,3600']);
+        $router->post('/products/{id}/photos', [MerchantController::class, 'addProductPhoto'], ['throttle:upload,120,3600']);
+        $router->delete('/products/{id}/photos/{pid}', [MerchantController::class, 'deleteProductPhoto']);
+        $router->post('/products/{id}/photos/{pid}/main', [MerchantController::class, 'mainProductPhoto']);
+        $router->post('/store/cover', [MerchantController::class, 'cover'], ['throttle:upload,20,3600']);
+        $router->post('/categories/{id}/photo', [MerchantController::class, 'categoryPhoto'], ['throttle:upload,60,3600']);
         $router->post('/products/{id}/options', [MerchantController::class, 'saveOption']);
         $router->delete('/products/{id}/options/{oid}', [MerchantController::class, 'deleteOption']);
         $router->post('/products/import', [MerchantController::class, 'import'], ['throttle:upload,10,3600']);

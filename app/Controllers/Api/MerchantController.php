@@ -42,7 +42,8 @@ final class MerchantController extends Controller
     {
         $m = $this->merchant();
         return $this->json([
-            'store' => $m + ['open_now' => MerchantHours::isOpenNow($m), 'logo_url' => $m['logo_file_id'] ? url('fichiers/' . $m['logo_file_id']) : null],
+            'store' => $m + ['open_now' => MerchantHours::isOpenNow($m), 'logo_url' => $m['logo_file_id'] ? url('fichiers/' . $m['logo_file_id']) : null,
+                'cover_url' => !empty($m['cover_file_id']) ? url('fichiers/' . $m['cover_file_id']) : null],
             'hours' => Database::select('SELECT id, weekday, open_time, close_time FROM merchant_hours WHERE merchant_id = :m ORDER BY weekday, open_time', ['m' => $m['id']]),
             'closures' => Database::select('SELECT id, closed_on, reason FROM merchant_closures WHERE merchant_id = :m AND closed_on >= CURDATE() ORDER BY closed_on', ['m' => $m['id']]),
             'stats' => Database::first("SELECT SUM(status = 'pending') pending, SUM(status IN ('accepted','preparing','ready')) in_preparation,
@@ -125,8 +126,10 @@ final class MerchantController extends Controller
         foreach ($products as &$p) {
             $p['options'] = $opts[$p['id']] ?? [];
             $p['photo_url'] = $p['photo_file_id'] ? url('fichiers/' . $p['photo_file_id']) : null;
+            $p['photos'] = self::photos((int) $p['id']);
         }
         return $this->json([
+            'max_photos' => \App\Core\Settings::int('catalog.max_photos_per_product', 6),
             'categories' => Database::select('SELECT * FROM product_categories WHERE merchant_id = :m ORDER BY sort_order, name', ['m' => $m['id']]),
             'products' => $products,
         ]);
@@ -170,6 +173,9 @@ final class MerchantController extends Controller
             throw \App\Core\ValidationException::field('promo_price', 'Le prix promotionnel doit être inférieur au prix normal.');
         }
         $v['is_available'] = !array_key_exists('is_available', $v) || $v['is_available'] ? 1 : 0;
+        if (!isset($v['sort_order'])) {
+            unset($v['sort_order']); // colonne NOT NULL : valeur par défaut de la base
+        }
         $id = $r->param('id');
         if ($id) {
             $this->product((int) $id, $m);
@@ -197,12 +203,102 @@ final class MerchantController extends Controller
         return $this->ok('Produit supprimé.');
     }
 
+    /** Ancienne route (une seule photo) : ajoute la photo et la met en avant. */
     public function productPhoto(Request $r): Response
     {
         $m = $this->merchant();
         $p = $this->product($r->intParam('id'), $m);
+        $photo = $this->storeProductPhoto($r, $p);
+        $this->setMainPhoto($p, (int) $photo['id']);
+        return $this->json(['photo_url' => url('fichiers/' . $photo['file_id']), 'photos' => self::photos((int) $p['id'])]);
+    }
+
+    /** Ajoute une photo au produit (plusieurs photos possibles, limite configurable). */
+    public function addProductPhoto(Request $r): Response
+    {
+        $m = $this->merchant();
+        $p = $this->product($r->intParam('id'), $m);
+        $this->storeProductPhoto($r, $p);
+        return $this->json(['photos' => self::photos((int) $p['id'])], 201);
+    }
+
+    public function deleteProductPhoto(Request $r): Response
+    {
+        $m = $this->merchant();
+        $p = $this->product($r->intParam('id'), $m);
+        $ph = Database::first('SELECT * FROM product_photos WHERE id = :id AND product_id = :p', ['id' => $r->intParam('pid'), 'p' => $p['id']]);
+        if (!$ph) {
+            throw HttpException::notFound('Photo introuvable.');
+        }
+        Database::execute('DELETE FROM product_photos WHERE id = :id', ['id' => $ph['id']]);
+        if ((int) $p['photo_file_id'] === (int) $ph['file_id']) {
+            $next = Database::value('SELECT file_id FROM product_photos WHERE product_id = :p ORDER BY sort_order, id LIMIT 1', ['p' => $p['id']]);
+            Database::update('products', ['photo_file_id' => $next ?: null], 'id = :id', ['id' => $p['id']]);
+        }
+        return $this->json(['photos' => self::photos((int) $p['id'])]);
+    }
+
+    public function mainProductPhoto(Request $r): Response
+    {
+        $m = $this->merchant();
+        $p = $this->product($r->intParam('id'), $m);
+        $this->setMainPhoto($p, $r->intParam('pid'));
+        return $this->json(['photos' => self::photos((int) $p['id'])]);
+    }
+
+    private function storeProductPhoto(Request $r, array $p): array
+    {
+        $max = \App\Core\Settings::int('catalog.max_photos_per_product', 6);
+        if ((int) Database::value('SELECT COUNT(*) FROM product_photos WHERE product_id = :p', ['p' => $p['id']]) >= $max) {
+            throw \App\Core\ValidationException::field('file', "Maximum {$max} photos par produit. Supprimez-en une avant d'en ajouter.");
+        }
         $f = UploadService::store($r->file('file'), (int) $this->user()['id'], 'product', true);
-        Database::update('products', ['photo_file_id' => $f['id']], 'id = :id', ['id' => $p['id']]);
+        $sort = (int) Database::value('SELECT COALESCE(MAX(sort_order), -1) + 1 FROM product_photos WHERE product_id = :p', ['p' => $p['id']]);
+        $id = Database::insert('product_photos', ['product_id' => $p['id'], 'file_id' => $f['id'], 'sort_order' => $sort]);
+        if (!$p['photo_file_id']) {
+            Database::update('products', ['photo_file_id' => $f['id']], 'id = :id', ['id' => $p['id']]);
+        }
+        return ['id' => $id, 'file_id' => (int) $f['id']];
+    }
+
+    private function setMainPhoto(array $p, int $photoId): void
+    {
+        $ph = Database::first('SELECT * FROM product_photos WHERE id = :id AND product_id = :p', ['id' => $photoId, 'p' => $p['id']]);
+        if (!$ph) {
+            throw HttpException::notFound('Photo introuvable.');
+        }
+        Database::transaction(function () use ($p, $ph) {
+            Database::execute('UPDATE product_photos SET sort_order = sort_order + 1 WHERE product_id = :p', ['p' => $p['id']]);
+            Database::execute('UPDATE product_photos SET sort_order = 0 WHERE id = :id', ['id' => $ph['id']]);
+            Database::update('products', ['photo_file_id' => $ph['file_id']], 'id = :id', ['id' => $p['id']]);
+        });
+    }
+
+    /** Photos d'un produit (la principale en premier). */
+    public static function photos(int $productId): array
+    {
+        return array_map(static fn ($x) => ['id' => (int) $x['id'], 'url' => url('fichiers/' . $x['file_id'])],
+            Database::select('SELECT id, file_id FROM product_photos WHERE product_id = :p ORDER BY sort_order, id', ['p' => $productId]));
+    }
+
+    /** Photo de couverture (bannière) du commerce. */
+    public function cover(Request $r): Response
+    {
+        $m = $this->merchant();
+        $f = UploadService::store($r->file('file'), (int) $this->user()['id'], 'logo', true);
+        Database::update('merchants', ['cover_file_id' => $f['id']], 'id = :id', ['id' => $m['id']]);
+        return $this->json(['cover_url' => url('fichiers/' . $f['id'])]);
+    }
+
+    public function categoryPhoto(Request $r): Response
+    {
+        $m = $this->merchant();
+        $c = Database::first('SELECT * FROM product_categories WHERE id = :id AND merchant_id = :m', ['id' => $r->intParam('id'), 'm' => $m['id']]);
+        if (!$c) {
+            throw HttpException::notFound('Catégorie introuvable.');
+        }
+        $f = UploadService::store($r->file('file'), (int) $this->user()['id'], 'product', true);
+        Database::update('product_categories', ['photo_file_id' => $f['id']], 'id = :id', ['id' => $c['id']]);
         return $this->json(['photo_url' => url('fichiers/' . $f['id'])]);
     }
 

@@ -7,6 +7,100 @@
   const MW = window.MW;
   MW.views = MW.views || {};
 
+
+  // ------------------------------------------------------------------ Photos (catalogue, logos)
+  /**
+   * Réduit une photo sur le téléphone avant l'envoi (max. 1600 px, JPEG ~82 %) :
+   * envoi plus rapide et moins de données mobiles consommées. Le serveur revérifie et ré-encode.
+   */
+  MW.compressImage = async function (file, maxPx = 1600, quality = 0.82) {
+    if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+    try {
+      const bmp = await (window.createImageBitmap ? createImageBitmap(file) : new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); }));
+      const ratio = Math.min(1, maxPx / Math.max(bmp.width, bmp.height));
+      if (ratio === 1 && file.size < 400 * 1024) return file;
+      const c = document.createElement('canvas'); c.width = Math.round(bmp.width * ratio); c.height = Math.round(bmp.height * ratio);
+      const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(bmp, 0, 0, c.width, c.height);
+      const blob = await new Promise((res) => c.toBlob(res, 'image/jpeg', quality));
+      return blob && blob.size < file.size ? new File([blob], (file.name || 'photo').replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }) : file;
+    } catch (e) { return file; }
+  };
+  MW.uploadImage = async function (path, file) {
+    const fd = new FormData(); fd.append('file', await MW.compressImage(file));
+    return MW.api('POST', path, fd);
+  };
+  /** Boutons « Appareil photo » et « Galerie » ; onFiles(FileList) */
+  MW.photoButtons = (multiple = true) => `<div class="photo-buttons">
+      <label class="btn btn-outline btn-sm">${MW.icon('plus')} Prendre une photo<input type="file" accept="image/*" capture="environment" hidden data-camera></label>
+      <label class="btn btn-outline btn-sm">Choisir dans la galerie<input type="file" accept="image/jpeg,image/png,image/webp" ${multiple ? 'multiple' : ''} hidden data-gallery></label></div>`;
+  const bindPhotoInputs = (root, onFiles) => root.querySelectorAll('[data-camera],[data-gallery]').forEach((i) => i.addEventListener('change', () => { if (i.files.length) onFiles([...i.files]); i.value = ''; }));
+
+  /**
+   * Gestion des photos d'un produit : ajout (appareil photo ou galerie), aperçu,
+   * choix de la photo principale, suppression. Si le produit n'existe pas encore,
+   * les photos sont gardées en attente et envoyées après l'enregistrement (flush).
+   */
+  MW.PhotoManager = class {
+    constructor(container, { productId = null, photos = [], max = 6 }) {
+      this.el = container; this.productId = productId; this.photos = photos; this.max = max; this.pending = [];
+      this.render();
+    }
+    render() {
+      const items = this.photos.map((p, i) => `<div class="photo-tile"><img src="${MW.esc(p.url)}" alt="" loading="lazy">${i === 0 ? '<span class="photo-main">Principale</span>' : ''}
+          <div class="photo-actions">${i ? `<button type="button" class="btn btn-sm btn-ghost" data-main="${p.id}" title="Mettre en principale">★</button>` : ''}<button type="button" class="btn btn-sm btn-ghost" data-del="${p.id}" aria-label="Supprimer la photo">${MW.icon('x')}</button></div></div>`)
+        .concat(this.pending.map((f, i) => `<div class="photo-tile pending"><img src="${f.preview}" alt=""><span class="photo-main">${this.productId ? 'Envoi…' : 'À envoyer'}</span>
+          <div class="photo-actions"><button type="button" class="btn btn-sm btn-ghost" data-unpend="${i}" aria-label="Retirer">${MW.icon('x')}</button></div></div>`));
+      const count = this.photos.length + this.pending.length;
+      this.el.innerHTML = `<div class="field"><span class="label">Photos du produit <span class="muted small">(${count}/${this.max})</span></span>
+        <div class="photo-grid">${items.join('') || '<p class="small muted" style="margin:0">Aucune photo. Les produits avec photo se vendent mieux.</p>'}</div>
+        ${count < this.max ? MW.photoButtons(true) : '<p class="small muted">Nombre maximal de photos atteint.</p>'}
+        <div class="hint">JPEG, PNG ou WebP. Les photos sont réduites automatiquement avant l'envoi.</div></div>`;
+      bindPhotoInputs(this.el, (files) => this.add(files));
+      this.el.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => MW.busy(b, async () => { this.photos = (await MW.del(`/merchant/products/${this.productId}/photos/${b.dataset.del}`)).data.photos; this.render(); this.changed = true; })));
+      this.el.querySelectorAll('[data-main]').forEach((b) => b.addEventListener('click', () => MW.busy(b, async () => { this.photos = (await MW.post(`/merchant/products/${this.productId}/photos/${b.dataset.main}/main`)).data.photos; this.render(); this.changed = true; })));
+      this.el.querySelectorAll('[data-unpend]').forEach((b) => b.addEventListener('click', () => { this.pending.splice(Number(b.dataset.unpend), 1); this.render(); }));
+    }
+    async add(files) {
+      const room = this.max - this.photos.length - this.pending.length;
+      files.slice(0, room).forEach((f) => this.pending.push(Object.assign(f, { preview: URL.createObjectURL(f) })));
+      if (files.length > room) MW.toast(`Maximum ${this.max} photos par produit.`, 'warn');
+      this.render();
+      if (this.productId) await this.flush(this.productId);
+    }
+    /** Envoie les photos en attente (après création du produit). */
+    async flush(productId) {
+      this.productId = productId;
+      while (this.pending.length) {
+        const f = this.pending[0];
+        try { this.photos = (await MW.uploadImage(`/merchant/products/${productId}/photos`, f)).data.photos; this.changed = true; } catch (e) { MW.error(e); this.pending.shift(); this.render(); return false; }
+        this.pending.shift(); this.render();
+      }
+      return true;
+    }
+  };
+
+  /** Une seule image (logo, couverture, photo de catégorie) : aperçu + appareil photo / galerie. */
+  MW.singleImage = function (container, { label, url, path, onDone, shape = 'square' }) {
+    const render = (u) => {
+      container.innerHTML = `<div class="field"><span class="label">${MW.esc(label)}</span><div class="single-image ${shape}">
+        ${u ? `<img src="${MW.esc(u)}" alt="">` : `<span class="muted small">Aucune image</span>`}</div>${MW.photoButtons(false)}</div>`;
+      bindPhotoInputs(container, async (files) => {
+        container.querySelector('.single-image').classList.add('loading');
+        try { const r = await MW.uploadImage(path, files[0]); const nu = Object.values(r.data).find((x) => typeof x === 'string'); render(nu); MW.toast('Image enregistrée.', 'success'); onDone && onDone(nu); }
+        catch (e) { MW.error(e); render(u); }
+      });
+    };
+    render(url);
+  };
+
+  /** Galerie de photos défilable (fiche produit côté client). */
+  MW.gallery = (photos, alt = '') => photos.length ? `<div class="gallery" tabindex="0">${photos.map((u) => `<img src="${MW.esc(u)}" alt="${MW.esc(alt)}" loading="lazy">`).join('')}</div>
+    ${photos.length > 1 ? `<div class="gallery-dots">${photos.map((_, i) => `<span class="${i ? '' : 'on'}"></span>`).join('')}</div>` : ''}` : '';
+  MW.bindGallery = (root) => root.querySelectorAll('.gallery').forEach((g) => {
+    const dots = g.nextElementSibling && g.nextElementSibling.classList.contains('gallery-dots') ? [...g.nextElementSibling.children] : [];
+    g.addEventListener('scroll', () => { const i = Math.round(g.scrollLeft / g.clientWidth); dots.forEach((d, k) => d.classList.toggle('on', k === i)); }, { passive: true });
+  });
+
   // ------------------------------------------------------------------ Profil
   MW.views.profile = async function (el) {
     const d = await MW.get('/auth/me');

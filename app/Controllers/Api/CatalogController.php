@@ -31,7 +31,7 @@ final class CatalogController extends Controller
             $where[] = 'm.cuisine = :c';
             $p['c'] = $v['cuisine'];
         }
-        $rows = Database::select('SELECT m.id, m.name, m.kind, m.cuisine, m.description, m.address_text, m.lat, m.lng, m.logo_file_id, m.prep_time_min, m.min_order,
+        $rows = Database::select('SELECT m.id, m.name, m.kind, m.cuisine, m.description, m.address_text, m.lat, m.lng, m.logo_file_id, m.cover_file_id, m.prep_time_min, m.min_order,
                 m.delivery_radius_km, m.rating_avg, m.rating_count, m.is_open, m.status,
                 (SELECT MIN(COALESCE(promo_price, price)) FROM products pr WHERE pr.merchant_id = m.id AND pr.deleted_at IS NULL AND pr.is_available = 1) min_price,
                 (SELECT COUNT(*) FROM products pr WHERE pr.merchant_id = m.id AND pr.deleted_at IS NULL AND pr.promo_price IS NOT NULL) promo_count
@@ -42,6 +42,7 @@ final class CatalogController extends Controller
                 'id' => (int) $m['id'], 'name' => $m['name'], 'kind' => $m['kind'], 'cuisine' => $m['cuisine'], 'description' => $m['description'],
                 'address' => $m['address_text'], 'lat' => (float) $m['lat'], 'lng' => (float) $m['lng'],
                 'logo_url' => $m['logo_file_id'] ? url('fichiers/' . $m['logo_file_id']) : null,
+                'cover_url' => $m['cover_file_id'] ? url('fichiers/' . $m['cover_file_id']) : null,
                 'prep_time_min' => (int) $m['prep_time_min'], 'min_order' => (int) $m['min_order'],
                 'rating' => (float) $m['rating_avg'], 'rating_count' => (int) $m['rating_count'],
                 'open' => MerchantHours::isOpenNow($m), 'min_price' => $m['min_price'] !== null ? (int) $m['min_price'] : null, 'has_promo' => (int) $m['promo_count'] > 0,
@@ -70,7 +71,8 @@ final class CatalogController extends Controller
         if (!$m) {
             throw HttpException::notFound('Commerce introuvable.');
         }
-        $categories = Database::select('SELECT id, name FROM product_categories WHERE merchant_id = :m ORDER BY sort_order, name', ['m' => $m['id']]);
+        $categories = array_map(static fn ($c) => ['id' => (int) $c['id'], 'name' => $c['name'], 'photo_url' => $c['photo_file_id'] ? url('fichiers/' . $c['photo_file_id']) : null],
+            Database::select('SELECT id, name, photo_file_id FROM product_categories WHERE merchant_id = :m ORDER BY sort_order, name', ['m' => $m['id']]));
         $products = Database::select('SELECT id, category_id, name, description, price, promo_price, photo_file_id, is_available, stock_qty FROM products
                                        WHERE merchant_id = :m AND deleted_at IS NULL ORDER BY sort_order, name', ['m' => $m['id']]);
         $options = [];
@@ -80,11 +82,19 @@ final class CatalogController extends Controller
                 $options[$o['product_id']][] = ['id' => (int) $o['id'], 'kind' => $o['kind'], 'group' => $o['group_name'], 'name' => $o['name'], 'price_delta' => (int) $o['price_delta']];
             }
         }
+        $photos = [];
+        if ($products) {
+            [$in, $pp] = Database::in(array_column($products, 'id'), 'ph');
+            foreach (Database::select("SELECT product_id, file_id FROM product_photos WHERE product_id IN ($in) ORDER BY sort_order, id", $pp) as $ph) {
+                $photos[$ph['product_id']][] = url('fichiers/' . $ph['file_id']);
+            }
+        }
         $hours = Database::select('SELECT weekday, open_time, close_time FROM merchant_hours WHERE merchant_id = :m ORDER BY weekday, open_time', ['m' => $m['id']]);
         return $this->json([
             'id' => (int) $m['id'], 'name' => $m['name'], 'kind' => $m['kind'], 'cuisine' => $m['cuisine'], 'description' => $m['description'],
             'address' => $m['address_text'], 'lat' => (float) $m['lat'], 'lng' => (float) $m['lng'],
             'logo_url' => $m['logo_file_id'] ? url('fichiers/' . $m['logo_file_id']) : null,
+            'cover_url' => $m['cover_file_id'] ? url('fichiers/' . $m['cover_file_id']) : null,
             'open' => MerchantHours::isOpenNow($m), 'prep_time_min' => (int) $m['prep_time_min'], 'min_order' => (int) $m['min_order'],
             'delivery_radius_km' => (float) $m['delivery_radius_km'], 'rating' => (float) $m['rating_avg'], 'rating_count' => (int) $m['rating_count'],
             'hours' => $hours,
@@ -93,6 +103,7 @@ final class CatalogController extends Controller
                 'id' => (int) $p['id'], 'category_id' => $p['category_id'] ? (int) $p['category_id'] : null, 'name' => $p['name'], 'description' => $p['description'],
                 'price' => (int) $p['price'], 'promo_price' => $p['promo_price'] !== null ? (int) $p['promo_price'] : null,
                 'photo_url' => $p['photo_file_id'] ? url('fichiers/' . $p['photo_file_id']) : null,
+                'photos' => $photos[$p['id']] ?? ($p['photo_file_id'] ? [url('fichiers/' . $p['photo_file_id'])] : []),
                 'available' => (bool) $p['is_available'] && ((int) $m['track_stock'] === 0 || $p['stock_qty'] === null || (int) $p['stock_qty'] > 0),
                 'options' => $options[$p['id']] ?? [],
             ], $products),

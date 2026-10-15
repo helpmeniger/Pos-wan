@@ -120,6 +120,51 @@ try {
   await driver.waitForSelector('[data-act="in_progress"]', { timeout: 15000 });
   check(true, 'Bouton « Je suis arrivé » utilisable depuis l\'écran de navigation');
 
+  // --- Catalogue : le restaurant ajoute un produit avec plusieurs photos (téléphone)
+  const IMG = process.env.TEST_IMAGES || '/tmp/testimg';
+  const merchCtx = await phone();
+  const merch = await merchCtx.newPage(); watch(merch, 'restaurant');
+  await login(merch, 'restaurant@marwa.demo');
+  await merch.goto(BASE + '/commerce#/catalogue', { waitUntil: 'domcontentloaded' });
+  await merch.click('[data-prod]');
+  await merch.fill('.modal [name="name"]', 'Brochettes test photo');
+  await merch.fill('.modal [name="price"]', '2500');
+  await merch.setInputFiles('.modal [data-gallery]', [IMG + '/plat1.jpg', IMG + '/plat2.jpg']);
+  await merch.waitForSelector('.modal .photo-tile.pending >> nth=1');
+  await shot(merch, '5-produit-photos');
+  await merch.click('.modal button[type=submit]');
+  await merch.waitForSelector('.product-card:has-text("Brochettes test photo") .thumb-count', { timeout: 20000 });
+  check(true, 'Produit créé avec 2 photos (compressées sur le téléphone puis envoyées)');
+  // Changer la photo principale puis ajouter une photo de couverture
+  await merch.click('.product-card:has-text("Brochettes test photo") [data-edit] >> nth=0');
+  await merch.waitForSelector('.modal .photo-tile [data-main]');
+  await merch.click('.modal .photo-tile [data-main]');
+  await merch.waitForResponse((r) => r.url().includes('/main') && r.status() === 200);
+  check(true, 'Photo principale modifiée');
+  await merch.click('.modal [data-close]');
+  await merch.goto(BASE + '/commerce#/parametres', { waitUntil: 'domcontentloaded' });
+  await merch.waitForSelector('[data-cover] [data-gallery]', { state: 'attached' });
+  await merch.setInputFiles('[data-cover] [data-gallery]', IMG + '/couverture.jpg');
+  await merch.waitForSelector('[data-cover] .single-image img', { timeout: 15000 });
+  check(true, 'Photo de couverture du restaurant enregistrée');
+
+  // --- Le client voit les photos
+  await client.goto(BASE + '/client#/repas', { waitUntil: 'domcontentloaded' });
+  await client.click('.merchant-card >> nth=0');
+  await client.waitForSelector('.store-cover', { timeout: 15000 });
+  const card = client.locator('.product-card:has-text("Brochettes test photo")');
+  await card.locator('.thumb').click();
+  await client.waitForSelector('.modal .gallery img >> nth=1');
+  const n = await client.locator('.modal .gallery img').count();
+  const ok = await client.evaluate(() => [...document.querySelectorAll('.modal .gallery img')].every((i) => i.complete && i.naturalWidth > 0));
+  check(n === 2 && ok, `Le client voit la vitrine et la galerie du produit (${n} photos chargées)`);
+  await shot(client, '6-galerie-client');
+  const w = await client.evaluate(() => document.querySelector('.modal .gallery img').naturalWidth);
+  check(w <= 1600, `Photo redimensionnée (${w} px de large au lieu de 3000)`);
+  await client.click('.modal [data-sheetadd]');
+  await client.waitForSelector('[data-cartbar]:not([hidden])');
+  check(true, 'Ajout au panier depuis la fiche produit');
+
   if (errors.length) throw new Error('Erreurs JavaScript :\n' + errors.join('\n'));
   log('TESTS DES FONCTIONNALITÉS RÉUSSIS');
   await browser.close();

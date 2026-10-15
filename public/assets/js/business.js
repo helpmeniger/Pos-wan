@@ -18,10 +18,13 @@
         <div class="stat"><p class="label">Collaborateurs</p><div class="value">${d.members.length}</div></div>
         <div class="stat"><p class="label">Adresses</p><div class="value">${d.addresses.length}</div></div></div>
       ${!Number(b.postpaid_enabled) ? '<div class="alert alert-info" style="margin-top:14px">Le paiement sur compte entreprise (facturation périodique) est activé par MARWA après validation de votre dossier. En attendant, vos collaborateurs peuvent payer en espèces ou par Mobile Money.</div>' : ''}
+      <div class="card" style="margin-top:14px"><div data-logo></div></div>
       <div class="card" style="margin-top:14px"><h2>Profil de facturation</h2><form data-form novalidate class="form-row">${MW.fields([
         { name: 'name', label: 'Raison sociale', required: true, value: b.name }, { name: 'tax_id', label: 'NIF', value: b.tax_id }, { name: 'rccm', label: 'RCCM', value: b.rccm },
         { name: 'billing_email', label: 'E-mail de facturation', type: 'email', value: b.billing_email }, { name: 'billing_address', label: 'Adresse de facturation', value: b.billing_address },
         { name: 'monthly_budget', label: 'Budget mensuel (FCFA)', type: 'number', value: b.monthly_budget }])}<div><button class="btn btn-primary" ${b.member_role === 'owner' ? '' : 'disabled'}>Enregistrer</button></div></form></div></div>`;
+    if (['owner', 'manager'].includes(b.member_role)) MW.singleImage(el.querySelector('[data-logo]'), { label: 'Logo de l\'entreprise', url: b.logo_url, path: '/business/logo' });
+    else el.querySelector('[data-logo]').closest('.card').remove();
     const f = el.querySelector('[data-form]');
     f.addEventListener('submit', async (e) => { e.preventDefault(); try { await MW.put('/business', MW.values(f)); MW.toast('Enregistré.', 'success'); } catch (err) { MW.showErrors(f, err); } });
   }

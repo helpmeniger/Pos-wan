@@ -229,7 +229,7 @@
       const q = new URLSearchParams(Object.entries(v).filter(([, x]) => x !== null && x !== false && x !== '').map(([k, x]) => [k, x === true ? '1' : x]));
       if (pos) { q.set('lat', pos.lat); q.set('lng', pos.lng); }
       const list = await MW.get('/merchants?' + q, { cache: true });
-      el.querySelector('[data-list]').innerHTML = list.length ? list.map((m) => `<a class="merchant-card" href="#/repas/${m.id}">
+      el.querySelector('[data-list]').innerHTML = list.length ? list.map((m) => `<a class="merchant-card ${m.cover_url ? 'has-cover' : ''}" href="#/repas/${m.id}" ${m.cover_url ? `style="--cover:url('${MW.esc(m.cover_url)}')"` : ''}>
         <span class="logo" ${m.logo_url ? `style="background-image:url('${MW.esc(m.logo_url)}')"` : ''}>${m.logo_url ? '' : MW.esc(m.name[0])}</span>
         <span class="grow" style="min-width:0"><strong>${MW.esc(m.name)}</strong><br><span class="small muted">${MW.esc(m.cuisine || MW.L.service[m.kind === 'shop' ? 'shop' : 'food'])}${m.distance_m !== undefined ? ' · ' + MW.dist(m.distance_m) : ''} · ${m.prep_time_min} min</span><br>
           ${m.open ? '<span class="badge green">Ouvert</span>' : '<span class="badge gray">Fermé</span>'} ${m.rating_count ? `<span class="badge">★ ${m.rating.toFixed(1)}</span>` : ''} ${m.has_promo ? '<span class="badge amber">Promo</span>' : ''} ${m.delivers_here === false ? '<span class="badge red">Hors zone</span>' : ''}</span>
@@ -250,13 +250,14 @@
     m.products.forEach((p) => { (byCat[p.category_id || 0] = byCat[p.category_id || 0] || []).push(p); });
     const cats = [...m.categories, { id: 0, name: 'Autres' }].filter((c) => byCat[c.id]);
     el.innerHTML = `<div class="container"><a href="#/repas">← Restaurants</a>
-      <div class="card" style="margin:10px 0 14px"><div class="row"><span class="logo merchant-card" style="padding:0;border:0"><span class="logo" ${m.logo_url ? `style="background-image:url('${MW.esc(m.logo_url)}')"` : ''}>${m.logo_url ? '' : MW.esc(m.name[0])}</span></span>
+      ${m.cover_url ? `<div class="store-cover" style="background-image:url('${MW.esc(m.cover_url)}')"></div>` : ''}
+      <div class="card" style="margin:10px 0 14px;position:relative"><div class="row"><span class="logo merchant-card" style="padding:0;border:0"><span class="logo" ${m.logo_url ? `style="background-image:url('${MW.esc(m.logo_url)}')"` : ''}>${m.logo_url ? '' : MW.esc(m.name[0])}</span></span>
         <div class="grow"><h1 style="margin:0">${MW.esc(m.name)}</h1><div class="muted small">${MW.esc(m.cuisine || '')} · ${MW.esc(m.address)} · préparation ~${m.prep_time_min} min${m.min_order ? ' · minimum ' + MW.fcfa(m.min_order) : ''}</div>
         <div style="margin-top:6px">${m.open ? '<span class="badge green">Ouvert</span>' : '<span class="badge gray">Fermé actuellement</span>'} ${m.rating_count ? `<span class="badge">★ ${m.rating.toFixed(1)} (${m.rating_count})</span>` : ''}</div></div></div>
         ${m.description ? `<p class="small muted" style="margin:10px 0 0">${MW.esc(m.description)}</p>` : ''}</div>
-      ${cats.map((c) => `<h2>${MW.esc(c.name)}</h2><div class="grid-2" style="margin-bottom:18px">${byCat[c.id].map((p) => `<div class="product-card">
-        <div class="thumb" ${p.photo_url ? `style="background-image:url('${MW.esc(p.photo_url)}')"` : ''}>${p.photo_url ? '' : MW.icon('food')}</div>
-        <div class="grow"><strong>${MW.esc(p.name)}</strong><div class="small muted">${MW.esc(p.description || '')}</div>
+      ${cats.map((c) => `<h2 class="cat-title">${c.photo_url ? `<img src="${MW.esc(c.photo_url)}" alt="" loading="lazy">` : ''}${MW.esc(c.name)}</h2><div class="grid-2" style="margin-bottom:18px">${byCat[c.id].map((p) => `<div class="product-card">
+        <div class="thumb" style="position:relative;${p.photo_url ? `background-image:url('${MW.esc(p.photo_url)}')` : ''}" data-view="${p.id}" role="button" aria-label="Voir ${MW.esc(p.name)}">${p.photo_url ? ((p.photos || []).length > 1 ? `<span class="thumb-count">${p.photos.length}</span>` : '') : MW.icon('food')}</div>
+        <div class="grow" data-view="${p.id}" style="cursor:pointer"><strong>${MW.esc(p.name)}</strong><div class="small muted">${MW.esc(p.description || '')}</div>
           <div style="margin-top:4px"><strong>${MW.fcfa(p.promo_price ?? p.price)}</strong>${p.promo_price ? `<span class="price-old">${MW.fcfa(p.price)}</span>` : ''}</div></div>
         ${p.available && m.open ? `<button class="btn btn-primary btn-sm" data-add="${p.id}" aria-label="Ajouter">${MW.icon('plus')}</button>` : '<span class="badge gray">Indisponible</span>'}</div>`).join('')}</div>`).join('')}
       ${m.reviews.length ? `<div class="card"><h2>Avis</h2>${m.reviews.map((r) => `<div class="list-item"><span class="badge amber">★ ${r.score}</span><div class="grow">${MW.esc(r.comment)}<div class="meta">${MW.esc(r.date)}</div></div></div>`).join('')}</div>` : ''}
@@ -269,6 +270,16 @@
       bar.hidden = n === 0;
       bar.innerHTML = `<a class="btn btn-accent btn-lg btn-block" href="#/panier/${m.id}">Voir le panier (${n}) · ${MW.fcfa(total)}</a>`;
     };
+    // Fiche produit : photos en grand (défilement), description, ajout au panier
+    el.querySelectorAll('[data-view]').forEach((t) => t.addEventListener('click', () => {
+      const p = m.products.find((x) => String(x.id) === t.dataset.view);
+      const md = MW.modal(p.name, `${MW.gallery(p.photos || [], p.name)}
+        ${p.description ? `<p>${MW.esc(p.description)}</p>` : ''}
+        <p style="font-size:1.2rem"><strong>${MW.fcfa(p.promo_price ?? p.price)}</strong>${p.promo_price ? `<span class="price-old">${MW.fcfa(p.price)}</span>` : ''}</p>
+        ${p.available && m.open ? `<button class="btn btn-primary btn-block btn-lg" data-sheetadd>${MW.icon('plus')} Ajouter au panier</button>` : '<span class="badge gray">Indisponible</span>'}`);
+      MW.bindGallery(md.el);
+      md.el.querySelector('[data-sheetadd]')?.addEventListener('click', () => { md.close(); el.querySelector(`[data-add="${p.id}"]`)?.click(); });
+    }));
     el.querySelectorAll('[data-add]').forEach((b) => b.addEventListener('click', () => {
       const p = m.products.find((x) => String(x.id) === b.dataset.add);
       const add = (optIds) => {
