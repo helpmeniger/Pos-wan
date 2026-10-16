@@ -8,7 +8,7 @@ use App\Core\Audit;
 use App\Core\BusinessException;
 
 /**
- * Mise à jour de POS Wan depuis le navigateur : l'administrateur sélectionne le dossier
+ * Mise à jour de POS Marwa depuis le navigateur : l'administrateur sélectionne le dossier
  * complet de la nouvelle version ; les fichiers sont envoyés par lots dans un dossier de
  * préparation (storage/tmp/update_<jeton>), contrôlés, puis copiés sur l'installation après
  * une double sauvegarde (base de données + code actuel). La base est ensuite mise à jour
@@ -20,9 +20,9 @@ use App\Core\BusinessException;
 final class UpdateService
 {
     /** Dossiers de premier niveau acceptés dans une nouvelle version. */
-    private const ROOT_DIRS = ['app', 'bin', 'config', 'database', 'docs', 'lang', 'public', 'routes', 'addons', 'tests'];
+    private const ROOT_DIRS = ['app', 'bin', 'config', 'database', 'docs', 'lang', 'public', 'routes', 'addons', 'tests', 'windows'];
     /** Fichiers de premier niveau acceptés. */
-    private const ROOT_FILES = '/^(\.htaccess|\.env\.example|\.gitignore|release\.json|[A-Za-z0-9_-]+\.(md|txt))$/';
+    private const ROOT_FILES = '/^(\.htaccess|\.env\.example|\.gitignore|\.gitattributes|release\.json|demarrer-pos-marwa\.bat|[A-Za-z0-9_-]+\.(md|txt))$/';
     /** Jamais remplacés (données et réglages de l'installation). */
     private const EXCLUDED = ['storage/', 'public/uploads/', 'public/assets/addons/', '.git/'];
     private const MAX_FILE = 20 * 1024 * 1024;
@@ -117,7 +117,7 @@ final class UpdateService
         $errors = $warnings = [];
         foreach (['app/bootstrap.php', 'public/index.php', 'config/app.php', 'database/schema.sql', 'routes/web.php'] as $must) {
             if (!is_file($dir . '/' . $must)) {
-                $errors[] = 'Fichier essentiel absent : ' . $must . ' (sélectionnez le dossier complet de POS Wan, celui qui contient app, public, config…).';
+                $errors[] = 'Fichier essentiel absent : ' . $must . ' (sélectionnez le dossier complet de POS Marwa, celui qui contient app, public, config…).';
             }
         }
         $current = (string) config('app.version');
@@ -315,7 +315,7 @@ final class UpdateService
                 $files[$rel] = hash_file('sha256', $root . '/' . $rel);
             }
         }
-        return ['product' => 'POS Wan', 'version' => self::versionOf($root . '/config/app.php'), 'date' => date('c'), 'files' => $files];
+        return ['product' => 'POS Marwa', 'version' => self::versionOf($root . '/config/app.php'), 'date' => date('c'), 'files' => $files];
     }
 
     private static function rrmdir(string $dir): void

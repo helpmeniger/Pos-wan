@@ -1,0 +1,9 @@
+<?php use Addons\Pressing\PressingService as PS; $tot = array_sum(array_map(fn($o) => $o['status'] !== 'cancelled' ? (float) $o['total'] : 0, $orders)); $due = array_sum(array_map(fn($o) => $o['status'] !== 'cancelled' ? max(0, (float) $o['total'] - (float) $o['paid']) : 0, $orders)); ?>
+<form class="d-flex gap-2 mb-3" method="get" style="max-width:420px"><input name="phone" value="<?= e($phone) ?>" class="form-control" placeholder="Téléphone du client" inputmode="tel"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></form>
+<?php if ($orders): ?>
+<div class="alert alert-light border"><b><?= e($orders[0]['customer_name']) ?></b> · <?= e($orders[0]['phone']) ?> · <?= count($orders) ?> dépôt(s) · total <?= money($tot) ?> · reste dû <b class="<?= $due > 0 ? 'text-danger' : '' ?>"><?= money($due) ?></b></div>
+<?php endif; ?>
+<div class="card"><div class="table-responsive"><table class="table table-sm align-middle mb-0 small"><thead><tr><th>N°</th><th>Dépôt</th><th>Vêtements</th><th>Livraison prévue</th><th class="num">Total</th><th class="num">Payé</th><th>Statut</th><th>Retiré le</th></tr></thead><tbody>
+<?php foreach ($orders as $o): ?><tr><td><a href="<?= e(url('/pressing/' . $o['id'])) ?>"><?= e($o['number']) ?></a></td><td><?= e(fdate($o['created_at'])) ?></td><td><?= e($o['clothes'] ?? '') ?></td><td><?= e(fdate($o['due_date'], false)) ?></td><td class="num"><?= money($o['total']) ?></td><td class="num"><?= money($o['paid']) ?></td><td><?= e(PS::SHORT[$o['status']]) ?></td><td><?= e(fdate($o['delivered_at'])) ?></td></tr><?php endforeach; ?>
+<?php if (!$orders): ?><tr><td colspan="8" class="text-center text-secondary py-4"><?= $phone === '' ? 'Saisissez un numéro de téléphone.' : 'Aucun dépôt pour ce numéro.' ?></td></tr><?php endif; ?>
+</tbody></table></div></div>

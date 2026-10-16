@@ -1,4 +1,4 @@
-# Sécurité de POS Wan
+# Sécurité de POS Marwa
 
 Ce document décrit les protections réellement implémentées, la façon dont elles ont été
 vérifiées, et les **risques résiduels**. Aucun logiciel n'est inviolable : la sécurité
@@ -129,6 +129,31 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
   l'usage sans clé, pas un informaticien qui modifie le code. Pour aller plus loin : encodage
   du code PHP (ionCube, SourceGuardian — outils payants) et recours au contrat (article 4).
 
+### Accès mobile, appareils et caméra (v2.0)
+- **QR code** :
+  - il contient uniquement l'adresse de la page `/m` ;
+  - il ne donne **aucun droit** : l'identifiant et le mot de passe restent exigés ;
+  - la page `/health` n'indique que l'état du serveur et de la base, sans aucune donnée.
+- **Appareils** :
+  - chaque navigateur reçoit un identifiant aléatoire (cookie `HttpOnly`), enregistré à la
+    connexion (seule son empreinte SHA-256 est gardée en base) ;
+  - l'administrateur peut exiger l'approbation des nouveaux appareils du réseau (le poste
+    serveur et les administrateurs restent toujours autorisés) ;
+  - il peut aussi **révoquer** un appareil : la session est coupée à la requête suivante et
+    la connexion est refusée (vérifié par test).
+- **Réseau** :
+  - n'ouvrir Apache qu'aux réseaux privés (`Require ip 192.168 10 172.16.0.0/12`) et le
+    pare-feu qu'au profil « Privé » ;
+  - ne **jamais** ouvrir MySQL (3306) au réseau.
+- **Caméra** :
+  - autorisée pour les pages de POS Marwa seulement (`Permissions-Policy: camera=(self)`),
+    toujours refusée à toute autre origine ;
+  - les images sont décodées dans le navigateur et ne sont pas envoyées au serveur.
+- **Limites** :
+  - en HTTP, les échanges du Wi-Fi ne sont pas chiffrés (voir HTTPS dans
+    `docs/DEMARRAGE_WINDOWS.md`) ;
+  - l'identifiant d'appareil peut être copié par quelqu'un qui a accès au navigateur.
+
 ### Intégrité métier
 - **Transactions SQL** pour ventes, paiements, stocks, retours, réceptions, inventaires, caisse.
 - Verrous de ligne (`SELECT … FOR UPDATE`) sur stocks, lots, sessions de caisse, comptes
@@ -179,7 +204,7 @@ Ces tests ont été faits sur l'application locale uniquement (aucun test sur un
 |---|---|
 | **HTTP en clair** sur le réseau local : mots de passe interceptables sur un Wi-Fi partagé | Activer HTTPS (voir INSTALLATION § 8) et `SESSION_SECURE=true` ; Wi-Fi WPA2/WPA3 dédié à la boutique. |
 | Accès physique au poste (vol, accès au disque) : base, sauvegardes et `.env` non chiffrés | Chiffrement BitLocker du disque, session Windows protégée, verrouillage automatique, sauvegardes hors site chiffrées. |
-| Compte MySQL `root` sans mot de passe (défaut Wamp) | Définir un mot de passe ; utiliser un compte dédié à POS Wan avec droits limités à sa base. |
+| Compte MySQL `root` sans mot de passe (défaut Wamp) | Définir un mot de passe ; utiliser un compte dédié à POS Marwa avec droits limités à sa base. |
 | phpMyAdmin accessible | Le laisser limité à `localhost` (défaut Wamp) ; ne jamais exposer Wamp sur Internet. |
 | Liste des comptes ayant un PIN visible sur l'écran de connexion (choix ergonomique de la caisse) | Désactiver la connexion PIN dans Paramètres si l'écran est visible du public ; PIN de 6 chiffres conseillé. |
 | Un administrateur malveillant peut tout faire (y compris restaurer une ancienne sauvegarde) | Limiter le rôle Administrateur au propriétaire ; contrôler régulièrement le journal d'audit ; conserver des sauvegardes hors site. |

@@ -11,6 +11,25 @@ final class DashboardController extends Controller
 {
     public function home(): void
     {
+        // Accueil selon le mode de fonctionnement : le personnel de caisse arrive directement
+        // sur la caisse de son activité (clinique, pressing), sans navigation supplémentaire.
+        $mode = \App\Services\BusinessMode::current();
+        if ($mode === 'clinique' || $mode === 'clinique_pharmacie') {
+            if (!can('dashboard.view') && can('clinique.reception')) {
+                redirect('/clinique/caisse');
+            }
+            if (!can('dashboard.view') && !can('pos.sell') && can('clinique.view')) {
+                redirect('/clinique');
+            }
+        }
+        if ($mode === 'pressing' && !can('dashboard.view')) {
+            if (can('pressing.deposit')) {
+                redirect('/pressing/caisse');
+            }
+            if (can('pressing.view')) {
+                redirect('/pressing');
+            }
+        }
         if (can('dashboard.view')) {
             redirect('/dashboard');
         }

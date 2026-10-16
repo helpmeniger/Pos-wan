@@ -17,7 +17,7 @@ function e(mixed $v): string
     return htmlspecialchars((string) ($v ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-/** Préfixe d'URL de l'application (ex. "/pos-wan/public" ou "" en virtual host). */
+/** Préfixe d'URL de l'application (ex. "/pos-marwa/public" ou "" en virtual host). */
 function base_path_prefix(): string
 {
     static $prefix = null;

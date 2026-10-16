@@ -20,7 +20,7 @@
       <td class="num"><?= (int) $i['dispensed_qty'] ?></td>
       <td class="num <?= $i['product_id'] && (float) $i['stock'] < $left ? 'text-danger fw-semibold' : '' ?>"><?= $i['product_id'] ? e(qty($i['stock'])) : '—' ?></td>
       <td class="num"><?= $i['product_id'] ? money($i['sale_price']) : '' ?></td>
-      <td><?php if ($i['product_id'] && $left > 0 && $todo): ?><input name="qty[<?= (int) $i['id'] ?>]" value="<?= (int) min($left, max(0, (int) floor((float) $i['stock']))) ?>" class="form-control form-control-sm text-end" inputmode="numeric" data-dq data-price="<?= e((string) (float) $i['sale_price']) ?>" data-max="<?= $left ?>"><?php endif; ?></td>
+      <td><?php if ($i['product_id'] && $left > 0 && $todo): ?><input name="qty[<?= (int) $i['id'] ?>]" data-codes="<?= e(implode('|', array_filter([$i['barcode'] ?? '', $i['reference'] ?? '']))) ?>" data-drug-name="<?= e($i['drug_name']) ?>" value="<?= (int) min($left, max(0, (int) floor((float) $i['stock']))) ?>" class="form-control form-control-sm text-end" inputmode="numeric" data-dq data-price="<?= e((string) (float) $i['sale_price']) ?>" data-max="<?= $left ?>"><?php endif; ?></td>
     </tr>
   <?php endforeach; ?>
   </tbody></table></div></div>
@@ -29,6 +29,7 @@
   <div class="col-lg-4">
     <?php if ($todo): ?>
     <div class="card border-success"><div class="card-header bg-success text-white"><i class="bi bi-cash-coin"></i> Délivrer et encaisser</div><div class="card-body">
+      <button type="button" class="btn btn-outline-secondary w-100 mb-2" id="dispenseScan"><i class="bi bi-camera"></i> Scanner les boîtes délivrées</button>
       <div class="d-flex justify-content-between mb-2"><span>Total estimé</span><b data-dispense-total>—</b></div>
       <div class="row g-1"><?= App\Core\View::partial('clinique::_pay') ?></div>
       <button class="btn btn-success w-100 mt-2"><i class="bi bi-check2-circle"></i> Valider la délivrance</button>

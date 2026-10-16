@@ -1,4 +1,4 @@
--- POS Wan 1.4 : modules complémentaires (dossier addons/), position du menu, assistance
+-- POS Marwa 1.4 : modules complémentaires (dossier addons/), position du menu, assistance
 
 CREATE TABLE IF NOT EXISTS addons (
   code VARCHAR(50) NOT NULL PRIMARY KEY,

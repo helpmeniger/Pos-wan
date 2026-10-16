@@ -54,6 +54,17 @@
       <?php if ($l = setting('company_logo')): ?><img src="<?= e(upload_url($l)) ?>" alt="" class="mb-2" style="max-height:80px"><?php endif; ?>
       <form method="post" enctype="multipart/form-data" action="<?= e(url('/settings/logo')) ?>" class="d-flex gap-2"><?= csrf_field() ?><input type="file" name="logo" accept="image/png,image/jpeg,image/webp" class="form-control form-control-sm" required><button class="btn btn-sm btn-outline-primary">Envoyer</button></form>
     </div></div>
+    <div class="card mb-3 border-primary"><div class="card-header"><i class="bi bi-diagram-3"></i> Mode de fonctionnement de la caisse</div><div class="card-body">
+      <form method="post" action="<?= e(url('/settings/mode')) ?>"><?= csrf_field() ?>
+        <?php $curMode = App\Services\BusinessMode::current(); foreach (App\Services\BusinessMode::MODES as $k => [$l, $d, $req]): $miss = App\Services\BusinessMode::missingAddons($k); ?>
+        <div class="form-check mb-1"><input class="form-check-input" type="radio" name="mode" value="<?= e($k) ?>" id="m_<?= e($k) ?>" <?= $curMode === $k ? 'checked' : '' ?> <?= $miss ? 'disabled' : '' ?>>
+          <label class="form-check-label" for="m_<?= e($k) ?>"><b><?= e($l) ?></b> <span class="small text-secondary">— <?= e($d) ?></span><?= $miss ? ' <span class="badge bg-secondary">module « ' . e(implode(', ', $miss)) . ' » à installer</span>' : '' ?></label></div>
+        <?php endforeach; ?>
+        <div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="show_all" value="1" id="m_all" <?= setting('mode_show_all_menus', '0') === '1' ? 'checked' : '' ?>><label class="form-check-label small" for="m_all">Afficher aussi les menus des autres activités</label></div>
+        <button class="btn btn-primary mt-2">Appliquer le mode</button>
+        <div class="small text-secondary mt-2">La caisse, l'accueil et les menus s'adaptent au mode. Changer de mode ne supprime aucune donnée.</div>
+      </form>
+    </div></div>
     <div class="card mb-3"><div class="card-header"><i class="bi bi-shop"></i> Type d'activité et modules</div><div class="card-body">
       <form method="post" action="<?= e(url('/settings/business')) ?>"><?= csrf_field() ?>
         <select name="business_type" class="form-select mb-2"><?php foreach ($types as $k => [$l]): ?><option value="<?= e($k) ?>" <?= setting('business_type') === $k ? 'selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select>

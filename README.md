@@ -1,4 +1,4 @@
-# POS Wan
+# POS Marwa
 
 **Logiciel de caisse et de gestion commerciale** pour les commerces du Niger (alimentations,
 supermarchés, boutiques, pharmacies, restaurants et maquis, quincailleries, dépôts de boissons…),
@@ -21,6 +21,18 @@ reprise ; tickets 58/80 mm et factures A4 (**3 modèles** chacun, **QR code** de
 réimpression contrôlée (DUPLICATA) ; **Valider = encaissement espèces direct** sans fenêtre ;
 opérateurs **mobile money** paramétrables ; anti-double validation ; raccourcis clavier
 configurables ; plein écran.
+
+**Nouveautés 2.0**
+- **Modes de fonctionnement** : Commerce, Restaurant, Pharmacie, Clinique, Clinique + Pharmacie
+  et Pressing. La caisse, l'accueil et les menus s'adaptent au mode choisi.
+- **Stock actualisé en temps réel** dans la caisse.
+- **Scan des codes-barres par la caméra** du téléphone ou du PC.
+- **Accès mobile par QR code**, avec des appareils que l'administrateur peut révoquer.
+- **Inventaire par scan.**
+- **Concepteur d'étiquettes.**
+- **Pressing** : suivi des vêtements et retrait partiel.
+- **Caisse clinique.**
+- **Lanceur Windows** : il démarre WampServer puis ouvre POS Marwa.
 
 **Devis et bons de livraison** — devis imprimables, suivi, conversion en vente ; bons de
 livraison avec ou sans prix.
@@ -78,9 +90,9 @@ restauration vérifiées, assistant d'installation.
 
 ## Démarrage rapide
 
-1. Copier le dossier dans `C:\wamp64\www\pos-wan`.
+1. Copier le dossier dans `C:\wamp64\www\pos-marwa`.
 2. Créer une base MySQL `poswan` et un utilisateur dédié (phpMyAdmin).
-3. Ouvrir `http://localhost/pos-wan/` → l'assistant d'installation se lance.
+3. Ouvrir `http://localhost/pos-marwa/` → l'assistant d'installation se lance.
 
 Guide complet : **[INSTALLATION_WAMPSERVER.md](INSTALLATION_WAMPSERVER.md)**
 (hôte virtuel, imprimante thermique, douchette, sauvegardes planifiées, restauration,
@@ -98,6 +110,8 @@ sont choisis pendant l'installation.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Structure du code, modèle de données, règles métier (CMP, FEFO, caisse, crédit) |
 | [docs/GUIDE_UTILISATEUR.md](docs/GUIDE_UTILISATEUR.md) | Utilisation de la caisse et des modules |
 | [docs/ETAT_DU_PROJET.md](docs/ETAT_DU_PROJET.md) | Ce qui est terminé, testé, et ce qui reste à faire |
+| [docs/DEMARRAGE_WINDOWS.md](docs/DEMARRAGE_WINDOWS.md) | Raccourci, démarrage automatique de Wamp et de POS Marwa, accès mobile, HTTPS pour la caméra |
+| [docs/AMELIORATIONS_2.0.md](docs/AMELIORATIONS_2.0.md) | Version 2.0 : analyse, fichiers, migrations, vérifications, limites |
 | [docs/MODULES.md](docs/MODULES.md) | Ajouter / créer un module complémentaire |
 | [CHANGELOG.md](CHANGELOG.md) | Historique des versions |
 

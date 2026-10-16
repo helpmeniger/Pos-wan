@@ -33,5 +33,5 @@
   <hr>
   <div class="c" style="font-size:.85em"><?= nl2br(e((string) setting('pressing_conditions', ''))) ?></div>
   <div class="c qr-box"><div data-qr="<?= e($o['number']) ?>" data-qr-size="3" class="qr"></div><div class="small"><?= e($o['number']) ?></div></div>
-  <div class="c" style="font-size:.85em">POS Wan · Pressing</div>
+  <div class="c" style="font-size:.85em">POS Marwa · Pressing</div>
 </div>

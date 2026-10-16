@@ -1,5 +1,5 @@
 -- =====================================================================
--- POS Wan — migration 0002 : module Restaurant + fiches techniques (recettes)
+-- POS Marwa — migration 0002 : module Restaurant + fiches techniques (recettes)
 -- =====================================================================
 
 -- Poste de préparation de chaque catégorie (cuisine, bar…) pour router les tickets

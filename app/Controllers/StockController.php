@@ -204,24 +204,79 @@ final class StockController extends Controller
         redirect('/inventories/' . $id);
     }
 
+    private function inventoryOr404(int $id): array
+    {
+        return DB::one('SELECT i.*, w.name AS warehouse, u.full_name, v.full_name AS validator, c.name AS category FROM inventories i JOIN warehouses w ON w.id = i.warehouse_id JOIN users u ON u.id = i.user_id LEFT JOIN users v ON v.id = i.validated_by LEFT JOIN categories c ON c.id = i.category_id WHERE i.id = ?', [$id])
+            ?? throw new HttpException(404);
+    }
+
+    private function inventoryItems(int $id, string $q = '', string $filter = ''): array
+    {
+        $sql = 'SELECT ii.*, p.name, p.reference, p.barcode, p.cost_price, c.name AS category, cu.full_name AS counter FROM inventory_items ii JOIN products p ON p.id = ii.product_id
+                LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN users cu ON cu.id = ii.counted_by WHERE ii.inventory_id = ?';
+        $params = [$id];
+        if ($q !== '') {
+            $sql .= ' AND (p.name LIKE ? OR p.barcode = ? OR p.reference = ?)';
+            array_push($params, '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%', $q, $q);
+        }
+        $sql .= match ($filter) {
+            'uncounted' => ' AND ii.counted_qty IS NULL',
+            'diff' => ' AND ii.counted_qty IS NOT NULL AND ABS(ii.counted_qty - ii.expected_qty) >= 0.0005',
+            'surplus' => ' AND ii.counted_qty IS NOT NULL AND ii.counted_qty - ii.expected_qty >= 0.0005',
+            'missing' => ' AND ii.counted_qty IS NOT NULL AND ii.expected_qty - ii.counted_qty >= 0.0005',
+            'conform' => ' AND ii.counted_qty IS NOT NULL AND ABS(ii.counted_qty - ii.expected_qty) < 0.0005',
+            default => '',
+        };
+        return DB::all($sql . ' ORDER BY c.name, p.name', $params);
+    }
+
     public function inventoryShow(int $id): void
     {
-        $inv = DB::one('SELECT i.*, w.name AS warehouse, u.full_name, v.full_name AS validator FROM inventories i JOIN warehouses w ON w.id = i.warehouse_id JOIN users u ON u.id = i.user_id LEFT JOIN users v ON v.id = i.validated_by WHERE i.id = ?', [$id]);
-        if (!$inv) {
-            throw new HttpException(404);
-        }
+        $inv = $this->inventoryOr404($id);
         $q = trim((string) Request::query('q', ''));
-        $items = DB::all('SELECT ii.*, p.name, p.reference, p.barcode, p.cost_price, c.name AS category FROM inventory_items ii JOIN products p ON p.id = ii.product_id LEFT JOIN categories c ON c.id = p.category_id WHERE ii.inventory_id = ?' . ($q !== '' ? ' AND (p.name LIKE ? OR p.barcode = ? OR p.reference = ?)' : '') . ' ORDER BY c.name, p.name', $q !== '' ? [$id, "%$q%", $q, $q] : [$id]);
+        $filter = (string) Request::query('f', '');
+        $items = $this->inventoryItems($id, $q, $filter);
         if (Request::query('print') === '1') {
             view('stock/inventory_sheet', ['title' => 'Feuille d\'inventaire ' . $inv['number'], 'inv' => $inv, 'items' => $items, 'bodyClass' => 'a4', 'backUrl' => url('/inventories/' . $id)], 'layouts/print');
         }
-        view('stock/inventory', ['title' => 'Inventaire ' . $inv['number'], 'inv' => $inv, 'items' => $items, 'q' => $q]);
+        view('stock/inventory', ['title' => 'Inventaire ' . $inv['number'], 'inv' => $inv, 'items' => $items, 'q' => $q, 'filter' => $filter,
+            'sum' => InventoryService::summary($id), 'scripts' => ['js/inventory.js'],
+            'log' => DB::all('SELECT l.*, p.name, u.full_name FROM inventory_count_log l JOIN inventory_items ii ON ii.id = l.item_id JOIN products p ON p.id = ii.product_id JOIN users u ON u.id = l.user_id WHERE l.inventory_id = ? ORDER BY l.id DESC LIMIT 30', [$id])]);
+    }
+
+    /** Lecture d'un code-barres (douchette ou caméra) : +1 sur l'article. */
+    public function inventoryScan(int $id): void
+    {
+        $this->jsonAttempt(fn() => InventoryService::scan($id, Request::str('code')));
+    }
+
+    /** Saisie manuelle d'une ligne, correction ou remise à zéro (enregistrée immédiatement). */
+    public function inventoryCount(int $id): void
+    {
+        $this->jsonAttempt(fn() => InventoryService::setCount($id, Request::int('item_id'), Request::input('qty'), Request::input('note') !== null ? Request::str('note') : null, Request::input('reset') === true || Request::str('reset') === '1'));
+    }
+
+    /** Rapport d'écarts : impression, CSV, PDF. */
+    public function inventoryReport(int $id): void
+    {
+        $inv = $this->inventoryOr404($id);
+        $filter = (string) Request::query('f', 'diff');
+        $items = $this->inventoryItems($id, '', $filter);
+        $sum = InventoryService::summary($id);
+        if (\App\Core\Export::requested()) {
+            $rows = array_map(fn($i) => [$i['category'] ?? '', $i['name'], $i['reference'], $i['barcode'] ?? '', (float) $i['expected_qty'], $i['counted_qty'] !== null ? (float) $i['counted_qty'] : '',
+                $i['counted_qty'] !== null ? round((float) $i['counted_qty'] - (float) $i['expected_qty'], 3) : '', $i['counted_qty'] !== null ? round(((float) $i['counted_qty'] - (float) $i['expected_qty']) * (float) $i['cost_price'], 2) : '', $i['note'] ?? '', $i['counter'] ?? ''], $items);
+            \App\Core\Export::download('inventaire_' . $inv['number'] . '.csv', 'Inventaire ' . $inv['number'] . ' — ' . $inv['warehouse'], ['Catégorie', 'Article', 'Référence', 'Code-barres', 'Théorique', 'Compté', 'Écart', 'Valeur écart', 'Observation', 'Compté par'], $rows,
+                ['subtitle' => 'Statut : ' . $inv['status'] . ' · excédents ' . $sum['surplus'] . ' · manquants ' . $sum['missing'] . ' · conformes ' . $sum['conform'] . ' · non comptés ' . $sum['uncounted'], 'landscape' => true]);
+        }
+        view('stock/inventory_report', ['title' => 'Rapport d\'inventaire ' . $inv['number'], 'inv' => $inv, 'items' => $items, 'sum' => $sum, 'filter' => $filter, 'bodyClass' => 'a4', 'backUrl' => url('/inventories/' . $id)], 'layouts/print');
     }
 
     public function inventorySave(int $id): void
     {
         $counts = Request::input('counted', []);
-        $this->attempt(fn() => InventoryService::saveCounts($id, is_array($counts) ? $counts : []), '/inventories/' . $id);
+        $notes = Request::input('notes', []);
+        $this->attempt(fn() => InventoryService::saveCounts($id, is_array($counts) ? $counts : [], is_array($notes) ? $notes : []), '/inventories/' . $id);
         flash('success', 'Comptages enregistrés.');
         redirect('/inventories/' . $id);
     }

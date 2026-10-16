@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Installation · POS Wan</title>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Installation · POS Marwa</title>
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap/bootstrap.min.css')) ?>"><link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>"><link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>"></head>
 <body class="login-body">
 <div class="card shadow-lg" style="max-width:860px;width:100%">
   <div class="card-body p-4">
-    <div class="d-flex align-items-center gap-3 mb-3"><img src="<?= e(asset('img/logo.svg')) ?>" width="52" alt=""><div><h1 class="h3 m-0">Installation de POS Wan</h1><small class="text-secondary">Assistant de première configuration — désactivé automatiquement après installation.</small></div></div>
+    <div class="d-flex align-items-center gap-3 mb-3"><img src="<?= e(asset('img/logo.svg')) ?>" width="52" alt=""><div><h1 class="h3 m-0">Installation de POS Marwa</h1><small class="text-secondary">Assistant de première configuration — désactivé automatiquement après installation.</small></div></div>
     <?php foreach ($flash as $f): ?><div class="alert alert-<?= e($f['type']) ?>"><?= e($f['message']) ?></div><?php endforeach; ?>
     <h2 class="h6 mt-3">1. Vérification de l'environnement</h2>
     <ul class="list-group mb-3 small">
@@ -51,8 +51,8 @@
         <div class="border rounded p-2 mt-2" style="max-height:260px;overflow:auto">
           <?php foreach (App\Services\Contract::clauses() as [$ct, $cp]): ?><div class="fw-semibold mt-2"><?= e($ct) ?></div><?php foreach ($cp as $p): ?><p class="mb-1"><?= e($p) ?></p><?php endforeach; ?><?php endforeach; ?>
         </div></details>
-      <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="accept_contract" value="1" id="acceptContract" required><label class="form-check-label" for="acceptContract">J'ai lu et j'accepte le contrat de licence d'utilisation de POS Wan (© <?= e(config('licence.author.name')) ?>).</label></div>
-      <button class="btn btn-warning btn-lg w-100"><i class="bi bi-rocket-takeoff"></i> Installer POS Wan</button>
+      <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="accept_contract" value="1" id="acceptContract" required><label class="form-check-label" for="acceptContract">J'ai lu et j'accepte le contrat de licence d'utilisation de POS Marwa (© <?= e(config('licence.author.name')) ?>).</label></div>
+      <button class="btn btn-warning btn-lg w-100"><i class="bi bi-rocket-takeoff"></i> Installer POS Marwa</button>
     </form>
   </div>
 </div>

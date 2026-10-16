@@ -1,4 +1,4 @@
-# Contrat de licence d'utilisation — POS Wan
+# Contrat de licence d'utilisation — POS Marwa
 
 Version du contrat : 1.0 — octobre 2026
 
@@ -8,13 +8,13 @@ Version du contrat : 1.0 — octobre 2026
 
 ## Article 1 — Parties et objet
 
-Le présent contrat est conclu entre Mahamadou Hamidou (Mohamed), ingénieur informaticien nigérien, Niamey, République du Niger, auteur et titulaire de tous les droits sur le logiciel POS Wan (ci-après « l'Auteur »), et la personne physique ou morale qui installe ou utilise le logiciel (ci-après « le Client »).
+Le présent contrat est conclu entre Mahamadou Hamidou (Mohamed), ingénieur informaticien nigérien, Niamey, République du Niger, auteur et titulaire de tous les droits sur le logiciel POS Marwa (ci-après « l'Auteur »), et la personne physique ou morale qui installe ou utilise le logiciel (ci-après « le Client »).
 
-Il définit les conditions dans lesquelles le Client est autorisé à utiliser POS Wan (caisse, gestion commerciale, stocks, modules complémentaires) et ses mises à jour.
+Il définit les conditions dans lesquelles le Client est autorisé à utiliser POS Marwa (caisse, gestion commerciale, stocks, modules complémentaires) et ses mises à jour.
 
 ## Article 2 — Propriété intellectuelle
 
-POS Wan, son code source, sa base de données, ses écrans, ses modules, sa documentation et son nom sont la propriété exclusive de l'Auteur et sont protégés par le droit d'auteur (Accord de Bangui révisé, Organisation africaine de la propriété intellectuelle — OAPI, et lois de la République du Niger).
+POS Marwa, son code source, sa base de données, ses écrans, ses modules, sa documentation et son nom sont la propriété exclusive de l'Auteur et sont protégés par le droit d'auteur (Accord de Bangui révisé, Organisation africaine de la propriété intellectuelle — OAPI, et lois de la République du Niger).
 
 Le contrat ne transfère aucun droit de propriété au Client : il lui accorde seulement un droit d'utilisation.
 

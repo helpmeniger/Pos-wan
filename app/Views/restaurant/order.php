@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <meta name="pw-currency" content="<?= e(json_encode(currency(), JSON_UNESCAPED_UNICODE)) ?>">
 <meta name="base-url" content="<?= e(url('/')) ?>">
-<title><?= e($o['number']) ?> · Restaurant · POS Wan</title>
+<title><?= e($o['number']) ?> · Restaurant · POS Marwa</title>
 <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>">
 <link rel="stylesheet" href="<?= e(bootstrap_css()) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">

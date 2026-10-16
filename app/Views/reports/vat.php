@@ -22,4 +22,4 @@
       <?php if (!$vat['months']): ?><tr><td colspan="5" class="text-center text-secondary py-3">—</td></tr><?php endif; ?>
     </tbody></table></div></div></div>
 </div>
-<p class="small text-secondary mt-3">Document d'aide à la déclaration : à rapprocher de votre comptabilité. POS Wan ne transmet rien à l'administration fiscale.</p>
+<p class="small text-secondary mt-3">Document d'aide à la déclaration : à rapprocher de votre comptabilité. POS Marwa ne transmet rien à l'administration fiscale.</p>

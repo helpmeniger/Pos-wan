@@ -17,5 +17,5 @@
   <hr>
   <div class="c"><?= nl2br(e($doc['footer'])) ?></div>
   <?php if ($doc['qr']): ?><div class="c qr-box"><div data-qr="<?= e($doc['qr']) ?>" data-qr-size="3" class="qr"></div><div class="small"><?= e($doc['number']) ?></div></div><?php endif; ?>
-  <div class="c" style="font-size:.85em"><?= e(t('Articles')) ?> : <?= qty($doc['count']) ?> · POS Wan</div>
+  <div class="c" style="font-size:.85em"><?= e(t('Articles')) ?> : <?= qty($doc['count']) ?> · POS Marwa</div>
 </div>

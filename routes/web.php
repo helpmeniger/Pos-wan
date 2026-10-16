@@ -14,6 +14,8 @@ use App\Controllers as C;
 $router->get('/install', [C\InstallController::class, 'form'], null, true);
 $router->post('/install', [C\InstallController::class, 'submit'], null, true);
 $router->get('/login', [C\AuthController::class, 'form'], null, true);
+$router->get('/m', [C\MobileController::class, 'landing'], null, true);
+$router->get('/health', [C\MobileController::class, 'health'], null, true);
 $router->post('/login', [C\AuthController::class, 'login'], null, true);
 $router->post('/login/pin', [C\AuthController::class, 'loginPin'], null, true);
 $router->post('/login/badge', [C\AuthController::class, 'loginBadge'], null, true);
@@ -30,9 +32,10 @@ $router->get('/dashboard', [C\DashboardController::class, 'index'], 'dashboard.v
 $router->get('/menu', [C\DashboardController::class, 'menu']);
 
 // --- Caisse (POS) ---
-$router->get('/pos', [C\PosController::class, 'index'], 'pos.sell');
+$router->get('/pos', [C\PosController::class, 'index']); // permission vérifiée dans le contrôleur (redirection selon le mode)
 $router->get('/pos/products', [C\PosController::class, 'products'], 'pos.sell');
 $router->get('/pos/lookup', [C\PosController::class, 'lookup'], 'pos.sell');
+$router->get('/pos/stock', [C\PosController::class, 'stock'], 'pos.sell');
 $router->get('/pos/customers', [C\PosController::class, 'customers'], 'pos.sell');
 $router->post('/pos/customers', [C\PosController::class, 'quickCustomer'], 'customers.manage');
 $router->post('/pos/checkout', [C\PosController::class, 'checkout'], 'pos.sell');
@@ -82,7 +85,11 @@ $router->get('/products/export', [C\ProductController::class, 'export'], 'produc
 $router->get('/products/import', [C\ProductController::class, 'importForm'], 'products.import');
 $router->post('/products/import', [C\ProductController::class, 'import'], 'products.import');
 $router->get('/products/template', [C\ProductController::class, 'template'], 'products.import');
-$router->get('/products/labels', [C\ProductController::class, 'labels'], 'products.view');
+$router->get('/products/labels', [C\LabelController::class, 'index'], 'products.view');
+$router->get('/products/labels/search', [C\LabelController::class, 'search'], 'products.view');
+$router->post('/products/labels/render', [C\LabelController::class, 'render'], 'products.view');
+$router->post('/products/labels/templates', [C\LabelController::class, 'saveTemplate'], 'products.manage');
+$router->post('/products/labels/templates/{id}/delete', [C\LabelController::class, 'deleteTemplate'], 'products.manage');
 $router->get('/products/bulk-price', [C\ProductController::class, 'bulkPriceForm'], 'products.price_edit');
 $router->post('/products/bulk-price', [C\ProductController::class, 'bulkPrice'], 'products.price_edit');
 $router->get('/products/duplicates', [C\ProductController::class, 'duplicates'], 'products.view');
@@ -121,6 +128,9 @@ $router->post('/inventories', [C\StockController::class, 'inventoryStart'], 'sto
 $router->get('/inventories/{id}', [C\StockController::class, 'inventoryShow'], 'stock.inventory');
 $router->post('/inventories/{id}', [C\StockController::class, 'inventorySave'], 'stock.inventory');
 $router->post('/inventories/{id}/validate', [C\StockController::class, 'inventoryValidate'], 'stock.inventory_validate');
+$router->post('/inventories/{id}/scan', [C\StockController::class, 'inventoryScan'], 'stock.inventory');
+$router->post('/inventories/{id}/count', [C\StockController::class, 'inventoryCount'], 'stock.inventory');
+$router->get('/inventories/{id}/report', [C\StockController::class, 'inventoryReport'], 'stock.inventory');
 $router->post('/inventories/{id}/cancel', [C\StockController::class, 'inventoryCancel'], 'stock.inventory');
 
 // --- Achats & fournisseurs ---
@@ -190,6 +200,7 @@ $router->post('/roles/{id}', [C\UserController::class, 'roleUpdate'], 'roles.man
 $router->get('/settings', [C\SettingsController::class, 'index'], 'settings.manage');
 $router->post('/settings', [C\SettingsController::class, 'update'], 'settings.manage');
 $router->post('/settings/business', [C\SettingsController::class, 'business'], 'settings.manage');
+$router->post('/settings/mode', [C\SettingsController::class, 'mode'], 'settings.manage');
 $router->get('/settings/template-preview', [C\SettingsController::class, 'templatePreview'], 'settings.manage');
 $router->get('/addons', [C\AddonController::class, 'index'], 'addons.manage');
 $router->get('/update', [C\UpdateController::class, 'index'], 'system.update');
@@ -199,6 +210,10 @@ $router->post('/update/check', [C\UpdateController::class, 'check'], 'system.upd
 $router->post('/update/apply', [C\UpdateController::class, 'apply'], 'system.update');
 $router->post('/update/rollback', [C\UpdateController::class, 'rollback'], 'system.update');
 $router->get('/about', [C\AboutController::class, 'about']);
+$router->get('/mobile', [C\MobileController::class, 'index'], 'settings.manage');
+$router->get('/devices', [C\MobileController::class, 'devices'], 'users.manage');
+$router->post('/devices/policy', [C\MobileController::class, 'devicePolicy'], 'users.manage');
+$router->post('/devices/{id}', [C\MobileController::class, 'deviceStatus'], 'users.manage');
 $router->get('/about/contrat', [C\AboutController::class, 'contract']);
 $router->get('/licence', [C\AboutController::class, 'licence']);
 $router->post('/licence', [C\AboutController::class, 'activate'], 'licence.manage');

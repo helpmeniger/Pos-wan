@@ -22,3 +22,4 @@ Thumbs.db
 # Fichiers publics des modules (copiés à l'installation depuis addons/<code>/public)
 public/assets/addons/
 release.json
+windows/pos-marwa.ini

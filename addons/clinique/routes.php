@@ -3,6 +3,7 @@
 use Addons\Clinique\ClinicController as C;
 use Addons\Clinique\HospitalController as H;
 use Addons\Clinique\PharmacyController as P;
+use Addons\Clinique\CashierController as K;
 
 // Accueil, patients, rendez-vous
 $router->get('/clinique', [C::class, 'dashboard'], 'clinique.view');
@@ -25,6 +26,13 @@ $router->post('/clinique/consultations/{id}/vitals', [C::class, 'visitVitals'], 
 $router->post('/clinique/consultations/{id}/prescription', [C::class, 'visitPrescription'], 'clinique.doctor');
 $router->post('/clinique/consultations/{id}/bill', [C::class, 'visitBill'], 'clinique.view');
 $router->get('/clinique/ordonnances/{id}/print', [C::class, 'prescriptionPrint'], 'clinique.view');
+
+// Caisse clinique (caisse principale en mode Clinique)
+$router->get('/clinique/caisse', [K::class, 'index'], 'clinique.reception');
+$router->get('/clinique/caisse/patients', [K::class, 'patients'], 'clinique.reception');
+$router->post('/clinique/caisse/patients', [K::class, 'quickPatient'], 'clinique.reception');
+$router->post('/clinique/caisse', [K::class, 'checkout'], 'clinique.reception');
+$router->get('/clinique/factures/{id}/ticket', [K::class, 'ticket'], 'clinique.reception');
 
 // Factures
 $router->get('/clinique/factures', [C::class, 'bills'], 'clinique.reception');

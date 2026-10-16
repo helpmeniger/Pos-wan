@@ -16,7 +16,7 @@
     const all = Array.from(input.files || []);
     // Racine : le dossier qui contient app/bootstrap.php (le dossier choisi peut l'englober)
     const marker = all.map((f) => f.webkitRelativePath || f.name).find((p) => /(^|\/)app\/bootstrap\.php$/.test(p));
-    if (!marker) { files = []; return T('Ce dossier ne contient pas POS Wan (app/bootstrap.php introuvable).'); }
+    if (!marker) { files = []; return T('Ce dossier ne contient pas POS Marwa (app/bootstrap.php introuvable).'); }
     const prefix = marker.slice(0, marker.length - 'app/bootstrap.php'.length);
     files = all.map((f) => ({ f, rel: (f.webkitRelativePath || f.name) })).filter((x) => x.rel.startsWith(prefix))
       .map((x) => ({ f: x.f, rel: x.rel.slice(prefix.length) })).filter((x) => !SKIP.some((r) => r.test(x.rel)));

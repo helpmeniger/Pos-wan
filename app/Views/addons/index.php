@@ -5,7 +5,7 @@ $badges = ['active' => ['success', 'Actif'], 'inactive' => ['secondary', 'Désac
   <b><i class="bi bi-puzzle"></i> Ajouter un module :</b> copiez son dossier dans <code><?= e(str_replace('\\', '/', $dir)) ?>/</code>
   (ex. <code>addons/livraisons/</code> contenant <code>manifest.json</code>), puis actualisez cette page et cliquez sur <b>Installer</b>.
   Une sauvegarde est faite automatiquement avant l'installation. Désactiver un module masque ses pages sans effacer ses données.
-  <span class="text-danger">N'installez que des modules de confiance : un module a les mêmes droits que POS Wan.</span>
+  <span class="text-danger">N'installez que des modules de confiance : un module a les mêmes droits que POS Marwa.</span>
   Créer un module : voir <code>docs/MODULES.md</code>.
 </div>
 <div class="d-flex mb-3"><a href="<?= e(url('/addons')) ?>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat"></i> Rechercher de nouveaux modules</a></div>

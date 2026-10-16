@@ -1,9 +1,9 @@
 {
     "code": "pressing",
     "name": "Pressing",
-    "version": "1.0.0",
-    "requires": "1.4.0",
-    "author": "POS Wan",
+    "version": "1.1.0",
+    "requires": "2.0.0",
+    "author": "POS Marwa",
     "description": "Gestion complète d'un pressing : tarifs par article et par service, dépôts avec étiquettes, express, acompte, suivi du traitement (reçu, en cours, prêt, retiré), retrait avec paiement du solde, relances des clients, rapport.",
     "icon": "bi-basket2",
     "color": "#1f77b4",
@@ -21,12 +21,16 @@
     },
     "menu": [
         { "group": "Pressing", "label": "Dépôts pressing", "icon": "bi-basket2", "url": "/pressing", "permission": "pressing.view", "color": "#1f77b4" },
+        { "group": "Pressing", "label": "Caisse pressing", "icon": "bi-cash-coin", "url": "/pressing/caisse", "permission": "pressing.deposit", "color": "#d62728" },
+        { "group": "Pressing", "label": "Suivi des vêtements", "icon": "bi-list-check", "url": "/pressing/suivi", "permission": "pressing.view", "color": "#ff7f0e" },
         { "group": "Pressing", "label": "Nouveau dépôt", "icon": "bi-plus-circle", "url": "/pressing/create", "permission": "pressing.deposit", "color": "#2ca02c" },
         { "group": "Pressing", "label": "Tarifs pressing", "icon": "bi-tags", "url": "/pressing/tarifs", "permission": "pressing.manage", "color": "#9467bd" },
         { "group": "Pressing", "label": "Rapport pressing", "icon": "bi-bar-chart", "url": "/pressing/report", "permission": "pressing.manage", "color": "#d62728" }
     ],
     "settings": {
         "pressing_delai_jours": "3",
+        "pressing_retrait_partiel": "1",
+        "pressing_alerte_jours": "1",
         "pressing_express_pourcent": "50",
         "pressing_express_delai_jours": "1",
         "pressing_relance_jours": "30",

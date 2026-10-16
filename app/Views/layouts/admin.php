@@ -6,7 +6,7 @@ use App\Services\Menu;
 use App\Services\Notifications;
 
 $u = Auth::user();
-$title = $title ?? 'POS Wan';
+$title = $title ?? 'POS Marwa';
 $current = App\Core\Request::path();
 $notes = $u ? Notifications::get() : [];
 ?><!doctype html>
@@ -17,21 +17,26 @@ $notes = $u ? Notifications::get() : [];
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
 <meta name="pw-currency" content="<?= e(json_encode(currency(), JSON_UNESCAPED_UNICODE)) ?>">
 <meta name="base-url" content="<?= e(url('/')) ?>">
-<title><?= e($title) ?> · POS Wan</title>
+<title><?= e($title) ?> · POS Marwa</title>
+<link rel="manifest" href="<?= e(url('/manifest.webmanifest')) ?>">
+<meta name="theme-color" content="#14213d">
+<link rel="apple-touch-icon" href="<?= e(asset('img/icons/icon-180.png')) ?>">
 <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>">
 <link rel="stylesheet" href="<?= e(bootstrap_css()) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/scanner.css')) ?>">
 </head>
 <body class="admin-body <?= setting('menu_position', 'right') === 'left' ? 'menu-left' : 'menu-right' ?>">
 <div class="app-shell">
   <aside class="sidebar d-print-none" id="sidebar">
     <a class="brand" href="<?= e(url('/')) ?>">
       <img src="<?= e(asset('img/logo.svg')) ?>" alt="" width="34" height="34">
-      <span>POS <b>Wan</b></span>
+      <span>POS <b>Marwa</b></span>
     </a>
-    <?php if (can('pos.sell')): ?>
-    <a href="<?= e(url('/pos')) ?>" class="btn btn-pos-launch"><i class="bi bi-cart3"></i> Ouvrir la caisse</a>
+    <?php $posUrl = App\Services\BusinessMode::posUrl(); $posPerm = ['/clinique/caisse' => 'clinique.reception', '/pressing/caisse' => 'pressing.deposit'][$posUrl] ?? 'pos.sell'; ?>
+    <?php if (can($posPerm)): ?>
+    <a href="<?= e(url($posUrl)) ?>" class="btn btn-pos-launch"><i class="bi bi-cart3"></i> Ouvrir la caisse</a>
     <?php endif; ?>
     <nav class="side-nav">
       <?php foreach (Menu::visible() as $group => $items): ?>
@@ -45,7 +50,7 @@ $notes = $u ? Notifications::get() : [];
     </nav>
     <a class="side-about" href="<?= e(url('/about')) ?>" title="À propos, contrat de licence, assistance">
       <i class="bi bi-info-circle"></i>
-      <span><b>À propos de POS Wan</b><small>v<?= e(config('app.version')) ?> · © <?= e(config('licence.author.name')) ?><br>Ingénieur informaticien nigérien · <?= e(implode(' / ', (array) config('licence.author.phones'))) ?></small></span>
+      <span><b>À propos de POS Marwa</b><small>v<?= e(config('app.version')) ?> · © <?= e(config('licence.author.name')) ?><br>Ingénieur informaticien nigérien · <?= e(implode(' / ', (array) config('licence.author.phones'))) ?></small></span>
     </a>
   </aside>
   <div class="main">
@@ -108,6 +113,8 @@ $notes = $u ? Notifications::get() : [];
 <?= i18n_script() ?>
 <script src="<?= e(asset('js/money.js')) ?>"></script>
 <script src="<?= e(asset('js/app.js')) ?>"></script>
+<script src="<?= e(asset('js/scanner.js')) ?>"></script>
 <?php foreach (($scripts ?? []) as $s): ?><script src="<?= e(asset($s)) ?>"></script><?php endforeach; ?>
+<script src="<?= e(asset('js/pwa.js')) ?>"></script>
 </body>
 </html>

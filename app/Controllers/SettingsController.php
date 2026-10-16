@@ -181,6 +181,13 @@ final class SettingsController extends Controller
         redirect('/settings');
     }
 
+    public function mode(): void
+    {
+        $this->attempt(fn() => \App\Services\BusinessMode::set(Request::str('mode'), Request::input('show_all') === '1'), '/settings');
+        flash('success', 'Mode de fonctionnement : ' . \App\Services\BusinessMode::label() . '. La caisse et les menus sont adaptés.');
+        redirect('/settings');
+    }
+
     public function business(): void
     {
         $type = Request::str('business_type');

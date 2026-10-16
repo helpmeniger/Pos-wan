@@ -12,7 +12,7 @@ final class Request
         return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
     }
 
-    /** Chemin de la route, sans le préfixe d'installation (ex. /pos-wan/public). */
+    /** Chemin de la route, sans le préfixe d'installation (ex. /pos-marwa/public). */
     public static function path(): string
     {
         $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
@@ -20,7 +20,7 @@ final class Request
         if ($base !== '' && str_starts_with($uri, $base)) {
             $uri = substr($uri, strlen($base));
         } elseif ($base !== '' && str_ends_with($base, '/public') && ($parent = substr($base, 0, -7)) !== '' && str_starts_with($uri, $parent . '/')) {
-            // Accès via la racine du projet réécrite vers public/ (ex. /pos-wan/login)
+            // Accès via la racine du projet réécrite vers public/ (ex. /pos-marwa/login)
             $uri = substr($uri, strlen($parent));
         }
         if (str_starts_with($uri, '/index.php')) {

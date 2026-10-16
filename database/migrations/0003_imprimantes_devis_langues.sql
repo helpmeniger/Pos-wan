@@ -1,5 +1,5 @@
 -- =====================================================================
--- POS Wan — migration 0003 : imprimantes, devis, langues, canaux de vente,
+-- POS Marwa — migration 0003 : imprimantes, devis, langues, canaux de vente,
 -- opérateurs mobile money
 -- =====================================================================
 

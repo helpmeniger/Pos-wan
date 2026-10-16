@@ -100,7 +100,7 @@ final class Addons
             }
             $req = (string) ($data['requires'] ?? '');
             if ($req !== '' && version_compare((string) config('app.version'), $req, '<')) {
-                $m['errors'][] = 'Nécessite POS Wan ' . $req . ' ou plus récent (version actuelle : ' . config('app.version') . ').';
+                $m['errors'][] = 'Nécessite POS Marwa ' . $req . ' ou plus récent (version actuelle : ' . config('app.version') . ').';
             }
             foreach (array_keys((array) ($data['permissions'] ?? [])) as $p) {
                 if (!preg_match('/^[a-z][a-z0-9_]*\.[a-z0-9_]+$/', (string) $p)) {

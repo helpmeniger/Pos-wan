@@ -4,9 +4,9 @@
     <div class="card mb-3 about-card"><div class="card-body p-4">
       <div class="d-flex align-items-center gap-3 mb-3">
         <img src="<?= e(asset('img/logo.svg')) ?>" alt="" width="64" height="64">
-        <div><div class="fs-3 fw-bold">POS <span class="text-warning">Wan</span></div><div class="text-secondary">Caisse et gestion commerciale · version <?= e(config('app.version')) ?></div></div>
+        <div><div class="fs-3 fw-bold">POS <span class="text-warning">Marwa</span></div><div class="text-secondary">Caisse et gestion commerciale · version <?= e(config('app.version')) ?></div></div>
       </div>
-      <p class="mb-3">POS Wan est un logiciel conçu et développé au Niger pour les commerces, pharmacies, restaurants, pressings et cliniques : caisse, stocks, achats, clients, rapports, modules complémentaires.</p>
+      <p class="mb-3">POS Marwa est un logiciel conçu et développé au Niger pour les commerces, pharmacies, restaurants, pressings et cliniques : caisse, stocks, achats, clients, rapports, modules complémentaires.</p>
       <div class="border rounded p-3 mb-3 bg-body-tertiary">
         <div class="small text-secondary text-uppercase fw-semibold mb-1">Conception et développement</div>
         <div class="fs-5 fw-bold"><?= e($author['name']) ?></div>

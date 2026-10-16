@@ -1,4 +1,4 @@
-/* POS Wan — impressions (ticket thermique 58/80 mm, A4) */
+/* POS Marwa — impressions (ticket thermique 58/80 mm, A4) */
 * { box-sizing: border-box; }
 body { font-family: "DejaVu Sans", Arial, Helvetica, sans-serif; color: #000; margin: 0; background: #e9ecef; }
 .print-toolbar { position: sticky; top: 0; background: #14213d; padding: .5rem; display: flex; gap: .5rem; justify-content: center; z-index: 10; }

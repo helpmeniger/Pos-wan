@@ -1,16 +1,16 @@
 # Modules complémentaires (addons)
 
-POS Wan accepte des modules ajoutés **sans toucher au code du logiciel**, comme dans Odoo :
+POS Marwa accepte des modules ajoutés **sans toucher au code du logiciel**, comme dans Odoo :
 on dépose le dossier du module dans `addons/`, puis on l'installe en un clic.
 
 ## 1. Installer un module (utilisateur)
 
-1. Copier le dossier du module dans le dossier `addons/` de POS Wan
-   (ex. `C:\wamp64\www\pos-wan\addons\livraisons\`, qui contient `manifest.json`).
+1. Copier le dossier du module dans le dossier `addons/` de POS Marwa
+   (ex. `C:\wamp64\www\pos-marwa\addons\livraisons\`, qui contient `manifest.json`).
 2. Se connecter en **administrateur général** → **Gestion → Modules complémentaires**
    (le module apparaît avec l'état « Non installé » ; sinon cliquer sur
    « Rechercher de nouveaux modules »).
-3. Cliquer sur **Installer** : POS Wan fait une **sauvegarde de sécurité**, crée les tables
+3. Cliquer sur **Installer** : POS Marwa fait une **sauvegarde de sécurité**, crée les tables
    du module, ajoute ses droits et son menu. Le module est actif immédiatement.
 4. Donner les droits aux rôles qui en ont besoin (**Rôles & permissions**) si le module ne
    l'a pas déjà fait.
@@ -38,7 +38,7 @@ php bin/addons.php disable livraisons
 php bin/addons.php enable livraisons
 ```
 
-> ⚠️ Un module est du code PHP qui s'exécute avec les mêmes droits que POS Wan (accès à toute
+> ⚠️ Un module est du code PHP qui s'exécute avec les mêmes droits que POS Marwa (accès à toute
 > la base). N'installez que des modules dont vous connaissez l'auteur. L'installation est
 > réservée à la permission `addons.manage` (administrateur général uniquement par défaut).
 > Les modules ne peuvent pas être envoyés par le navigateur : il faut un accès au dossier
@@ -103,9 +103,9 @@ addons/
 |---|---|---|
 | `code` | oui | Identique au nom du dossier |
 | `name`, `version` | oui | Version au format `1.0.0` ; l'augmenter pour proposer « Mettre à jour » |
-| `requires` | non | Version minimale de POS Wan (sinon le module est refusé) |
+| `requires` | non | Version minimale de POS Marwa (sinon le module est refusé) |
 | `permissions` | non | `module.action` → libellé ; apparaissent dans Rôles & permissions |
-| `new_roles` | non | Rôles créés à l'installation s'ils n'existent pas : `{"code": {"name", "description", "permissions": [...]}}` (POS Wan ≥ 1.5.0 ; ex. module Clinique) |
+| `new_roles` | non | Rôles créés à l'installation s'ils n'existent pas : `{"code": {"name", "description", "permissions": [...]}}` (POS Marwa ≥ 1.5.0 ; ex. module Clinique) |
 | `roles` | non | Droits accordés à l'installation aux rôles système (`owner`, `store_manager`, `cashier`, `stock_manager`, `buyer`, `accountant`, `pharmacist`, `waiter`, `cook`, `auditor`). L'administrateur général reçoit toujours tout |
 | `menu` | non | Entrées ajoutées au menu (groupe existant ou nouveau groupe) |
 | `settings` | non | Paramètres créés à l'installation (jamais écrasés), lus avec `setting('clé')` |
@@ -138,7 +138,7 @@ Les contrôleurs héritent de `App\Controllers\Controller` (méthodes `attempt()
 ### Vues
 
 `view('livraisons::index', [...])` affiche `addons/livraisons/views/index.php` dans la mise
-en page de POS Wan (menu, en-tête). Toujours échapper les données avec `e()`.
+en page de POS Marwa (menu, en-tête). Toujours échapper les données avec `e()`.
 
 ### Tables (migrations/)
 
@@ -151,7 +151,7 @@ en page de POS Wan (menu, en-tête). Toujours échapper les données avec `e()`.
 ### Traductions (lang/)
 
 `lang/en.php` retourne `['Texte français' => 'English text']` : fusionné avec les
-dictionnaires de POS Wan quand le module est actif.
+dictionnaires de POS Marwa quand le module est actif.
 
 ### Fichiers publics (public/)
 

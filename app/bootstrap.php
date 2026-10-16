@@ -1,6 +1,6 @@
 <?php
 /**
- * POS Wan — amorçage commun (web + CLI).
+ * POS Marwa — amorçage commun (web + CLI).
  * Charge l'autoloader, l'environnement (.env), la configuration,
  * le fuseau horaire et la gestion des erreurs.
  */

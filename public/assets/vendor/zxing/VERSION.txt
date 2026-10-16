@@ -1,0 +1,2 @@
+@zxing/library 0.21.3 (MIT / Apache-2.0) — https://github.com/zxing-js/library
+Lecture des codes-barres par la caméra (repli quand BarcodeDetector est absent).

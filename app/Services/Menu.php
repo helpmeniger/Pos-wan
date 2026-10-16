@@ -62,6 +62,8 @@ final class Menu
                 ['Imprimantes', 'bi-printer', '/printers', 'settings.manage', '#2c3e50'],
                 ['Modules complémentaires', 'bi-puzzle', '/addons', 'addons.manage', '#6c3483'],
                 ['Mise à jour du logiciel', 'bi-cloud-arrow-up', '/update', 'system.update', '#1f618d'],
+                ['Accès mobile (QR code)', 'bi-qr-code', '/mobile', 'settings.manage', '#117a65'],
+                ['Appareils connectés', 'bi-phone', '/devices', 'users.manage', '#7d3c98'],
                 ['Licence et activation', 'bi-key-fill', '/licence', 'licence.manage', '#b7950b'],
                 ['Boutiques, entrepôts, caisses', 'bi-shop', '/stores', 'stores.manage', '#28b463'],
                 ['Sauvegardes', 'bi-hdd-stack', '/backups', 'backup.manage', '#b03a2e'],
@@ -80,7 +82,7 @@ final class Menu
             $groups[$g] = array_merge($groups[$g] ?? [], $items);
         }
         foreach ($groups as $g => $items) {
-            $f = array_values(array_filter($items, fn($i) => ($i[3] === null || can($i[3])) && (!isset($i[5]) || feature($i[5]))));
+            $f = array_values(array_filter($items, fn($i) => ($i[3] === null || can($i[3])) && (!isset($i[5]) || feature($i[5])) && !BusinessMode::hides($i[2])));
             if ($f) {
                 $out[$g] = $f;
             }

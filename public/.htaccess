@@ -1,4 +1,4 @@
-# POS Wan — règles Apache du dossier public
+# POS Marwa — règles Apache du dossier public
 Options -Indexes -MultiViews
 DirectoryIndex index.php
 
@@ -14,6 +14,11 @@ DirectoryIndex index.php
 <FilesMatch "(?i)(^\.|\.(env|ini|log|sql|gz|zip|bak|sh|lock|md|json|dist)$)">
     Require all denied
 </FilesMatch>
+
+# Application installable (manifeste web)
+<IfModule mod_mime.c>
+    AddType application/manifest+json .webmanifest
+</IfModule>
 
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"

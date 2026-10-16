@@ -57,6 +57,15 @@ final class AuthController extends Controller
             flash('danger', $r['error']);
             redirect('/login', ['tab' => $tab]);
         }
+        // Appareil (ordinateur, smartphone) : enregistré, refusé s'il est bloqué ou non approuvé
+        try {
+            Session::set('device_id', \App\Services\DeviceService::onLogin(Auth::user()));
+        } catch (\App\Core\BusinessException $e) {
+            Auth::logout();
+            Session::start();
+            flash('danger', $e->getMessage());
+            redirect('/login', ['tab' => $tab]);
+        }
         redirect('/');
     }
 

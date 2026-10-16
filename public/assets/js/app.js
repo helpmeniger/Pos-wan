@@ -1,4 +1,4 @@
-/* POS Wan — comportements communs de l'administration (aucun script inline : CSP stricte). */
+/* POS Marwa — comportements communs de l'administration (aucun script inline : CSP stricte). */
 (function () {
   'use strict';
   const $ = (s, r = document) => r.querySelector(s);

@@ -38,6 +38,12 @@ final class Auth
             Session::destroy();
             return null;
         }
+        // Appareil révoqué par l'administrateur : session coupée immédiatement
+        if (!\App\Services\DeviceService::sessionAllowed()) {
+            Audit::log('device.session_cut', 'user', (int) $id, null, (int) $id);
+            Session::destroy();
+            return null;
+        }
         // Le « ping » de surveillance ne compte pas comme une activité (sinon la session n'expirerait jamais)
         if (PHP_SAPI === 'cli' || Request::path() !== '/session/ping') {
             Session::set('last_seen', $now);

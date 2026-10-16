@@ -64,7 +64,7 @@ final class InstallController extends Controller
                 throw new BusinessException('Le nom du commerce est obligatoire.');
             }
             if (Request::input('accept_contract') !== '1') {
-                throw new BusinessException('Acceptez le contrat de licence d\'utilisation pour installer POS Wan.');
+                throw new BusinessException('Acceptez le contrat de licence d\'utilisation pour installer POS Marwa.');
             }
             if ($data['admin_password'] !== (string) Request::input('admin_password_confirm', '')) {
                 throw new BusinessException('La confirmation du mot de passe ne correspond pas.');

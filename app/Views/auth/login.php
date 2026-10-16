@@ -2,7 +2,10 @@
 <html <?= html_attrs() ?>>
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Connexion · POS Wan</title>
+<title>Connexion · POS Marwa</title>
+<link rel="manifest" href="<?= e(url('/manifest.webmanifest')) ?>">
+<meta name="theme-color" content="#14213d">
+<link rel="apple-touch-icon" href="<?= e(asset('img/icons/icon-180.png')) ?>">
 <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>">
 <link rel="stylesheet" href="<?= e(bootstrap_css()) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
@@ -81,5 +84,6 @@
 <?= i18n_script() ?>
 <script src="<?= e(asset('js/money.js')) ?>"></script>
 <script src="<?= e(asset('js/login.js')) ?>"></script>
+<script src="<?= e(asset('js/pwa.js')) ?>"></script>
 </body>
 </html>

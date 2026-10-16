@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>"><meta name="base-url" content="<?= e(url('/')) ?>">
-<title>Écran <?= e($station) ?> · POS Wan</title>
+<title>Écran <?= e($station) ?> · POS Marwa</title>
 <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>">
 <link rel="stylesheet" href="<?= e(bootstrap_css()) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">

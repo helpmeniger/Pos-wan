@@ -317,30 +317,6 @@ final class ProductController extends Controller
     }
 
     // ------------------------------------------------------------------ étiquettes, prix groupés, doublons
-    public function labels(): void
-    {
-        $ids = array_filter(array_map('intval', (array) Request::query('ids', [])));
-        $cat = (int) Request::query('category', 0);
-        $copies = max(1, min(50, (int) Request::query('copies', 1)));
-        $products = [];
-        if ($ids || $cat) {
-            $sql = "SELECT id, name, reference, barcode, sale_price FROM products WHERE status = 'active'";
-            $params = [];
-            if ($ids) {
-                $sql .= ' AND id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')';
-                $params = $ids;
-            } else {
-                $sql .= ' AND category_id = ?';
-                $params[] = $cat;
-            }
-            $products = DB::all($sql . ' ORDER BY name LIMIT 500', $params);
-        }
-        if ($products && Request::query('print') === '1') {
-            view('products/labels_print', ['title' => 'Étiquettes', 'products' => $products, 'copies' => $copies, 'bodyClass' => 'a4', 'backUrl' => url('/products/labels')], 'layouts/print');
-        }
-        view('products/labels', ['title' => 'Étiquettes code-barres', 'products' => $products, 'copies' => $copies, 'categories' => DB::all('SELECT id, name FROM categories ORDER BY name')]);
-    }
-
     /** Formulaire article : propose un EAN-13 interne libre (bouton « Générer »). */
     public function newBarcode(): void
     {

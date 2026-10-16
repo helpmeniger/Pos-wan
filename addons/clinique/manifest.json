@@ -1,9 +1,9 @@
 {
     "code": "clinique",
     "name": "Clinique",
-    "version": "1.0.0",
-    "requires": "1.5.0",
-    "author": "POS Wan",
+    "version": "1.1.0",
+    "requires": "2.0.0",
+    "author": "POS Marwa",
     "description": "Gestion d'une clinique / cabinet médical : dossiers patients, rendez-vous, accueil et constantes, consultations, ordonnances transmises à la pharmacie, hospitalisation et mise en observation (lits, plan de soins), écran de supervision des malades hospitalisés, facturation avec prise en charge, rapport.",
     "icon": "bi-hospital",
     "color": "#0b7a75",
@@ -30,6 +30,7 @@
             "permissions": ["clinique.view", "clinique.reception", "cash.open_close"] }
     },
     "menu": [
+        { "group": "Clinique", "label": "Caisse clinique", "icon": "bi-cash-coin", "url": "/clinique/caisse", "permission": "clinique.reception", "color": "#2e7d32" },
         { "group": "Clinique", "label": "Accueil clinique", "icon": "bi-hospital", "url": "/clinique", "permission": "clinique.view", "color": "#0b7a75" },
         { "group": "Clinique", "label": "Patients", "icon": "bi-person-vcard", "url": "/clinique/patients", "permission": "clinique.view", "color": "#1565c0" },
         { "group": "Clinique", "label": "Rendez-vous", "icon": "bi-calendar-week", "url": "/clinique/rdv", "permission": "clinique.view", "color": "#6a1b9a" },
@@ -40,6 +41,7 @@
         { "group": "Clinique", "label": "Actes, lits, rapport", "icon": "bi-gear-wide-connected", "url": "/clinique/parametres", "permission": "clinique.manage", "color": "#455a64" }
     ],
     "settings": {
+        "clinique_partial_payment": "1",
         "clinique_alerte_temp_haute": "38.5",
         "clinique_alerte_temp_basse": "35.5",
         "clinique_alerte_tas_haute": "160",

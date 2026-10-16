@@ -1,7 +1,7 @@
 <link rel="stylesheet" href="<?= e(asset('addons/pressing/pressing.css')) ?>">
 <?php
 use Addons\Pressing\PressingService as PS;
-$colors = ['received' => 'secondary', 'processing' => 'info text-dark', 'ready' => 'success', 'delivered' => 'dark', 'cancelled' => 'danger'];
+$colors = ['received' => 'secondary', 'processing' => 'info text-dark', 'ready' => 'success', 'partial' => 'warning text-dark', 'delivered' => 'dark', 'cancelled' => 'danger'];
 $tiles = [
   ['received', 'Reçus', 'bi-inbox', 'secondary', (int) ($counts['received'] ?? 0)],
   ['processing', 'En cours', 'bi-arrow-repeat', 'info', (int) ($counts['processing'] ?? 0)],
@@ -39,7 +39,7 @@ $tiles = [
     <td class="<?= $late ? 'text-danger fw-semibold' : '' ?>"><?= e(fdate($o['due_date'], false)) ?><?= $late ? ' <i class="bi bi-alarm"></i>' : '' ?></td>
     <td class="num"><?= money($o['total']) ?></td>
     <td class="num <?= $rest > 0 ? 'text-danger fw-semibold' : 'text-success' ?>"><?= $rest > 0 ? money($rest) : 'payé' ?></td>
-    <td><span class="badge bg-<?= e($colors[$o['status']]) ?>"><?= e(PS::STATUSES[$o['status']]) ?></span></td>
+    <td><span class="badge bg-<?= e($colors[$o['status']]) ?>"><?= e(PS::SHORT[$o['status']]) ?></span><?php $ld = PS::lateDays($o); ?><?= $ld ? '<br><small class="text-danger fw-semibold">' . $ld . ' j de retard</small>' : '' ?></td>
     <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="<?= e(url('/pressing/' . $o['id'])) ?>"><i class="bi bi-eye"></i></a></td>
   </tr>
 <?php endforeach; ?>

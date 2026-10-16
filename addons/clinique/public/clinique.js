@@ -95,6 +95,23 @@
     };
     df.addEventListener('input', (e) => { if (e.target.matches('[data-dq]')) calc(); });
     calc();
+    // Vérification par scan : chaque boîte scannée doit correspondre à une ligne de l'ordonnance
+    const sb = $('#dispenseScan');
+    let scanned = {};
+    if (sb && window.PMScanner) sb.addEventListener('click', () => {
+      scanned = {};
+      PMScanner.open({ title: T('Scanner les boîtes délivrées'), onCode: async (code) => {
+        const inp = $$('[data-dq]', df).find((i) => (i.dataset.codes || '').split('|').includes(code));
+        if (!inp) return { ok: false, text: T('Ce produit ne figure pas sur l\'ordonnance') };
+        const id = inp.name;
+        scanned[id] = (scanned[id] || 0) + 1;
+        const max = num(inp.dataset.max);
+        if (scanned[id] > max) { scanned[id] = max; return { ok: false, text: inp.dataset.drugName + ' : ' + T('quantité prescrite déjà atteinte') + ' (' + max + ')' }; }
+        inp.value = scanned[id];
+        calc();
+        return { ok: true, text: inp.dataset.drugName + ' : ' + scanned[id] + ' / ' + max };
+      } });
+    });
   }
 
   // ---------------------------------------------------------------- courbe des constantes (séjour)

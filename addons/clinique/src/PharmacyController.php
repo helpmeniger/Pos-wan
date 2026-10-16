@@ -36,7 +36,7 @@ final class PharmacyController extends Controller
     public function show(int $id): void
     {
         $pr = $this->prescriptionOr404($id);
-        $items = DB::all('SELECT i.*, pd.sale_price, pd.requires_prescription, COALESCE((SELECT SUM(quantity) FROM stock_levels sl WHERE sl.product_id = i.product_id), 0) AS stock
+        $items = DB::all('SELECT i.*, pd.sale_price, pd.requires_prescription, pd.barcode, pd.reference, COALESCE((SELECT SUM(quantity) FROM stock_levels sl WHERE sl.product_id = i.product_id), 0) AS stock
                 FROM clinic_prescription_items i LEFT JOIN products pd ON pd.id = i.product_id WHERE i.prescription_id = ? ORDER BY i.id', [$id]);
         view('clinique::pharmacy_dispense', ['title' => 'Délivrance ' . $pr['number'], 'pr' => $pr, 'items' => $items, 'uuid' => $this->uuid(),
             'sales' => DB::all('SELECT d.*, s.number, s.total, u.full_name FROM clinic_dispensings d JOIN sales s ON s.id = d.sale_id JOIN users u ON u.id = d.user_id WHERE d.prescription_id = ? ORDER BY d.id', [$id]),

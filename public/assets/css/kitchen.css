@@ -1,4 +1,4 @@
-/* POS Wan — écran cuisine / bar (KDS) */
+/* POS Marwa — écran cuisine / bar (KDS) */
 html, body { height: 100%; }
 body.kds { background: #0b0f14; color: #e9eef5; font-size: 16px; margin: 0; }
 .kds-head { display: flex; align-items: center; gap: 1.2rem; padding: .5rem 1rem; background: #141b24; border-bottom: 2px solid #f39c12; position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }

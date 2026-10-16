@@ -3,6 +3,7 @@
   <a class="btn btn-outline-secondary" href="<?= e(url('/clinique/factures')) ?>"><i class="bi bi-arrow-left"></i> Factures</a>
   <a class="btn btn-outline-primary" href="<?= e(url('/clinique/patients/' . $b['patient_id'])) ?>"><i class="bi bi-folder2-open"></i> Dossier patient</a>
   <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/clinique/factures/' . $b['id'] . '/print')) ?>"><i class="bi bi-printer"></i> Imprimer la facture</a>
+  <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/clinique/factures/' . $b['id'] . '/ticket')) ?>"><i class="bi bi-receipt-cutoff"></i> Reçu (ticket)</a>
   <span class="ms-auto fs-5"><span class="badge bg-<?= ['open' => 'warning text-dark', 'paid' => 'success', 'cancelled' => 'secondary'][$b['status']] ?>"><?= e(['open' => 'À payer', 'paid' => 'Payée', 'cancelled' => 'Annulée'][$b['status']]) ?></span></span>
 </div>
 <?php if ($b['status'] === 'cancelled'): ?><div class="alert alert-secondary py-2">Annulée : <?= e($b['cancel_reason']) ?></div><?php endif; ?>

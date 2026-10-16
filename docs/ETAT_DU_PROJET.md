@@ -1,4 +1,4 @@
-# État du projet — version 1.6.1
+# État du projet — version 2.0.0 (POS Marwa)
 
 ## Terminé et vérifié
 
@@ -47,8 +47,18 @@
 | **v1.6** Mise à jour par sélection du dossier (lots, intégrité, sauvegardes, retour arrière) | ✅ | Tests + Chromium : installation 1.6.0 mise à jour en 1.6.1 par le navigateur, migration appliquée |
 | **v1.6** À propos, contrat, licence signée (essai, lecture seule), outils de l'auteur | ✅ | Tests (falsification, autre installation, expiration) + activation réelle dans Chromium |
 | Protections Apache (.htaccess) en sous-dossier | ✅ | Testé sous Apache 2.4 + mod_php |
+| **v2.0** Renommage POS Marwa | ✅ | Recherche dans tout le code ; compatibilité conservée (base, clés de licence) |
+| **v2.0** Stock temps réel en caisse, ventes simultanées | ✅ | Test HTTP : 10 ventes simultanées pour 5 en stock → 5 acceptées, stock 0, une seule déduction par vente |
+| **v2.0** Modes de fonctionnement (6), caisse et menus adaptés | ✅ | Tests (redirections, droits, modules requis) + Chromium |
+| **v2.0** Accès mobile par QR code, appareils (approbation, révocation), `/health` | ✅ | Tests HTTP (révocation → session coupée) + Chromium mobile 390 × 844 ; **détection de l'adresse IP non testée sur un vrai réseau local** |
+| **v2.0** Scan caméra (lecteur intégré du navigateur / ZXing, une lecture par présentation, +1, photo) | ✅ | Chromium avec caméra simulée (flux vidéo EAN-13) : caisse, inventaire ; **non testé sur un téléphone physique** |
+| **v2.0** Inventaire scan + manuel, journal, filtres, rapport, validation | ✅ | Tests + Chromium (caméra et douchette) |
+| **v2.0** Étiquettes (champs, A4/rouleau en mm, modèles, aperçu, calibrage, EAN-13) | ✅ | Tests + code-barres imprimé relu par ZXing ; **non testé sur une imprimante d'étiquettes réelle** |
+| **v2.0** Clinique 1.1 : caisse clinique, paiement partiel, contrôle par scan à la délivrance | ✅ | Tests HTTP + Chromium |
+| **v2.0** Pressing 1.1 : caisse, statuts, retrait partiel, retards, suivi, historique client | ✅ | Tests + Chromium |
+| **v2.0** Lanceur Windows, raccourci, tâche planifiée, PWA | ⚠️ | Écrits et relus ; **non exécutés sous Windows** (voir `docs/DEMARRAGE_WINDOWS.md` §5) |
 
-**Résultat de la suite de tests : 106 réussis, 0 échec** (`php tests/run.php`).
+**Résultat de la suite de tests : 116 réussis, 0 échec** (`php tests/run.php`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 
@@ -59,7 +69,7 @@
 | Lecture automatique d'une balance électronique | Saisie manuelle du poids (quantités décimales) ; pas de lecture des étiquettes code-barres « prix/poids » | Prise en charge des codes EAN à poids variable (préfixe 2x) |
 | Afficheur client (second écran) | Non disponible | Page « afficheur » synchronisée |
 | Utilisation des points de fidélité (conversion en remise) | Les points sont cumulés ; leur utilisation se fait par une remise manuelle | Bon de réduction automatique |
-| Export Excel natif (.xlsx) | CSV compatible Excel ; PDF généré par POS Wan (polices latines : pas d'arabe dans les PDF) | Bibliothèque XLSX |
+| Export Excel natif (.xlsx) | CSV compatible Excel ; PDF généré par POS Marwa (polices latines : pas d'arabe dans les PDF) | Bibliothèque XLSX |
 | Prix saisis hors taxe (TVA ajoutée au total) | Prix toujours TTC, TVA extraite | Mode HT si besoin |
 | Conversion d'unités générique (kg ↔ g, etc.) | Conditionnements (N unités de base) uniquement | Table de conversions |
 | Génération automatique de la grille de variantes | Chaque variante est un article lié à son parent (création par « Dupliquer / variante ») | Assistant taille × couleur |
@@ -70,11 +80,12 @@
 | Traductions | Générées et contrôlées automatiquement, non relues par des locuteurs natifs (haoussa en priorité) ; certains messages dynamiques restent en français | Relecture ; ajout des textes manquants dans `lang/<code>.php` |
 | Devise | Changement d'affichage uniquement : aucun taux de change, montants existants non convertis | — |
 | Restaurant : modificateurs payants (suppléments), menus/formules à prix fixe, réservations | Notes libres ; suppléments à saisir comme articles | Options d'articles et réservations |
-| HTTPS | Documenté (certificat local), non configuré automatiquement | — |
+| HTTPS | Documenté (certificat local), non configuré automatiquement ; nécessaire pour la caméra en direct sur smartphone (sinon « Photo du code ») | — |
 | Conformité réglementaire pharmacie / fiscale (Niger) | Fonctions de traçabilité fournies, **non certifiées** | Validation par un pharmacien et un expert-comptable |
 | Factures normalisées / dispositifs fiscaux éventuels exigés par l'administration | Non implémenté | À étudier selon la réglementation en vigueur |
 
 ## Prochaines tâches proposées
+0. Essayer sur le poste Windows le lanceur, le raccourci et le démarrage automatique ; essayer le scan caméra sur les téléphones de l'établissement (en HTTPS) et l'imprimante d'étiquettes.
 1. Valider le module pharmacie et les mentions des factures avec des professionnels locaux.
 2. Essais sur les imprimantes thermiques réellement utilisées (réseau et USB partagée) ; relecture des traductions.
 3. Codes-barres balance (poids/prix variable) et afficheur client.

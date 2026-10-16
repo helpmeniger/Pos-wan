@@ -1,4 +1,4 @@
-# Architecture technique de POS Wan
+# Architecture technique de POS Marwa
 
 ## 1. Choix techniques
 
@@ -13,7 +13,7 @@
 ## 2. Arborescence
 
 ```
-pos-wan/
+pos-marwa/
 ├── app/
 │   ├── bootstrap.php        Autoload PSR-4, .env, configuration, fuseau horaire, erreurs
 │   ├── helpers.php          e(), url(), money(), setting(), feature(), paginate(), amount_words()…

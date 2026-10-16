@@ -3,7 +3,7 @@
     "name": "Livraisons",
     "version": "1.0.0",
     "requires": "1.4.0",
-    "author": "POS Wan",
+    "author": "POS Marwa",
     "description": "Suivi des livraisons à domicile : client, adresse, livreur, frais, statut (à livrer, en route, livrée), lien avec la vente. Module d'exemple à copier pour créer vos propres modules.",
     "icon": "bi-truck",
     "color": "#16a085",

@@ -1,5 +1,5 @@
 /* =====================================================================
-   POS Wan — logique de la caisse.
+   POS Marwa — logique de la caisse.
    Le navigateur calcule les totaux pour l'affichage ; le serveur recalcule
    TOUT (prix, remises, taxes, stock, droits) et fait foi.
    ===================================================================== */
@@ -193,6 +193,34 @@
         <div class="p-price">${p.promo ? `<s class="text-secondary small me-1">${fmt(p.regular)}</s>` : ''}${fmt(p.price)}</div>${packs}</div>`;
     }).join('') + (more ? '<button class="btn btn-outline-secondary empty-msg" id="loadMore">Afficher plus…</button>' : '');
   }
+  // ------------------------------------------------------------------ stock en temps réel
+  // Les ventes des autres caisses, réceptions, retours, transferts et inventaires modifient le
+  // stock : il est relu toutes les 15 s (et après chaque vente) sans recharger la page.
+  async function refreshStock() {
+    const ids = [...new Set(cart.lines.map((l) => l.id).concat(items.map((p) => p.id)))].slice(0, 300);
+    if (!ids.length || document.hidden) return;
+    let d;
+    try { d = await api('/pos/stock?ids=' + ids.join(',')); } catch (e) { return; }
+    if (!d || !d.ok) return;
+    const st = d.stock || {};
+    let changed = false;
+    cart.lines.forEach((l) => { if (st[l.id] !== undefined && st[l.id] !== l.stock) { l.stock = st[l.id]; changed = true; } });
+    items.forEach((p, i) => {
+      if (st[p.id] === undefined || st[p.id] === p.stock) return;
+      p.stock = st[p.id];
+      const card = document.querySelector(`#productGrid .p-card[data-i="${i}"]`);
+      if (card) {
+        card.classList.toggle('out', p.track && p.stock <= 0);
+        const s2 = card.querySelector('.stk');
+        if (s2 && p.track) s2.textContent = __('Stock') + ' : ' + fmtQ(p.stock);
+      }
+    });
+    if (changed) { save(); render(); }
+  }
+  setInterval(refreshStock, 15000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshStock(); });
+  window.PosStock = { refresh: refreshStock };
+
   $('#productGrid').addEventListener('click', (e) => {
     if (e.target.id === 'loadMore') { page++; loadProducts(true); return; }
     const pk = e.target.closest('[data-pack]');
@@ -214,6 +242,20 @@
   if (localStorage.getItem('pw-pos-view') === 'list') $('[data-view="list"]').click();
 
   // ------------------------------------------------------------------ code-barres
+  // Caméra du smartphone / de la tablette : lecture successive, anti-doublon, retour visuel et sonore
+  const cam = $('#cameraScan');
+  if (cam && window.PMScanner) cam.addEventListener('click', () => PMScanner.open({
+    title: __('Scanner des articles'),
+    onCode: async (code) => {
+      const d = await api('/pos/lookup?code=' + encodeURIComponent(code));
+      if (!d.ok) return { ok: false, text: d.error || __('Article introuvable.') };
+      addItem(d.item, d.packaging_id);
+      const it = d.item;
+      const line = cart.lines[selected];
+      const low = it.track && line && line.qty * (line.factor || 1) > it.stock;
+      return { ok: true, html: `<b>${esc(it.name)}</b> · ${esc(it.reference || '')} · ${fmt(it.price)} · ${__('Stock')} ${fmtQ(it.stock)}${line ? ' · ' + __('Qté') + ' ' + fmtQ(line.qty) : ''}${low ? ' <span style="color:#c62828">⚠ ' + __('stock insuffisant') + '</span>' : ''}` };
+    },
+  }));
   const bi = $('#barcodeInput');
   bi.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = bi.value; bi.value = ''; scan(v); } });
   $('#barcodeGo').addEventListener('click', () => { const v = bi.value; bi.value = ''; scan(v); bi.focus(); });
@@ -462,6 +504,7 @@
     }
     if (!quickMode) modal('payModal').hide();
     finishSale(d);
+    setTimeout(refreshStock, 300); // quantités affichées mises à jour après la vente
   }
   $('#payConfirm').addEventListener('click', checkout);
   $('#authOk').addEventListener('click', () => {

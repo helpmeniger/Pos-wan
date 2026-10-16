@@ -2,7 +2,7 @@
 use App\Core\Env;
 
 /*
- * Licence d'utilisation de POS Wan — © Mahamadou Hamidou (Mohamed).
+ * Licence d'utilisation de POS Marwa — © Mahamadou Hamidou (Mohamed).
  * Clé PUBLIQUE de vérification des licences (Ed25519). La clé privée correspondante reste
  * exclusivement chez l'auteur : elle n'est jamais livrée avec le logiciel.
  */

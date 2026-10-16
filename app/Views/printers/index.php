@@ -10,7 +10,7 @@
     <?php if (!$printers): ?><tr><td colspan="7" class="text-center text-secondary py-4">Aucune imprimante configurée : tout s'imprime sur l'imprimante par défaut du navigateur.</td></tr><?php endif; ?>
     </tbody></table></div></div>
     <div class="alert alert-info small">
-      <b>Comment ça marche ?</b> Le navigateur imprime toujours sur l'imprimante <i>par défaut</i> de l'appareil. Pour envoyer chaque document vers sa propre imprimante (ex. tickets de l'alimentation à la caisse, bons cuisine en cuisine, bons boissons au bar), le serveur POS Wan les imprime lui-même :
+      <b>Comment ça marche ?</b> Le navigateur imprime toujours sur l'imprimante <i>par défaut</i> de l'appareil. Pour envoyer chaque document vers sa propre imprimante (ex. tickets de l'alimentation à la caisse, bons cuisine en cuisine, bons boissons au bar), le serveur POS Marwa les imprime lui-même :
       <ul class="mb-1 mt-1">
         <li><b>Imprimante réseau</b> (câble Ethernet ou Wi-Fi) : saisir son adresse IP, port 9100 (ex. <code>192.168.1.50:9100</code>).</li>
         <li><b>Imprimante USB</b> branchée sur le PC serveur : dans Windows, <i>Paramètres → Imprimantes → Propriétés → Partage</i>, partager l'imprimante (ex. nom <code>XP-80</code>), puis saisir <code>\\localhost\XP-80</code>.</li>

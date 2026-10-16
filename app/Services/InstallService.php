@@ -175,7 +175,7 @@ final class InstallService
     public static function install(array $d): void
     {
         if (self::isInstalled()) {
-            throw new BusinessException('POS Wan est déjà installé.');
+            throw new BusinessException('POS Marwa est déjà installé.');
         }
         if ($err = Auth::passwordPolicyError((string) $d['admin_password'], (string) $d['admin_username'])) {
             throw new BusinessException($err);

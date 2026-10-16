@@ -116,6 +116,82 @@ final class PressingController extends Controller
         redirect('/pressing/' . $id);
     }
 
+    public function partial(int $id): void
+    {
+        $this->order($id);
+        $change = $this->attempt(fn() => PressingService::deliverPartial($id, (array) Request::input('qty', []), $this->payData()), '/pressing/' . $id);
+        flash('success', t('Pièces remises au client.') . ($change > 0 ? ' ' . t('Monnaie à rendre') . ' : ' . money($change) . '.' : ''));
+        redirect('/pressing/' . $id);
+    }
+
+    /** Caisse pressing (caisse principale en mode Pressing) : dépôt direct + retraits. */
+    public function caisse(): void
+    {
+        $recent = DB::all('SELECT customer_name, phone FROM pressing_orders GROUP BY customer_name, phone ORDER BY MAX(id) DESC LIMIT 300');
+        view('pressing::form', ['title' => 'Caisse pressing', 'tarifs' => PressingService::tarifs(), 'recent' => $recent, 'scripts' => ['addons/pressing/pressing.js'], 'caisse' => true,
+            'ready' => DB::all("SELECT id, number, customer_name, phone, total - paid AS due, due_date FROM pressing_orders WHERE status IN ('ready','partial') ORDER BY due_date LIMIT 12"),
+            'readyCount' => (int) DB::value("SELECT COUNT(*) FROM pressing_orders WHERE status IN ('ready','partial')")]);
+    }
+
+    /** Recherche d'un dépôt pour le retrait (n°, téléphone, nom, étiquette ou QR du ticket). */
+    public function find(): void
+    {
+        $q = trim((string) Request::query('q', ''));
+        $exact = $q !== '' ? DB::value('SELECT id FROM pressing_orders WHERE number = ?', [$q]) : null;
+        if ($exact) {
+            redirect('/pressing/' . $exact);
+        }
+        redirect('/pressing', ['q' => $q, 'f' => 'all']);
+    }
+
+    /** Historique d'un client (par téléphone). */
+    public function client(): void
+    {
+        $phone = trim((string) Request::query('phone', ''));
+        $digits = preg_replace('/\D/', '', $phone);
+        $orders = $digits !== '' ? DB::all("SELECT o.*, (SELECT GROUP_CONCAT(CONCAT(i.quantity, ' ', i.article_name) SEPARATOR ', ') FROM pressing_items i WHERE i.order_id = o.id) AS clothes
+                FROM pressing_orders o WHERE REPLACE(REPLACE(REPLACE(o.phone, ' ', ''), '+', ''), '-', '') LIKE ? ORDER BY o.id DESC LIMIT 200", ['%' . substr((string) $digits, -8)]) : [];
+        view('pressing::client', ['title' => 'Historique client', 'phone' => $phone, 'orders' => $orders]);
+    }
+
+    /** Suivi des vêtements déposés : toutes les commandes, retards, soldes ; export CSV / PDF. */
+    public function suivi(): void
+    {
+        $f = (string) Request::query('f', 'open');
+        $q = trim((string) Request::query('q', ''));
+        $alertDays = max(0, (int) setting('pressing_alerte_jours', '1'));
+        $where = match ($f) {
+            'late' => "o.status IN ('received','processing','ready','partial') AND o.due_date < CURDATE()",
+            'soon' => "o.status IN ('received','processing') AND o.due_date BETWEEN CURDATE() AND CURDATE() + INTERVAL " . $alertDays . ' DAY',
+            'ready' => "o.status IN ('ready','partial')",
+            'delivered' => "o.status = 'delivered'",
+            'unpaid' => "o.status <> 'cancelled' AND o.total - o.paid > 0.009",
+            'all' => '1=1',
+            default => "o.status IN ('received','processing','ready','partial')",
+        };
+        $params = [];
+        if ($q !== '') {
+            $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%';
+            $where .= ' AND (o.number LIKE ? OR o.customer_name LIKE ? OR o.phone LIKE ?)';
+            array_push($params, $like, $like, $like);
+        }
+        $rows = DB::all("SELECT o.*, (SELECT GROUP_CONCAT(CONCAT(i.quantity, ' ', i.article_name) ORDER BY i.line_no SEPARATOR ', ') FROM pressing_items i WHERE i.order_id = o.id) AS clothes,
+                (SELECT MAX(p.created_at) FROM pressing_payments p WHERE p.order_id = o.id) AS last_payment
+                FROM pressing_orders o WHERE $where ORDER BY FIELD(o.status, 'ready', 'partial', 'processing', 'received', 'delivered', 'cancelled'), o.due_date, o.id DESC LIMIT 1000", $params);
+        $counts = [
+            'late' => (int) DB::value("SELECT COUNT(*) FROM pressing_orders WHERE status IN ('received','processing','ready','partial') AND due_date < CURDATE()"),
+            'soon' => (int) DB::value("SELECT COUNT(*) FROM pressing_orders WHERE status IN ('received','processing') AND due_date BETWEEN CURDATE() AND CURDATE() + INTERVAL " . $alertDays . ' DAY'),
+            'ready' => (int) DB::value("SELECT COUNT(*) FROM pressing_orders WHERE status IN ('ready','partial')"),
+            'unpaid' => (float) DB::value("SELECT COALESCE(SUM(total - paid),0) FROM pressing_orders WHERE status NOT IN ('cancelled')"),
+        ];
+        if (\App\Core\Export::requested() && can('reports.export')) {
+            \App\Core\Export::download('pressing_suivi_' . date('Y-m-d') . '.csv', 'Pressing — suivi des vêtements déposés', ['N°', 'Client', 'Téléphone', 'Vêtements', 'Pièces', 'Dépôt', 'Livraison prévue', 'Total', 'Payé', 'Reste', 'Statut', 'Retard (j)'],
+                array_map(fn($o) => [$o['number'], $o['customer_name'], $o['phone'], $o['clothes'], (int) $o['pieces'], substr($o['created_at'], 0, 16), $o['due_date'], $o['total'], $o['paid'], round((float) $o['total'] - (float) $o['paid'], 2), PressingService::SHORT[$o['status']], PressingService::lateDays($o)], $rows),
+                ['landscape' => true, 'subtitle' => count($rows) . ' dépôt(s) · ' . date('d/m/Y H:i')]);
+        }
+        view('pressing::suivi', ['title' => 'Suivi des vêtements déposés', 'rows' => $rows, 'f' => $f, 'q' => $q, 'counts' => $counts, 'alertDays' => $alertDays]);
+    }
+
     public function cancel(int $id): void
     {
         $this->order($id);

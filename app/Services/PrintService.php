@@ -13,7 +13,7 @@ use App\Core\Logger;
  *
  * Un navigateur imprime toujours sur l'imprimante par défaut de l'appareil. Pour
  * diriger chaque document vers la bonne imprimante (ticket de l'alimentation, bon
- * de la cuisine, bon du bar…), le serveur POS Wan — installé sur le PC où sont
+ * de la cuisine, bon du bar…), le serveur POS Marwa — installé sur le PC où sont
  * branchées les imprimantes — envoie lui-même les données ESC/POS :
  *  - network : imprimante réseau (Ethernet/Wi-Fi), port RAW 9100 ;
  *  - windows : imprimante USB partagée sous Windows (\\localhost\NomDuPartage) ;

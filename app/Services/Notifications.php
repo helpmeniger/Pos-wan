@@ -28,6 +28,16 @@ final class Notifications
                 }
             }
         }
+        if (\App\Core\Addons::isActive('pressing') && can('pressing.view')) {
+            $late = (int) DB::value("SELECT COUNT(*) FROM pressing_orders WHERE status IN ('received','processing') AND due_date < CURDATE()");
+            $soon = (int) DB::value("SELECT COUNT(*) FROM pressing_orders WHERE status IN ('received','processing') AND due_date BETWEEN CURDATE() AND CURDATE() + INTERVAL ? DAY", [max(0, (int) setting('pressing_alerte_jours', '1'))]);
+            if ($late > 0) {
+                $items[] = ['bi-alarm text-danger', "$late dépôt(s) pressing en retard", '/pressing/suivi?f=late'];
+            }
+            if ($soon > 0) {
+                $items[] = ['bi-hourglass-split text-warning', "$soon dépôt(s) pressing à livrer bientôt", '/pressing/suivi?f=soon'];
+            }
+        }
         if (can('customers.view')) {
             $late = (int) DB::value("SELECT COUNT(DISTINCT customer_id) FROM customer_transactions ct JOIN customers c ON c.id = ct.customer_id WHERE ct.type = 'credit_sale' AND ct.due_date < CURDATE() AND c.balance > 0");
             if ($late > 0) {

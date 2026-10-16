@@ -38,6 +38,57 @@ final class Barcode
         return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' . $width . ' ' . ($height + 14) . '" preserveAspectRatio="none"><rect width="100%" height="100%" fill="#fff"/><g fill="#000">' . $bars . '</g><text x="' . ($width / 2) . '" y="' . ($height + 12) . '" font-family="monospace" font-size="11" text-anchor="middle">' . htmlspecialchars($code, ENT_XML1) . '</text></svg>';
     }
 
+    private const EAN_L = ['0001101', '0011001', '0010011', '0111101', '0100011', '0110001', '0101111', '0111011', '0110111', '0001011'];
+    private const EAN_G = ['0100111', '0110011', '0011011', '0100001', '0011101', '0111001', '0000101', '0010001', '0001001', '0010111'];
+    private const EAN_R = ['1110010', '1100110', '1101100', '1000010', '1011100', '1001110', '1010000', '1000100', '1001000', '1110100'];
+    private const EAN_PARITY = ['LLLLLL', 'LLGLGG', 'LLGGLG', 'LLGGGL', 'LGLLGG', 'LGGLLG', 'LGGGLL', 'LGLGLG', 'LGLGGL', 'LGGLGL'];
+
+    public static function isEan13(string $code): bool
+    {
+        if (!preg_match('/^\d{13}$/', $code)) {
+            return false;
+        }
+        $sum = 0;
+        for ($i = 0; $i < 12; $i++) {
+            $sum += (int) $code[$i] * ($i % 2 ? 3 : 1);
+        }
+        return (10 - $sum % 10) % 10 === (int) $code[12];
+    }
+
+    /** EAN-13 (symbologie standard des articles de commerce), chiffres sous les barres. */
+    public static function ean13Svg(string $code, int $height = 50): string
+    {
+        $bits = '101';
+        $parity = self::EAN_PARITY[(int) $code[0]];
+        for ($i = 1; $i <= 6; $i++) {
+            $bits .= ($parity[$i - 1] === 'L' ? self::EAN_L : self::EAN_G)[(int) $code[$i]];
+        }
+        $bits .= '01010';
+        for ($i = 7; $i <= 12; $i++) {
+            $bits .= self::EAN_R[(int) $code[$i]];
+        }
+        $bits .= '101';
+        $q = 11; // zone de silence (modules)
+        $rects = '';
+        $guards = [0, 1, 2, 45, 46, 47, 48, 49, 92, 93, 94];
+        foreach (str_split($bits) as $i => $b) {
+            if ($b === '1') {
+                $h = in_array($i, $guards, true) ? $height + 5 : $height;
+                $rects .= '<rect x="' . ($q + $i) . '" y="0" width="1" height="' . $h . '"/>';
+            }
+        }
+        $w = 95 + 2 * $q;
+        $t = fn(float $x, string $s) => '<text x="' . $x . '" y="' . ($height + 11) . '" font-family="monospace" font-size="10" text-anchor="middle">' . $s . '</text>';
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' . $w . ' ' . ($height + 13) . '" preserveAspectRatio="none"><rect width="100%" height="100%" fill="#fff"/><g fill="#000">' . $rects . '</g>'
+            . $t($q - 5, $code[0]) . $t($q + 3 + 21, substr($code, 1, 6)) . $t($q + 50 + 21, substr($code, 7, 6)) . '</svg>';
+    }
+
+    /** EAN-13 si le code en est un (somme de contrôle valide), sinon Code 128. */
+    public static function auto(string $code, int $height = 50): string
+    {
+        return self::isEan13($code) ? self::ean13Svg($code, $height) : self::svg($code, $height);
+    }
+
     /** Nouvel EAN-13 interne unique (préfixe 21). */
     public static function newInternalEan(): string
     {

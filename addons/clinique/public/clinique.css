@@ -70,3 +70,11 @@ body.sup.has-alert .sup-head { animation: supPulse 2s ease-in-out infinite; }
 .bed .care .done:disabled { opacity: .5; }
 @media (min-width: 1800px) { .sup-board { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); } body.sup { font-size: 17px; } }
 @media (max-width: 576px) { .sup-head { padding: 8px; } .sup-clock { font-size: 1.1rem; } .sup-board { grid-template-columns: 1fr; padding: 8px; } }
+
+/* Caisse clinique */
+.cl-acts { max-height: 70vh; overflow: auto; }
+.cl-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin-bottom: 6px; }
+.cl-tile { border: 1px solid var(--bs-border-color); background: var(--bs-body-bg); border-radius: 8px; padding: 8px; text-align: left; display: flex; flex-direction: column; gap: 4px; min-height: 64px; }
+.cl-tile span { font-size: .82rem; line-height: 1.15; } .cl-tile b { font-size: .85rem; color: #0b7a75; }
+.cl-tile:hover, .cl-tile:focus { border-color: #0b7a75; box-shadow: 0 0 0 2px rgba(11,122,117,.15); }
+.cl-line input { width: 56px; }

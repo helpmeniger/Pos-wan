@@ -6,11 +6,15 @@
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
 <meta name="pw-currency" content="<?= e(json_encode(currency(), JSON_UNESCAPED_UNICODE)) ?>">
 <meta name="base-url" content="<?= e(url('/')) ?>">
-<title>Caisse · POS Wan</title>
+<title>Caisse · POS Marwa</title>
+<link rel="manifest" href="<?= e(url('/manifest.webmanifest')) ?>">
+<meta name="theme-color" content="#14213d">
+<link rel="apple-touch-icon" href="<?= e(asset('img/icons/icon-180.png')) ?>">
 <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>">
 <link rel="stylesheet" href="<?= e(bootstrap_css()) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/pos.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/scanner.css')) ?>">
 </head>
 <body class="pos-body">
 <div class="pos">
@@ -25,6 +29,17 @@
         </button>
       <?php endforeach; ?>
     </div>
+    <?php if ($alerts || $clinicLink || $rxQueue !== null): ?>
+    <div class="mode-bar">
+      <?php if ($mode === 'clinique_pharmacie'): ?><span class="mode-tag"><i class="bi bi-capsule"></i> Pharmacie</span><?php if ($clinicLink): ?><a class="mode-link" href="<?= e(url('/clinique/caisse')) ?>"><i class="bi bi-hospital"></i> Prestations médicales</a><?php endif; ?><?php endif; ?>
+      <?php if ($rxQueue !== null): ?><a class="mode-link <?= $rxQueue ? 'warn' : '' ?>" href="<?= e(url('/clinique/pharmacie')) ?>"><i class="bi bi-file-medical"></i> Ordonnances à délivrer : <b><?= (int) $rxQueue ?></b></a><?php endif; ?>
+      <?php if ($alerts): ?>
+        <?php if ($alerts['expired']): ?><a class="mode-link danger" href="<?= e(url('/stock/expiry')) ?>" title="Lots périmés : leur vente est bloquée"><i class="bi bi-calendar-x"></i> <?= (int) $alerts['expired'] ?> lot(s) périmé(s)</a><?php endif; ?>
+        <?php if ($alerts['soon']): ?><a class="mode-link warn" href="<?= e(url('/stock/expiry')) ?>"><i class="bi bi-hourglass-split"></i> <?= (int) $alerts['soon'] ?> lot(s) périment sous <?= (int) $alerts['days'] ?> j</a><?php endif; ?>
+        <?php if ($alerts['out']): ?><a class="mode-link warn" href="<?= e(url('/stock', ['filter' => 'low'])) ?>"><i class="bi bi-box-seam"></i> <?= (int) $alerts['out'] ?> médicament(s) en rupture</a><?php endif; ?>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
     <div class="search-row">
       <div class="input-group">
         <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -44,6 +59,7 @@
       </div>
       <input type="text" id="barcodeInput" class="form-control barcode" placeholder="Code-barres ici (scanner ou saisir puis Entrée)" autocomplete="off" inputmode="numeric">
       <button class="btn btn-icon btn-ok" id="barcodeGo" title="Ajouter"><i class="bi bi-check-lg"></i></button>
+      <button class="btn btn-icon btn-camera" id="cameraScan" title="Scanner avec la caméra (smartphone, tablette)"><i class="bi bi-camera"></i></button>
       <button class="btn btn-icon btn-trash" data-action="clear" title="Vider le panier"><i class="bi bi-trash3"></i></button>
       <div class="money-box"><input type="text" id="tenderedInput" class="form-control" inputmode="numeric" value="" placeholder="0"><label>Argent client</label></div>
       <button class="btn btn-icon btn-calc" data-action="pay" title="Encaisser"><i class="bi bi-calculator"></i></button>
@@ -240,6 +256,9 @@
 <script src="<?= e(asset('vendor/bootstrap/bootstrap.bundle.min.js')) ?>"></script>
 <?= i18n_script() ?>
 <script src="<?= e(asset('js/money.js')) ?>"></script>
+<script src="<?= e(asset('vendor/zxing/zxing.min.js')) ?>"></script>
+<script src="<?= e(asset('js/scanner.js')) ?>"></script>
 <script src="<?= e(asset('js/pos.js')) ?>"></script>
+<script src="<?= e(asset('js/pwa.js')) ?>"></script>
 </body>
 </html>

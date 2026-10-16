@@ -85,7 +85,7 @@ final class UpdateController extends Controller
             json_response(['ok' => false, 'error' => 'Mise à jour interrompue : ' . $e->getMessage()], 500);
         }
         Session::forget('update_token');
-        flash('success', 'POS Wan mis à jour : version ' . $r['from'] . ' → ' . $r['to'] . ' (' . $r['files'] . ' fichiers). Sauvegardes : ' . $r['db_backup'] . ' et ' . $r['code_backup'] . '. La base de données a été mise à jour automatiquement.');
+        flash('success', 'POS Marwa mis à jour : version ' . $r['from'] . ' → ' . $r['to'] . ' (' . $r['files'] . ' fichiers). Sauvegardes : ' . $r['db_backup'] . ' et ' . $r['code_backup'] . '. La base de données a été mise à jour automatiquement.');
         json_response(['ok' => true] + $r);
     }
 

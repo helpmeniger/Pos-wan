@@ -1,5 +1,5 @@
 /* =====================================================================
-   POS Wan — prise de commande restaurant.
+   POS Marwa — prise de commande restaurant.
    L'état de la commande vit sur le serveur : chaque action renvoie la
    commande à jour (plusieurs serveurs peuvent travailler sur la même table).
    ===================================================================== */

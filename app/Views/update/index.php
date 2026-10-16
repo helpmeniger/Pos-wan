@@ -1,8 +1,8 @@
 <script type="application/json" id="update-limits"><?= json_encode($limits) ?></script>
 <div class="row g-3">
   <div class="col-xl-8">
-    <div class="card mb-3"><div class="card-header"><i class="bi bi-cloud-arrow-up"></i> Installer une nouvelle version de POS Wan</div><div class="card-body">
-      <p class="small mb-2">Version installée : <b>v<?= e(config('app.version')) ?></b>. Sélectionnez le <b>dossier complet</b> de la nouvelle version (celui qui contient <code>app</code>, <code>public</code>, <code>config</code>…), par exemple le dossier <code>pos-wan</code> obtenu en décompressant le fichier ZIP reçu.</p>
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-cloud-arrow-up"></i> Installer une nouvelle version de POS Marwa</div><div class="card-body">
+      <p class="small mb-2">Version installée : <b>v<?= e(config('app.version')) ?></b>. Sélectionnez le <b>dossier complet</b> de la nouvelle version (celui qui contient <code>app</code>, <code>public</code>, <code>config</code>…), par exemple le dossier <code>pos-marwa</code> obtenu en décompressant le fichier ZIP reçu.</p>
       <ul class="small text-secondary mb-3">
         <li>Vos données ne sont pas touchées : base de données, <code>.env</code>, sauvegardes, photos (<code>public/uploads</code>), modules ajoutés.</li>
         <li>Avant la copie : <b>sauvegarde de la base</b> et <b>sauvegarde du code actuel</b> (retour en arrière possible ci-dessous).</li>

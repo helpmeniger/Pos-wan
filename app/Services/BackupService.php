@@ -36,7 +36,7 @@ final class BackupService
             throw new \RuntimeException('Impossible de créer le fichier de sauvegarde.');
         }
         $pdo = DB::connection();
-        gzwrite($gz, '-- POS Wan sauvegarde ' . date('c') . ' version ' . config('app.version') . "\n");
+        gzwrite($gz, '-- POS Marwa sauvegarde ' . date('c') . ' version ' . config('app.version') . "\n");
         gzwrite($gz, "SET FOREIGN_KEY_CHECKS=0;\n");
         $tables = DB::all("SELECT TABLE_NAME AS t FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME");
         $rowsTotal = 0;

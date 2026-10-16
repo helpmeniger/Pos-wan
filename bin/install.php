@@ -32,4 +32,4 @@ InstallService::install([
     'store_name' => $o['store'] ?? '',
     'demo' => isset($o['demo']),
 ]);
-echo "POS Wan installé avec succès.\n";
+echo "POS Marwa installé avec succès.\n";

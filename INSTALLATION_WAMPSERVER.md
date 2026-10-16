@@ -1,6 +1,6 @@
-# Installation de POS Wan sur WampServer (Windows)
+# Installation de POS Marwa sur WampServer (Windows)
 
-Ce guide installe POS Wan sur un poste Windows équipé de WampServer, pour une utilisation
+Ce guide installe POS Marwa sur un poste Windows équipé de WampServer, pour une utilisation
 sur le poste lui-même et, si besoin, depuis d'autres appareils du réseau local de la boutique
 (tablette, deuxième caisse).
 
@@ -28,7 +28,7 @@ Extensions PHP nécessaires (clic gauche sur l'icône Wamp → PHP → Extension
 
 Modules Apache (clic gauche → Apache → Modules Apache) : **`rewrite_module`** et **`headers_module`** cochés.
 
-POS Wan n'utilise ni Composer ni Node.js : toutes les bibliothèques (Bootstrap 5.3.3,
+POS Marwa n'utilise ni Composer ni Node.js : toutes les bibliothèques (Bootstrap 5.3.3,
 Bootstrap Icons 1.11.3, Chart.js 4.4.4) sont fournies dans `public/assets/vendor`.
 L'application fonctionne donc **sans connexion Internet**.
 
@@ -36,8 +36,8 @@ L'application fonctionne donc **sans connexion Internet**.
 
 ## 2. Copier les fichiers
 
-1. Décompressez l'archive dans `C:\wamp64\www\pos-wan`
-   (vous devez obtenir `C:\wamp64\www\pos-wan\public\index.php`).
+1. Décompressez l'archive dans `C:\wamp64\www\pos-marwa`
+   (vous devez obtenir `C:\wamp64\www\pos-marwa\public\index.php`).
 2. Vérifiez que les dossiers suivants sont accessibles en écriture (c'est le cas par défaut sous Windows) :
    `storage\` (et ses sous-dossiers) et `public\uploads\`.
 
@@ -70,9 +70,9 @@ La configuration la plus sûre fait pointer Apache **uniquement** sur le dossier
 
 ```apache
 <VirtualHost *:80>
-    ServerName pos-wan.local
-    DocumentRoot "C:/wamp64/www/pos-wan/public"
-    <Directory "C:/wamp64/www/pos-wan/public">
+    ServerName pos-marwa.local
+    DocumentRoot "C:/wamp64/www/pos-marwa/public"
+    <Directory "C:/wamp64/www/pos-marwa/public">
         Options -Indexes +FollowSymLinks
         AllowOverride All
         # Poste local uniquement :
@@ -81,32 +81,32 @@ La configuration la plus sûre fait pointer Apache **uniquement** sur le dossier
         # ci-dessus par le réseau local, par exemple :
         # Require ip 192.168.1
     </Directory>
-    ErrorLog "${INSTALL_DIR}/logs/pos-wan-error.log"
+    ErrorLog "${INSTALL_DIR}/logs/pos-marwa-error.log"
 </VirtualHost>
 ```
 
 2. Ajoutez dans `C:\Windows\System32\drivers\etc\hosts` (ouvrir le Bloc-notes **en administrateur**) :
 
 ```
-127.0.0.1   pos-wan.local
+127.0.0.1   pos-marwa.local
 ```
 
 3. Redémarrez les services Wamp (clic gauche → Redémarrer les services).
-4. Ouvrez `http://pos-wan.local`.
+4. Ouvrez `http://pos-marwa.local`.
 
-Un modèle complet est fourni dans `docs/apache-vhost-pos-wan.conf`.
+Un modèle complet est fourni dans `docs/apache-vhost-pos-marwa.conf`.
 
-**Sans hôte virtuel** : `http://localhost/pos-wan/` fonctionne aussi. Le fichier `.htaccess`
+**Sans hôte virtuel** : `http://localhost/pos-marwa/` fonctionne aussi. Le fichier `.htaccess`
 de la racine redirige vers `public/` et **interdit** l'accès à `app/`, `config/`, `storage/`,
 `database/`, `.env`, etc. (vérifié : réponse 403). L'hôte virtuel reste préférable.
 
 ---
 
-## 5. Installer POS Wan
+## 5. Installer POS Marwa
 
 ### Option A — assistant web (recommandé)
 
-1. Ouvrez `http://pos-wan.local` : vous êtes redirigé vers `/install`.
+1. Ouvrez `http://pos-marwa.local` : vous êtes redirigé vers `/install`.
 2. Vérifiez que tous les contrôles d'environnement sont verts.
 3. Saisissez les paramètres de la base (étape 3), le nom du commerce, le **type d'activité**
    (alimentation, boutique, pharmacie, quincaillerie…), puis l'identifiant et le mot de passe
@@ -121,7 +121,7 @@ de la racine redirige vers `public/` et **interdit** l'accès à `app/`, `config
 ### Option B — ligne de commande
 
 ```bat
-cd C:\wamp64\www\pos-wan
+cd C:\wamp64\www\pos-marwa
 copy .env.example .env
 notepad .env          (renseigner DB_USERNAME, DB_PASSWORD et APP_KEY)
 C:\wamp64\bin\php\php8.2.x\php.exe bin\install.php --company="Mon commerce" --type=alimentation --user=gerant --name="Nom Prénom"
@@ -161,7 +161,7 @@ l'article dès la lecture, même si le curseur n'est pas dans le champ code-barr
 Un navigateur imprime toujours sur l'imprimante **par défaut** de l'appareil. Pour envoyer
 chaque document sur sa propre imprimante (tickets de l'alimentation, bons de la cuisine, bons
 du bar…), déclarez les imprimantes dans **Paramètres → Imprimantes** : c'est alors le serveur
-POS Wan (le PC où tourne WampServer) qui leur envoie les données en **ESC/POS** (langage
+POS Marwa (le PC où tourne WampServer) qui leur envoie les données en **ESC/POS** (langage
 de la plupart des imprimantes thermiques : Epson, Xprinter, Rongta, Sunmi…).
 
 | Branchement | À saisir dans « Adresse » | Préparation |
@@ -186,7 +186,7 @@ Remarques :
 - Sans imprimante serveur pour un usage, l'impression se fait par le navigateur comme ci-dessous.
 
 ### Imprimante thermique par le navigateur (tickets 58/80 mm)
-Sans imprimante déclarée côté serveur, POS Wan imprime via le **pilote Windows** de
+Sans imprimante déclarée côté serveur, POS Marwa imprime via le **pilote Windows** de
 l'imprimante par défaut de l'appareil :
 
 1. Installez le pilote du fabricant, réglez le papier sur 80 mm (ou 58 mm) et la hauteur « continue ».
@@ -194,7 +194,7 @@ l'imprimante par défaut de l'appareil :
 3. Dans Chrome, à la première impression : Marges = « Aucune », En-têtes et pieds de page = décoché.
 4. Impression **sans boîte de dialogue** (facultatif) : créez un raccourci Chrome avec l'option
    `--kiosk-printing`, par exemple :
-   `"C:\Program Files\Google\Chrome\Application\chrome.exe" --kiosk-printing --app=http://pos-wan.local/pos`
+   `"C:\Program Files\Google\Chrome\Application\chrome.exe" --kiosk-printing --app=http://pos-marwa.local/pos`
 
 Les factures A4, bons de commande, bons de réception, états de caisse et étiquettes s'impriment
 sur une imprimante classique ; « Enregistrer au format PDF » de la fenêtre d'impression produit un PDF.
@@ -210,7 +210,7 @@ Paramètres, puis enregistrez le badge de chaque utilisateur (Utilisateurs → M
 Le numéro du badge n'est jamais stocké en clair (empreinte HMAC).
 
 ### Restaurant : écrans et bons de cuisine
-- **Écran cuisine / bar** : ouvrez `http://pos-wan.local/kitchen` sur une tablette ou un
+- **Écran cuisine / bar** : ouvrez `http://pos-marwa.local/kitchen` sur une tablette ou un
   téléviseur avec navigateur placé en cuisine (compte de rôle « Cuisinier / barman »).
   Un onglet par poste : cuisine, grill, bar… (le poste se règle sur chaque catégorie).
 - **Bons imprimés** : déclarez une imprimante par poste (usage « Bons cuisine », « Bons
@@ -237,7 +237,7 @@ numérique). La lecture automatique d'une balance connectée **n'est pas implém
 - MySQL ne doit pas être joignable depuis le réseau : laissez `bind-address = 127.0.0.1`
   (ou ne l'ouvrez pas dans le pare-feu, port 3306).
 - Pare-feu Windows : autorisez uniquement le port 80/443 depuis le réseau local si d'autres
-  appareils utilisent POS Wan, et rien depuis Internet.
+  appareils utilisent POS Marwa, et rien depuis Internet.
 - Accès à distance (propriétaire en déplacement) : uniquement via un VPN correctement configuré.
 - Comptes Windows : session protégée par mot de passe, verrouillage automatique de l'écran.
 - Voir `SECURITE.md` pour la liste des mesures et des risques résiduels.
@@ -245,11 +245,19 @@ numérique). La lecture automatique d'une balance connectée **n'est pas implém
 ### HTTPS sur le réseau local (recommandé si plusieurs appareils)
 Les identifiants circulent en clair en HTTP sur le Wi-Fi. Pour chiffrer :
 
-1. Générez un certificat local (par exemple avec `mkcert pos-wan.local 192.168.1.10`)
+1. Générez un certificat local (par exemple avec `mkcert pos-marwa.local 192.168.1.10`)
    et installez l'autorité de certification sur chaque appareil.
 2. Activez `ssl_module` dans Wamp et ajoutez un `VirtualHost *:443` avec
    `SSLEngine on`, `SSLCertificateFile` et `SSLCertificateKeyFile`.
 3. Dans `.env` : `SESSION_SECURE=true`.
+
+### Démarrage automatique, accès mobile et caméra (v2.0)
+Voir **`docs/DEMARRAGE_WINDOWS.md`** :
+- lanceur `demarrer-pos-marwa.bat` ;
+- raccourci du Bureau ;
+- tâche planifiée à l'ouverture de session ;
+- règles Apache et pare-feu pour les smartphones ;
+- HTTPS local (mkcert), nécessaire pour la caméra en direct sur un téléphone.
 
 ---
 
@@ -268,8 +276,8 @@ sont conservées (paramètre réglable).
 Ouvrez une invite de commandes **en administrateur** :
 
 ```bat
-schtasks /Create /SC DAILY /ST 21:30 /TN "POS Wan - Sauvegarde" /RL HIGHEST ^
- /TR "\"C:\wamp64\bin\php\php8.2.x\php.exe\" \"C:\wamp64\www\pos-wan\bin\backup.php\" --copy-to=\"E:\Sauvegardes POS\""
+schtasks /Create /SC DAILY /ST 21:30 /TN "POS Marwa - Sauvegarde" /RL HIGHEST ^
+ /TR "\"C:\wamp64\bin\php\php8.2.x\php.exe\" \"C:\wamp64\www\pos-marwa\bin\backup.php\" --copy-to=\"E:\Sauvegardes POS\""
 ```
 
 (adaptez la version de PHP et le lecteur de copie). `--copy-to` recopie l'archive sur un
@@ -295,12 +303,12 @@ sécurité** de l'état actuel est faite automatiquement, puis la base est rempl
 Les photos se restaurent en décompressant le `.zip` dans `public\uploads`.
 
 ### Après une panne (nouveau poste)
-1. Installez WampServer et copiez POS Wan (§ 2).
+1. Installez WampServer et copiez POS Marwa (§ 2).
 2. Recréez la base et l'utilisateur MySQL (§ 3) ; replacez votre `.env` sauvegardé
    (ou recréez-le depuis `.env.example`).
 3. Restaurez la base en ligne de commande :
    ```bat
-   cd C:\wamp64\www\pos-wan\storage\backups
+   cd C:\wamp64\www\pos-marwa\storage\backups
    "C:\Program Files\7-Zip\7z.exe" e poswan_XXXXXXXX_XXXXXX_auto.sql.gz
    C:\wamp64\bin\mysql\mysqlX.X.X\bin\mysql.exe -u poswan -p poswan < poswan_XXXXXXXX_XXXXXX_auto.sql
    ```
@@ -312,7 +320,7 @@ Les photos se restaurent en décompressant le `.zip` dans `public\uploads`.
 ## 11. Mise à jour sans perte de données
 
 **Depuis la version 1.6 (le plus simple)** : décompressez la nouvelle version, puis
-**Configuration → Mise à jour du logiciel** → sélectionnez le dossier `pos-wan` → mot de passe
+**Configuration → Mise à jour du logiciel** → sélectionnez le dossier `pos-marwa` → mot de passe
 → « Envoyer et vérifier » → « Sauvegarder puis installer ». Rien d'autre à faire (sauvegardes
 et mise à jour de la base automatiques). L'extension PHP **zip** doit être active.
 
@@ -320,12 +328,12 @@ et mise à jour de la base automatiques). L'extension PHP **zip** doit être act
 
 1. Faites une sauvegarde (menu Sauvegardes) et une copie du dossier complet.
 2. Remplacez les fichiers de l'application **sauf** : `.env`, `storage\`, `public\uploads\`.
-3. Ouvrez POS Wan dans le navigateur : depuis la version 1.5.1, **la base est mise à jour
+3. Ouvrez POS Marwa dans le navigateur : depuis la version 1.5.1, **la base est mise à jour
    automatiquement** au premier affichage (sauvegarde de sécurité `avant_migration`, puis
    application des seuls fichiers de `database\migrations` non encore exécutés).
    La commande manuelle reste possible :
    ```bat
-   cd C:\wamp64\www\pos-wan
+   cd C:\wamp64\www\pos-marwa
    C:\wamp64\bin\php\php8.2.x\php.exe bin\migrate.php
    ```
 4. Videz le cache du navigateur (Ctrl+F5).
@@ -333,7 +341,7 @@ et mise à jour de la base automatiques). L'extension PHP **zip** doit être act
 ---
 
 ### Modules complémentaires
-Copier le dossier du module dans `addons/` (ex. `C:\wamp64\www\pos-wan\addons\livraisons\`,
+Copier le dossier du module dans `addons/` (ex. `C:\wamp64\www\pos-marwa\addons\livraisons\`,
 qui contient directement `manifest.json`), puis **Gestion → Modules complémentaires →
 Installer** (ou `php bin/addons.php install livraisons`). Si Windows a décompressé le module
 dans un sous-dossier (`addons\module-clinique-1.0.0\clinique\`) ou l'a renommé

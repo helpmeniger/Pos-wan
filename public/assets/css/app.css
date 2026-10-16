@@ -1,5 +1,5 @@
 /* =====================================================================
-   POS Wan — styles de l'administration et de la caisse
+   POS Marwa — styles de l'administration et de la caisse
    ===================================================================== */
 :root {
   --wan-navy: #14213d;
@@ -157,3 +157,23 @@ html[dir="rtl"] .menu-right .side-link.active { border-left-color: var(--wan-ora
 
 /* ---------- Modules complémentaires ---------- */
 .addon-icon { width: 42px; height: 42px; border-radius: .7rem; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem; flex: 0 0 42px; }
+
+/* Accès mobile */
+.mobile-qr { width: min(300px, 80vw); }
+.mobile-qr svg { width: 100%; height: auto; }
+
+/* Inventaire */
+.inv-table tr.inv-ok td { background: rgba(46, 160, 67, .08); }
+.inv-table tr.inv-plus td { background: rgba(13, 110, 253, .08); }
+.inv-table tr.inv-minus td { background: rgba(220, 53, 69, .08); }
+.inv-table tr.inv-flash td { background: rgba(255, 193, 7, .35) !important; transition: background .5s; }
+.inv-table [data-diff] { white-space: nowrap; }
+.inv-last { max-height: 180px; overflow: auto; }
+.inv-last-row { display: flex; gap: 8px; align-items: center; padding: 3px 6px; border-radius: 6px; font-size: .88rem; }
+.inv-last-row.ok { background: rgba(46, 160, 67, .08); } .inv-last-row.bad { background: rgba(220, 53, 69, .1); color: #b02a37; }
+
+/* Étiquettes */
+.lbl-preview { width: 100%; height: 68vh; border: 0; background: #7d8799; display: block; }
+.lbl-list { max-height: 44vh; overflow: auto; }
+.lbl-row { display: flex; gap: 6px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--bs-border-color); font-size: .85rem; }
+.lbl-row input { width: 64px; }

@@ -48,7 +48,7 @@ final class DocumentRef
     {
         $parts = explode('|', trim($code));
         if (count($parts) !== 7 || $parts[0] !== 'POSWAN') {
-            return ['valid' => false, 'message' => 'Ce code n\'est pas un QR code POS Wan.'];
+            return ['valid' => false, 'message' => 'Ce code n\'est pas un QR code POS Marwa.'];
         }
         $sig = array_pop($parts);
         if (!hash_equals(self::sign(implode('|', $parts)), $sig)) {

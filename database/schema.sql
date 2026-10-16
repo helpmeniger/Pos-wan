@@ -1,5 +1,5 @@
 -- =====================================================================
--- POS Wan — Schéma de base de données (MySQL 8 / MariaDB 10.4+)
+-- POS Marwa — Schéma de base de données (MySQL 8 / MariaDB 10.4+)
 -- Encodage : utf8mb4. Moteur : InnoDB (transactions + clés étrangères).
 -- Ce fichier crée la version 1 du schéma. Les évolutions ultérieures
 -- sont dans database/migrations/ (appliquées par bin/migrate.php).

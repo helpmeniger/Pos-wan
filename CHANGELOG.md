@@ -2,12 +2,95 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.0.0] — 2026-10-16 — POS Marwa
+
+### Changé
+- **POS Wan devient POS Marwa** : nom affiché, documents et documentation. Restent inchangés
+  pour la compatibilité :
+  - le nom de la base (`poswan`) ;
+  - les clés de licence déjà délivrées ;
+  - le cookie de session ;
+  - le préfixe des sauvegardes.
+- Le lien « Ouvrir la caisse » et l'écran d'accueil ouvrent la caisse du mode choisi.
+
+### Ajouté
+- **Modes de fonctionnement** (Paramètres → Mode de fonctionnement de la caisse) :
+  - modes : Commerce général, Restaurant, Pharmacie, Clinique, Clinique + Pharmacie, Pressing ;
+  - la caisse, l'accueil et les menus s'adaptent au mode ;
+  - changer de mode ne supprime aucune donnée.
+- **Stock en temps réel dans la caisse** :
+  - actualisation toutes les 15 s et après chaque vente ;
+  - stock vendable sans lots périmés ni rappelés ;
+  - test de 10 ventes simultanées pour 5 unités en stock : 5 acceptées, 5 refusées, stock final 0.
+- **Accès mobile par QR code** (Configuration → Accès mobile) :
+  - détection de l'adresse IP locale et alerte si elle change ;
+  - consignes Apache et pare-feu ;
+  - page mobile `/m` qui vérifie le serveur et la caméra ;
+  - page `/health`.
+- **Appareils connectés** :
+  - enregistrement de chaque appareil ;
+  - approbation facultative des nouveaux appareils du réseau ;
+  - révocation, qui coupe la session immédiatement.
+- **Scan des codes-barres par la caméra** :
+  - lecteur intégré du navigateur, ou ZXing ;
+  - une lecture par présentation du code, bouton « +1 », photo du code si pas de HTTPS,
+    saisie manuelle ;
+  - disponible dans la caisse, l'inventaire, les articles, les étiquettes, la délivrance
+    pharmacie et la caisse pressing ;
+  - les douchettes fonctionnent toujours.
+- **Inventaire** :
+  - comptage par scan (+1 par lecture) et saisie manuelle enregistrée immédiatement, combinables ;
+  - observations, remise à zéro, historique des corrections, auteur du comptage ;
+  - filtres (non comptés, écarts, surplus, manquants, conformes) ;
+  - inventaire partiel par catégorie, un seul inventaire en cours par entrepôt ;
+  - rapport imprimable et exportable (CSV, PDF).
+- **Étiquettes** :
+  - choix des informations : code-barres, nom, prix, référence, magasin ;
+  - articles ajoutés par recherche, catégorie ou scan, avec quantité par article ;
+  - format en mm : planche A4 ou rouleau ;
+  - aperçu en direct ;
+  - modèles enregistrés et modèle par défaut ;
+  - étiquette de calibrage ;
+  - EAN-13 réel pour les codes EAN.
+- **Clinique 1.1.0** :
+  - caisse clinique : patient trouvé ou créé, prestations, paiement total ou partiel, ticket ;
+  - contrôle des médicaments par scan à la délivrance.
+- **Pressing 1.1.0** :
+  - caisse pressing ;
+  - statuts : Déposé, En attente, En traitement, Prêt, Partiellement retiré, Retiré, Annulé ;
+  - retrait partiel ;
+  - jours de retard et alertes (dépôts en retard et dépôts dont la date approche) ;
+  - écran « Suivi des vêtements » avec filtres et exports ;
+  - historique par client.
+- **Windows** :
+  - `demarrer-pos-marwa.bat` démarre WampServer, attend Apache/MySQL et ouvre POS Marwa une
+    seule fois ;
+  - raccourci Bureau ;
+  - tâche planifiée à l'ouverture de session ;
+  - voir `docs/DEMARRAGE_WINDOWS.md`.
+- **PWA** : icône, ajout à l'écran d'accueil, ouverture plein écran.
+
+### Corrigé
+- L'en-tête `Permissions-Policy` bloquait la caméra : elle est désormais autorisée pour POS
+  Marwa uniquement (`camera=(self)`).
+- Clinique et pressing : un utilisateur sans droit de vente commerciale est dirigé vers la
+  caisse de son activité au lieu d'une erreur 403.
+
+### Base de données
+- `0006_marwa.sql` :
+  - tables `user_devices`, `inventory_count_log` et `label_templates` (3 modèles) ;
+  - colonnes de comptage dans `inventory_items` ;
+  - colonne `category_id` dans `inventories`.
+- Pressing `0002_suivi_retraits.sql` : statut `partial`, quantités retirées.
+- Les migrations s'appliquent automatiquement ; les modules se mettent à jour par
+  Configuration → Modules → Mettre à jour.
+
 ## [1.6.1] — 2026-10-12
 
 ### Corrigé
 - **Activation de la licence en « Erreur 500 » sous WampServer** : la vérification de la
   signature utilisait l'extension PHP `sodium`, qui n'est pas activée par défaut sous Windows.
-  POS Wan utilise maintenant l'extension si elle est présente, sinon la bibliothèque PHP pure
+  POS Marwa utilise maintenant l'extension si elle est présente, sinon la bibliothèque PHP pure
   `sodium_compat` (paragonie, licence ISC) intégrée dans `app/Lib/`. Même correction pour
   `bin/licence.php`.
 - Une erreur technique pendant l'activation affiche sa cause au lieu d'une page d'erreur 500.
@@ -115,7 +198,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [
   par taux et par mois, avec export CSV et PDF.
 - **Export PDF** de tous les rapports et listes exportables (ventes, articles, bénéfices,
   stock, mouvements, péremptions, créances, dépenses, ordonnancier, TVA) : PDF généré par
-  POS Wan lui-même, sans Internet ni logiciel supplémentaire (en-tête, totaux, pagination).
+  POS Marwa lui-même, sans Internet ni logiciel supplémentaire (en-tête, totaux, pagination).
 
 ### Corrigé — restaurant / écran cuisine
 - Les articles d'une catégorie **sans poste de préparation** étaient marqués « servis » et

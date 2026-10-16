@@ -1,5 +1,5 @@
 /* =====================================================================
-   POS Wan — écran de caisse (tactile + clavier + douchette)
+   POS Marwa — écran de caisse (tactile + clavier + douchette)
    ===================================================================== */
 :root { --dark: #101418; --dark-2: #1c232b; --orange: #f39c12; --green: #27ae60; --left-bg: #eef1f5; }
 html, body { height: 100%; overflow: hidden; }
@@ -42,6 +42,7 @@ input, textarea { user-select: text; }
 .barcode { flex: 1; font-size: 1.05rem; padding: .55rem .7rem; border: 2px solid #2e86c1; }
 .btn-icon { font-size: 1.5rem; line-height: 1; padding: .35rem .55rem; border-radius: .5rem; }
 .btn-ok { background: #fff; border: 2px solid #14213d; }
+.btn-camera { background: #fff; border: 2px solid #0b7a75; color: #0b7a75; }
 .btn-trash { background: #fff; border: 2px solid #c0392b; color: #c0392b; }
 .btn-calc { background: #c0392b; color: #fff; }
 .btn-calc:hover { background: #a93226; color: #fff; }
@@ -150,3 +151,10 @@ a.btn-validate:hover { color: #fff; }
 .pay-providers { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
 .pay-providers button { border: 2px solid #ced4da; background: #fff; border-radius: .5rem; padding: .35rem .7rem; font-weight: 600; }
 .pay-providers button.active { border-color: #f5a623; background: #fff4e0; }
+
+/* Barre du mode (pharmacie / clinique + pharmacie) */
+.mode-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 8px; align-items: center; }
+.mode-tag { font-weight: 700; font-size: .85rem; color: #0b7a75; }
+.mode-link { font-size: .8rem; padding: 2px 8px; border-radius: 12px; background: #eef2f7; color: #14213d; text-decoration: none; }
+.mode-link.warn { background: #fff3cd; color: #7a5b00; } .mode-link.danger { background: #f8d7da; color: #842029; }
+[data-bs-theme="dark"] .mode-link { background: #2a3446; color: #e6ebf5; }

@@ -1,8 +1,9 @@
 <?php
 use Addons\Pressing\PressingService as PS;
-$colors = ['received' => 'secondary', 'processing' => 'info text-dark', 'ready' => 'success', 'delivered' => 'dark', 'cancelled' => 'danger'];
+$colors = ['received' => 'secondary', 'processing' => 'info text-dark', 'ready' => 'success', 'partial' => 'warning text-dark', 'delivered' => 'dark', 'cancelled' => 'danger'];
 $rest = round((float) $o['total'] - (float) $o['paid'], 2);
 $open = !in_array($o['status'], ['delivered', 'cancelled'], true);
+$lateDays = PS::lateDays($o);
 $late = in_array($o['status'], ['received', 'processing'], true) && $o['due_date'] < date('Y-m-d');
 $wa = preg_replace('/\D/', '', $o['phone']);
 $wa = strlen($wa) === 8 ? '227' . $wa : $wa;
@@ -14,14 +15,15 @@ $msg = sprintf(t('Bonjour %s, votre linge (dépôt %s) est prêt chez %s.'), $o[
   <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/pressing/' . $o['id'] . '/ticket')) ?>"><i class="bi bi-receipt"></i> Ticket client</a>
   <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/pressing/' . $o['id'] . '/labels')) ?>"><i class="bi bi-tags"></i> Étiquettes (<?= (int) $o['pieces'] ?>)</a>
   <?php if ($o['status'] === 'ready'): ?><a class="btn btn-outline-success" target="_blank" rel="noopener" href="https://wa.me/<?= e($wa) ?>?text=<?= e(rawurlencode($msg)) ?>"><i class="bi bi-whatsapp"></i> Prévenir le client</a><?php endif; ?>
+  <a class="btn btn-outline-secondary" href="<?= e(url('/pressing/client', ['phone' => $o['phone']])) ?>"><i class="bi bi-clock-history"></i> Historique du client</a>
   <span class="ms-auto fs-5"><span class="badge bg-<?= e($colors[$o['status']]) ?>"><?= e(PS::STATUSES[$o['status']]) ?></span><?= (int) $o['express'] ? ' <span class="badge bg-danger">EXPRESS</span>' : '' ?></span>
 </div>
-<?php if ($late): ?><div class="alert alert-danger py-2"><i class="bi bi-alarm"></i> En retard : retrait prévu le <?= e(fdate($o['due_date'], false)) ?>.</div><?php endif; ?>
+<?php if ($lateDays): ?><div class="alert alert-danger py-2"><i class="bi bi-alarm"></i> <?= $o['status'] === 'ready' || $o['status'] === 'partial' ? 'Prêt mais non retiré' : 'En retard' ?> : <b><?= $lateDays ?> jour(s)</b> après la date prévue (<?= e(fdate($o['due_date'], false)) ?>).</div><?php endif; ?>
 <?php if ($o['status'] === 'cancelled'): ?><div class="alert alert-secondary py-2">Annulé : <?= e($o['cancel_reason']) ?></div><?php endif; ?>
 <div class="row g-3">
   <div class="col-lg-8">
     <div class="card mb-3"><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Étiquette</th><th>Article</th><th>Service</th><th class="num">Qté</th><th class="num">P.U.</th><th class="num">Total</th></tr></thead><tbody>
-      <?php foreach ($items as $i): ?><tr><td><span class="badge bg-dark fs-6"><?= e($i['tag']) ?></span></td><td><?= e($i['article_name']) ?><?php $d = array_filter([$i['color'], $i['brand']]); ?><?= $d ? '<br><small class="text-secondary">' . e(implode(' · ', $d)) . '</small>' : '' ?><?= $i['defects'] ? '<br><small class="text-danger"><i class="bi bi-exclamation-triangle"></i> ' . e($i['defects']) . '</small>' : '' ?></td>
+      <?php foreach ($items as $i): ?><tr><td><span class="badge bg-dark fs-6"><?= e($i['tag']) ?></span></td><td><?= e($i['article_name']) ?><?= (int) ($i['picked_qty'] ?? 0) > 0 ? ' <span class="badge bg-' . ((int) $i['picked_qty'] >= (int) $i['quantity'] ? 'dark' : 'warning text-dark') . '">retiré ' . (int) $i['picked_qty'] . '/' . (int) $i['quantity'] . '</span>' : '' ?><?php $d = array_filter([$i['color'], $i['brand']]); ?><?= $d ? '<br><small class="text-secondary">' . e(implode(' · ', $d)) . '</small>' : '' ?><?= $i['defects'] ? '<br><small class="text-danger"><i class="bi bi-exclamation-triangle"></i> ' . e($i['defects']) . '</small>' : '' ?></td>
       <td><?= e(PS::SERVICES[$i['service']] ?? $i['service']) ?></td><td class="num"><?= (int) $i['quantity'] ?></td><td class="num"><?= money($i['unit_price']) ?><?= abs((float) $i['unit_price'] - (float) $i['list_price']) >= 0.01 ? ' <span class="badge bg-warning text-dark" title="Tarif ' . e(money($i['list_price'])) . '">modifié</span>' : '' ?></td><td class="num fw-semibold"><?= money($i['line_total']) ?></td></tr><?php endforeach; ?>
     </tbody><tfoot>
       <tr><td colspan="5" class="text-end">Sous-total</td><td class="num"><?= money($o['subtotal']) ?></td></tr>
@@ -66,9 +68,23 @@ $msg = sprintf(t('Bonjour %s, votre linge (dépôt %s) est prêt chez %s.'), $o[
           <?= App\Core\View::partial('pressing::_pay', ['amount' => (string) $rest]) ?>
           <?php if (can('pressing.manage')): ?><div class="col-12"><input name="unpaid_reason" class="form-control form-control-sm mt-1" placeholder="Remettre sans paiement complet : motif (responsable)" maxlength="180"></div><?php endif; ?>
         <?php else: ?><div class="col-12 small text-success mb-1"><i class="bi bi-check-circle"></i> Entièrement payé.</div><?php endif; ?>
-        <div class="col-12 mt-2"><button class="btn btn-success w-100" <?= $o['status'] !== 'ready' && !can('pressing.manage') ? 'disabled title="Le linge doit être marqué Prêt"' : '' ?>><i class="bi bi-bag-check"></i> Remettre le linge<?= $rest > 0 ? ' et encaisser' : '' ?></button></div>
+        <div class="col-12 mt-2"><button class="btn btn-success w-100" <?= !in_array($o['status'], ['ready', 'partial'], true) && !can('pressing.manage') ? 'disabled title="Le linge doit être marqué Prêt"' : '' ?>><i class="bi bi-bag-check"></i> Remettre le linge<?= $rest > 0 ? ' et encaisser' : '' ?></button></div>
       </form>
     </div></div>
+    <?php $remainingItems = array_filter($items, fn($i) => (int) $i['quantity'] - (int) ($i['picked_qty'] ?? 0) > 0); ?>
+    <?php if (in_array($o['status'], ['ready', 'partial', 'processing'], true) && setting('pressing_retrait_partiel', '1') === '1' && array_sum(array_map(fn($i) => (int) $i['quantity'] - (int) $i['picked_qty'], $items)) > 1): ?>
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-bag-dash"></i> Retrait partiel</div><div class="card-body">
+      <form method="post" action="<?= e(url('/pressing/' . $o['id'] . '/partial')) ?>" class="small"><?= csrf_field() ?>
+        <?php foreach ($remainingItems as $i): $left = (int) $i['quantity'] - (int) $i['picked_qty']; ?>
+          <div class="d-flex align-items-center gap-2 mb-1"><span class="badge bg-dark"><?= e($i['tag']) ?></span><span class="flex-grow-1"><?= e($i['article_name']) ?></span><span class="text-secondary">reste <?= $left ?></span>
+            <input type="number" name="qty[<?= (int) $i['id'] ?>]" min="0" max="<?= $left ?>" value="0" class="form-control form-control-sm" style="width:64px"></div>
+        <?php endforeach; ?>
+        <div class="row g-1 mt-1"><?= App\Core\View::partial('pressing::_pay') ?></div>
+        <button class="btn btn-sm btn-outline-success w-100 mt-2">Remettre ces pièces</button>
+        <div class="text-secondary mt-1">Paiement facultatif ici ; le solde est exigé au retrait des dernières pièces.</div>
+      </form>
+    </div></div>
+    <?php endif; ?>
     <?php if ($rest > 0): ?>
     <div class="card mb-3"><div class="card-header">Paiement partiel / acompte</div><div class="card-body">
       <form method="post" action="<?= e(url('/pressing/' . $o['id'] . '/pay')) ?>" class="row g-1"><?= csrf_field() ?><?= App\Core\View::partial('pressing::_pay') ?><div class="col-12 mt-1"><button class="btn btn-sm btn-outline-primary w-100">Encaisser</button></div></form>

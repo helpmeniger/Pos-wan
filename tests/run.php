@@ -1,6 +1,6 @@
 <?php
 /**
- * POS Wan — suite de tests automatisés (sans dépendance externe).
+ * POS Marwa — suite de tests automatisés (sans dépendance externe).
  *
  * Usage :
  *   TEST_DB_USER=xxx TEST_DB_PASS=yyy php tests/run.php
@@ -946,7 +946,7 @@ test('Modules : découverte, manifestes invalides refusés', function () {
         $all = App\Core\Addons::discover(true);
         ok(isset($all['livraisons']) && $all['livraisons']['errors'] === [], 'module exemple valide');
         ok(!empty($all['zz_test_invalide']['errors']), 'JSON invalide signalé');
-        ok(str_contains(implode(' ', $all['zz_test_ancien']['errors']), 'Nécessite POS Wan 99.0.0'), 'version requise contrôlée');
+        ok(str_contains(implode(' ', $all['zz_test_ancien']['errors']), 'Nécessite POS Marwa 99.0.0'), 'version requise contrôlée');
         ok(!isset($all['Mauvais-Nom']), 'nom de dossier invalide ignoré');
         eq('error', App\Core\Addons::status('zz_test_ancien'));
         throws(fn() => App\Core\Addons::install('zz_test_ancien', false), 'invalide');
@@ -986,7 +986,7 @@ test('Module exemple « Livraisons » : installation, permissions, données, ré
 $PR = [];
 test('Module Pressing : dépôt express, acompte en caisse, étiquettes, prix protégés', function () use (&$PR) {
     actingAs('admin');
-    eq(['0001_pressing'], App\Core\Addons::install('pressing', false), 'installation');
+    eq(['0001_pressing', '0002_suivi_retraits'], App\Core\Addons::install('pressing', false), 'installation');
     $PR['chemise'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Chemise'");
     $PR['boubou'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Boubou simple'");
     $PR['couverture'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Couverture'");
@@ -1332,6 +1332,143 @@ test('Mise à jour du logiciel : chemins contrôlés, version, intégrité, sauv
     @unlink(S\BackupService::dir() . '/' . $res['code_backup']);
     foreach (glob(S\BackupService::dir() . '/*avant_maj_*') ?: [] as $f) { @unlink($f); }
 });
+$V2 = [];
+test('POS Marwa — modes de fonctionnement : caisse, accueil et menus adaptés, module requis', function () use (&$V2) {
+    actingAs('admin');
+    eq('commerce', S\BusinessMode::current(), 'mode par défaut');
+    eq('/pos', S\BusinessMode::posUrl());
+    App\Core\Addons::setActive('clinique', false);
+    App\Core\Addons::reset();
+    throws(fn() => S\BusinessMode::set('clinique'), 'nécessite le module');
+    App\Core\Addons::setActive('clinique', true);
+    App\Core\Addons::reset();
+    S\BusinessMode::set('clinique');
+    eq('/clinique/caisse', S\BusinessMode::posUrl(), 'caisse clinique');
+    ok(S\BusinessMode::hides('/pressing/suivi') && S\BusinessMode::hides('/quotes') && !S\BusinessMode::hides('/clinique/caisse'), 'menus des autres activités masqués');
+    S\BusinessMode::set('pressing');
+    eq('/pressing/caisse', S\BusinessMode::posUrl());
+    ok(S\BusinessMode::hides('/clinique') && !S\BusinessMode::hides('/pressing/suivi'));
+    S\BusinessMode::set('pharmacie');
+    ok(feature('pharmacy') && feature('lots'), 'fonctions pharmacie activées');
+    eq('/pos', S\BusinessMode::posUrl());
+    S\BusinessMode::set('commerce', true);
+    ok(!S\BusinessMode::hides('/clinique'), 'option : afficher tous les menus');
+    S\BusinessMode::set('commerce');
+    throws(fn() => S\BusinessMode::set('inconnu'), 'inconnu');
+    ok((int) DB::value("SELECT COUNT(*) FROM audit_logs WHERE action = 'settings.business_mode'") >= 4, 'changements journalisés');
+    ok((int) DB::value('SELECT COUNT(*) FROM clinic_beds') >= 1 && (int) DB::value('SELECT COUNT(*) FROM pressing_orders') >= 1, 'données des modules conservées');
+});
+test('POS Marwa — stock vendable : lots périmés et rappelés exclus de la quantité affichée en caisse', function () {
+    actingAs('admin');
+    $pid = S\ProductService::create(S\ProductService::validate(['name' => 'Sirop lots test', 'sale_price' => 900, 'cost_price' => 500, 'track_stock' => 1, 'track_lots' => 1]), 3, 1, 'L-BON', date('Y-m-d', strtotime('+1 year')));
+    $old = S\StockService::lot($pid, 1, 'L-PERIME', '2020-01-01', 500);
+    DB::run('UPDATE stock_lots SET quantity = 5 WHERE id = ?', [$old]);
+    DB::run('UPDATE stock_levels SET quantity = quantity + 5 WHERE product_id = ? AND warehouse_id = 1', [$pid]);
+    eq(8.0, stock($pid), 'stock physique (avec le lot périmé)');
+    $sellable = (float) DB::value('SELECT ' . App\Controllers\PosController::stockSql(1) . ' FROM products p LEFT JOIN stock_levels sl ON sl.product_id = p.id AND sl.warehouse_id = 1 WHERE p.id = ?', [$pid]);
+    eq(3.0, $sellable, 'stock vendable : lot périmé exclu');
+    $a = S\BusinessMode::pharmacyAlerts(1);
+    ok($a['expired'] >= 1, 'alerte lot périmé');
+    DB::run('UPDATE stock_lots SET quantity = 0 WHERE id = ?', [$old]);
+    DB::run('UPDATE stock_levels SET quantity = quantity - 5 WHERE product_id = ? AND warehouse_id = 1', [$pid]);
+});
+test('POS Marwa — appareils : approbation des nouveaux appareils du réseau, blocage, poste serveur toujours autorisé', function () {
+    actingAs('admin');
+    $u = DB::one('SELECT u.*, r.code AS role_code FROM users u JOIN roles r ON r.id = u.role_id WHERE username = ?', ['caissier']);
+    $_COOKIE['pm_device'] = str_repeat('a', 40);
+    $_SERVER['REMOTE_ADDR'] = '192.168.1.50';
+    setting_set('device_approval', '1');
+    throws(fn() => S\DeviceService::onLogin($u), 'autorisé par l\'administrateur');
+    $dev = (int) DB::value('SELECT id FROM user_devices WHERE user_id = ? AND status = ?', [$u['id'], 'pending']);
+    ok($dev > 0, 'appareil en attente');
+    S\DeviceService::setStatus($dev, 'approved');
+    eq($dev, S\DeviceService::onLogin($u), 'appareil autorisé');
+    App\Core\Session::set('device_id', $dev);
+    ok(S\DeviceService::sessionAllowed());
+    S\DeviceService::setStatus($dev, 'revoked');
+    ok(!S\DeviceService::sessionAllowed(), 'session coupée après blocage');
+    throws(fn() => S\DeviceService::onLogin($u), 'bloqué');
+    App\Core\Session::forget('device_id');
+    $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+    $_COOKIE['pm_device'] = str_repeat('b', 40);
+    ok(S\DeviceService::onLogin($u) > 0, 'poste serveur (local) toujours autorisé');
+    setting_set('device_approval', '0');
+    unset($_COOKIE['pm_device']);
+    eq('Android · Chrome (mobile)', S\DeviceService::label('Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36'));
+    ok(S\NetworkService::isPrivate('192.168.1.10') && S\NetworkService::isPrivate('10.0.0.5') && !S\NetworkService::isPrivate('8.8.8.8') && !S\NetworkService::isPrivate('127.0.0.1'), 'adresses du réseau local');
+});
+test('POS Marwa — inventaire : scan (+1 par lecture), saisie manuelle, remise à zéro, synthèse, validation, verrouillage', function () use (&$V2) {
+    actingAs('magasin');
+    $p1 = S\ProductService::create(S\ProductService::validate(['name' => 'Inv scan A', 'barcode' => '2100000000012', 'sale_price' => 100, 'cost_price' => 60, 'track_stock' => 1]), 10, 1);
+    $p2 = S\ProductService::create(S\ProductService::validate(['name' => 'Inv scan B', 'barcode' => '2100000000029', 'sale_price' => 100, 'cost_price' => 50, 'track_stock' => 1]), 4, 1);
+    $p3 = S\ProductService::create(S\ProductService::validate(['name' => 'Inv scan C', 'sale_price' => 100, 'cost_price' => 40, 'track_stock' => 1]), 7, 1);
+    DB::run('UPDATE products SET track_stock = 1 WHERE id IN (?,?,?)', [$p1, $p2, $p3]);
+    foreach (DB::all("SELECT id FROM inventories WHERE status = 'draft'") as $d) { DB::update('inventories', ['status' => 'cancelled'], 'id = ?', [$d['id']]); }
+    $inv = S\InventoryService::start(1, null, 'Test v2');
+    throws(fn() => S\InventoryService::start(1, null, null), 'déjà en cours');
+    for ($i = 0; $i < 15; $i++) {
+        $r = S\InventoryService::scan($inv, '2100000000012');
+    }
+    eq(15.0, $r['counted'], '15 lectures = 15 unités');
+    eq(15, $r['scans']);
+    S\InventoryService::scan($inv, '2100000000029');
+    throws(fn() => S\InventoryService::scan($inv, '9999999999999'), 'Aucun article');
+    $it2 = (int) DB::value('SELECT id FROM inventory_items WHERE inventory_id = ? AND product_id = ?', [$inv, $p2]);
+    $r2 = S\InventoryService::setCount($inv, $it2, '3', 'carton abîmé');
+    eq(3.0, $r2['counted'], 'correction manuelle');
+    eq('carton abîmé', $r2['note']);
+    $it3 = (int) DB::value('SELECT id FROM inventory_items WHERE inventory_id = ? AND product_id = ?', [$inv, $p3]);
+    S\InventoryService::setCount($inv, $it3, '9');
+    S\InventoryService::setCount($inv, $it3, null, null, true);
+    eq(null, DB::value('SELECT counted_qty FROM inventory_items WHERE id = ?', [$it3]), 'comptage recommencé');
+    S\InventoryService::setCount($inv, $it3, '7');
+    throws(fn() => S\InventoryService::setCount($inv, $it3, '-2'), 'invalide');
+    $s = S\InventoryService::summary($inv);
+    ok($s['surplus'] >= 1 && $s['missing'] >= 1 && $s['conform'] >= 1, 'excédents, manquants, conformes : ' . json_encode($s));
+    ok((int) DB::value('SELECT COUNT(*) FROM inventory_count_log WHERE inventory_id = ?', [$inv]) >= 18, 'historique des corrections');
+    eq((int) DB::value("SELECT id FROM users WHERE username = 'magasin'"), (int) DB::value('SELECT counted_by FROM inventory_items WHERE id = ?', [$it2]), 'compteur enregistré');
+    actingAs('gerant');
+    S\InventoryService::validate($inv);
+    eq(15.0, stock($p1), 'stock corrigé : +5');
+    eq(3.0, stock($p2), 'stock corrigé : −1');
+    eq(7.0, stock($p3), 'conforme : inchangé');
+    eq((int) DB::value("SELECT id FROM users WHERE username = 'gerant'"), (int) DB::value('SELECT validated_by FROM inventories WHERE id = ?', [$inv]), 'valideur enregistré');
+    throws(fn() => S\InventoryService::scan($inv, '2100000000012'), 'ne peut plus être modifié');
+    throws(fn() => S\InventoryService::setCount($inv, $it2, '1'), 'ne peut plus être modifié');
+    $V2['inv'] = $inv;
+});
+test('POS Marwa — étiquettes : réglages contrôlés, EAN-13, champs choisis', function () {
+    $c = App\Controllers\LabelController::config(['paper' => 'a4', 'width' => '50', 'height' => '30', 'cols' => '3', 'fields' => ['name', 'price', 'pirate'], 'font' => '99']);
+    eq(['name', 'price'], $c['fields'], 'champs filtrés');
+    eq(24.0, (float) $c['font'], 'taille bornée');
+    throws(fn() => App\Controllers\LabelController::config(['paper' => 'a4', 'width' => '80', 'cols' => '3']), 'dépassent la largeur');
+    eq(1, App\Controllers\LabelController::config(['paper' => 'roll', 'cols' => '4'])['cols'], 'rouleau : une colonne');
+    ok(S\Barcode::isEan13('2100000000012') && !S\Barcode::isEan13('2100000000013') && !S\Barcode::isEan13('ABC'), 'contrôle EAN-13');
+    ok(str_contains(S\Barcode::ean13Svg('2100000000012'), 'viewBox="0 0 117 '), 'EAN-13 : 95 modules + zones de silence');
+    ok(str_contains(S\Barcode::auto('2100000000012'), 'viewBox="0 0 117 ') && !str_contains(S\Barcode::auto('ABC-12'), 'viewBox="0 0 117 '), 'EAN-13 si valide, sinon Code 128');
+});
+test('POS Marwa — pressing : retrait partiel, solde au dernier retrait, retards', function () use (&$V2) {
+    actingAs('caissier');
+    $chem = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Chemise'");
+    $r = Addons\Pressing\PressingService::create(['customer_name' => 'Partiel', 'phone' => '90 55 55 55', 'lines' => [['article_id' => $chem, 'service' => 'lavage', 'quantity' => 3]], 'deposit' => ['method' => 'cash', 'amount' => '500']]);
+    $id = $r['id'];
+    Addons\Pressing\PressingService::setStatus($id, 'ready');
+    $item = (int) DB::value('SELECT id FROM pressing_items WHERE order_id = ?', [$id]);
+    throws(fn() => Addons\Pressing\PressingService::deliverPartial($id, [$item => 5]), 'restante');
+    Addons\Pressing\PressingService::deliverPartial($id, [$item => 2]);
+    eq('partial', DB::value('SELECT status FROM pressing_orders WHERE id = ?', [$id]), 'partiellement retiré');
+    eq(2, (int) DB::value('SELECT picked_qty FROM pressing_items WHERE id = ?', [$item]));
+    throws(fn() => Addons\Pressing\PressingService::cancel($id, 'x'), 'ne peut plus être annulé');
+    throws(fn() => Addons\Pressing\PressingService::deliverPartial($id, [$item => 1]), 'Reste à payer');
+    $change = Addons\Pressing\PressingService::deliverPartial($id, [$item => 1], ['method' => 'cash', 'amount' => '2000']);
+    eq(1000.0, $change, 'solde 1000 sur 2000 remis');
+    eq('delivered', DB::value('SELECT status FROM pressing_orders WHERE id = ?', [$id]), 'toutes les pièces retirées');
+    ok(DB::value('SELECT delivered_at FROM pressing_orders WHERE id = ?', [$id]) !== null, 'date et heure du retrait');
+    eq(['received', 'ready', 'partial', 'delivered'], array_column(DB::all('SELECT to_status FROM pressing_status_log WHERE order_id = ? ORDER BY id', [$id]), 'to_status'), 'historique des statuts');
+    eq(3, Addons\Pressing\PressingService::lateDays(['status' => 'ready', 'due_date' => date('Y-m-d', strtotime('-3 days'))]), 'jours de retard');
+    eq(0, Addons\Pressing\PressingService::lateDays(['status' => 'delivered', 'due_date' => '2020-01-01']), 'retiré : pas de retard');
+    $V2['pressing'] = $id;
+});
 test('Menu à droite par défaut ; numéros d\'assistance', function () {
     eq('right', setting('menu_position'));
     $n = support_numbers();
@@ -1373,7 +1510,8 @@ if ($busy = @fsockopen('127.0.0.1', $port, $errno, $errstr, 0.5)) {
     exit(1);
 }
 $cmd = sprintf((PHP_OS_FAMILY === 'Windows' ? '' : 'exec ') . 'php -S 127.0.0.1:%d -t %s %s', $port, escapeshellarg(PUBLIC_PATH), escapeshellarg(__DIR__ . '/server-router.php'));
-$proc = proc_open($cmd, [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $pipes, BASE_PATH, array_merge(getenv(), $env));
+// Plusieurs processus PHP : requêtes réellement simultanées (test des caisses concurrentes)
+$proc = proc_open($cmd, [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $pipes, BASE_PATH, array_merge(getenv(), $env, ['PHP_CLI_SERVER_WORKERS' => '6']));
 usleep(700000);
 $B = "http://127.0.0.1:$port";
 
@@ -1418,6 +1556,7 @@ test('En-têtes de sécurité HTTP présents', function () use ($B) {
     }
     ok(stripos($r['headers'], 'HttpOnly') !== false && stripos($r['headers'], 'SameSite=Strict') !== false, 'cookie de session HttpOnly + SameSite');
     ok(stripos($r['headers'], 'X-Powered-By') === false, 'version PHP masquée');
+    ok((bool) preg_match('/Permissions-Policy:[^\n]*camera=\(self\)/i', $r['headers']), 'caméra autorisée pour le site (scan des codes-barres), refusée aux autres origines');
 });
 test('Pages protégées : redirection vers la connexion / 401 en JSON', function () use ($B) {
     $h = new Http();
@@ -1927,6 +2066,173 @@ test('HTTP : confirmation renvoie l\'action, licence en lecture seule, mise à j
     $x = json_decode($a->req('POST', "$B/update/check", json_encode(['token' => str_repeat('a', 32)]), array_merge($hdr, ['Content-Type: application/json']))['body'], true);
     ok(!$x['ok'], 'jeton d\'une autre session refusé');
     ok(str_contains($a->req('GET', "$B/update")['body'], 'webkitdirectory'), 'page de mise à jour');
+});
+test('Caisses simultanées : 10 ventes en même temps pour 5 en stock, aucune survente ni double déduction', function () use ($B) {
+    actingAs('admin');
+    if (!DB::value("SELECT id FROM cash_sessions WHERE register_id = 1 AND status = 'open'")) {
+        S\CashService::open(1, 0);
+    }
+    $pid = S\ProductService::create(S\ProductService::validate(['name' => 'Article concurrence', 'sale_price' => 1000, 'cost_price' => 600, 'track_stock' => 1]), 5, 1);
+    DB::update('products', ['track_stock' => 1], 'id = ?', [$pid]);
+    $clients = [];
+    foreach (['caissier' => 'Mot-de-passe-2026', 'gerant' => 'Mot-de-passe-2026'] as $u => $pw) {
+        $h = new Http();
+        $h->login($B, $u, $pw);
+        preg_match('/name="csrf-token" content="([^"]+)"/', $h->req('GET', "$B/pos")['body'], $m);
+        $clients[] = [$h, $m[1] ?? ''];
+    }
+    $st = json_decode($clients[0][0]->req('GET', "$B/pos/stock?ids=$pid", null, ['Accept: application/json'])['body'], true);
+    eq(5.0, (float) $st['stock'][$pid], 'stock lu par la caisse');
+    $mh = curl_multi_init();
+    $handles = [];
+    $uuids = [];
+    for ($i = 0; $i < 10; $i++) {
+        [$h, $tok] = $clients[$i % 2];
+        $uuids[] = $u = uuid();
+        $ch = curl_init("$B/pos/checkout");
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_COOKIEFILE => $h->jar, CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $tok],
+            CURLOPT_POSTFIELDS => json_encode(['_csrf' => $tok, 'client_uuid' => $u, 'items' => [['product_id' => $pid, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 1000]]])]);
+        curl_multi_add_handle($mh, $ch);
+        $handles[] = $ch;
+    }
+    do { $s = curl_multi_exec($mh, $running); if ($running) { curl_multi_select($mh, 1); } } while ($running && $s === CURLM_OK);
+    $okCount = 0;
+    foreach ($handles as $ch) {
+        $d = json_decode((string) curl_multi_getcontent($ch), true);
+        $okCount += !empty($d['ok']) ? 1 : 0;
+        curl_multi_remove_handle($mh, $ch);
+    }
+    eq(5, $okCount, '5 ventes acceptées, 5 refusées (stock insuffisant)');
+    eq(0.0, stock($pid), 'stock final à zéro, jamais négatif');
+    eq(-5.0, (float) DB::value("SELECT SUM(quantity) FROM stock_movements WHERE product_id = ? AND type = 'sale'", [$pid]), 'une seule déduction par vente');
+    eq(5, (int) DB::value('SELECT COUNT(DISTINCT s.id) FROM sales s JOIN sale_items i ON i.sale_id = s.id WHERE i.product_id = ?', [$pid]));
+    ok((int) DB::value("SELECT COUNT(*) FROM stock_movements WHERE product_id = ? AND type = 'sale' AND user_id IS NULL", [$pid]) === 0, 'mouvements attribués au caissier');
+    // Rejouer une vente déjà validée (même identifiant) : aucune nouvelle déduction
+    [$h, $tok] = $clients[0];
+    $okUuid = DB::value("SELECT client_uuid FROM sales s JOIN sale_items i ON i.sale_id = s.id WHERE i.product_id = ? LIMIT 1", [$pid]);
+    $r = json_decode($h->req('POST', "$B/pos/checkout", json_encode(['_csrf' => $tok, 'client_uuid' => $okUuid, 'items' => [['product_id' => $pid, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 1000]]]), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $tok])['body'], true);
+    ok(!empty($r['duplicate']), 'double envoi reconnu');
+    eq(0.0, stock($pid), 'pas de double déduction');
+});
+test('POS Marwa (HTTP) : accès mobile, QR code, /health, appareils, application installable', function () use ($B) {
+    $h = json_decode((new Http())->req('GET', "$B/health")['body'], true);
+    ok(($h['ok'] ?? false) && $h['app'] === 'POS Marwa' && !isset($h['db_password']), '/health public, sans donnée sensible');
+    $m = (new Http())->req('GET', "$B/m");
+    ok($m['code'] === 200 && str_contains($m['body'], 'Se connecter') && str_contains($m['body'], 'manifest.webmanifest'), 'page d\'arrivée du QR code');
+    $mf = (new Http())->req('GET', "$B/manifest.webmanifest");
+    ok($mf['code'] === 200 && str_contains($mf['body'], '"POS Marwa"'), 'manifeste web');
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    ok((int) DB::value("SELECT COUNT(*) FROM user_devices d JOIN users u ON u.id = d.user_id WHERE u.username = 'admin' AND d.status = 'approved'") >= 1, 'appareil enregistré à la connexion');
+    $page = $a->req('GET', "$B/mobile")['body'];
+    ok(str_contains($page, 'data-qr="http://') || str_contains($page, 'Aucune adresse de réseau local détectée'), 'page QR code (ou message explicite sans réseau)');
+    $_SERVER['SERVER_PORT'] = 8080;
+    $u = S\NetworkService::urlFor('192.168.1.20');
+    ok(str_starts_with($u, 'http://192.168.1.20:8080/') && str_ends_with($u, '/m'), 'adresse d\'accès avec le port : ' . $u);
+    ok(str_contains($page, 'Require ip 192.168') && str_contains($page, 'netsh advfirewall'), 'procédure Apache / pare-feu');
+    ok(str_contains($a->req('GET', "$B/devices")['body'], 'Approbation obligatoire'), 'page des appareils');
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(403, $c->req('GET', "$B/devices")['code'], 'appareils : administrateur seulement');
+    $dev = (int) DB::value("SELECT d.id FROM user_devices d JOIN users u ON u.id = d.user_id WHERE u.username = 'caissier' ORDER BY d.id DESC LIMIT 1");
+    $t = $a->token("$B/devices");
+    $a->req('POST', "$B/devices/$dev", http_build_query(['_csrf' => $t, 'status' => 'revoked']));
+    $r = $c->req('GET', "$B/sales");
+    ok($r['code'] === 302 && str_contains($r['headers'], '/login'), 'appareil bloqué : session coupée immédiatement');
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    ok(str_contains($c->req('GET', "$B/login")['body'], 'bloqué'), 'reconnexion refusée');
+    DB::update('user_devices', ['status' => 'approved'], 'id = ?', [$dev]);
+});
+test('POS Marwa (HTTP) : modes — caisse clinique (prestations, file d\'attente, paiement partiel, tout ou rien), caisse pressing', function () use ($B) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $t = $a->token("$B/settings");
+    $a->req('POST', "$B/settings/mode", http_build_query(['_csrf' => $t, 'mode' => 'clinique']));
+    eq('clinique', DB::value("SELECT svalue FROM settings WHERE skey = 'business_mode'"), 'mode enregistré');
+    $acc = new Http();
+    $acc->login($B, 'accueil', 'Mot-de-passe-2026');
+    $home = $acc->req('GET', "$B/");
+    ok(str_contains($home['headers'], '/clinique/caisse'), 'accueil : la caisse clinique s\'ouvre directement');
+    ok(str_contains($acc->req('GET', "$B/pos")['headers'], '/clinique/caisse'), '/pos redirigé vers la caisse clinique');
+    $page = $acc->req('GET', "$B/clinique/caisse")['body'];
+    ok(str_contains($page, 'Caisse clinique') && str_contains($page, 'Consultation de médecine générale') && !str_contains($page, 'productGrid'), 'prestations médicales, pas d\'articles commerciaux');
+    preg_match('/name="csrf-token" content="([^"]+)"/', $page, $m);
+    $hdr = ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]];
+    $found = json_decode($acc->req('GET', "$B/clinique/caisse/patients?q=ISSA", null, ['Accept: application/json'])['body'], true);
+    ok(count($found['items']) >= 1, 'recherche patient');
+    $np = json_decode($acc->req('POST', "$B/clinique/caisse/patients", json_encode(['last_name' => 'Caisse', 'first_name' => 'Test', 'sex' => 'F', 'phone' => '96 11 22 33', 'coverage_pct' => '50', 'insurer' => 'CNSS']), $hdr)['body'], true);
+    ok($np['ok'] && $np['patient']['coverage'] == 50, 'patient créé depuis la caisse');
+    $consult = (int) DB::value("SELECT id FROM clinic_acts WHERE name = 'Consultation de médecine générale'");
+    $glyc = (int) DB::value("SELECT id FROM clinic_acts WHERE name = 'Glycémie'");
+    $bills = (int) DB::value('SELECT COUNT(*) FROM clinic_bills');
+    $bad = json_decode($acc->req('POST', "$B/clinique/caisse", json_encode(['patient_id' => $np['patient']['id'], 'lines' => [['act_id' => $consult, 'quantity' => 1]], 'queue' => true, 'pay' => ['method' => 'bitcoin', 'amount' => '500']]), $hdr)['body'], true);
+    ok(!$bad['ok'], 'mode de paiement refusé');
+    eq($bills, (int) DB::value('SELECT COUNT(*) FROM clinic_bills'), 'tout ou rien : aucune facture enregistrée');
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM clinic_visits WHERE patient_id = ? AND status = 'waiting'", [$np['patient']['id']]), 'ni de consultation');
+    $ok = json_decode($acc->req('POST', "$B/clinique/caisse", json_encode(['patient_id' => $np['patient']['id'], 'lines' => [['act_id' => $consult, 'quantity' => 1], ['act_id' => $glyc, 'quantity' => 2]], 'queue' => true, 'reason' => 'Fièvre', 'pay' => ['method' => 'cash', 'amount' => '1000']]), $hdr)['body'], true);
+    ok($ok['ok'], 'encaissement : ' . json_encode($ok));
+    eq(5000.0, $ok['total'], '3000 + 2 × 1000');
+    eq(2500.0, $ok['patient_amount'], 'prise en charge 50 %');
+    eq(1000.0, $ok['paid'], 'paiement partiel');
+    eq(1500.0, $ok['due'], 'reste');
+    ok($ok['visit_id'] > 0 && DB::value('SELECT bill_id FROM clinic_visits WHERE id = ?', [$ok['visit_id']]) == $ok['bill_id'], 'patient en file d\'attente, facture liée à la consultation');
+    ok(str_contains($acc->req('GET', "$B/clinique/factures/{$ok['bill_id']}/ticket")['body'], 'PRESTATIONS MÉDICALES'), 'reçu');
+    // Pressing
+    $a->req('POST', "$B/settings/mode", http_build_query(['_csrf' => $t, 'mode' => 'pressing']));
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    ok(str_contains($c->req('GET', "$B/")['headers'], '/pressing/caisse'), 'caissier : caisse pressing directement');
+    ok(str_contains($c->req('GET', "$B/pos")['headers'], '/pressing/caisse'), '/pos redirigé vers la caisse pressing');
+    $pc = $c->req('GET', "$B/pressing/caisse")['body'];
+    ok(str_contains($pc, 'Caisse pressing') && str_contains($pc, 'pressingForm'), 'dépôt direct sans vente commerciale');
+    $num = DB::value('SELECT number FROM pressing_orders ORDER BY id DESC LIMIT 1');
+    ok(str_contains($c->req('GET', "$B/pressing/find?q=" . urlencode($num))['headers'], '/pressing/'), 'recherche du dépôt par n° (QR du ticket)');
+    $s = $c->req('GET', "$B/pressing/suivi?f=all")['body'];
+    ok(str_contains($s, 'Livraison prévue') && str_contains($s, 'Retard') && str_contains($s, $num), 'écran de suivi des vêtements');
+    eq(200, $c->req('GET', "$B/pressing/client?phone=" . urlencode('90 55 55 55'))['code'], 'historique client');
+    ok(!str_contains($c->req('GET', "$B/pressing/suivi")['body'], 'href="/clinique"'), 'menus clinique masqués en mode pressing');
+    $csv = $a->req('GET', "$B/pressing/suivi?f=all&export=csv");
+    ok(str_contains($csv['body'], 'Vêtements') && str_contains($csv['body'], $num), 'export du suivi');
+    $a->req('POST', "$B/settings/mode", http_build_query(['_csrf' => $t, 'mode' => 'commerce']));
+    eq('commerce', DB::value("SELECT svalue FROM settings WHERE skey = 'business_mode'"));
+});
+test('POS Marwa (HTTP) : inventaire par scan, saisie, rapport ; étiquettes (recherche, aperçu, modèles)', function () use ($B) {
+    $g = new Http();
+    $g->login($B, 'gerant', 'Mot-de-passe-2026');
+    foreach (DB::all("SELECT id FROM inventories WHERE status = 'draft'") as $d) { DB::update('inventories', ['status' => 'cancelled'], 'id = ?', [$d['id']]); }
+    $t = $g->token("$B/inventories");
+    $r = $g->req('POST', "$B/inventories", http_build_query(['_csrf' => $t, 'warehouse_id' => 1]));
+    $inv = (int) DB::value("SELECT id FROM inventories WHERE status = 'draft' ORDER BY id DESC LIMIT 1");
+    $page = $g->req('GET', "$B/inventories/$inv")['body'];
+    ok(str_contains($page, 'invScanInput') && str_contains($page, 'invCamera'), 'écran de comptage par scan');
+    preg_match('/name="csrf-token" content="([^"]+)"/', $page, $m);
+    $hdr = ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]];
+    $g->req('POST', "$B/inventories/$inv/scan", json_encode(['code' => '2100000000012']), $hdr);
+    $s = json_decode($g->req('POST', "$B/inventories/$inv/scan", json_encode(['code' => '2100000000012']), $hdr)['body'], true);
+    eq(2.0, $s['counted'], 'deux lectures');
+    $c = json_decode($g->req('POST', "$B/inventories/$inv/count", json_encode(['item_id' => $s['item_id'], 'qty' => '14', 'note' => 'recompté']), $hdr)['body'], true);
+    eq(14.0, $c['counted'], 'saisie manuelle enregistrée immédiatement');
+    ok(str_contains($g->req('GET', "$B/inventories/$inv/report?f=all")['body'], 'RAPPORT D&#039;INVENTAIRE'), 'rapport imprimable');
+    $csv = $g->req('GET', "$B/inventories/$inv/report?f=all&export=csv");
+    ok(str_contains($csv['body'], 'Théorique') && str_contains($csv['body'], 'recompté'), 'export CSV');
+    // Étiquettes
+    $lp = $g->req('GET', "$B/products/labels")['body'];
+    ok(str_contains($lp, 'labelPreview') && str_contains($lp, 'Code-barres + nom + prix'), 'concepteur d\'étiquettes');
+    $sr = json_decode($g->req('GET', "$B/products/labels/search?code=2100000000012", null, ['Accept: application/json'])['body'], true);
+    eq(1, count($sr['items']), 'article trouvé par code-barres');
+    $pid = $sr['items'][0]['id'];
+    preg_match('/name="_csrf" value="([^"]+)"/', $lp, $mt);
+    $html = $g->req('POST', "$B/products/labels/render", http_build_query(['_csrf' => $mt[1], 'items' => [$pid => 7], 'cfg' => ['paper' => 'a4', 'width' => 63.5, 'height' => 38.1, 'cols' => 3, 'fields' => ['barcode', 'name', 'price']]]))['body'];
+    eq(7, substr_count($html, 'class="lbl"'), '7 étiquettes');
+    ok(str_contains($html, 'viewBox="0 0 117 ') && str_contains($html, 'Inv scan A'), 'EAN-13 et nom imprimés');
+    $roll = $g->req('POST', "$B/products/labels/render", http_build_query(['_csrf' => $mt[1], 'items' => [$pid => 2], 'cfg' => ['paper' => 'roll', 'width' => 40, 'height' => 30, 'fields' => ['price']]]))['body'];
+    ok(str_contains($roll, 'size: 40mm 30mm') && !str_contains($roll, 'viewBox="0 0 117 ') && substr_count($roll, 'class="page"') === 2, 'rouleau 40 × 30 : prix seul, une étiquette par page');
+    $tpl = json_decode($g->req('POST', "$B/products/labels/templates", json_encode(['name' => 'Test 50x30', 'cfg' => ['paper' => 'roll', 'width' => 50, 'height' => 30, 'fields' => ['barcode', 'price']]]), $hdr)['body'], true);
+    ok($tpl['ok'] && $tpl['config']['width'] == 50, 'modèle enregistré');
+    $del = json_decode($g->req('POST', "$B/products/labels/templates/{$tpl['id']}/delete", json_encode([]), $hdr)['body'], true);
+    ok($del['ok'] && !DB::value('SELECT id FROM label_templates WHERE id = ?', [$tpl['id']]), 'modèle supprimé');
+    DB::update('inventories', ['status' => 'cancelled'], 'id = ?', [$inv]);
 });
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);

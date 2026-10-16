@@ -18,7 +18,18 @@ use App\Services\Sequence;
 final class PressingService
 {
     public const SERVICES = ['lavage' => 'Lavage + repassage', 'sec' => 'Nettoyage à sec', 'repassage' => 'Repassage seul', 'teinture' => 'Teinture'];
-    public const STATUSES = ['received' => 'Reçu', 'processing' => 'En cours', 'ready' => 'Prêt', 'delivered' => 'Retiré', 'cancelled' => 'Annulé'];
+    public const STATUSES = ['received' => 'Déposé — en attente de traitement', 'processing' => 'En cours de traitement', 'ready' => 'Prêt à être retiré', 'partial' => 'Partiellement retiré', 'delivered' => 'Retiré', 'cancelled' => 'Annulé'];
+    /** Libellés courts (badges, listes). */
+    public const SHORT = ['received' => 'Déposé', 'processing' => 'En traitement', 'ready' => 'Prêt', 'partial' => 'Retrait partiel', 'delivered' => 'Retiré', 'cancelled' => 'Annulé'];
+
+    /** Jours de retard : dépôt non prêt après la date prévue, ou prêt mais non retiré après cette date. */
+    public static function lateDays(array $o): int
+    {
+        if (!in_array($o['status'], ['received', 'processing', 'ready', 'partial'], true)) {
+            return 0;
+        }
+        return max(0, (int) floor((strtotime(date('Y-m-d')) - strtotime((string) $o['due_date'])) / 86400));
+    }
     /** Étapes du traitement (le retrait et l'annulation ont leurs propres actions). */
     public const STEPS = ['received' => ['processing', 'ready'], 'processing' => ['ready', 'received'], 'ready' => ['processing']];
 
@@ -242,10 +253,10 @@ final class PressingService
     {
         return DB::transaction(function () use ($id, $pay, $unpaidReason) {
             $o = self::lock($id);
-            if (!in_array($o['status'], ['ready', 'processing', 'received'], true)) {
+            if (!in_array($o['status'], ['ready', 'processing', 'received', 'partial'], true)) {
                 throw new BusinessException('Ce dépôt ne peut pas être retiré (statut : ' . self::STATUSES[$o['status']] . ').');
             }
-            if ($o['status'] !== 'ready' && !Auth::can('pressing.manage')) {
+            if (!in_array($o['status'], ['ready', 'partial'], true) && !Auth::can('pressing.manage')) {
                 throw new BusinessException('Le linge n\'est pas encore marqué « Prêt ».');
             }
             $change = 0.0;
@@ -261,8 +272,53 @@ final class PressingService
                 $note = 'Remis avec un solde impayé de ' . money($due) . ' : ' . mb_substr(trim((string) $unpaidReason), 0, 180);
             }
             DB::update('pressing_orders', ['status' => 'delivered', 'delivered_at' => date('Y-m-d H:i:s'), 'delivered_by' => Auth::id()], 'id = ?', [$id]);
+            DB::run('UPDATE pressing_items SET picked_at = COALESCE(IF(picked_qty < quantity, NOW(), picked_at), NOW()), picked_qty = quantity WHERE order_id = ?', [$id]);
             self::log($id, $o['status'], 'delivered', $note);
             Audit::log('pressing.deliver', 'pressing_order', $id, ['unpaid' => $due > 0.009 ? $due : 0]);
+            return $change;
+        });
+    }
+
+    /**
+     * Retrait partiel : le client emporte une partie des pièces ($qtys [item_id => quantité]).
+     * Paiement facultatif à ce moment ; le solde reste exigé au dernier retrait.
+     * Quand toutes les pièces sont retirées, le dépôt passe à « Retiré ».
+     */
+    public static function deliverPartial(int $id, array $qtys, array $pay = []): float
+    {
+        if (setting('pressing_retrait_partiel', '1') !== '1') {
+            throw new BusinessException('Les retraits partiels ne sont pas autorisés (paramètre du pressing).');
+        }
+        return DB::transaction(function () use ($id, $qtys, $pay) {
+            $o = self::lock($id);
+            if (!in_array($o['status'], ['ready', 'partial', 'processing'], true)) {
+                throw new BusinessException('Retrait impossible (statut : ' . self::STATUSES[$o['status']] . ').');
+            }
+            $items = DB::all('SELECT * FROM pressing_items WHERE order_id = ? FOR UPDATE', [$id]);
+            $taken = [];
+            foreach ($items as $it) {
+                $q = (int) ($qtys[$it['id']] ?? 0);
+                $left = (int) $it['quantity'] - (int) $it['picked_qty'];
+                if ($q <= 0) {
+                    continue;
+                }
+                if ($q > $left) {
+                    throw new BusinessException('« ' . $it['article_name'] . ' » : seulement ' . $left . ' pièce(s) restante(s).');
+                }
+                DB::run('UPDATE pressing_items SET picked_qty = picked_qty + ?, picked_at = NOW() WHERE id = ?', [$q, $it['id']]);
+                $taken[] = $q . ' × ' . $it['article_name'] . ' [' . $it['tag'] . ']';
+            }
+            if (!$taken) {
+                throw new BusinessException('Indiquez les pièces remises au client.');
+            }
+            $remaining = (int) DB::value('SELECT COALESCE(SUM(quantity - picked_qty),0) FROM pressing_items WHERE order_id = ?', [$id]);
+            if ($remaining === 0) {
+                return self::deliver($id, $pay);
+            }
+            $change = (float) ($pay['amount'] ?? 0) > 0 ? self::pay($id, $pay) : 0.0;
+            DB::update('pressing_orders', ['status' => 'partial'], 'id = ?', [$id]);
+            self::log($id, $o['status'], 'partial', 'Remis : ' . implode(', ', $taken) . ' — reste ' . $remaining . ' pièce(s)');
+            Audit::log('pressing.partial', 'pressing_order', $id, ['taken' => $taken, 'remaining' => $remaining]);
             return $change;
         });
     }
@@ -275,7 +331,7 @@ final class PressingService
         }
         DB::transaction(function () use ($id, $reason) {
             $o = self::lock($id);
-            if (in_array($o['status'], ['delivered', 'cancelled'], true)) {
+            if (in_array($o['status'], ['delivered', 'cancelled', 'partial'], true)) {
                 throw new BusinessException('Ce dépôt ne peut plus être annulé.');
             }
             if ((float) $o['paid'] > 0) {

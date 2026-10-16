@@ -1,11 +1,11 @@
-# Module « Pressing » pour POS Wan
+# Module « Pressing » pour POS Marwa
 
 Gestion complète d'un pressing / blanchisserie : tarifs, dépôts, étiquettes, suivi du
 traitement, retrait avec paiement, relances et rapport. Les encaissements passent par la
-caisse POS Wan (ils apparaissent dans la clôture de caisse).
+caisse POS Marwa (ils apparaissent dans la clôture de caisse).
 
 ## Installation
-1. Copier le dossier `pressing` dans `addons/` (déjà présent dans POS Wan 1.4.1).
+1. Copier le dossier `pressing` dans `addons/` (déjà présent dans POS Marwa 1.4.1).
 2. Gestion → **Modules complémentaires** → Pressing → **Installer**.
 3. Menu **Pressing** : Dépôts, Nouveau dépôt, Tarifs, Rapport.
 
@@ -54,3 +54,25 @@ Tableau de bord : reçus, en cours, prêts, **en retard** (date de retrait dépa
 | `pressing_conditions` | texte | Conditions imprimées sur le ticket |
 
 Les tarifs fournis (FCFA) sont **indicatifs** : adaptez-les avant la mise en service.
+
+## Version 1.1.0 (POS Marwa 2.0)
+
+- **Caisse pressing** (`/pressing/caisse`) :
+  - nouveau dépôt ;
+  - retrait par numéro, téléphone ou scan du ticket ;
+  - ouverte automatiquement en mode Pressing.
+- **Statuts** : Déposé, En attente, En traitement, Prêt, Partiellement retiré, Retiré,
+  Annulé.
+- **Retrait partiel** :
+  - pièces cochées une à une, date de chaque retrait ;
+  - réglage `pressing_retrait_partiel` (1 = autorisé).
+- **Suivi des vêtements** (`/pressing/suivi`) :
+  - filtres : en cours, en retard, retrait proche, prêts, impayés, retirés, tous ;
+  - jours de retard ;
+  - export CSV ou PDF.
+- **Alertes** :
+  - dépôts en retard ;
+  - dépôts à retirer dans `pressing_alerte_jours` jours (1 par défaut).
+- **Historique d'un client** : liste de ses dépôts avec les montants payés.
+- Migration `0002_suivi_retraits.sql` (Modules → Pressing → Mettre à jour). Les dépôts déjà
+  retirés sont marqués entièrement retirés.

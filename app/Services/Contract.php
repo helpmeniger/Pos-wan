@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 /**
- * Contrat de licence d'utilisation de POS Wan (texte unique : page « À propos → Contrat »
+ * Contrat de licence d'utilisation de POS Marwa (texte unique : page « À propos → Contrat »
  * et fichier LICENCE.md régénéré par bin/release.php).
  * Modèle à faire relire par un conseil juridique avant usage commercial.
  */
@@ -18,11 +18,11 @@ final class Contract
         $tel = implode(' / ', $a['phones']);
         return [
             ['Article 1 — Parties et objet', [
-                'Le présent contrat est conclu entre ' . $a['name'] . ', ' . strtolower($a['title']) . ', ' . $a['country'] . ', auteur et titulaire de tous les droits sur le logiciel POS Wan (ci-après « l\'Auteur »), et la personne physique ou morale qui installe ou utilise le logiciel (ci-après « le Client »).',
-                'Il définit les conditions dans lesquelles le Client est autorisé à utiliser POS Wan (caisse, gestion commerciale, stocks, modules complémentaires) et ses mises à jour.',
+                'Le présent contrat est conclu entre ' . $a['name'] . ', ' . strtolower($a['title']) . ', ' . $a['country'] . ', auteur et titulaire de tous les droits sur le logiciel POS Marwa (ci-après « l\'Auteur »), et la personne physique ou morale qui installe ou utilise le logiciel (ci-après « le Client »).',
+                'Il définit les conditions dans lesquelles le Client est autorisé à utiliser POS Marwa (caisse, gestion commerciale, stocks, modules complémentaires) et ses mises à jour.',
             ]],
             ['Article 2 — Propriété intellectuelle', [
-                'POS Wan, son code source, sa base de données, ses écrans, ses modules, sa documentation et son nom sont la propriété exclusive de l\'Auteur et sont protégés par le droit d\'auteur (Accord de Bangui révisé, Organisation africaine de la propriété intellectuelle — OAPI, et lois de la République du Niger).',
+                'POS Marwa, son code source, sa base de données, ses écrans, ses modules, sa documentation et son nom sont la propriété exclusive de l\'Auteur et sont protégés par le droit d\'auteur (Accord de Bangui révisé, Organisation africaine de la propriété intellectuelle — OAPI, et lois de la République du Niger).',
                 'Le contrat ne transfère aucun droit de propriété au Client : il lui accorde seulement un droit d\'utilisation.',
             ]],
             ['Article 3 — Licence accordée', [
@@ -65,7 +65,7 @@ final class Contract
     public static function markdown(): string
     {
         $a = config('licence.author');
-        $md = "# Contrat de licence d'utilisation — POS Wan\n\nVersion du contrat : " . self::VERSION . "\n\n"
+        $md = "# Contrat de licence d'utilisation — POS Marwa\n\nVersion du contrat : " . self::VERSION . "\n\n"
             . "© " . date('Y') . ' ' . $a['name'] . ' — ' . $a['title'] . ' — ' . $a['country'] . ' — ' . implode(' / ', $a['phones']) . "\n\n"
             . "> Logiciel propriétaire. Toute copie, revente ou utilisation sans licence est interdite.\n\n";
         foreach (self::clauses() as [$title, $paras]) {

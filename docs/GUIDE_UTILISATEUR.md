@@ -1,4 +1,4 @@
-# Guide d'utilisation rapide — POS Wan
+# Guide d'utilisation rapide — POS Marwa
 
 ## Se connecter
 - **Accès rapide PIN** : choisir son nom, taper son code PIN sur le pavé, puis **GO**.
@@ -90,6 +90,76 @@ Le menu en haut du tableau applique le même choix à toutes les lignes. La colo
 **Nouveau prix de vente** (droit « Modifier les prix de vente ») met à jour le prix en caisse ;
 le changement est historisé.
 
+## Mode de fonctionnement (Paramètres)
+Le mode se règle dans **Paramètres → Mode de fonctionnement de la caisse**. Choix possibles :
+Commerce général, Restaurant, Pharmacie, Clinique, Clinique + Pharmacie, Pressing.
+
+« Ouvrir la caisse » et l'écran d'accueil ouvrent alors la caisse de l'activité :
+- `/pos` pour le commerce, le restaurant et la pharmacie ;
+- la caisse clinique ;
+- la caisse pressing.
+
+Les menus des autres activités sont masqués, sauf si vous cochez « Afficher aussi les menus
+des autres activités ». Changer de mode ne supprime aucune donnée.
+
+## Scanner avec la caméra
+Le bouton **caméra** existe à plusieurs endroits :
+- dans la caisse, à côté du champ code-barres ;
+- dans l'inventaire ;
+- dans la liste des articles ;
+- dans les étiquettes ;
+- à la délivrance pharmacie ;
+- dans la caisse pressing.
+
+Comment il fonctionne :
+- Présentez le code devant la caméra : **un bip = un article**.
+- Laisser le code devant la caméra n'ajoute rien de plus. Pour un deuxième article
+  identique, retirez le code puis représentez-le, ou touchez **+1**.
+- Sans HTTPS, le navigateur interdit la caméra en direct : utilisez **Photo du code**. Le
+  téléphone prend une photo, que POS Marwa lit.
+- La douchette USB ou Bluetooth fonctionne toujours, sans rien régler.
+
+## Accès depuis un smartphone (QR code)
+1. **Configuration → Accès mobile (QR code)** : scannez le QR code avec le téléphone, qui
+   doit être sur le même Wi-Fi que l'ordinateur. Les réglages Apache et pare-feu sont
+   indiqués sur la page et dans `docs/DEMARRAGE_WINDOWS.md`.
+2. Connectez-vous avec votre identifiant et votre mot de passe : le QR code seul ne donne
+   aucun accès.
+3. **Configuration → Appareils connectés** :
+   - liste des appareils ;
+   - **Révoquer** un appareil : sa session est coupée et il ne peut plus se connecter ;
+   - option « approuver les nouveaux appareils du réseau avant leur première utilisation ».
+
+## Inventaire
+1. Stock → Inventaires → **Démarrer** : choisissez l'entrepôt, et éventuellement une
+   catégorie pour un inventaire partiel.
+2. Comptez de l'une des deux façons, ou des deux :
+   - **Scan** (douchette ou caméra) : chaque lecture ajoute 1. Quinze articles scannés
+     donnent 15.
+   - **Saisie** : tapez la quantité et une observation ; le bouton « 0 » marque un article
+     absent ; « Recommencer » efface le comptage d'un article.
+
+   Tout est enregistré immédiatement : vous pouvez fermer et reprendre plus tard.
+3. Utilisez les filtres pour contrôler : non comptés, écarts, surplus, manquants, conformes.
+4. Le rapport s'imprime ou s'exporte en CSV ou PDF.
+5. La **validation** est faite par un responsable : les écarts deviennent des mouvements de
+   stock, puis l'inventaire est verrouillé.
+
+## Étiquettes code-barres (Articles → Étiquettes)
+1. Ajoutez les articles :
+   - par recherche ;
+   - par scan ;
+   - ou toute une catégorie.
+
+   Réglez ensuite le nombre d'étiquettes par article.
+2. Cochez les informations à imprimer, ou choisissez une combinaison rapide.
+3. Choisissez le format :
+   - planche A4 (largeur, hauteur, colonnes, marges, espacements) ;
+   - ou rouleau d'imprimante d'étiquettes.
+4. Contrôlez l'**aperçu**. Imprimez d'abord une **étiquette de calibrage**, à l'échelle 100 %
+   et sans marges du navigateur.
+5. Enregistrez vos réglages comme **modèle**, et cochez « par défaut » si besoin.
+
 ## Modules complémentaires
 Pour ajouter une fonction (ex. Livraisons) : copier le dossier du module dans `addons/`,
 puis **Gestion → Modules complémentaires → Installer**. *Désactiver* masque le module sans
@@ -100,24 +170,46 @@ Module fourni (`addons/clinique/`) : à installer depuis Modules complémentaire
 rendez-vous, consultations, ordonnances délivrées par la pharmacie, hospitalisation,
 écran de supervision des malades. Guide : `addons/clinique/README.md`.
 
+**Caisse clinique** (menu Clinique → Caisse clinique, ou automatiquement en mode Clinique) :
+1. Recherchez le patient, ou créez-le en deux champs.
+2. Touchez les prestations.
+3. Encaissez tout ou partie : le reste dû apparaît sur la facture du patient.
+4. Imprimez le ticket.
+
+La pharmacie reste une vente séparée, reliée par l'ordonnance.
+
 ### Pressing
 Module fourni (`addons/pressing/`) : à installer depuis Modules complémentaires. Guide :
 `addons/pressing/README.md`.
 
+**Caisse pressing** : nouveau dépôt, et retrait par numéro, téléphone ou scan du ticket.
+
+**Suivi des vêtements** :
+- filtres : en cours, en retard, retrait proche, prêts, impayés, retirés ;
+- jours de retard affichés ;
+- export CSV ou PDF.
+
+**Statuts** : Déposé, En attente, En traitement, Prêt, Partiellement retiré, Retiré, Annulé.
+
+**Retrait partiel** : sur la fiche du dépôt, cochez les pièces remises. Chaque retrait est
+daté.
+
+**Historique d'un client** : lien depuis la fiche du dépôt.
+
 ## Mise à jour du logiciel (Configuration → Mise à jour du logiciel)
-1. Décompressez le fichier ZIP de la nouvelle version reçu de l'auteur (dossier `pos-wan`).
+1. Décompressez le fichier ZIP de la nouvelle version reçu de l'auteur (dossier `pos-marwa`).
 2. Ouvrez **Configuration → Mise à jour du logiciel**, cliquez sur « Choisir », sélectionnez le
-   dossier `pos-wan` et saisissez votre mot de passe.
+   dossier `pos-marwa` et saisissez votre mot de passe.
 3. **Envoyer et vérifier** : les fichiers sont envoyés et contrôlés (version, fichiers complets).
 4. **Sauvegarder puis installer** : sauvegarde de la base et du code, copie, puis mise à jour
    automatique de la base. Vos données, `.env`, photos et sauvegardes ne sont pas touchés.
 En cas de problème : « Revenir à la version précédente » sur la même page.
 
 ## Licence, contrat, À propos
-- **À propos de POS Wan** (en bas du menu) : auteur, version, contacts, contrat de licence.
+- **À propos de POS Marwa** (en bas du menu) : auteur, version, contacts, contrat de licence.
 - **Licence et activation** : communiquez l'identifiant d'installation à l'auteur
   (+227 92 08 12 82 / 87 22 52 02), collez la clé reçue, cliquez sur « Activer ».
-- Sans licence, après 30 jours d'essai, POS Wan passe en lecture seule (données conservées).
+- Sans licence, après 30 jours d'essai, POS Marwa passe en lecture seule (données conservées).
 
 ## Affichage
 - Le **menu de gestion** est à droite ; le remettre à gauche : Paramètres → Position du menu.
@@ -136,7 +228,7 @@ En cas de problème : « Revenir à la version précédente » sur la même page
 ## Export PDF
 Chaque rapport et chaque liste exportable (ventes, stock, mouvements, péremptions,
 créances, dépenses…) a un bouton **PDF** à côté du bouton CSV : le fichier est créé par
-POS Wan, sans Internet. (L'arabe ne s'imprime pas dans ces PDF : les en-têtes restent en
+POS Marwa, sans Internet. (L'arabe ne s'imprime pas dans ces PDF : les en-têtes restent en
 français ; utiliser « Imprimer / PDF » du navigateur pour un document en arabe.)
 
 ## Paramètres utiles (v1.2)

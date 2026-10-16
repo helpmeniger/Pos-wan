@@ -1,0 +1,15 @@
+; POS Marwa - reglages du lanceur Windows (facultatif).
+; Copiez ce fichier en "pos-marwa.ini" (meme dossier) et adaptez si besoin.
+;
+; Adresse de POS Marwa (par defaut : http://localhost/<nom du dossier>/)
+; Exemple avec un hote virtuel :
+;URL=http://pos-marwa.local/
+;
+; Dossier de WampServer (detecte automatiquement en temps normal)
+;WAMP=C:\wamp64
+;
+; app = fenetre dediee (Edge ou Chrome) ; defaut = navigateur par defaut
+NAVIGATEUR=app
+;
+; Attente maximale du demarrage d'Apache et MySQL/MariaDB (secondes)
+ATTENTE=120

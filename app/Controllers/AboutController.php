@@ -12,7 +12,7 @@ final class AboutController extends Controller
 {
     public function about(): void
     {
-        view('about/index', ['title' => 'À propos de POS Wan', 'author' => config('licence.author'), 'lic' => LicenceService::status()]);
+        view('about/index', ['title' => 'À propos de POS Marwa', 'author' => config('licence.author'), 'lic' => LicenceService::status()]);
     }
 
     public function contract(): void

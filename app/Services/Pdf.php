@@ -147,7 +147,7 @@ final class Pdf
         for ($i = 1; $i <= $max; $i++) {
             $pdf .= isset($offsets[$i]) ? sprintf("%010d 00000 n \n", $offsets[$i]) : "0000000000 65535 f \n";
         }
-        $pdf .= "trailer\n<< /Size " . ($max + 1) . " /Root 1 0 R /Info << /Producer (POS Wan) /Creator (POS Wan) >> >>\nstartxref\n$xref\n%%EOF\n";
+        $pdf .= "trailer\n<< /Size " . ($max + 1) . " /Root 1 0 R /Info << /Producer (POS Marwa) /Creator (POS Marwa) >> >>\nstartxref\n$xref\n%%EOF\n";
         return $pdf;
     }
 
@@ -182,7 +182,7 @@ final class Pdf
         $scale = $usable / array_sum($widths);
         $widths = array_map(fn($w) => $w * $scale, $widths);
 
-        $company = (string) setting('company_name', 'POS Wan');
+        $company = (string) setting('company_name', 'POS Marwa');
         $printed = date('d/m/Y H:i');
         $y = 0.0;
         $page = static function () use ($pdf, $margin, $usable, $title, $opts, $company, $printed, $headers, $widths, $size, $lineH, $numeric, &$y): void {
@@ -203,7 +203,7 @@ final class Pdf
                 $x += $widths[$c];
             }
             $y += $lineH + 2;
-            $pdf->text($margin, $pdf->h - 20, 'POS Wan', 7, false, 'left', 100, [0.5, 0.5, 0.5]);
+            $pdf->text($margin, $pdf->h - 20, 'POS Marwa', 7, false, 'left', 100, [0.5, 0.5, 0.5]);
             $pdf->text($margin, $pdf->h - 20, 'Page ' . (count($pdf->pages) + 1) . ' / {nb}', 7, false, 'right', $usable, [0.5, 0.5, 0.5]);
         };
         $page();

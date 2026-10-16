@@ -1,10 +1,10 @@
-# POS Wan — protection si Apache sert la racine du projet (ex. http://localhost/pos-wan/).
+# POS Marwa — protection si Apache sert la racine du projet (ex. http://localhost/pos-marwa/).
 # Configuration recommandée : VirtualHost dont le DocumentRoot est le dossier public/.
 Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
     # Tout est redirigé vers public/ ; app/, config/, storage/, database/... ne sont jamais servis.
-    RewriteRule ^(app|addons|config|database|storage|routes|tests|bin|docs|vendor|lang)(/|$) - [F,L]
+    RewriteRule ^(app|addons|config|database|storage|routes|tests|bin|docs|vendor|lang|windows|outils-auteur)(/|$) - [F,L]
     RewriteRule ^$ public/ [L]
     RewriteCond %{REQUEST_URI} !/public/
     RewriteRule ^(.*)$ public/$1 [L]

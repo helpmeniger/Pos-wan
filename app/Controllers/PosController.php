@@ -15,6 +15,13 @@ final class PosController extends Controller
     public function index(): void
     {
         $u = $this->user();
+        $mode = \App\Services\BusinessMode::current();
+        if (in_array($mode, ['clinique', 'pressing'], true)) {
+            redirect(\App\Services\BusinessMode::posUrl()); // caisse dédiée à l'activité
+        }
+        if (!can('pos.sell')) {
+            throw new \App\Core\HttpException(403);
+        }
         $register = $u['register_id'] ? DB::one('SELECT r.*, s.name AS store_name, w.name AS warehouse_name FROM cash_registers r JOIN stores s ON s.id = r.store_id JOIN warehouses w ON w.id = r.warehouse_id WHERE r.id = ?', [$u['register_id']]) : null;
         $session = $register ? CashService::openSessionForRegister((int) $register['id']) : null;
         $categories = DB::all("SELECT id, name, color, icon, image FROM categories WHERE active = 1 AND parent_id IS NULL AND sales_channel IN ('all','shop') ORDER BY sort_order, name");
@@ -40,7 +47,11 @@ final class PosController extends Controller
             'mobileProviders' => mobile_money_providers(),
             'serverPrinter' => \App\Services\PrintService::targets('receipt', $register ? (int) $register['id'] : null) !== [],
         ];
-        view('pos/index', ['u' => $u, 'register' => $register, 'session' => $session, 'categories' => $categories, 'config' => $config], null);
+        $config['mode'] = $mode;
+        $alerts = in_array($mode, ['pharmacie', 'clinique_pharmacie'], true) && $register ? \App\Services\BusinessMode::pharmacyAlerts((int) $register['warehouse_id']) : null;
+        $clinicLink = $mode === 'clinique_pharmacie' && can('clinique.reception');
+        $rxQueue = $mode === 'clinique_pharmacie' && can('clinique.pharmacy') ? (int) DB::value("SELECT COUNT(*) FROM clinic_prescriptions WHERE status IN ('new','partial')") : null;
+        view('pos/index', ['u' => $u, 'register' => $register, 'session' => $session, 'categories' => $categories, 'config' => $config, 'mode' => $mode, 'alerts' => $alerts, 'clinicLink' => $clinicLink, 'rxQueue' => $rxQueue], null);
     }
 
     public static function defaultShortcuts(): array
@@ -78,12 +89,36 @@ final class PosController extends Controller
         ];
     }
 
+    /**
+     * Stock VENDABLE dans l'entrepôt de la caisse : pour les articles suivis par lot, seuls les
+     * lots non périmés et non rappelés comptent (ce que la vente acceptera réellement).
+     */
+    public static function stockSql(int $wh): string
+    {
+        return "CASE WHEN p.track_lots = 1 THEN COALESCE((SELECT SUM(l.quantity) FROM stock_lots l WHERE l.product_id = p.id AND l.warehouse_id = " . $wh . "
+                AND l.recalled = 0 AND (l.expiry_date IS NULL OR l.expiry_date >= CURDATE())), 0) ELSE COALESCE(sl.quantity, 0) END";
+    }
+
+    /** Stock actuel d'articles (rafraîchissement automatique de la caisse, sans recharger la page). */
+    public function stock(): void
+    {
+        $ids = array_slice(array_values(array_unique(array_filter(array_map('intval', explode(',', (string) Request::query('ids', '')))))), 0, 300);
+        $out = [];
+        if ($ids) {
+            $wh = $this->defaultWarehouseId();
+            foreach (DB::all('SELECT p.id, ' . self::stockSql($wh) . ' AS stock FROM products p LEFT JOIN stock_levels sl ON sl.product_id = p.id AND sl.warehouse_id = ' . $wh . ' WHERE p.id IN (' . implode(',', $ids) . ')') as $r) {
+                $out[(int) $r['id']] = (float) $r['stock'];
+            }
+        }
+        json_response(['ok' => true, 'stock' => (object) $out, 'at' => date('H:i:s')]);
+    }
+
     /** @param string $channel 'shop' (caisse) ou 'restaurant' (prise de commande) */
     private function baseQuery(string $channel = 'shop'): string
     {
         $wh = $this->defaultWarehouseId();
         $channel = $channel === 'restaurant' ? 'restaurant' : 'shop';
-        return "SELECT p.*, u.short_name AS unit_short, u.allow_decimal, c.color AS cat_color, COALESCE(sl.quantity,0) AS stock
+        return "SELECT p.*, u.short_name AS unit_short, u.allow_decimal, c.color AS cat_color, " . self::stockSql($wh) . " AS stock
                 FROM products p LEFT JOIN units u ON u.id = p.unit_id LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN categories pc ON pc.id = c.parent_id
                 LEFT JOIN stock_levels sl ON sl.product_id = p.id AND sl.warehouse_id = " . (int) $wh . "
                 WHERE p.status = 'active' AND p.sellable = 1 AND " . \App\Services\ProductService::CHANNEL_SQL . " IN ('all', '$channel')";

@@ -1,7 +1,7 @@
-# Module Clinique (POS Wan)
+# Module Clinique (POS Marwa)
 
-Gestion d'une clinique ou d'un cabinet médical, reliée à la pharmacie de POS Wan.
-Version 1.0.0 — nécessite POS Wan 1.5.0 ou plus.
+Gestion d'une clinique ou d'un cabinet médical, reliée à la pharmacie de POS Marwa.
+Version 1.0.0 — nécessite POS Marwa 1.5.0 ou plus.
 
 > ⚠️ Ce module est un outil de gestion. Ce n'est pas un logiciel médical certifié : il ne
 > remplace ni le jugement du médecin, ni les protocoles de l'établissement. Les seuils
@@ -9,7 +9,7 @@ Version 1.0.0 — nécessite POS Wan 1.5.0 ou plus.
 
 ## Installation
 
-1. Le dossier `addons/clinique/` doit être présent dans POS Wan.
+1. Le dossier `addons/clinique/` doit être présent dans POS Marwa.
 2. **Gestion → Modules complémentaires → Clinique → Installer** (sauvegarde automatique),
    ou `php bin/addons.php install clinique`.
 3. Créer les comptes du personnel (**Utilisateurs**) avec les rôles créés par le module :
@@ -83,3 +83,19 @@ indicatifs en FCFA) ; chambres, lits et prix par jour ; seuils d'alerte.
 - Pas de laboratoire ni d'imagerie détaillés (résultats d'examens) : facturés comme actes.
 - Pas de facturation électronique aux assurances : le rapport donne les montants par organisme.
 - Traductions : français et anglais.
+
+## Version 1.1.0 (POS Marwa 2.0)
+
+- **Caisse clinique** (`/clinique/caisse`) :
+  - recherche ou création rapide du patient ;
+  - choix des prestations ;
+  - encaissement total ou partiel (réglage `clinique_partial_payment`) ;
+  - ticket.
+
+  Elle s'ouvre automatiquement pour l'accueil en mode Clinique ou Clinique + Pharmacie.
+- **Délivrance pharmacie** : contrôle des médicaments par scan (douchette ou caméra) avant la
+  vente.
+- En mode Clinique + Pharmacie :
+  - les prestations médicales et les ventes de médicaments restent des opérations séparées,
+    reliées par l'ordonnance ;
+  - la caisse principale affiche la file des ordonnances à délivrer.

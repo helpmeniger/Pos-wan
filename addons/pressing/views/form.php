@@ -7,6 +7,15 @@ foreach ($tarifs as $a) { $cats[$a['category']][] = $a; }
 $data = ['tarifs' => array_values($tarifs), 'services' => PS::SERVICES, 'expressPct' => (float) setting('pressing_express_pourcent', '50'),
   'delai' => (int) setting('pressing_delai_jours', '3'), 'delaiExpress' => (int) setting('pressing_express_delai_jours', '1'), 'canPrice' => $manage];
 ?>
+<?php if (!empty($caisse)): ?>
+<div class="card mb-3 border-success"><div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center">
+  <span class="badge bg-success fs-6"><i class="bi bi-basket2"></i> Caisse pressing</span>
+  <form method="get" action="<?= e(url('/pressing/find')) ?>" class="d-flex gap-1"><input name="q" id="pkFind" class="form-control form-control-sm" placeholder="Retrait : n° de dépôt, téléphone, nom" style="min-width:240px"><button type="button" class="btn btn-sm btn-outline-secondary" data-camera-scan="#pkFind" data-scan-submit data-scan-title="Scanner le QR code du ticket"><i class="bi bi-qr-code-scan"></i></button><button class="btn btn-sm btn-success">Retrait</button></form>
+  <a class="btn btn-sm btn-outline-success" href="<?= e(url('/pressing/suivi', ['f' => 'ready'])) ?>">Prêts à retirer <span class="badge bg-success"><?= (int) $readyCount ?></span></a>
+  <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('/pressing/suivi')) ?>"><i class="bi bi-list-check"></i> Suivi</a>
+  <?php foreach ($ready as $r): ?><a class="badge bg-light text-dark border text-decoration-none" href="<?= e(url('/pressing/' . $r['id'])) ?>"><?= e($r['number']) ?> · <?= e($r['customer_name']) ?><?= (float) $r['due'] > 0 ? ' · ' . e(money($r['due'])) : '' ?></a><?php endforeach; ?>
+</div></div>
+<?php endif; ?>
 <form method="post" action="<?= e(url('/pressing')) ?>" id="pressingForm" autocomplete="off"><?= csrf_field() ?>
 <div class="row g-3">
   <div class="col-xl-8">

@@ -1,4 +1,4 @@
--- POS Wan 1.3 : TVA générale, restaurant (poste par défaut, envoi en cuisine à l'encaissement)
+-- POS Marwa 1.3 : TVA générale, restaurant (poste par défaut, envoi en cuisine à l'encaissement)
 
 -- Article exonéré de la TVA générale (produits de première nécessité…)
 ALTER TABLE products ADD COLUMN vat_exempt TINYINT(1) NOT NULL DEFAULT 0 AFTER tax_rate;

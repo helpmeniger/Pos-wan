@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Générateur de licences POS Wan</title>
+<title>Générateur de licences POS Marwa</title>
 <!--
   Outil de l'AUTEUR (Mahamadou Hamidou) — ne pas donner aux clients.
   Fonctionne hors ligne, dans Chrome / Edge / Firefox récents (signature Ed25519 du navigateur).
@@ -49,7 +49,7 @@
 </head>
 <body>
 <header>
-  <h1>Générateur de licences POS <b>Wan</b></h1>
+  <h1>Générateur de licences POS <b>Marwa</b></h1>
   <small>Outil de l'auteur — Mahamadou Hamidou (Mohamed) · +227 92 08 12 82 / 87 22 52 02</small>
 </header>
 <main>
@@ -67,7 +67,7 @@
     <h2>2. Licence du client</h2>
     <label for="client">Nom du client (entreprise)</label>
     <input id="client" maxlength="150" placeholder="ex. Pharmacie Espoir">
-    <label for="installId">Identifiant d'installation (affiché dans POS Wan → Licence et activation)</label>
+    <label for="installId">Identifiant d'installation (affiché dans POS Marwa → Licence et activation)</label>
     <input id="installId" class="mono" maxlength="40" placeholder="PW-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
     <div class="row">
       <div><label for="expires">Date de fin (vide = sans limite)</label><input type="date" id="expires"></div>
@@ -101,7 +101,7 @@
     <div class="tablewrap"><table><thead><tr><th>Date</th><th>N°</th><th>Client</th><th>Identifiant</th><th>Fin</th><th>Clé</th></tr></thead><tbody id="hist"></tbody></table></div>
   </section>
 </main>
-<footer>© Mahamadou Hamidou (Mohamed) — POS Wan. Ne jamais transmettre ce fichier ni la clé privée.</footer>
+<footer>© Mahamadou Hamidou (Mohamed) — POS Marwa. Ne jamais transmettre ce fichier ni la clé privée.</footer>
 
 <script>
 (function () {
@@ -130,10 +130,10 @@
       if (k.length !== 64) throw new Error('taille');
       secret = k;
       const pub = bytesToB64(k.slice(32));
-      if (pub === OFFICIAL_PUBLIC) { st.className = 'status good'; st.textContent = '✔ Clé privée chargée : elle correspond à la clé publique de POS Wan.'; }
-      else { st.className = 'status bad'; st.textContent = '⚠ Clé chargée, mais elle ne correspond pas à la clé publique de cette version de POS Wan : les licences seront refusées (sauf si vous avez mis sa clé publique dans config/licence.php).'; }
+      if (pub === OFFICIAL_PUBLIC) { st.className = 'status good'; st.textContent = '✔ Clé privée chargée : elle correspond à la clé publique de POS Marwa.'; }
+      else { st.className = 'status bad'; st.textContent = '⚠ Clé chargée, mais elle ne correspond pas à la clé publique de cette version de POS Marwa : les licences seront refusées (sauf si vous avez mis sa clé publique dans config/licence.php).'; }
     } catch (e) {
-      st.className = 'status bad'; st.textContent = '✖ Contenu invalide : ce n\'est pas une clé privée POS Wan (64 octets en base64).';
+      st.className = 'status bad'; st.textContent = '✖ Contenu invalide : ce n\'est pas une clé privée POS Marwa (64 octets en base64).';
     }
   }
   $('#keyFile').addEventListener('change', async (e) => { const f = e.target.files[0]; if (f) { const t = await f.text(); $('#keyText').value = ''; loadKey(t); } });
@@ -170,7 +170,7 @@
     const num = $('#number').value.trim();
     if (!secret) return msg(m, 'err', 'Chargez d\'abord votre clé privée (étape 1).');
     if (!client) return msg(m, 'err', 'Indiquez le nom du client.');
-    if (!ID_RE.test(id)) return msg(m, 'err', 'Identifiant invalide : il a la forme PW-1A2B-3C4D-5E6F-7A8B (copiez-le depuis POS Wan → Licence et activation).');
+    if (!ID_RE.test(id)) return msg(m, 'err', 'Identifiant invalide : il a la forme PW-1A2B-3C4D-5E6F-7A8B (copiez-le depuis POS Marwa → Licence et activation).');
     if (exp && exp < today()) return msg(m, 'err', 'La date de fin est déjà passée.');
     try {
       $('#generate').disabled = true;
@@ -181,7 +181,7 @@
       $('#licence').value = lic;
       $('#result').hidden = false;
       $('#resultInfo').textContent = 'Licence n° ' + num + ' pour « ' + client + ' » (' + id + ')' + (exp ? ', valable jusqu\'au ' + exp.split('-').reverse().join('/') : ', sans limite de durée') + '. Elle ne fonctionne que sur cette installation.';
-      const text = 'Bonjour, voici votre licence POS Wan (' + client + ').\nDans POS Wan : Configuration → Licence et activation → collez la clé puis cliquez sur « Activer ».\n\n' + lic + '\n\nMahamadou Hamidou — +227 92 08 12 82 / 87 22 52 02';
+      const text = 'Bonjour, voici votre licence POS Marwa (' + client + ').\nDans POS Marwa : Configuration → Licence et activation → collez la clé puis cliquez sur « Activer ».\n\n' + lic + '\n\nMahamadou Hamidou — +227 92 08 12 82 / 87 22 52 02';
       $('#copyMsg').dataset.text = text;
       $('#wa').href = 'https://wa.me/?text=' + encodeURIComponent(text);
       saveHistory({ date: new Date().toLocaleString('fr-FR'), n: num, c: client, i: id, e: exp || '', k: lic });
