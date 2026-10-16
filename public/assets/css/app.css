@@ -1,0 +1,105 @@
+/* =============================================================================
+   JOB NIGER — feuille de style (complète Bootstrap 5.3)
+   Couleurs : vert savane (confiance, emploi), ocre sahélien (énergie, opportunité),
+   bleu nuit (sérieux). Contrastes AA vérifiés sur fond clair.
+   ========================================================================== */
+:root {
+  --jn-green: #0B7A5C;
+  --jn-green-dark: #075C45;
+  --jn-green-soft: #E3F2EC;
+  --jn-ochre: #E07A1F;
+  --jn-ochre-soft: #FDEEDC;
+  --jn-ink: #14213D;
+  --jn-muted: #5B6472;
+  --jn-bg: #F6F7F4;
+  --jn-border: #E2E5E0;
+  --bs-primary: var(--jn-green);
+  --bs-primary-rgb: 11, 122, 92;
+  --bs-link-color: var(--jn-green-dark);
+  --bs-link-color-rgb: 7, 92, 69;
+  --bs-link-hover-color: #04402F;
+  --bs-link-hover-color-rgb: 4, 64, 47;
+  --bs-body-color: var(--jn-ink);
+  --bs-body-font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --bs-border-radius: .65rem;
+}
+body { background: var(--jn-bg); min-height: 100vh; display: flex; flex-direction: column; }
+main { flex: 1 0 auto; }
+a { text-underline-offset: .15em; }
+
+.btn-primary { --bs-btn-bg: var(--jn-green); --bs-btn-border-color: var(--jn-green); --bs-btn-hover-bg: var(--jn-green-dark);
+  --bs-btn-hover-border-color: var(--jn-green-dark); --bs-btn-active-bg: #04402F; --bs-btn-disabled-bg: var(--jn-green); }
+.btn-outline-primary { --bs-btn-color: var(--jn-green-dark); --bs-btn-border-color: var(--jn-green); --bs-btn-hover-bg: var(--jn-green);
+  --bs-btn-hover-border-color: var(--jn-green); --bs-btn-active-bg: var(--jn-green-dark); }
+.btn-accent { background: var(--jn-ochre); border-color: var(--jn-ochre); color: #1b1006; font-weight: 600; }
+.btn-accent:hover, .btn-accent:focus { background: #C96812; border-color: #C96812; color: #fff; }
+.text-primary { color: var(--jn-green) !important; }
+.bg-primary-soft { background: var(--jn-green-soft) !important; }
+.bg-accent-soft { background: var(--jn-ochre-soft) !important; }
+.text-muted { color: var(--jn-muted) !important; }
+.form-control:focus, .form-select:focus, .form-check-input:focus { border-color: var(--jn-green); box-shadow: 0 0 0 .2rem rgba(11,122,92,.2); }
+.form-check-input:checked { background-color: var(--jn-green); border-color: var(--jn-green); }
+
+/* Navigation */
+.jn-navbar { background: #fff; border-bottom: 1px solid var(--jn-border); }
+.jn-navbar .navbar-brand img { height: 40px; width: auto; }
+.jn-navbar .nav-link { color: var(--jn-ink); font-weight: 500; }
+.jn-navbar .nav-link.active, .jn-navbar .nav-link:hover { color: var(--jn-green); }
+.jn-badge-count { font-size: .65rem; }
+
+/* Accueil */
+.jn-hero { background: linear-gradient(135deg, #0B7A5C 0%, #0A6A50 55%, #14213D 100%); color: #fff; }
+.jn-hero h1 { font-weight: 800; letter-spacing: -.5px; }
+.jn-hero .lead { color: rgba(255,255,255,.88); }
+.jn-hero-card { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); border-radius: 1rem; }
+.jn-stat { font-size: 1.75rem; font-weight: 800; line-height: 1; }
+
+/* Cartes */
+.jn-card { background: #fff; border: 1px solid var(--jn-border); border-radius: 1rem; box-shadow: 0 1px 2px rgba(20,33,61,.04); }
+.jn-card-link { transition: transform .15s ease, box-shadow .15s ease; color: inherit; text-decoration: none; display: block; height: 100%; }
+.jn-card-link:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(20,33,61,.08); color: inherit; }
+.jn-icon { width: 2.75rem; height: 2.75rem; border-radius: .75rem; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--jn-green-soft); color: var(--jn-green); font-size: 1.35rem; flex-shrink: 0; }
+.jn-icon.accent { background: var(--jn-ochre-soft); color: #A9540C; }
+
+/* Tableaux de bord */
+.jn-kpi { padding: 1.1rem 1.2rem; }
+.jn-kpi .label { color: var(--jn-muted); font-size: .85rem; }
+.jn-kpi .value { font-size: 1.5rem; font-weight: 700; }
+.jn-kpi .hint { font-size: .75rem; color: var(--jn-muted); }
+.jn-section-title { font-size: 1.05rem; font-weight: 700; margin-bottom: .75rem; }
+.progress { height: .6rem; }
+.progress-bar { background-color: var(--jn-green); }
+
+/* Badges de risque / statut */
+.badge-risk-LOW { background: #E3F2EC; color: #075C45; }
+.badge-risk-MEDIUM { background: #FFF4D6; color: #7A5300; }
+.badge-risk-HIGH { background: #FDE2D3; color: #8E3A0B; }
+.badge-risk-REGULATED { background: #E4E7F5; color: #2A3570; }
+.badge-env-PRODUCTION { background: #E3F2EC; color: #075C45; }
+.badge-env-TEST { background: #FFF4D6; color: #7A5300; }
+.badge-env-A_CONFIGURER, .badge-env-INDISPONIBLE { background: #ECEEF1; color: #3D4552; }
+
+/* Formulaires d'authentification */
+.jn-auth { max-width: 520px; }
+.jn-auth-wide { max-width: 760px; }
+.password-toggle { cursor: pointer; }
+.account-type-option { border: 1px solid var(--jn-border); border-radius: .75rem; padding: .75rem 1rem; cursor: pointer; background: #fff; }
+.account-type-option:has(input:checked) { border-color: var(--jn-green); background: var(--jn-green-soft); }
+
+/* Pied de page */
+.jn-footer { background: var(--jn-ink); color: rgba(255,255,255,.75); }
+.jn-footer a { color: #fff; text-decoration: none; }
+.jn-footer a:hover { text-decoration: underline; }
+
+/* Contenu juridique */
+.jn-legal h2 { font-size: 1.2rem; margin-top: 1.75rem; }
+.jn-draft-banner { border-left: 4px solid var(--jn-ochre); }
+
+/* Mobile : cibles tactiles confortables */
+@media (max-width: 575.98px) {
+  .btn { padding: .6rem 1rem; }
+  .jn-hero h1 { font-size: 1.9rem; }
+  .jn-kpi .value { font-size: 1.3rem; }
+}
+@media (prefers-reduced-motion: reduce) { .jn-card-link { transition: none; } }

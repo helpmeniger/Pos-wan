@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         cacheDirectory="storage/cache/phpunit"
+         failOnWarning="true"
+         failOnRisky="true"
+         displayDetailsOnTestsThatTriggerWarnings="true">
+    <testsuites>
+        <testsuite name="Unit"><directory>tests/Unit</directory></testsuite>
+        <testsuite name="Integration"><directory>tests/Integration</directory></testsuite>
+        <testsuite name="Security"><directory>tests/Security</directory></testsuite>
+        <testsuite name="Feature"><directory>tests/Feature</directory></testsuite>
+    </testsuites>
+    <php>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_DEBUG" value="false" force="true"/>
+        <env name="MAIL_DRIVER" value="log" force="true"/>
+        <env name="SMS_DRIVER" value="log" force="true"/>
+    </php>
+    <source>
+        <include><directory>app</directory></include>
+    </source>
+</phpunit>

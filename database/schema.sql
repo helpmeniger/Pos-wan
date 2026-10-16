@@ -1955,7 +1955,7 @@ CREATE TABLE support_ticket_messages (
 
 -- Suivi des migrations appliquées
 CREATE TABLE schema_migrations (
-  version       VARCHAR(40) NOT NULL,
+  version       VARCHAR(190) NOT NULL,
   applied_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (version)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

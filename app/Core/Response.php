@@ -67,6 +67,7 @@ final class Response
     public function send(): void
     {
         if (!headers_sent()) {
+            header_remove('X-Powered-By');   // ne pas divulguer la version de PHP
             http_response_code($this->status);
             foreach ($this->headers as $name => $value) {
                 header($name . ': ' . $value, true);

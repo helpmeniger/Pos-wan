@@ -12,8 +12,21 @@ Stack : PHP 8.3 (MVC), MySQL 8 / MariaDB 10.6+, Bootstrap 5, WampServer en déve
 
 ## État du projet
 
-**Phase 1 — Conception : livrée.** Les phases 2 à 7 (code applicatif) restent à développer.
-Ce dépôt ne contient pas encore d'application exécutable.
+| Phase | Statut |
+|---|---|
+| 1 — Conception (architecture, règles métier, finance, schéma SQL) | ✅ |
+| 2 — Socle : comptes, connexion, rôles et permissions, sécurité, tableaux de bord de base | ✅ |
+| 3 — Annonces, candidatures, recherche, messagerie, négociation, missions, avis | à venir |
+| 4 — Paiements, commissions, grand livre, remboursements, versements, rapports | à venir |
+| 5 — Administration complète · 6 — Sécurité et qualité · 7 — Déploiement | à venir |
+
+**Fonctionnel aujourd'hui :** site public (accueil, 21 domaines / 221 métiers, aide, contact → ticket, CGU et
+confidentialité en brouillon), inscription prestataire / particulier / organisation, connexion par téléphone ou e-mail,
+mot de passe oublié, vérification du téléphone par code SMS (pilote de développement), changement de mot de passe,
+rôles et permissions, verrouillage anti-force brute, tableaux de bord prestataire / demandeur / administration
+alimentés par la base, notifications internes, API JSON des référentiels, console d'exploitation.
+
+L'installation pas à pas sous WampServer est décrite dans **[INSTALLATION.md](INSTALLATION.md)**.
 
 | Document | Contenu |
 |---|---|
@@ -23,16 +36,17 @@ Ce dépôt ne contient pas encore d'application exécutable.
 | [docs/04-PLAN-DES-PHASES.md](docs/04-PLAN-DES-PHASES.md) | Plan, fichiers prévus, intégrations externes à configurer |
 | [database/schema.sql](database/schema.sql) | Schéma MySQL complet et exécutable |
 
-## Essayer le schéma
+## Démarrage rapide
 
 ```bash
-mysql -u root -p < database/schema.sql
-mysql -u root -p < database/seeders/001_reference_data.sql
-mysql -u root -p < database/seeders/002_job_catalogue.sql
-# Test de fumée (base jetable job_niger_test) :
-tests/Database/run_schema_smoke.sh -u root -p
+composer install
+cp .env.example .env            # renseigner DB_* puis :
+php bin/console key:generate
+php bin/console migrate         # schéma + données de référence + migrations
+php bin/console admin:create --phone="90 00 00 01" --first=Prénom --last=Nom
+php -S 127.0.0.1:8080 -t public public/index.php   # ou VirtualHost Apache (voir INSTALLATION.md)
+vendor/bin/phpunit              # 82 tests (base dédiée job_niger_test)
 ```
-Sous WampServer : phpMyAdmin → Importer, dans le même ordre.
 
 ## Avertissement
 

@@ -34,7 +34,7 @@ c'est ce qui rend l'application Android possible sans réécriture.
 |---|---|---|
 | Langage | **PHP 8.3** (compatible 8.2) | Fourni par WampServer 3.3, typage strict, enums, readonly |
 | Framework | **MVC maison léger** + composants Composer ciblés | Installation simple sous Wamp, code lisible et maîtrisé ; pas de magie |
-| Dépendances Composer | `vlucas/phpdotenv`, `monolog/monolog`, `phpoffice/phpspreadsheet` (export Excel), `phpunit/phpunit` (dev) | Briques éprouvées, limitées au strict nécessaire |
+| Dépendances Composer | Aucune à l'exécution en Phase 2 (`Env` et `Logger` internes) ; `phpunit/phpunit` en développement ; `phpoffice/phpspreadsheet` prévu pour l'export Excel (Phase 4) | Installation simple sous Wamp, surface d'attaque réduite |
 | Base de données | **MySQL 8.0.16+ ou MariaDB 10.6+**, InnoDB, `utf8mb4_unicode_ci` | Transactions ACID, clés étrangères, CHECK, triggers |
 | Accès données | **PDO** (`ERRMODE_EXCEPTION`, `EMULATE_PREPARES=false`) | Requêtes préparées natives contre l'injection SQL |
 | Montants | `DECIMAL(15,2)`, arithmétique PHP en **entiers de francs** (classe `Money`) | Aucun flottant ; XOF n'a pas de sous-unité → arrondi à l'unité |
@@ -44,7 +44,7 @@ c'est ce qui rend l'application Android possible sans réécriture.
 | Temps réel | **Interrogation périodique** (8 s, configurable, `since_id`) puis WebSocket (Ratchet/Swoole) en évolution | Compatible Wamp sans démon ; API déjà paginée par curseur |
 | Hors-ligne | Service Worker + IndexedDB pour **brouillons** (annonces, messages, candidatures) avec `client_msg_id` anti-doublon | Les opérations financières restent **exclusivement serveur** |
 | Tâches planifiées | `php bin/console schedule:run` (Planificateur Windows / cron) | Expirations, validation tacite, rappels, envois, sauvegardes |
-| Journalisation | Monolog → `storage/logs/app-YYYY-MM-DD.log` + tables `security_events`, `admin_audit_logs` | Séparation technique / sécurité / audit |
+| Journalisation | `App\Support\Logger` (JSON, secrets masqués) → `storage/logs/app-YYYY-MM-DD.log` + tables `security_events`, `admin_audit_logs` (chaînage SHA-256) | Séparation technique / sécurité / audit |
 | Tests | **PHPUnit** (Unit, Integration sur base `job_niger_test`, Security) + `tests/Database/*.sql` | Exécutables localement et en CI |
 | i18n | Fichiers `lang/fr/*.php` ; clés prêtes pour `ha`, `dje`, `en` | Français au lancement |
 | Dates | Stockage heure locale `Africa/Niamey` (UTC+1 fixe), affichage `JJ/MM/AAAA` | Le Niger n'a pas d'heure d'été |

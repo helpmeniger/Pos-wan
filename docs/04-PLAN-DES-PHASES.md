@@ -3,8 +3,8 @@
 | Phase | Contenu | Statut |
 |---|---|---|
 | 1 — Conception | Architecture, règles métier, finance, schéma SQL, données de référence, test de fumée | ✅ livrée |
-| 2 — Socle | Config/.env, PDO, routeur, middleware, vues, auth (inscription, connexion, reset, OTP), RBAC, `admin:create`, migrations | ⏭ suivante |
-| 3 — Fonctionnel | Profils, catalogue, annonces, candidatures, invitations, recherche, messagerie, négociation, contrats, workflow missions, avis | |
+| 2 — Socle | Config/.env, PDO, routeur, middleware, vues, auth (inscription, connexion, reset, OTP), RBAC, `admin:create`, migrations | ✅ livrée |
+| 3 — Fonctionnel | Profils, catalogue, annonces, candidatures, invitations, recherche, messagerie, négociation, contrats, workflow missions, avis | ⏭ suivante |
 | 4 — Finance | Money, Commission, Ledger, Transaction, Payment + passerelles, Webhook, Refund, Payout, reçus, rapports, exports | |
 | 5 — Administration | Tableaux de bord, utilisateurs, entreprises, modération, vérifications, litiges, signalements, paramètres, rôles, audit | |
 | 6 — Sécurité & qualité | PHPUnit (unit/intégration/sécurité), en-têtes, CSP, upload, rate-limit, sauvegardes, journalisation | |
@@ -25,24 +25,58 @@ tests/Database/schema_smoke.sql           scénario financier + 30 contrôles d'
 tests/Database/run_schema_smoke.sh
 ```
 
-## Fichiers prévus en Phase 2 (socle)
+## Fichiers livrés en Phase 2 (socle)
 ```
-composer.json  .env.example  .gitignore  public/index.php  public/.htaccess  .htaccess (refus racine)
-bin/console
-config/{app,database,security,permissions,payment}.php
-app/Core/{Application,Container,Config,Env,Router,Request,Response,View,Session,Csrf,Database,Validator,Money,Uuid,Paginator}.php
-app/Middleware/{StartSession,SecurityHeaders,VerifyCsrf,Authenticate,RequirePermission,RequireRole,RateLimit,ForcePasswordChange}.php
-app/Services/Auth/{AuthService,PasswordResetService,OtpService,PermissionService}.php
-app/Services/Audit/{AuditLogger,SecurityLogger}.php
-app/Repositories/{UserRepository,RoleRepository,SettingRepository}.php
-app/Controllers/Web/{HomeController,AuthController,PasswordController}.php
-app/Views/layouts/{app,admin,auth}.php  app/Views/partials/*  app/Views/auth/*  app/Views/public/home.php
-public/assets/css/app.css  public/assets/js/app.js  public/assets/images/logo.svg
+composer.json  phpunit.xml  .env.example  .htaccess (refus racine)  INSTALLATION.md
+bootstrap/app.php              amorçage commun (web, console, tests) et déclaration des services
+bin/console                    migrate [--fresh] · db:check · admin:create · key:generate · schedule:run · audit:verify
+config/{app,database,security,services,permissions}.php
+app/Core/                      Application, Container, Config, Env, Router, Request, Response, View, Session, Csrf,
+                               Database, Validator, HttpException, ValidationException, helpers.php
+app/Support/                   Money (entiers de francs, points de base), Phone (+227), Uuid, Logger, SqlScriptRunner
+app/Middleware/                SecurityHeaders, StartSession, VerifyCsrf, Authenticate, RedirectIfAuthenticated,
+                               RequirePermission, RequireRole, ForcePasswordChange, Throttle
+app/Services/Auth/             AuthService, RegistrationService, PasswordHasher, PasswordResetService, OtpService,
+                               PermissionService, RateLimiter
+app/Services/Audit/            AuditLogger (chaînage SHA-256), SecurityLogger
+app/Services/Notifications/    NotificationService, MailerInterface (+ LogMailer, PhpMailer), SmsSenderInterface (+ LogSmsSender)
+app/Services/Dashboard/        DashboardService (indicateurs réels prestataire / demandeur / administration)
+app/Repositories/              UserRepository, SettingRepository, CityRepository, CatalogRepository
+app/Controllers/Web/           Home, Page (pages + contact → ticket), Auth, Password, PhoneVerification, Dashboard, Notification
+app/Controllers/Admin/         Dashboard
+app/Controllers/Api/V1/        Meta (health, villes, quartiers, catégories)
+app/Console/Kernel.php
+app/Views/                     layouts, partials, public (accueil, catégories, à propos, aide, contact, CGU, confidentialité),
+                               auth, dashboard, admin, notifications, errors
 routes/{web,api}.php
-database/migrations/2026_10_16_000001_initial_schema.php (enveloppe schema.sql)
-app/Console/Commands/{Migrate,Seed,AdminCreate,ScheduleRun}.php
-tests/Unit/{MoneyTest,ValidatorTest,CsrfTest}.php  tests/Security/{LoginRateLimitTest,SessionFixationTest}.php
-phpunit.xml
+public/index.php  public/.htaccess  public/uploads/.htaccess  public/robots.txt
+public/assets/{css/app.css, js/app.js, images/logo.svg, images/favicon.svg}
+public/assets/vendor/          Bootstrap 5.3.3, Bootstrap Icons 1.11.3, Chart.js 4.4.6, Leaflet 1.9.4 (servis localement)
+database/migrations/2026_10_17_000001_password_changed_at_precision.sql
+tests/Unit (38) · tests/Integration (22) · tests/Feature (11) · tests/Security (11) — 82 tests
+```
+
+Écarts assumés par rapport au plan initial :
+- Pas de dépendance d'exécution Composer : `Env` et `Logger` maison remplacent phpdotenv et Monolog
+  (installation plus simple sous Wamp, surface d'attaque réduite). PHPUnit reste en dépendance de développement.
+- Migrations en SQL pur (`database/migrations/*.sql`) exécutées par `bin/console migrate`, importables aussi dans phpMyAdmin.
+- `Money` est livré dès la Phase 2 (utilisé pour l'exemple de commission de la page « Comment ça marche »).
+- `schema_migrations.version` élargi à 190 caractères dans `schema.sql` (aucune base n'était encore déployée).
+
+## Fichiers prévus en Phase 3 (fonctionnel)
+```
+app/Services/Files/FileStorageService.php        téléversements (finfo, ré-encodage GD, stockage privé)
+app/Services/Profile/{WorkerProfileService,BusinessService}.php
+app/Services/Jobs/{JobPostService,ModerationService,ApplicationService,InvitationService,SearchService,RecommendationService}.php
+app/Services/Missions/{NegotiationService,ContractService,MissionWorkflowService}.php
+app/Services/Messaging/{ConversationService,MessageService}.php
+app/Services/Reviews/{ReviewService,ReputationService}.php
+app/Policies/{JobPostPolicy,MissionPolicy,ConversationPolicy,ApplicationPolicy}.php
+app/Controllers/Web/{Profile,Jobs,Workers,Applications,Invitations,Missions,Negotiations,Messages,Reviews,Files}Controller.php
+app/Controllers/Api/V1/{Auth,Jobs,Messages}Controller.php        jetons Bearer (api_tokens)
+app/Views/{profile,jobs,workers,missions,messages,reviews}/*
+tests/Integration/{JobPostTest,ApplicationTest,NegotiationContractTest,MissionWorkflowTest,MessagingTest}.php
+tests/Security/{IdorTest,UploadTest,PriceTamperingTest}.php
 ```
 
 ## Intégrations externes à configurer (aucune n'est active)
@@ -51,8 +85,8 @@ phpunit.xml
 | Mobile Money intégré (agrégateur ou opérateurs) | Contrat marchand, identifiants API, clé de signature webhook, validation réglementaire BCEAO | A_CONFIGURER |
 | Carte bancaire (PSP agréé UEMOA) | Contrat, page de paiement hébergée, clés | A_CONFIGURER |
 | Virement bancaire | Compte bancaire de la société | A_CONFIGURER |
-| SMS (OTP, notifications) | Fournisseur SMS local, identifiant expéditeur | Désactivé (`auth.phone_otp_enabled = 0`) |
-| E-mail transactionnel | Serveur SMTP / service d'envoi, domaine (SPF/DKIM) | À configurer en Phase 2 |
+| SMS (OTP, notifications) | Fournisseur SMS local, identifiant expéditeur | Pilote `log` seulement ; OTP désactivé (`auth.phone_otp_enabled = 0`) |
+| E-mail transactionnel | Serveur SMTP / service d'envoi, domaine (SPF/DKIM) | Pilote `log` (dév.) ou `mail()` de PHP ; SMTP authentifié à brancher |
 | Tuiles cartographiques | Fournisseur de tuiles OSM pour la production | Usage de dév. uniquement |
 | Notifications push | Firebase Cloud Messaging (appli Android) | Futur |
 | Validation juridique | CGU, confidentialité, statut fiscal (TVA sur commissions), droit du travail | **Obligatoire avant lancement** |

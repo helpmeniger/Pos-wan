@@ -129,6 +129,12 @@ class AuthService
         $this->permissions->flush((int) $user['id']);
     }
 
+    public function loginById(int $userId): void
+    {
+        $user = $this->users->findWithHash($userId) ?? throw new \RuntimeException('Utilisateur introuvable');
+        $this->login($user);
+    }
+
     /** Après un changement de mot de passe par l'utilisateur lui-même : garder sa session. */
     public function refreshPasswordStamp(): void
     {

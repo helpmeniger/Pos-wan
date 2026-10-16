@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /admin
+Disallow: /espace
+Disallow: /api
+Disallow: /mot-de-passe

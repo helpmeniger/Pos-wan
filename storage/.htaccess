@@ -1,0 +1,3 @@
+# Si, par erreur, la racine du projet est exposée (au lieu de public/), tout est refusé.
+# Configurez le DocumentRoot sur le dossier public/ (voir INSTALLATION.md).
+Require all denied

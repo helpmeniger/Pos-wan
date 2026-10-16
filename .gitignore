@@ -32,3 +32,5 @@ bin-release/
 !/public/uploads/.gitkeep
 .phpunit.result.cache
 *.sql.gz
+# La console de l'application doit être versionnée (le modèle ci-dessus ignore les dossiers bin/)
+!/bin/

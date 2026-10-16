@@ -121,12 +121,60 @@ final class Router
 
     private function compile(string $path): string
     {
-        $regex = preg_replace_callback(
-            '#\{([a-z_][a-z0-9_]*)(?::([^}]+))?\}#i',
-            fn (array $m) => '(?P<' . $m[1] . '>' . ($m[2] ?? '[^/]+') . ')',
-            $path
-        );
+        $regex = '';
+        foreach (self::tokenize($path) as $token) {
+            $regex .= is_string($token)
+                ? preg_quote($token, '#')
+                : '(?P<' . $token['name'] . '>' . ($token['pattern'] ?? '[^/]+') . ')';
+        }
         return '#^' . $regex . '$#u';
+    }
+
+    /**
+     * Découpe un chemin en littéraux et paramètres {nom} / {nom:regex}.
+     * Les accolades d'une contrainte (ex : [0-9a-f]{36}) sont prises en compte.
+     *
+     * @return list<string|array{name: string, pattern: ?string}>
+     */
+    private static function tokenize(string $path): array
+    {
+        $tokens = [];
+        $literal = '';
+        $len = strlen($path);
+        for ($i = 0; $i < $len; $i++) {
+            if ($path[$i] !== '{') {
+                $literal .= $path[$i];
+                continue;
+            }
+            $depth = 1;
+            $j = $i + 1;
+            while ($j < $len && $depth > 0) {
+                if ($path[$j] === '{') {
+                    $depth++;
+                } elseif ($path[$j] === '}') {
+                    $depth--;
+                }
+                $j++;
+            }
+            if ($depth !== 0) {
+                throw new \InvalidArgumentException("Accolade non fermée dans la route : {$path}");
+            }
+            $inner = substr($path, $i + 1, $j - $i - 2);
+            [$name, $pattern] = array_pad(explode(':', $inner, 2), 2, null);
+            if (!preg_match('/^[a-z_][a-z0-9_]*$/i', (string) $name)) {
+                throw new \InvalidArgumentException("Nom de paramètre invalide dans la route : {$path}");
+            }
+            if ($literal !== '') {
+                $tokens[] = $literal;
+                $literal = '';
+            }
+            $tokens[] = ['name' => $name, 'pattern' => $pattern];
+            $i = $j - 1;
+        }
+        if ($literal !== '') {
+            $tokens[] = $literal;
+        }
+        return $tokens;
     }
 
     /** @param array<string, string|int> $params */
@@ -135,16 +183,15 @@ final class Router
         if (!isset($this->named[$name])) {
             throw new \InvalidArgumentException("Route inconnue : {$name}");
         }
-        $path = $this->routes[$this->named[$name]]['path'];
-        $path = preg_replace_callback(
-            '#\{([a-z_][a-z0-9_]*)(?::[^}]+)?\}#i',
-            function (array $m) use (&$params) {
-                $value = $params[$m[1]] ?? '';
-                unset($params[$m[1]]);
-                return rawurlencode((string) $value);
-            },
-            $path
-        );
+        $path = '';
+        foreach (self::tokenize($this->routes[$this->named[$name]]['path']) as $token) {
+            if (is_string($token)) {
+                $path .= $token;
+                continue;
+            }
+            $path .= rawurlencode((string) ($params[$token['name']] ?? ''));
+            unset($params[$token['name']]);
+        }
         return $path . ($params ? '?' . http_build_query($params) : '');
     }
 
