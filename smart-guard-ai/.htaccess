@@ -7,3 +7,12 @@ Options -Indexes
 RewriteEngine On
 RewriteRule ^public/ - [L]
 RewriteRule ^(.*)$ public/$1 [L]
+
+# Limites de téléversement (photos, vidéos de test) pour PHP exécuté en module Apache (WampServer)
+<IfModule php_module>
+  php_value upload_max_filesize 256M
+  php_value post_max_size 260M
+  php_value max_execution_time 120
+  php_flag expose_php Off
+  php_flag display_errors Off
+</IfModule>

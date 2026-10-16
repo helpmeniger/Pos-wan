@@ -1,0 +1,24 @@
+{
+    "name": "smart-guard-ai/app",
+    "description": "SMART GUARD AI — vidéosurveillance intelligente et comptage des sorties d'articles (WampServer + service IA Python)",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.1",
+        "ext-pdo_mysql": "*",
+        "ext-gd": "*",
+        "ext-sodium": "*",
+        "ext-curl": "*",
+        "ext-fileinfo": "*",
+        "ext-mbstring": "*",
+        "ext-zip": "*"
+    },
+    "autoload": {
+        "psr-4": { "App\\": "app/" },
+        "files": ["app/helpers.php"]
+    },
+    "config": { "optimize-autoloader": true },
+    "scripts": {
+        "check": "php scripts/check_system.php"
+    }
+}

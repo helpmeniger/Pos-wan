@@ -90,7 +90,7 @@ final class Router
         if ($method !== 'GET' && $method !== 'HEAD' && !$isApi) {
             $token = $request->input('_csrf') ?? $request->header('X-CSRF-Token');
             if (!Csrf::verify(is_string($token) ? $token : null)) {
-                throw new HttpException(419);
+                throw new HttpException(403, 'Jeton de sécurité (CSRF) absent ou expiré. Rechargez la page et réessayez.');
             }
         }
         foreach ($mw as $m) {

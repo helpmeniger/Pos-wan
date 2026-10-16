@@ -4,7 +4,7 @@ from __future__ import annotations
 import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 
 import cv2
 import numpy as np
@@ -15,7 +15,9 @@ from .tracker import CONFIRMED, ByteTracker, Track
 
 
 def iso_ms(ts: float) -> str:
-    return datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    """Horodatage ISO 8601 en UTC (ex. 2024-05-12T09:42:16.123+00:00). PHP le convertit dans le
+    fuseau APP_TIMEZONE : pas d'erreur si l'horloge ou le fuseau de Windows diffèrent."""
+    return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat(timespec="milliseconds")
 
 
 @dataclass

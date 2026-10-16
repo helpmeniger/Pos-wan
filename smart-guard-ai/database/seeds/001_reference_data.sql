@@ -86,6 +86,7 @@ INSERT IGNORE INTO stores (code, name, city, timezone, currency) VALUES
 
 -- Paramètres globaux (modifiables dans Paramètres)
 INSERT IGNORE INTO system_settings (store_id, setting_key, setting_value, value_type, description) VALUES
+(NULL,'recon.enabled','1','bool','Activer le rapprochement automatique entre sorties observées et ventes de la caisse'),
 (NULL,'recon.window_before_sec','900','int','Délai max (s) entre une vente et la sortie observée (vente AVANT la sortie)'),
 (NULL,'recon.window_after_sec','120','int','Tolérance (s) si l horloge caisse est en retard (vente APRÈS la sortie)'),
 (NULL,'alerts.priority_min_confidence','0.85','float','Confiance minimale de reconnaissance pour qu une sortie sans vente devienne prioritaire'),
