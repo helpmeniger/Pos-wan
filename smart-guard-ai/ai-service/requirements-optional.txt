@@ -1,0 +1,15 @@
+# Dépendances FACULTATIVES — à installer seulement si nécessaire.
+#
+# 1) Extracteur d'empreintes visuelles (embeddings) par réseau de neurones pré-entraîné.
+#    Améliore nettement la reconnaissance des emballages. Licence : MIT (onnxruntime).
+onnxruntime>=1.17
+#
+# 2) Pour EXPORTER le modèle d'empreintes (une seule fois, avec Internet) :
+#    torch / torchvision (licence BSD). Poids ImageNet : vérifier les conditions d'utilisation.
+# torch>=2.2
+# torchvision>=0.17
+#
+# 3) Détecteur d'objets YOLO (Ultralytics). ATTENTION : licence AGPL-3.0.
+#    Une utilisation commerciale fermée nécessite une licence Ultralytics Enterprise.
+#    Le détecteur par défaut (« motion ») n'en a pas besoin.
+# ultralytics>=8.1

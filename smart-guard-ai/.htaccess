@@ -1,0 +1,9 @@
+# SMART GUARD AI — Toute requête est redirigée vers public/.
+# Les dossiers app/, config/, storage/, ai-service/... ne sont jamais servis.
+Options -Indexes
+<FilesMatch "^\.|\.(env|sql|bat|md|json|lock|py|log)$">
+  Require all denied
+</FilesMatch>
+RewriteEngine On
+RewriteRule ^public/ - [L]
+RewriteRule ^(.*)$ public/$1 [L]
