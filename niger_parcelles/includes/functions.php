@@ -216,14 +216,17 @@ function send_security_headers(): void
     if (headers_sent()) {
         return;
     }
-    $tiles = 'https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://server.arcgisonline.com https://*.arcgisonline.com';
+    $tiles = 'https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://*.tile.openstreetmap.fr '
+        . 'https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://*.arcgisonline.com';
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: SAMEORIGIN');
-    header('Referrer-Policy: same-origin');
+    // OpenStreetMap exige un en-tête Referer sur les tuiles : « same-origin » le supprimait
+    // et faisait bloquer les tuiles. On transmet uniquement l'origine (sans chemin ni paramètres).
+    header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: geolocation=(self), camera=(), microphone=()');
     header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
         . "img-src 'self' data: blob: $tiles; font-src 'self'; "
-        . "connect-src 'self' https://nominatim.openstreetmap.org; frame-ancestors 'self'; "
+        . "connect-src 'self' https://nominatim.openstreetmap.org $tiles; frame-ancestors 'self'; "
         . "form-action 'self'; base-uri 'self'; object-src 'none'");
 }
 

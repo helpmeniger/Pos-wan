@@ -255,7 +255,7 @@ require __DIR__ . '/includes/header.php';
 ?>
 <div class="container py-4" style="max-width: 860px">
     <div class="d-flex align-items-center gap-3 mb-3">
-        <img src="<?= e(asset('img/logo.svg')) ?>" alt="" width="56" height="56">
+        <img src="<?= e(asset('img/logo.svg')) ?>" alt="Drapeau du Niger" width="65" height="56" class="np-flag">
         <div><h1 class="h3 mb-0">Installation de Niger Parcelles</h1><div class="text-muted">Assistant de configuration pour WampServer</div></div>
     </div>
 

@@ -51,25 +51,54 @@ $config = [
 
     // Fonds de carte (affichés côté navigateur, nécessitent Internet).
     // Respectez les conditions d'utilisation de chaque fournisseur.
+    //  maxNativeZoom : zoom maximal réellement servi par le fournisseur ; au-delà,
+    //  la carte agrandit les tuiles (zoom jusqu'à 'map_max_zoom').
+    //  fallback      : fonds de secours essayés automatiquement si le fond
+    //  principal ne répond pas (blocage, coupure, quota).
+    'map_max_zoom' => 25,   // ≈ 4,5 mm par pixel à Niamey : vue de quelques mètres de large
     'tile_layers' => [
         'osm' => [
             'name' => 'OpenStreetMap (routier)',
             'url'  => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            'attribution' => '&copy; Contributeurs OpenStreetMap',
-            'maxZoom' => 19,
+            'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">Contributeurs OpenStreetMap</a>',
+            'maxNativeZoom' => 19,
+            'fallback' => ['osm_fr', 'carto', 'esri_street'],
         ],
         'satellite' => [
             'name' => 'Satellite (Esri World Imagery)',
             'url'  => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
             'attribution' => 'Imagerie &copy; Esri, Maxar, Earthstar Geographics et contributeurs',
-            'maxZoom' => 19,
+            'maxNativeZoom' => 19,
         ],
         'labels' => [
             'name' => 'Libellés et limites (Esri)',
             'url'  => 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
             'attribution' => 'Libellés &copy; Esri',
-            'maxZoom' => 19,
+            'maxNativeZoom' => 19,
             'overlay' => true,
+        ],
+    ],
+    // Fonds de secours (même cartographie OpenStreetMap, autres serveurs)
+    'tile_fallbacks' => [
+        'osm_fr' => [
+            'name' => 'OpenStreetMap France',
+            'url'  => 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+            'subdomains' => 'abc',
+            'attribution' => '&copy; Contributeurs OpenStreetMap, rendu OSM France',
+            'maxNativeZoom' => 19,
+        ],
+        'carto' => [
+            'name' => 'OpenStreetMap (CARTO Voyager)',
+            'url'  => 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+            'subdomains' => 'abcd',
+            'attribution' => '&copy; Contributeurs OpenStreetMap &copy; CARTO',
+            'maxNativeZoom' => 20,
+        ],
+        'esri_street' => [
+            'name' => 'Esri World Street Map',
+            'url'  => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+            'attribution' => 'Carte &copy; Esri et contributeurs',
+            'maxNativeZoom' => 19,
         ],
     ],
 

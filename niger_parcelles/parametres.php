@@ -165,6 +165,12 @@ if (request_method() === 'POST') {
                 flash('success', 'Restauration effectuée (' . $r['statements'] . ' instructions). Sauvegarde de sécurité préalable : ' . $r['safety'] . '. Reconnectez-vous si nécessaire.');
                 break;
 
+            case 'recompute':
+                $tab = 'systeme';
+                $r = ParcelService::recomputeMeasures((int) $me['id']);
+                flash('success', "Superficies recalculées sur l'ellipsoïde WGS84 : {$r['updated']} parcelle(s) corrigée(s) sur {$r['checked']}. Les limites n'ont pas été modifiées.");
+                break;
+
             case 'purge_demo':
                 $tab = 'demo';
                 if (($_POST['confirm_text'] ?? '') !== 'SUPPRIMER') {
@@ -340,5 +346,13 @@ require __DIR__ . '/includes/header.php';
     <dt class="col-sm-4">HTTPS</dt><dd class="col-sm-8"><?= is_https() ? 'Oui' : 'Non (acceptable en local uniquement ; obligatoire avant toute exposition sur un réseau)' ?></dd>
     <dt class="col-sm-4">Stockage privé</dt><dd class="col-sm-8"><?= e(storage_path()) ?></dd>
 </dl></div></div>
+<div class="card mt-3"><div class="card-header">Calcul des superficies</div><div class="card-body small">
+    <p>Les superficies et périmètres sont calculés sur l'ellipsoïde WGS84 (écart inférieur à 1 ppm avec la méthode de référence de Karney ;
+        coordonnées stockées au millimètre). Les parcelles enregistrées avec une version antérieure de l'application (formule sphérique,
+        environ +0,4 % à la latitude du Niger) peuvent être recalculées : seules les valeurs calculées changent, jamais les limites.
+        Chaque correction est inscrite dans l'historique de la parcelle.</p>
+    <form method="post" data-confirm="Recalculer les superficies et périmètres de toutes les parcelles ?"><?= csrf_field() ?><input type="hidden" name="action" value="recompute">
+        <button class="btn btn-sm btn-outline-primary"><i class="bi bi-calculator"></i> Recalculer les superficies</button></form>
+</div></div>
 <?php endif; ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

@@ -17,7 +17,7 @@ $menu = [
 ?>
 <aside class="np-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="npSidebar" aria-label="Navigation principale">
     <div class="np-brand">
-        <img src="<?= e(asset('img/logo.svg')) ?>" alt="" width="34" height="34">
+        <img src="<?= e(asset('img/logo.svg')) ?>" alt="Drapeau du Niger" width="40" height="34" class="np-flag">
         <div>
             <div class="np-brand-title">Niger Parcelles</div>
             <div class="np-brand-sub">Gestion foncière</div>

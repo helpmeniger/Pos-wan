@@ -15,10 +15,28 @@ require_once __DIR__ . '/unit_test_helpers.php';
 
 suite('Calculs géographiques (Geo)');
 
-test('Superficie géodésique identique à Turf.js (référence 12 022,69 m²)', function () {
+test('Superficie et périmètre sur l\'ellipsoïde WGS84 = référence Karney (GeographicLib) à 1 ppm près', function () {
+    $ref = json_decode((string) file_get_contents(__DIR__ . '/fixtures/geodesic_reference.json'), true)['cases'];
+    foreach ($ref as $name => $c) {
+        $ring = $c['coords'];
+        $ring[] = $ring[0];
+        // calcul direct, sans l'arrondi de stockage, pour isoler la formule
+        $area = abs(Geo::ringAreaSigned($ring));
+        $perim = Geo::lineLength($ring);
+        assert_near($c['area'], $area, $c['area'] * 1e-6, "$name : aire");
+        assert_near($c['perimeter'], $perim, $c['perimeter'] * 1e-6, "$name : périmètre");
+    }
+    // Carré de 0,001° à Niamey : 11 977,68 m² (la formule sphérique de Turf.js donnait 12 022,69, soit +0,38 %)
     $r = Geo::normalizePolygon(['type' => 'Polygon', 'coordinates' => [[[2.1, 13.5], [2.101, 13.5], [2.101, 13.501], [2.1, 13.501], [2.1, 13.5]]]]);
-    assert_near(12022.69, Geo::polygonArea($r), 0.01, 'aire');
-    assert_near(438.64, Geo::polygonPerimeter($r), 0.01, 'périmètre');
+    assert_near(11977.68, Geo::polygonArea($r), 0.01, 'carré 0,001°');
+});
+
+test('Stockage au millimètre : une parcelle UTM de 20 × 20 m reste à 400,23 m² (± 0,01)', function () {
+    $ref = json_decode((string) file_get_contents(__DIR__ . '/fixtures/geodesic_reference.json'), true)['cases']['utm_20x20'];
+    $ring = $ref['coords'];
+    $ring[] = $ring[0];
+    $r = Geo::normalizePolygon(['type' => 'Polygon', 'coordinates' => [$ring]]);
+    assert_near($ref['area'], Geo::polygonArea($r), 0.01);
 });
 
 test('Rectangle de 100 m × 50 m ≈ 5 000 m² (écart < 0,5 %)', function () {

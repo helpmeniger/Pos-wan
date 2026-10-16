@@ -90,7 +90,9 @@ body.page-map .np-content { padding: 0; position: relative; }
 body.page-map .np-footer { display: none; }
 .map-shell { position: relative; height: calc(100vh - var(--np-topbar-h)); min-height: 480px; display: flex; }
 #map { flex-grow: 1; height: 100%; background: #dfe6ea; }
-.map-toolbar { position: absolute; top: 10px; left: 56px; z-index: 900; display: flex; flex-wrap: wrap; gap: .35rem; max-width: calc(100% - 120px); }
+.map-toolbar { position: absolute; top: 10px; left: 56px; z-index: 900; display: flex; flex-wrap: wrap; gap: .35rem;
+    max-width: calc(100% - 480px); /* laisse la place à la recherche et au sélecteur de couches */ }
+@media (max-width: 1100px) and (min-width: 768px) { .map-search { top: auto; bottom: 64px; right: 10px; } .map-toolbar { max-width: calc(100% - 120px); } }
 .map-toolbar .btn { box-shadow: 0 1px 4px rgba(0,0,0,.25); }
 .map-toolbar .btn.active { background: var(--np-orange); color: #fff; border-color: var(--np-orange); }
 .map-search { position: absolute; top: 10px; right: 54px; z-index: 900; width: min(340px, calc(100% - 120px)); }
@@ -109,8 +111,10 @@ body.page-map .np-footer { display: none; }
 .map-panel dl { display: grid; grid-template-columns: 42% 58%; margin: 0; row-gap: .3rem; font-size: .9rem; }
 .map-panel dt { color: #5c6670; font-weight: 500; }
 .map-panel dd { margin: 0; word-break: break-word; }
-.map-status { position: absolute; left: 10px; bottom: 26px; z-index: 900; background: rgba(255,255,255,.92); border-radius: .35rem;
-    padding: .2rem .5rem; font-size: .78rem; box-shadow: 0 1px 4px rgba(0,0,0,.2); font-family: ui-monospace, monospace; }
+.map-status { background: rgba(255,255,255,.92); border-radius: .35rem; padding: .2rem .5rem; font-size: .74rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.2); font-family: ui-monospace, monospace; max-width: min(520px, 70vw); }
+.leaflet-bottom.leaflet-left .map-status { margin-bottom: 6px; }
+.map-shell > .map-status { position: absolute; visibility: hidden; } /* avant son insertion dans la carte */
 .map-legend { background: rgba(255,255,255,.95); padding: .5rem .7rem; border-radius: .4rem; box-shadow: 0 1px 5px rgba(0,0,0,.25);
     font-size: .8rem; line-height: 1.5; }
 .map-legend .sw { display: inline-block; width: 14px; height: 10px; margin-right: 6px; border: 2px solid; vertical-align: middle; }
@@ -142,3 +146,30 @@ body.page-map .np-footer { display: none; }
     .card { box-shadow: none; border: 1px solid #999; }
     .print-map { height: 420px !important; }
 }
+
+/* ---------- Logo (drapeau du Niger) ---------- */
+.np-flag { border-radius: 3px; box-shadow: 0 0 0 1px rgba(0,0,0,.15); background: #fff; }
+
+/* ---------- Précision et assistant (carte) ---------- */
+.map-crosshair { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none; z-index: 850; }
+.map-crosshair span { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; }
+.map-crosshair span::before, .map-crosshair span::after { content: ""; position: absolute; background: #e05206;
+    box-shadow: 0 0 0 1px #fff; }
+.map-crosshair span::before { left: 21px; top: 0; width: 2px; height: 44px; }
+.map-crosshair span::after { top: 21px; left: 0; height: 2px; width: 44px; }
+body.page-map.crosshair-on .map-panel ~ .map-crosshair { right: 400px; }
+.edge-label { background: rgba(255,255,255,.9); border: 1px solid #e05206; color: #7a2c00; font-size: 11px; font-weight: 700;
+    padding: 0 4px; border-radius: 3px; box-shadow: none; }
+.edge-label::before { display: none; }
+.owner-label { background: rgba(255,255,255,.92); border: 1px solid #0d8b3e; box-shadow: 0 1px 3px rgba(0,0,0,.2); font-size: 11px;
+    line-height: 1.25; padding: 2px 5px; text-align: center; white-space: normal; max-width: 180px; }
+.owner-label::before { display: none; }
+.owner-label .ol-ref { font-family: ui-monospace, monospace; font-weight: 700; font-size: 10px; color: #333; }
+.owner-label .ol-own { color: #0a6b30; font-weight: 600; }
+.owner-label .ol-none { color: #8a6d3b; font-style: italic; }
+.pos-popup table { font-size: 12px; margin: 0; }
+.pos-popup td { padding: 1px 6px 1px 0; vertical-align: top; }
+.pos-popup .mono { font-family: ui-monospace, monospace; }
+.candidate-item { border-left: 4px solid #e05206; padding: .35rem .5rem; margin-bottom: .35rem; background: var(--np-gray-50); border-radius: .25rem; }
+.candidate-item.low { border-left-color: #c62828; }
+.gps-marker { background: #1565c0; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px #1565c0, 0 0 8px rgba(21,101,192,.8); }

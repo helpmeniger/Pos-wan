@@ -37,7 +37,7 @@ require __DIR__ . '/includes/header.php';
     <div class="card login-card shadow-sm">
         <div class="card-body p-4">
             <div class="text-center mb-3">
-                <img src="<?= e(asset('img/logo.svg')) ?>" alt="" width="64" height="64">
+                <img src="<?= e(asset('img/logo.svg')) ?>" alt="Drapeau du Niger" width="84" height="72" class="np-flag">
                 <h1 class="h4 mt-2 mb-0 fw-bold">Niger Parcelles</h1>
                 <div class="text-muted small">Cartographie et gestion foncière</div>
             </div>

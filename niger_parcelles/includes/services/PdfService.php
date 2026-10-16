@@ -36,7 +36,13 @@ final class PdfService
         $this->pdf->rect(0, 0, SimplePdf::W, 6, self::ORANGE);
         $this->pdf->rect(0, 6, SimplePdf::W, 2, [255, 255, 255]);
         $this->pdf->rect(0, 8, SimplePdf::W, 3, self::GREEN);
-        $this->pdf->text(self::M, 34, (string) setting('organisation_name', 'Niger Parcelles'), 9, true, self::GRAY);
+        // Logo : drapeau du Niger (proportions 960 × 823)
+        $fx = self::M; $fy = 20; $fw = 24; $fh = 20.6;
+        $this->pdf->rect($fx, $fy, $fw, $fh, [255, 255, 255], [200, 200, 200], 0.4);
+        $this->pdf->rect($fx, $fy, $fw, $fh / 3, [224, 82, 6]);
+        $this->pdf->rect($fx, $fy + 2 * $fh / 3, $fw, $fh / 3, [13, 176, 43]);
+        $this->pdf->circle($fx + $fw / 2, $fy + $fh / 2, $fh * 0.142, [224, 82, 6]);
+        $this->pdf->text(self::M + 30, 34, (string) setting('organisation_name', 'Niger Parcelles'), 9, true, self::GRAY);
         $this->pdf->text(SimplePdf::W - self::M, 34, $this->docTitle, 9, false, self::GRAY, 'R');
         $this->y = 56;
     }

@@ -394,3 +394,17 @@ test('Sauvegarde SQL puis restauration : données identiques', function () {
     assert_same($hist, (int) db_value('SELECT COUNT(*) FROM parcel_history'));
     assert_throws(fn () => BackupService::path('../../config/database.php'), UserFacingException::class);
 });
+
+test('Recalcul des superficies : correction tracée, limites inchangées', function () {
+    $u = as_user('admin_general');
+    $id = (int) db_value('SELECT id FROM parcels ORDER BY id LIMIT 1');
+    $geomBefore = db_value('SELECT geojson FROM parcel_geometries g JOIN parcels p ON p.id = g.parcel_id AND g.geometry_version = p.current_geometry_version WHERE p.id = ?', [$id]);
+    db_query('UPDATE parcels SET area_m2 = area_m2 * 1.004 WHERE id = ?', [$id]); // valeur « ancienne formule »
+    $r = ParcelService::recomputeMeasures($u['id']);
+    assert_true($r['updated'] >= 1);
+    $m = Geo::measure(json_decode($geomBefore, true)['coordinates']);
+    assert_near($m['area_m2'], (float) db_value('SELECT area_m2 FROM parcels WHERE id = ?', [$id]), 0.005);
+    assert_same($geomBefore, db_value('SELECT geojson FROM parcel_geometries g JOIN parcels p ON p.id = g.parcel_id AND g.geometry_version = p.current_geometry_version WHERE p.id = ?', [$id]));
+    $h = db_one("SELECT new_data FROM parcel_history WHERE parcel_id = ? AND action_type = 'modification' ORDER BY id DESC LIMIT 1", [$id]);
+    assert_contains('ellipsoïde', (string) $h['new_data']);
+});

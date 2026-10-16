@@ -148,6 +148,9 @@ test('En-têtes de sécurité présents', function () {
     assert_contains("script-src 'self'", $r['headers']);
     assert_contains('X-Frame-Options: SAMEORIGIN', $r['headers']);
     assert_contains('X-Content-Type-Options: nosniff', $r['headers']);
+    // OpenStreetMap refuse les tuiles sans en-tête Referer : l'origine doit être transmise
+    assert_contains('Referrer-Policy: strict-origin-when-cross-origin', $r['headers']);
+    assert_contains('https://*.tile.openstreetmap.fr', $r['headers'], 'fond de secours autorisé par la CSP');
 });
 
 suite('Authentification et sessions');

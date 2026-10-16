@@ -265,6 +265,41 @@ final class ParcelService
         });
     }
 
+    /**
+     * Recalcule superficie, périmètre, centroïde et emprise de toutes les
+     * parcelles à partir de leur géométrie actuelle (après une amélioration de la
+     * méthode de calcul). Chaque correction est tracée dans l'historique.
+     * @return array{checked:int, updated:int}
+     */
+    public static function recomputeMeasures(int $userId): array
+    {
+        $checked = $updated = 0;
+        $rows = db_all('SELECT p.id, p.area_m2, p.perimeter_m, g.id AS geom_id, g.geojson FROM parcels p
+                        JOIN parcel_geometries g ON g.parcel_id = p.id AND g.geometry_version = p.current_geometry_version');
+        db_transaction(static function () use ($rows, $userId, &$checked, &$updated) {
+            foreach ($rows as $r) {
+                $checked++;
+                $coords = json_decode($r['geojson'], true)['coordinates'] ?? null;
+                if (!$coords) {
+                    continue;
+                }
+                $m = Geo::measure($coords);
+                if (abs($m['area_m2'] - (float) $r['area_m2']) < 0.005 && abs($m['perimeter_m'] - (float) $r['perimeter_m']) < 0.005) {
+                    continue;
+                }
+                db_query('UPDATE parcels SET area_m2 = ?, perimeter_m = ?, centroid_lat = ?, centroid_lng = ?, min_lat = ?, max_lat = ?, min_lng = ?, max_lng = ? WHERE id = ?',
+                    [$m['area_m2'], $m['perimeter_m'], $m['centroid_lat'], $m['centroid_lng'], $m['min_lat'], $m['max_lat'], $m['min_lng'], $m['max_lng'], $r['id']]);
+                db_query('UPDATE parcel_geometries SET area_m2 = ?, perimeter_m = ? WHERE id = ?', [$m['area_m2'], $m['perimeter_m'], $r['geom_id']]);
+                self::history((int) $r['id'], $userId, 'modification',
+                    ['area_m2' => (float) $r['area_m2'], 'perimeter_m' => (float) $r['perimeter_m']],
+                    ['area_m2' => $m['area_m2'], 'perimeter_m' => $m['perimeter_m'], 'motif' => 'Recalcul sur l\'ellipsoïde WGS84 (limites inchangées)']);
+                $updated++;
+            }
+        });
+        audit_log('recalcul_superficies', null, null, ['verifiees' => $checked, 'corrigees' => $updated]);
+        return ['checked' => $checked, 'updated' => $updated];
+    }
+
     // ------------------------------------------------------------------
     // Chevauchements
     // ------------------------------------------------------------------

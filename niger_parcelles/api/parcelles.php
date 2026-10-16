@@ -40,8 +40,22 @@ switch (api_action('list')) {
                 FROM parcels p ' . ($asPoints ? '' : 'JOIN parcel_geometries g ON g.parcel_id = p.id AND g.geometry_version = p.current_geometry_version ') .
                "WHERE $where ORDER BY p.area_m2 DESC LIMIT $limit";
         $tol = $zoom >= 17 ? 0 : ($zoom >= 15 ? 0.5 : 2.0);
+        $rows = db_all($sql, $params);
+        // Noms des propriétaires actuels (affichage sur la carte) : profils autorisés uniquement
+        $ownerNames = [];
+        $withOwners = !empty($_GET['owners']) && can('owner.view_personal');
+        if ($withOwners && $rows) {
+            $ids = array_map(static fn ($r) => (int) $r['id'], $rows);
+            foreach (db_all('SELECT po.parcel_id, o.owner_type, o.first_name, o.last_name, o.organization_name, po.share_percentage
+                             FROM parcel_owners po JOIN owners o ON o.id = po.owner_id
+                             WHERE po.valid_to IS NULL AND po.parcel_id IN (' . implode(',', $ids) . ') ORDER BY po.id') as $o) {
+                $ownerNames[(int) $o['parcel_id']][] = owner_display_name($o)
+                    . ($o['share_percentage'] !== null ? ' (' . rtrim(rtrim(number_format((float) $o['share_percentage'], 2, ',', ''), '0'), ',') . ' %)' : '');
+            }
+            audit_log('carte_affichage_proprietaires', null, null, ['parcelles' => count($ownerNames)]);
+        }
         $features = [];
-        foreach (db_all($sql, $params) as $r) {
+        foreach ($rows as $r) {
             if ($asPoints) {
                 $geom = ['type' => 'Point', 'coordinates' => [(float) $r['centroid_lng'], (float) $r['centroid_lat']]];
             } else {
@@ -54,7 +68,7 @@ switch (api_action('list')) {
                 'id' => (int) $r['id'], 'ref' => $r['parcel_reference'], 'status' => $r['verification_status'],
                 'category' => $r['category'], 'survey' => $r['survey_level'], 'overlap' => (int) $r['has_overlap_warning'] === 1,
                 'area' => (float) $r['area_m2'], 'demo' => (int) $r['is_demo'] === 1,
-            ]];
+            ] + ($withOwners ? ['owners' => implode(' ; ', $ownerNames[(int) $r['id']] ?? [])] : [])];
         }
         json_response(['type' => 'FeatureCollection', 'features' => $features, 'total' => $total,
                        'truncated' => $total > count($features), 'mode' => $asPoints ? 'points' : 'polygons']);

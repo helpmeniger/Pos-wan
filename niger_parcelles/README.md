@@ -65,13 +65,17 @@ Décisions :
 
 * **PHP sans framework ni Composer** : installation par simple copie dans `www`.
 * **Bibliothèques front-end embarquées** dans `assets/vendor/` (versions figées : Leaflet 1.9.4,
-  Leaflet-Geoman 2.17.0, Bootstrap 5.3.3, Bootstrap Icons 1.11.3, Chart.js 4.4.4, Turf 7.1.0) :
+  Leaflet-Geoman 2.17.0, Bootstrap 5.3.3, Bootstrap Icons 1.11.3, Chart.js 4.4.4, Turf 7.1.0) et
+  le moteur de précision maison `parcel-assist.js` :
   l'interface fonctionne sans Internet ; seuls les fonds de carte et le géocodage OSM en ont besoin.
 * **Géométries en GeoJSON** (RFC 7946, WGS84, `[lng, lat]`) validées et stockées en `LONGTEXT`,
   avec **boîtes englobantes indexées** pour les requêtes spatiales (pas de PostGIS requis).
-* **Calculs géodésiques côté serveur** (`includes/lib/Geo.php`) : superficie par la formule
-  sphérique de Chamberlain-Duquette (identique à `turf.area`), périmètre haversine. Le client
-  affiche les mêmes valeurs avec Turf ; **le serveur recalcule toujours** les valeurs enregistrées.
+* **Calculs géodésiques sur l'ellipsoïde WGS84** (`includes/lib/Geo.php` côté serveur,
+  `assets/js/parcel-assist.js` côté navigateur, mêmes formules) : superficie par intégration
+  exacte de l'aire authalique, longueurs par l'arc de méridien exact. Écart inférieur à 1 ppm
+  avec l'algorithme de référence de Karney (GeographicLib), soit moins d'un millimètre carré
+  sur 400 m² ; coordonnées stockées avec 8 décimales (≈ 1 mm). **Le serveur recalcule toujours**
+  les valeurs enregistrées.
 * **Chevauchements** : pré-filtre SQL par emprise puis test géométrique exact (croisement de
   limites, sommets/milieux intérieurs, tolérance de contiguïté de 10 cm paramétrable).
 * **Performance** : la carte ne charge que les parcelles de l'emprise visible ; en dessous du
@@ -247,6 +251,42 @@ Ajustez les sommets (glisser ; point intermédiaire = ajout ; clic droit = suppr
 « Annuler » revient en arrière). Renseignez zone, catégorie, nature de la délimitation ›
 « Vérifier » (contrôle serveur, chevauchements) › « Enregistrer ». La référence s'affiche.
 
+**Position exacte** : cliquez n'importe où sur la carte : latitude/longitude (7 décimales),
+degrés-minutes-secondes, coordonnées UTM et précision du pointage au zoom courant s'affichent
+(bouton « Copier »). En cliquant sur une parcelle, le point cliqué est indiqué en tête de sa fiche.
+Le bouton <i>position</i> active le suivi GPS continu ; « Précision › Ma position moyennée »
+fait la moyenne pondérée des mesures GPS pendant 15 s.
+
+**Zoom très rapproché** : molette ou « Précision › Zoom maximal » jusqu'au niveau 25 (la barre
+d'état indique la résolution : 1 px ≈ 4,5 mm et la largeur de vue ≈ 5 m) ; le viseur central
+(« Précision › Viseur ») permet de pointer chaque angle exactement, y compris sur tablette.
+
+**Outils de précision pendant la saisie** : longueur de chaque côté affichée sur la carte,
+tableau des sommets modifiable (coordonnées au 1/10 000 000 de degré), « Équerrer » (rectangle le
+plus proche, angles droits), « Ajuster à 400 m² » (ou toute superficie cible), ajout d'un sommet
+au viseur ou à la position GPS moyennée, accrochage aux limites des parcelles voisines.
+« Précision › Saisir des coordonnées » trace une parcelle à partir d'une liste de points WGS84
+ou UTM 31N/32N/33N (plan de géomètre) ; « Relevé GPS sur le terrain » enregistre les sommets un
+par un en marchant autour de la parcelle.
+
+**Assistant d'identification (menu « Assistant »)** :
+* *Détecter* : cliquez dans la cour d'une concession sur l'image satellite ; l'assistant repère
+  ses murs et propose son contour avec un indice de confiance (format courant : 20 × 20 m = 400 m²).
+* *Gabarit* : un clic = une parcelle de 20 × 20 m (ou 15 × 25, 20 × 30, 10 × 40… ou sur mesure),
+  orientée comme les parcelles voisines ou le bâti.
+* *Lotir* : dessinez un îlot, il est découpé en lots de la taille choisie.
+Les propositions s'accumulent : ajustez-les (« Ajuster », rotation de 5°, suppression), puis
+« Enregistrer les N parcelles » avec une zone et une catégorie communes. Les chevauchements sont
+signalés comme pour une saisie manuelle.
+
+**Noms des propriétaires sur la carte** : bouton « Propriétaires » (profils autorisés aux données
+personnelles) ; les noms et quotes-parts s'affichent sur chaque parcelle suffisamment grande à
+l'écran, au survol pour les autres. L'affichage est journalisé.
+
+**Fonds de carte** : si OpenStreetMap ne répond pas, l'application bascule automatiquement sur
+un serveur de secours (OpenStreetMap France, puis CARTO, puis Esri) ; l'état du fond est affiché
+en bas à gauche.
+
 **Modifier des limites** : fiche ou panneau de la carte › « Modifier les limites » ; un motif
 est demandé ; une nouvelle version est créée, l'ancienne reste consultable.
 
@@ -339,6 +379,8 @@ C:\wamp64\bin\php\php8.3.x\php.exe tests\run_tests.php
 | `tests/run_tests.php` | 21 tests unitaires + 27 tests d'intégration MySQL | `php tests\run_tests.php` |
 | `tests/http_test.php` | 19 tests HTTP « boîte noire » (auth, CSRF, rôles, XSS, injection SQL, documents privés, accès direct, blocage des connexions) | `set NP_TEST_ADMIN_PASS=...` puis `php tests\http_test.php` (extension curl) |
 | `tests/e2e/map_e2e.js` | 11 tests navigateur (carte, dessin, superficie, enregistrement, rechargement, modification, mesure, recherche, mobile) | facultatif, nécessite Node.js + Playwright (outil de développement uniquement) |
+| `tests/e2e/assist_e2e.js` | 13 tests navigateur : Referer OSM, fond de secours, zoom 25, position exacte au clic, GPS moyenné, détection, gabarit, enregistrement groupé, saisie UTM, longueurs des côtés, noms des propriétaires | facultatif (Node.js + Playwright) ; tuiles simulées, fonctionne hors ligne |
+| `tests/js/assist_test.js` | 11 tests du moteur de précision (Mercator, UTM, rectangles, gabarits, lots, détection sur image synthétique, référence Karney) | `node tests/js/assist_test.js` (facultatif) |
 
 > Les tests HTTP vérifient le blocage anti force brute : chaque exécution enregistre environ
 > 8 échecs de connexion pour votre adresse IP. Au-delà de 6 exécutions en 15 minutes, l'IP est
@@ -347,7 +389,8 @@ C:\wamp64\bin\php\php8.3.x\php.exe tests\run_tests.php
 
 Résultats obtenus lors du développement (Linux, Apache 2.4 + PHP 8.3), sur **MySQL 8.0**
 (mode strict, `ONLY_FULL_GROUP_BY`, configuration par défaut de WampServer) et sur
-**MariaDB 10.11** : 48/48 (unitaires + intégration), 19/19 (HTTP), 11/11 (navigateur), ainsi que
+**MariaDB 10.11** : 50/50 (unitaires + intégration), 19/19 (HTTP), 11/11 + 13/13 (navigateur),
+11/11 (moteur JavaScript), ainsi que
 l'installateur web sur une base et un utilisateur créés manuellement. L'exécution sur votre
 installation WampServer reste à faire : lancez les commandes ci-dessus après installation.
 
@@ -367,11 +410,27 @@ rôles, CSRF, validation des fichiers, injections SQL, accès direct aux documen
   propriétaire. Aucun fond n'est disponible hors connexion tant que des tuiles n'ont pas été
   légalement préparées (un serveur de tuiles local peut être ajouté dans `config/app.php`).
 * **Recherche de localités** : service Nominatim d'OpenStreetMap (Internet, 1 requête/s max).
+* **Si la carte reste grise** : vérifiez la connexion Internet du poste ; un pare-feu ou un proxy
+  d'entreprise doit autoriser `tile.openstreetmap.org`, `*.tile.openstreetmap.fr`,
+  `*.basemaps.cartocdn.com` et `server.arcgisonline.com`. L'application transmet l'en-tête
+  « Referer » exigé par OpenStreetMap (les versions antérieures au 16/10/2026 le supprimaient,
+  ce qui faisait refuser les tuiles).
 * **Limites administratives** : non fournies ; à importer depuis une source fiable.
 * **Systèmes de coordonnées** : WGS84, UTM 31N/32N/33N (WGS84) et Web Mercator. Les données sur
   un autre datum (ex. Clarke 1880) doivent être converties au préalable (QGIS).
-* **Précision** : superficie sphérique (écart < 0,3 % avec l'ellipsoïde), largement inférieure
-  aux erreurs de relevé usuelles ; les chevauchements sont testés sur les contours extérieurs.
+* **Précision** : les calculs (superficie, longueurs) sont exacts au millimètre près ; la
+  précision réelle d'une parcelle dépend de la façon dont ses sommets ont été obtenus : pointage
+  sur l'imagerie (résolution de l'ordre de 30 à 50 cm par pixel dans les villes, moins ailleurs,
+  avec un décalage possible de l'image de 1 à 3 m), GPS de smartphone (± 3 à 5 m, amélioré par la
+  moyenne), récepteur GNSS différentiel (centimétrique). Les chevauchements sont testés sur les
+  contours extérieurs.
+* **Zoom au-delà de 19** : jusqu'au niveau 25 (vue de 5 à 10 m de large, soit « quelques
+  mètres du sol »), l'image n'est plus détaillée mais agrandie ; ce zoom sert à pointer les
+  sommets avec précision, pas à voir plus de détails que la photo n'en contient.
+* **Assistant de détection** : il analyse l'image satellite autour du clic (couleurs,
+  contours des murs) ; il fonctionne bien sur les concessions murées bien visibles et propose un
+  gabarit orienté quand les limites sont peu nettes. Ses propositions sont **indicatives** et
+  doivent être vérifiées ; elles sont enregistrées avec la nature « dessinée à titre indicatif ».
 * **Parcelles multi-parties** : une parcelle = un polygone (les MultiPolygon à plusieurs parties
   doivent être scindés).
 * **PDF** : polices standard (Helvetica, jeu WinAnsi) ; la fiche contient un plan vectoriel de la
@@ -404,8 +463,8 @@ niger_parcelles/
 │   ├── lib/        Geo, Crs, SimplePdf, XlsxWriter, ShapefileReader, SqlRunner
 │   └── services/   ParcelService, ParcelQuery, OwnerService, DocumentService,
 │                   ImportService, ReportService, PdfService, StatsService, BackupService
-├── assets/     css/app.css, js/(app, map, dashboard, parcel-details, import).js,
-│               img/logo.svg, vendor/ (Leaflet, Geoman, Bootstrap, Icons, Chart.js, Turf)
+├── assets/     css/app.css, js/(app, map, parcel-assist, dashboard, parcel-details, import).js,
+│               img/logo.svg (drapeau du Niger), vendor/ (Leaflet, Geoman, Bootstrap, Icons, Chart.js, Turf)
 ├── database/   schema.sql, demo_data.sql (fictif)
 ├── storage/    documents/, exports/, imports/, logs/, backups/ (privés)
 ├── tests/      run_tests.php, unit_test.php, integration_test.php, http_test.php, e2e/
