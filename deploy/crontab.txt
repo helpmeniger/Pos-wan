@@ -1,0 +1,5 @@
+# crontab -u www-data -e
+# Alternative au service systemd : worker une fois par minute
+* * * * * /usr/bin/php /var/www/marwa/bin/worker.php --once >> /var/www/marwa/storage/logs/worker.log 2>&1
+# Sauvegarde quotidienne à 2 h 15 (conserver 14 jours) — copier aussi hors du serveur !
+15 2 * * * /usr/bin/php /var/www/marwa/bin/backup.php --keep=14 >> /var/www/marwa/storage/logs/backup.log 2>&1

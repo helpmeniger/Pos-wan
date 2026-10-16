@@ -1,0 +1,18 @@
+# /etc/systemd/system/marwa-worker.service
+# systemctl daemon-reload && systemctl enable --now marwa-worker
+[Unit]
+Description=MARWA - worker (attribution, relances, purge GPS)
+After=network.target mariadb.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/marwa
+ExecStart=/usr/bin/php /var/www/marwa/bin/worker.php
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

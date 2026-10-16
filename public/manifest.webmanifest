@@ -1,0 +1,27 @@
+{
+  "id": "./",
+  "name": "MARWA — Taxi, repas et livraison",
+  "short_name": "MARWA",
+  "description": "Taxi, livraison de repas, de colis et de documents au Niger. Paiement en FCFA.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#fbf8f2",
+  "theme_color": "#0b6e4f",
+  "categories": ["travel", "food", "shopping", "business"],
+  "icons": [
+    { "src": "assets/img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Commander un taxi", "short_name": "Taxi", "url": "./client#/taxi", "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Commander un repas", "short_name": "Repas", "url": "./client#/repas", "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Envoyer un colis", "short_name": "Colis", "url": "./client#/colis", "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Mes commandes", "short_name": "Commandes", "url": "./client#/historique", "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
