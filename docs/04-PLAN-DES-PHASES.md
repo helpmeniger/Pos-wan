@@ -17,7 +17,7 @@ docs/01-ARCHITECTURE.md        décisions techniques, arborescence, sécurité, 
 docs/02-REGLES-METIER.md       rôles, vérifications, âge/risques, annonces, missions, messagerie, litiges, avis
 docs/03-SYSTEME-FINANCIER.md   commissions, modes de paiement, plan de comptes, écritures, webhooks, rapports
 docs/04-PLAN-DES-PHASES.md     ce fichier
-database/schema.sql            schéma complet (≈ 90 tables, 3 vues, 22 triggers)
+database/schema.sql            schéma complet (92 tables, 3 vues, 22 triggers)
 database/seeders/001_reference_data.sql   langues, villes, quartiers, rôles, permissions, types de mission,
                                           comptes du grand livre, passerelles, commission 10 %, plans, paramètres
 database/seeders/002_job_catalogue.sql    21 domaines, 221 métiers (risque, âge, niveau, qualification)
