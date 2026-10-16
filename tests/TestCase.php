@@ -156,5 +156,9 @@ abstract class TestCase
     protected function isolateProviders(): void
     {
         Database::execute('UPDATE provider_profiles SET is_online = 0');
+        // Les demandes restées ouvertes par les tests précédents seraient proposées aux nouveaux
+        // prestataires en ligne (comportement voulu) : on les clôt pour isoler chaque test.
+        Database::execute("UPDATE orders SET status = 'expired', dispatch_status = 'no_provider' WHERE provider_id IS NULL AND status IN ('searching','negotiating')");
+        Database::execute("UPDATE orders SET dispatch_status = 'no_provider' WHERE provider_id IS NULL AND dispatch_status = 'searching'");
     }
 }

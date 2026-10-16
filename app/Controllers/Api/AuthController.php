@@ -34,15 +34,53 @@ final class AuthController extends Controller
 
     public function login(Request $r): Response
     {
-        $v = $this->validate($r, ['identifier' => 'required|string|max:190', 'password' => 'required|string|max:200']);
+        $v = $this->validate($r, ['identifier' => 'required|string|max:190', 'password' => 'required|string|max:200', 'remember' => 'nullable|bool']);
         $user = AuthService::attempt($v['identifier'], $v['password'], $r);
+        return $this->secondStepOrLogin($user, $r, !empty($v['remember']));
+    }
+
+    private function secondStepOrLogin(array $user, Request $r, bool $remember): Response
+    {
         if (SecurityService::totpEnabled($user)) {
             // Deuxième étape : le code de l'application d'authentification est exigé avant d'ouvrir la session
             \App\Core\Session::regenerate();
-            \App\Core\Session::set('2fa', ['uid' => (int) $user['id'], 'exp' => time() + 300, 'tries' => 0, 'ua' => hash('sha256', $r->userAgent())]);
+            \App\Core\Session::set('2fa', ['uid' => (int) $user['id'], 'exp' => time() + 300, 'tries' => 0, 'ua' => hash('sha256', $r->userAgent()), 'remember' => $remember]);
             return $this->json(['two_factor' => true, 'csrf' => Csrf::token()]);
         }
-        return $this->completeLogin($user, $r);
+        return $this->completeLogin($user, $r, $remember);
+    }
+
+    // ------------------------------------------------------------------ Clients : connexion par code SMS
+
+    /** POST /api/auth/phone/send — envoie un code de connexion au numéro (clients uniquement). */
+    public function phoneSend(Request $r): Response
+    {
+        $v = $this->validate($r, ['phone' => 'required|string|max:30']);
+        $res = \App\Services\PhoneLoginService::send($v['phone'], $r->ip());
+        if ($res['password_required']) {
+            return $this->json(['password_required' => true, 'message' => 'Ce numéro correspond à un compte professionnel : connectez-vous avec votre mot de passe.']);
+        }
+        return $this->json(['sent' => true, 'message' => 'Code envoyé par SMS. Il expire dans 10 minutes.'] + ($res['debug_code'] ? ['debug_code' => $res['debug_code']] : []));
+    }
+
+    /** POST /api/auth/phone/verify — vérifie le code ; connecte le client ou demande son nom (nouveau compte). */
+    public function phoneVerify(Request $r): Response
+    {
+        $v = $this->validate($r, ['phone' => 'required|string|max:30', 'code' => 'required|string|max:10', 'remember' => 'nullable|bool']);
+        $res = \App\Services\PhoneLoginService::verify($v['phone'], $v['code']);
+        if (isset($res['signup_token'])) {
+            return $this->json(['needs_profile' => true, 'signup_token' => $res['signup_token']]);
+        }
+        return $this->secondStepOrLogin($res['user'], $r, !empty($v['remember']));
+    }
+
+    /** POST /api/auth/phone/register — nouveau client : nom + acceptation des conditions. */
+    public function phoneRegister(Request $r): Response
+    {
+        $v = $this->validate($r, ['phone' => 'required|string|max:30', 'signup_token' => 'required|string|max:120', 'full_name' => 'required|string|max:120',
+            'accept_terms' => 'nullable|bool', 'remember' => 'nullable|bool']);
+        $user = \App\Services\PhoneLoginService::register($v['phone'], $v['signup_token'], $v['full_name'], !empty($v['accept_terms']));
+        return $this->completeLogin($user, $r, !empty($v['remember']));
     }
 
     /** POST /api/auth/2fa — code à 6 chiffres ou code de secours. */
@@ -61,12 +99,15 @@ final class AuthController extends Controller
             throw \App\Core\ValidationException::field('code', $c['tries'] >= 5 ? 'Trop d\'essais. Reconnectez-vous.' : 'Code incorrect.');
         }
         \App\Core\Session::set('2fa', null);
-        return $this->completeLogin(AuthService::findUser((int) $c['uid']), $r);
+        return $this->completeLogin(AuthService::findUser((int) $c['uid']), $r, !empty($c['remember']));
     }
 
-    private function completeLogin(array $user, Request $r): Response
+    private function completeLogin(array $user, Request $r, bool $remember = false): Response
     {
         Auth::login($user, $r);
+        if ($remember) {
+            \App\Services\RememberService::issue((int) $user['id'], $r);
+        }
         SecurityService::recordDevice($user, $r);
         // La langue choisie sur l'appareil devient celle du compte (notifications push comprises)
         $lang = (string) ($r->cookies['mw_lang'] ?? '');
@@ -150,6 +191,7 @@ final class AuthController extends Controller
         if ($token) {
             Database::execute('UPDATE api_tokens SET revoked_at = NOW() WHERE token_hash = :h', ['h' => hash('sha256', $token)]);
         }
+        \App\Services\RememberService::forgetCurrent($r);
         Auth::logout();
         return $this->ok('Vous êtes déconnecté.');
     }

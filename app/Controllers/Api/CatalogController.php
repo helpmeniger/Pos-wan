@@ -113,9 +113,9 @@ final class CatalogController extends Controller
 
     public function promotions(Request $r): Response
     {
-        return $this->json(Database::select("SELECT p.code, p.description, p.discount_type, p.value, p.max_discount, p.min_order, p.service_type, p.ends_at, m.name merchant
+        return $this->json(array_map(static fn ($p) => array_diff_key($p, ['image_file_id' => 1]) + ['image_url' => $p['image_file_id'] ? url('fichiers/' . $p['image_file_id']) : null], Database::select("SELECT p.code, p.description, p.discount_type, p.value, p.max_discount, p.min_order, p.service_type, p.ends_at, p.image_file_id, m.name merchant
                                               FROM promotions p LEFT JOIN merchants m ON m.id = p.merchant_id
                                              WHERE p.is_active = 1 AND p.is_public = 1 AND NOW() BETWEEN p.starts_at AND p.ends_at
-                                               AND (p.max_uses IS NULL OR p.used_count < p.max_uses) ORDER BY p.ends_at LIMIT 20"));
+                                               AND (p.max_uses IS NULL OR p.used_count < p.max_uses) ORDER BY p.ends_at LIMIT 20")));
     }
 }

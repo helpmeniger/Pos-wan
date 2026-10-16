@@ -202,7 +202,9 @@ final class AuthService
         $code = Str::digits(6);
         Database::execute("UPDATE otp_codes SET consumed_at = NOW() WHERE target = :t AND purpose = :p AND consumed_at IS NULL", ['t' => $target, 'p' => $purpose]);
         Database::insert('otp_codes', ['target' => $target, 'purpose' => $purpose, 'code_hash' => password_hash($code, PASSWORD_BCRYPT), 'expires_at' => date('Y-m-d H:i:s', time() + 600)]);
-        SmsSender::send($target, "MARWA : votre code est $code. Il expire dans 10 minutes. Ne le communiquez à personne.");
+        // Dernière ligne au format WebOTP (« @domaine #code ») : Android propose de remplir le code automatiquement
+        $host = (string) parse_url((string) Config::get('app.url'), PHP_URL_HOST);
+        SmsSender::send($target, "MARWA : votre code est $code. Il expire dans 10 minutes. Ne le communiquez à personne." . ($host ? "\n\n@$host #$code" : ''));
         // En développement uniquement (SMS non réels), le code est renvoyé pour faciliter les tests.
         return (!SmsSender::isReal() && Config::get('app.env') !== 'production') ? $code : null;
     }

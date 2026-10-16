@@ -34,7 +34,27 @@ des **ordres de grandeur à vérifier** auprès des fournisseurs : aucun tarif n
 Toute la logique comptable (compte 2300, frais 5100, règlement, remboursement) est déjà en place
 et testée avec la passerelle de démonstration.
 
-## Intégrer un fournisseur SMS
+## Configurer un fournisseur SMS (connexion des clients par code, alertes)
+
+La connexion des clients par numéro de téléphone **nécessite un fournisseur SMS** en production
+(en démonstration, le code s'affiche à l'écran). Sans programmer, le pilote `http` s'adapte à la
+plupart des API HTTP d'agrégateurs ou d'opérateurs : renseignez dans `.env`
+
+```ini
+SMS_DRIVER=http
+SMS_HTTP_URL=https://api.votre-fournisseur.example/sms
+SMS_HTTP_FORMAT=json          # json | form | get
+SMS_HTTP_BODY={"to":"{to}","from":"{sender}","text":"{message}"}
+SMS_HTTP_HEADERS="Authorization: Bearer VOTRE_CLE"
+SMS_HTTP_PHONE_FORMAT=e164    # e164 (+227…) | digits (227…) | local (8 chiffres)
+```
+
+Les noms des champs viennent de la documentation **officielle** de votre fournisseur. Testez avec
+votre propre numéro (Administration → Utilisateurs → votre compte → message) avant l'ouverture.
+Les SMS sont payants : MARWA n'envoie un SMS automatique que pour les alertes importantes, à une
+personne ni dans l'application ni abonnée aux notifications, au plus un toutes les 10 minutes.
+
+## Intégrer un fournisseur SMS par programmation
 
 Implémenter `App\Services\Notification\SmsGateway` (`name()`, `send($telephoneE164, $message)`),
 l'activer au démarrage (`SmsSender::useGateway(new MonGateway(...))` dans `bootstrap/app.php`) ou

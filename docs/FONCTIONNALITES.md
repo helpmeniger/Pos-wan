@@ -9,6 +9,8 @@ Légende : **✅ Opérationnel** (codé et vérifié par des tests automatisés 
 | Fonctionnalité | État |
 |---|---|
 | Inscription par téléphone et/ou e-mail (client, chauffeur, livreur, commerce, entreprise) | ✅ |
+| Clients : connexion par numéro de téléphone vérifié (code SMS), sans mot de passe, compte créé automatiquement | ✅ testé ; 🔌 fournisseur SMS requis en production (pilote `http` configurable) |
+| « Se souvenir de moi » (30 jours, jeton renouvelé à chaque usage, détection de vol) | ✅ testé |
 | Connexion, verrouillage après échecs, déconnexion, jetons API mobiles | ✅ |
 | Vérification du téléphone par OTP | ✅ logique ; 🔌 SMS réel (en local, le code s'affiche en mode développement et est écrit dans `storage/logs/outbox.log`) |
 | Mot de passe oublié : lien e-mail / code SMS | ✅ ; 🔌 e-mail SMTP à configurer, SMS fournisseur |
@@ -66,7 +68,12 @@ Légende : **✅ Opérationnel** (codé et vérifié par des tests automatisés 
 | Fonctionnalité | État |
 |---|---|
 | Tableau de bord de direction (CA brut, commissions acquises/encaissées, dus partenaires, marge, bénéfice estimé, opérations, graphiques) | ✅ testé (chiffres issus de la base) |
-| Carte opérationnelle (prestataires en ligne, commandes actives) | ✅ |
+| Suivi en direct de toutes les commandes (carte + liste, alertes : attente longue, sans prestataire, GPS non actualisé, prestataire hors de l'app) | ✅ testé |
+| Contacter un prestataire ou un client : notification app + téléphone, SMS, appel, WhatsApp ; proposer une course à un prestataire précis | ✅ testé |
+| Prestataire qui se connecte : les courses restées sans prise en charge autour de lui lui sont proposées | ✅ testé |
+| Promotions avec photo (bannière sur l'accueil client) | ✅ testé |
+| Notifications : glisser vers la droite pour effacer ; relais SMS des alertes importantes si la personne est injoignable | ✅ testé |
+| Précision GPS : meilleure mesure sur quelques secondes, cercle de précision, filtre (Kalman, sauts impossibles) côté prestataire | ✅ |
 | Utilisateurs, suspension motivée, comptes du personnel | ✅ |
 | Validation des chauffeurs/livreurs (documents), commerces, entreprises | ✅ |
 | Commandes : détail, attribution, négociation, annulation, réaffectation, relance, litige, remboursement | ✅ |

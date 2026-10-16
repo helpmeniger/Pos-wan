@@ -362,3 +362,17 @@ Les contrôles de propriété (ma commande, mon commerce, mon solde) sont effect
 | `GET` | `/api/admin/ratings` | connecté, rôle admin,support,finance, permission complaints.manage |
 | `POST` | `/api/admin/ratings/{id}` | connecté, rôle admin,support,finance, permission complaints.manage |
 | `POST` | `/api/admin/broadcast` | connecté, rôle admin,support,finance, permission notifications.send |
+
+## Ajouts (connexion par téléphone, suivi en direct)
+
+| Méthode | Chemin | Accès | Rôle |
+|---|---|---|---|
+| POST | `/api/auth/phone/send` | public (limité) | Envoie un code de connexion au numéro `phone` (clients). Réponse `password_required` pour un compte professionnel |
+| POST | `/api/auth/phone/verify` | public (limité) | `phone`, `code`, `remember` → connexion, ou `needs_profile` + `signup_token` pour un nouveau numéro |
+| POST | `/api/auth/phone/register` | public (limité) | `phone`, `signup_token`, `full_name`, `accept_terms`, `remember` → crée le compte client et connecte |
+| POST | `/api/auth/login` | public | accepte `remember` (« se souvenir de moi », cookie `mw_remember` 30 jours) |
+| DELETE | `/api/notifications/{id}` | connecté | Efface une de ses notifications |
+| GET | `/api/admin/live` | `orders.view` | Commandes ouvertes, alertes, prestataires en ligne (présence dans l'application) |
+| GET | `/api/admin/live/orders/{id}/candidates` | `orders.view` | Prestataires validés les plus proches du départ |
+| POST | `/api/admin/live/contact` | `orders.manage` | `user_id`, `message`, `order_id?`, `sms?`, `offer?` : notification (app + push), SMS, proposition de la course |
+| POST | `/api/admin/promotions/{id}/image` | `promotions.manage` | Photo de la promotion |

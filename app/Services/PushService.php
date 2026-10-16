@@ -118,7 +118,7 @@ final class PushService
             return;
         }
         foreach ($subs as $s) {
-            self::$outbox[] = ['sub' => $s, 'message' => $message, 'urgent' => in_array($message['type'] ?? '', ['new_request', 'order_assigned', 'counter_offer', 'sos'], true)];
+            self::$outbox[] = ['sub' => $s, 'message' => $message, 'urgent' => in_array($message['type'] ?? '', ['new_request', 'order_assigned', 'counter_offer', 'sos', 'order_arrived_pickup', 'courier_arrived', 'staff_message'], true)];
         }
         if (!self::$shutdownRegistered && PHP_SAPI !== 'cli') {
             self::$shutdownRegistered = true;

@@ -37,6 +37,11 @@ Guide détaillé et dépannage : [docs/INSTALLATION_WAMP.md](docs/INSTALLATION_W
 - Sécurité : double authentification, déconnexion de tous les appareils, script de durcissement
   du serveur, contrôle de sécurité (voir [docs/SECURITE.md](docs/SECURITE.md)).
 - Application installable sur l'écran d'accueil, écrans vérifiés sur Android 360 px et iPhone.
+- Clients : connexion par simple numéro de téléphone vérifié (code SMS) et « Se souvenir de moi ».
+- Administration : suivi en direct de toutes les commandes, contact et notification des prestataires
+  (application, téléphone, SMS, appel, WhatsApp), proposition d'une course à un prestataire précis.
+- Courses restées sans prise en charge proposées aux prestataires qui se connectent ; GPS plus précis.
+- Promotions avec photo ; notifications effaçables d'un glissement ; relais SMS des alertes importantes.
 
 ### Comptes de démonstration (créés à l'installation locale)
 

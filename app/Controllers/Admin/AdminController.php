@@ -135,7 +135,7 @@ final class AdminController extends Controller
             $w[] = 'p.provider_type = :t';
             $p['t'] = (string) $t;
         }
-        return $this->json(Database::select('SELECT p.user_id id, u.full_name, u.phone, u.status user_status, p.provider_type, p.verification_status, p.is_online, p.rating_avg, p.rating_count,
+        return $this->json(Database::select('SELECT p.user_id id, u.full_name, u.phone, u.status user_status, u.last_seen_at, p.provider_type, p.verification_status, p.is_online, p.rating_avg, p.rating_count,
                 p.license_expires_at, p.created_at, v.category, v.plate, (SELECT COUNT(*) FROM provider_documents d WHERE d.provider_id = p.user_id AND d.status = \'pending\') pending_docs
               FROM provider_profiles p JOIN users u ON u.id = p.user_id LEFT JOIN vehicles v ON v.provider_id = p.user_id AND v.is_active = 1
              WHERE ' . implode(' AND ', $w) . ' ORDER BY p.verification_status = \'pending\' DESC, p.created_at DESC LIMIT 300', $p));

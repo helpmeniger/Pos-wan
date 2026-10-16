@@ -115,6 +115,7 @@ final class SecurityService
         Database::execute('UPDATE users SET session_version = session_version + 1 WHERE id = :id', ['id' => $userId]);
         Database::execute('UPDATE api_tokens SET revoked_at = NOW() WHERE user_id = :u AND revoked_at IS NULL', ['u' => $userId]);
         Database::execute('DELETE FROM push_subscriptions WHERE user_id = :u', ['u' => $userId]);
+        RememberService::revokeAll($userId);
         Audit::log('auth.logout_everywhere', 'user', $userId, null, null, $userId);
     }
 

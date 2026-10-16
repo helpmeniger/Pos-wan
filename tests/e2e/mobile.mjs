@@ -15,7 +15,7 @@ const plan = [
   { user: 'chauffeur@marwa.demo', pages: ['/prestataire#/', '/prestataire#/course', '/prestataire#/revenus', '/prestataire#/historique', '/prestataire#/documents', '/prestataire#/profil'] },
   { user: 'restaurant@marwa.demo', pages: ['/commerce#/', '/commerce#/commandes', '/commerce#/catalogue', '/commerce#/finances', '/commerce#/rapports', '/commerce#/parametres'] },
   { user: 'entreprise@marwa.demo', pages: ['/entreprise#/', '/entreprise#/collaborateurs', '/entreprise#/commandes', '/entreprise#/releves'] },
-  { user: 'admin@marwa.demo', pages: ['/admin#/', '/admin#/commandes', '/admin#/utilisateurs', '/admin#/paiements', '/admin#/parametres', '/admin#/traductions'] },
+  { user: 'admin@marwa.demo', pages: ['/admin#/', '/admin#/direct', '/admin#/commandes', '/admin#/utilisateurs', '/admin#/paiements', '/admin#/parametres', '/admin#/traductions'] },
 ];
 const devices = [{ name: 'android-360', viewport: { width: 360, height: 740 }, deviceScaleFactor: 3 }, { name: 'iphone-390', viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 }];
 const inspect = () => {
@@ -46,6 +46,7 @@ for (const step of plan) {
   page.on('pageerror', (e) => errors.push(e.message));
   if (step.user) {
     await page.goto(BASE + '/connexion');
+    if (await page.locator('[data-tab="password"]').count()) await page.click('[data-tab="password"]');
     await page.fill('#identifier', step.user); await page.fill('#password', 'Demo2026!');
     await Promise.all([page.waitForNavigation(), page.click('#login-form button[type=submit]')]);
   }

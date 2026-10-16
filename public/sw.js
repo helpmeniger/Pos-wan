@@ -1,7 +1,7 @@
 /* MARWA — service worker : mise en cache des ressources statiques uniquement.
    Les appels API ne sont jamais servis depuis le cache par le service worker :
    aucune commande ni aucun paiement ne peut être « confirmé » hors ligne. */
-const VERSION = 'marwa-v2';
+const VERSION = 'marwa-v3';
 const STATIC = ['assets/css/app.css', 'assets/js/core.js', 'assets/js/map.js', 'assets/vendor/leaflet/leaflet.js', 'assets/vendor/leaflet/leaflet.css', 'assets/img/logo.svg', 'assets/img/icon-192.png', 'hors-ligne'];
 
 self.addEventListener('install', (e) => {
@@ -32,7 +32,7 @@ self.addEventListener('fetch', (e) => {
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = { title: 'MARWA', body: e.data ? e.data.text() : '' }; }
-  const urgent = ['new_request', 'order_assigned', 'counter_offer', 'sos'].includes(d.type);
+  const urgent = ['new_request', 'order_assigned', 'counter_offer', 'sos', 'order_arrived_pickup', 'courier_arrived', 'staff_message'].includes(d.type);
   const icon = new URL('assets/img/icon-192.png', self.registration.scope).toString();
   e.waitUntil(self.registration.showNotification(d.title || 'MARWA', {
     body: d.body || '', icon, badge: icon, tag: d.tag || undefined, renotify: !!d.tag,

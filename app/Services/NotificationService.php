@@ -14,6 +14,21 @@ use App\Services\Notification\SmsSender;
  */
 final class NotificationService
 {
+    /** Alertes relayées par SMS quand la personne n'est pas joignable autrement. */
+    public const CRITICAL = ['new_request', 'order_assigned', 'courier_arrived', 'order_arrived_pickup', 'order_ready', 'staff_message'];
+
+    private static function smsFallback(int $userId): bool
+    {
+        if (!filter_var(\App\Core\Settings::get('notifications.sms_fallback', true), FILTER_VALIDATE_BOOLEAN) || !SmsSender::isReal()) {
+            return false;
+        }
+        $u = Database::first('SELECT phone, last_seen_at, (SELECT COUNT(*) FROM push_subscriptions s WHERE s.user_id = users.id) push FROM users WHERE id = :id', ['id' => $userId]);
+        if (!$u || !$u['phone'] || (int) $u['push'] > 0 || ($u['last_seen_at'] && strtotime((string) $u['last_seen_at']) > time() - 120)) {
+            return false;
+        }
+        return \App\Core\RateLimiter::hit('sms_fallback:' . $userId, 1, 600);
+    }
+
     public static function notify(int $userId, string $type, string $title, string $body, array $data = [], array $channels = []): int
     {
         $id = Database::insert('notifications', [
@@ -24,6 +39,11 @@ final class NotificationService
             'data' => $data ? json_encode($data, JSON_UNESCAPED_UNICODE) : null,
         ]);
         RealtimeService::push($userId, 'notification', $data['order_id'] ?? null, ['id' => $id, 'type' => $type, 'title' => $title, 'body' => $body] + $data);
+        // Relais SMS pour les alertes qui ne doivent pas être manquées, si la personne n'est ni dans
+        // l'application ni joignable par notification push (fournisseur SMS réel requis, 1 SMS / 10 min max.)
+        if (!$channels && in_array($type, self::CRITICAL, true)) {
+            $channels = self::smsFallback($userId) ? ['sms'] : [];
+        }
         // Notification push sur le téléphone (même en veille ou application fermée)
         try {
             if (PushService::enabled() && Database::value('SELECT 1 FROM push_subscriptions WHERE user_id = :u LIMIT 1', ['u' => $userId])) {

@@ -16,17 +16,25 @@
     start() {
       if (this.watchId !== null || !navigator.geolocation) { if (!navigator.geolocation) { this.status = 'unsupported'; this.emit(); } return; }
       this.status = 'waiting'; this.emit();
+      this.filter = new MW.GpsFilter();
       this.watchId = navigator.geolocation.watchPosition((p) => this.onPosition(p), (e) => { this.status = e.code === 1 ? 'denied' : 'error'; this.emit(); },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
-      if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then((w) => (this.wakeLock = w)).catch(() => {});
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+      this.lockScreen();
+      if (!this.visHandler) { this.visHandler = () => { if (!document.hidden && this.watchId !== null) this.lockScreen(); }; document.addEventListener('visibilitychange', this.visHandler); }
+    },
+    /** Écran maintenu allumé pendant le suivi (réactivé au retour dans l'application). */
+    lockScreen() {
+      if ('wakeLock' in navigator && !(this.wakeLock && !this.wakeLock.released)) navigator.wakeLock.request('screen').then((w) => (this.wakeLock = w)).catch(() => {});
     },
     stop() {
       if (this.watchId !== null) navigator.geolocation.clearWatch(this.watchId);
       this.watchId = null; this.status = 'off'; this.wakeLock && this.wakeLock.release && this.wakeLock.release(); this.wakeLock = null; this.emit();
     },
     async onPosition(p) {
-      const c = p.coords;
-      this.last = { lat: c.latitude, lng: c.longitude, heading: (c.heading !== null && !isNaN(c.heading)) ? c.heading : null, speed: c.speed, accuracy: c.accuracy, at: Date.now() };
+      // Filtrage : mesures trop imprécises et sauts impossibles ignorés, tracé lissé
+      const f = (this.filter || (this.filter = new MW.GpsFilter())).push(p.coords, p.timestamp);
+      if (!f) return;
+      this.last = { lat: f.lat, lng: f.lng, heading: f.heading, speed: f.speed, accuracy: f.accuracy, rawAccuracy: f.rawAccuracy, at: Date.now() };
       this.status = 'ok'; this.emit();
       // Limitation des envois : toutes les 5 s au plus, ou dès 15 m de déplacement (économie de données)
       const moved = this.lastSentPos ? distance(this.lastSentPos, this.last) : Infinity;

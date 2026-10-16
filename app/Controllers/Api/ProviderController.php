@@ -136,9 +136,12 @@ final class ProviderController extends Controller
         if (!$v['online']) {
             // Hors ligne : la position n'est plus conservée.
             Database::execute('DELETE FROM provider_locations WHERE provider_id = :u', ['u' => $p['user_id']]);
-            Database::execute("UPDATE dispatch_offers SET status = 'expired' WHERE provider_id = :u AND status = 'pending'", ['u' => $p['user_id']]);
+            // Propositions en cours retirées sans pénalité : elles pourront lui être reproposées à son retour
+            Database::execute("UPDATE dispatch_offers SET status = 'superseded' WHERE provider_id = :u AND status = 'pending'", ['u' => $p['user_id']]);
         }
-        return $this->json(['online' => $v['online']]);
+        // Retour en ligne : les commandes encore sans prise en charge autour de lui lui sont proposées
+        $backlog = $v['online'] ? DispatchService::offerOpenOrdersTo((int) $p['user_id']) : 0;
+        return $this->json(['online' => $v['online'], 'waiting_orders' => $backlog]);
     }
 
     public function location(Request $r): Response
@@ -153,6 +156,7 @@ final class ProviderController extends Controller
     {
         $u = $this->user();
         DispatchService::tick();
+        DispatchService::offerOpenOrdersTo((int) $u['id']);
         $rows = Database::select("SELECT o.*, d.status offer_status, d.expires_at offer_expires_at, d.distance_m offer_distance FROM dispatch_offers d JOIN orders o ON o.id = d.order_id
                                    WHERE d.provider_id = :u AND d.status IN ('pending','countered') AND d.expires_at > NOW() AND o.provider_id IS NULL ORDER BY d.id DESC", ['u' => $u['id']]);
         $out = [];

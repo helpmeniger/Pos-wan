@@ -156,7 +156,21 @@ final class ConfigController extends Controller
 
     public function promotions(Request $r): Response
     {
-        return $this->json(Database::select('SELECT p.*, m.name merchant FROM promotions p LEFT JOIN merchants m ON m.id = p.merchant_id ORDER BY p.id DESC'));
+        return $this->json(array_map(static fn ($p) => $p + ['image_url' => $p['image_file_id'] ? url('fichiers/' . $p['image_file_id']) : null],
+            Database::select('SELECT p.*, m.name merchant FROM promotions p LEFT JOIN merchants m ON m.id = p.merchant_id ORDER BY p.id DESC')));
+    }
+
+    /** Photo (bannière) d'une promotion, affichée aux clients. */
+    public function promotionImage(Request $r): Response
+    {
+        $p = Database::first('SELECT * FROM promotions WHERE id = :id', ['id' => $r->intParam('id')]);
+        if (!$p) {
+            throw HttpException::notFound('Promotion introuvable.');
+        }
+        $f = \App\Services\UploadService::store($r->file('file'), (int) $this->user()['id'], 'logo', true);
+        Database::update('promotions', ['image_file_id' => $f['id']], 'id = :id', ['id' => $p['id']]);
+        Audit::log('promotion.image', 'promotion', (int) $p['id']);
+        return $this->json(['image_url' => url('fichiers/' . $f['id'])]);
     }
 
     public function savePromotion(Request $r): Response

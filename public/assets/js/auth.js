@@ -11,6 +11,54 @@
   });
 
   document.addEventListener('DOMContentLoaded', () => {
+    // Onglets « code par SMS » / « mot de passe » (dernier choix mémorisé sur l'appareil)
+    const tabs = document.querySelectorAll('[data-tab]');
+    const showTab = (t) => {
+      tabs.forEach((b) => b.classList.toggle('active', b.dataset.tab === t));
+      document.querySelectorAll('[data-pane]').forEach((p) => { p.hidden = p.dataset.pane !== t; });
+      try { localStorage.setItem('mw:loginTab', t); } catch (e) { /* privé */ }
+    };
+    tabs.forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+    let savedTab = null; try { savedTab = localStorage.getItem('mw:loginTab'); } catch (e) { /* privé */ }
+    if (tabs.length && (savedTab === 'password' || /[?&]mode=motdepasse/.test(location.search))) showTab('password');
+
+    const phoneForm = document.getElementById('phone-form');
+    if (phoneForm) {
+      const pane = phoneForm.parentElement;
+      const back = document.getElementById('login-form')?.dataset.back;
+      const go = (r) => { location.href = back ? MW.base + back : r.data.redirect; };
+      submit(phoneForm, async (v) => {
+        const r = await MW.post('/auth/phone/send', { phone: v.phone });
+        if (r.data.password_required) { MW.toast(r.data.message, 'warn', 7000); showTab('password'); const id = document.getElementById('identifier'); if (id) id.value = v.phone; return; }
+        const remember = v.remember;
+        phoneForm.hidden = true;
+        const f = document.createElement('form'); f.id = 'code-form'; f.noValidate = true;
+        f.innerHTML = `<div class="alert alert-info">${MW.esc(r.data.message)}${r.data.debug_code ? `<br><strong>Mode démonstration (aucun SMS réel) — code : <span translate="no">${MW.esc(r.data.debug_code)}</span></strong>` : ''}</div>
+          <div class="field" data-field="code"><label for="otp">Code reçu par SMS</label><input class="input otp-input" id="otp" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></div>
+          <button class="btn btn-primary btn-block btn-lg" type="submit">Se connecter</button>
+          <div class="row between" style="margin-top:10px"><button type="button" class="btn btn-ghost btn-sm" data-other>Changer de numéro</button><button type="button" class="btn btn-ghost btn-sm" data-resend>Renvoyer le code</button></div>`;
+        pane.appendChild(f); f.querySelector('input').focus();
+        f.querySelector('[data-other]').onclick = () => { f.remove(); phoneForm.hidden = false; };
+        f.querySelector('[data-resend]').onclick = (e) => MW.busy(e.currentTarget, async () => { const x = await MW.post('/auth/phone/send', { phone: v.phone }); MW.toast(x.data.debug_code ? 'Code (démonstration) : ' + x.data.debug_code : x.data.message, 'success', 9000); });
+        // Lecture automatique du code SMS (Android Chrome, si le SMS respecte le format WebOTP)
+        if ('OTPCredential' in window) navigator.credentials.get({ otp: { transport: ['sms'] } }).then((o) => { if (o && o.code) { f.code.value = o.code; f.requestSubmit(); } }).catch(() => {});
+        submit(f, async (c) => {
+          const x = await MW.post('/auth/phone/verify', { phone: v.phone, code: c.code, remember });
+          if (x.data.two_factor) { MW.toast('Double authentification activée : utilisez l\'onglet mot de passe.', 'warn'); return; }
+          if (!x.data.needs_profile) return go(x);
+          // Nouveau client : nom et conditions d'utilisation
+          f.remove();
+          const g = document.createElement('form'); g.noValidate = true;
+          g.innerHTML = `<div class="alert alert-success">Numéro vérifié. Dernière étape : comment vous appelez-vous ?</div>
+            <div class="field" data-field="full_name"><label for="fn">Nom et prénom</label><input class="input" id="fn" name="full_name" autocomplete="name" required maxlength="120"></div>
+            <label class="check" data-field="accept_terms"><input type="checkbox" name="accept_terms"> <span>J'accepte les <a href="${MW.base}/pages/cgu" target="_blank">conditions d'utilisation</a> et la <a href="${MW.base}/pages/confidentialite" target="_blank">politique de confidentialité</a>.</span></label>
+            <button class="btn btn-primary btn-block btn-lg" type="submit">Créer mon compte</button>`;
+          pane.appendChild(g); g.querySelector('input').focus();
+          submit(g, async (w) => go(await MW.post('/auth/phone/register', { phone: v.phone, signup_token: x.data.signup_token, full_name: w.full_name, accept_terms: w.accept_terms, remember })));
+        });
+      });
+    }
+
     const login = document.getElementById('login-form');
     const done = (r) => { const back = login.dataset.back; location.href = back && !r.data.two_factor_setup_required ? MW.base + back : r.data.redirect; };
     submit(login, async (v) => {

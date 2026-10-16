@@ -35,6 +35,7 @@ for (const step of plan) {
   const page = await ctx.newPage();
   if (step.user) {
     await page.goto(BASE + '/connexion');
+    if (await page.locator('[data-tab="password"]').count()) await page.click('[data-tab="password"]');
     await page.fill('#identifier', step.user); await page.fill('#password', 'Demo2026!');
     await Promise.all([page.waitForNavigation(), page.click('#login-form button[type=submit]')]);
   }

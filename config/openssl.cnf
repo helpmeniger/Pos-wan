@@ -1,0 +1,13 @@
+# Configuration OpenSSL minimale fournie avec MARWA.
+# Sous Windows (WampServer), PHP ne trouve souvent aucun openssl.cnf : la création des clés
+# des notifications push (courbe P-256) échouerait alors. Ce fichier suffit à ces opérations.
+HOME = .
+openssl_conf = openssl_init
+
+[ openssl_init ]
+
+[ req ]
+default_bits = 2048
+distinguished_name = req_distinguished_name
+
+[ req_distinguished_name ]

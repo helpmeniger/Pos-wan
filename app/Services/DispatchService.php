@@ -132,6 +132,127 @@ final class DispatchService
     }
 
     /**
+     * Prestataire qui vient de se connecter (ou qui consulte ses demandes) : les commandes encore
+     * sans prise en charge autour de lui lui sont proposées, même si elles ont été créées avant
+     * son arrivée. Une commande déjà refusée ou laissée sans réponse par lui n'est pas reproposée.
+     * Retourne le nombre de nouvelles propositions.
+     */
+    public static function offerOpenOrdersTo(int $providerId, int $max = 5): int
+    {
+        if (!filter_var(Settings::get('dispatch.offer_open_orders_on_online', true), FILTER_VALIDATE_BOOLEAN)) {
+            return 0;
+        }
+        $p = Database::first("SELECT p.*, l.lat, l.lng, l.updated_at loc_at FROM provider_profiles p JOIN users u ON u.id = p.user_id AND u.status = 'active'
+                               JOIN provider_locations l ON l.provider_id = p.user_id WHERE p.user_id = :p", ['p' => $providerId]);
+        if (!$p || $p['verification_status'] !== 'verified' || !(int) $p['is_online'] || $p['current_order_id'] !== null
+            || strtotime((string) $p['loc_at']) < time() - Settings::int('dispatch.location_max_age_s', 300)) {
+            return 0;
+        }
+        $vehicles = Database::select('SELECT category, capacity FROM vehicles WHERE provider_id = :p AND is_active = 1', ['p' => $providerId]);
+        if (!$vehicles) {
+            return 0;
+        }
+        $radiusKm = (float) Settings::get('dispatch.radius_km', 6);
+        $lat = (float) $p['lat'];
+        $lng = (float) $p['lng'];
+        $dLat = $radiusKm / 111.0;
+        $dLng = $radiusKm / (111.0 * max(0.2, cos(deg2rad($lat))));
+        $flowSql = $p['provider_type'] === 'driver'
+            ? "o.flow = 'ride' AND o.status IN ('searching','negotiating')"
+            : "((o.flow = 'courier' AND o.status IN ('searching','negotiating')) OR (o.flow = 'merchant' AND o.dispatch_status = 'searching' AND o.status IN ('accepted','preparing','ready')))";
+        $orders = Database::select(
+            "SELECT o.* FROM orders o
+              WHERE $flowSql AND o.provider_id IS NULL
+                AND (o.expires_at IS NULL OR o.expires_at > NOW())
+                AND (o.dispatch_after IS NULL OR o.dispatch_after <= NOW())
+                AND o.created_at >= DATE_SUB(NOW(), INTERVAL 2 HOUR)
+                AND (o.merchant_id IS NULL OR :mid = 0 OR o.merchant_id = :mid2)
+                AND o.pickup_lat BETWEEN :la1 AND :la2 AND o.pickup_lng BETWEEN :ln1 AND :ln2
+                AND NOT EXISTS (SELECT 1 FROM dispatch_offers d WHERE d.order_id = o.id AND d.provider_id = :p AND d.status <> 'superseded')
+              ORDER BY o.created_at LIMIT 30",
+            ['mid' => (int) ($p['merchant_id'] ?? 0), 'mid2' => (int) ($p['merchant_id'] ?? 0), 'la1' => $lat - $dLat, 'la2' => $lat + $dLat, 'ln1' => $lng - $dLng, 'ln2' => $lng + $dLng, 'p' => $providerId]
+        );
+        $sent = 0;
+        foreach ($orders as $o) {
+            if ($sent >= $max) {
+                break;
+            }
+            $dist = Geo::distance($lat, $lng, (float) $o['pickup_lat'], (float) $o['pickup_lng']);
+            if ($dist > $radiusKm * 1000 || !self::vehicleFits($o, $vehicles)) {
+                continue;
+            }
+            if (self::insertOffer($o, $providerId, (int) round($dist))) {
+                $sent++;
+            }
+        }
+        if ($sent > 0) {
+            NotificationService::notify($providerId, 'new_request', $sent > 1 ? "$sent demandes en attente près de vous" : 'Une demande en attente près de vous',
+                'Des clients attendent encore une prise en charge : consultez vos demandes.', []);
+        }
+        return $sent;
+    }
+
+    /** Proposition d'une commande à un prestataire précis (décision de l'équipe MARWA). */
+    public static function offerToProvider(int $orderId, int $providerId): array
+    {
+        $o = self::fresh($orderId);
+        if ($o['provider_id'] !== null) {
+            throw HttpException::conflict('Cette commande a déjà un prestataire.', 'already_assigned');
+        }
+        $p = Database::first('SELECT p.*, l.lat, l.lng FROM provider_profiles p LEFT JOIN provider_locations l ON l.provider_id = p.user_id WHERE p.user_id = :p', ['p' => $providerId]);
+        if (!$p || $p['verification_status'] !== 'verified') {
+            throw HttpException::conflict('Ce prestataire n\'est pas validé.', 'provider_unavailable');
+        }
+        if ($p['provider_type'] !== self::providerTypeFor($o)) {
+            throw HttpException::conflict($o['flow'] === 'ride' ? 'Une course doit être proposée à un chauffeur.' : 'Une livraison doit être proposée à un livreur.', 'wrong_type');
+        }
+        $dist = $p['lat'] !== null ? (int) round(Geo::distance((float) $p['lat'], (float) $p['lng'], (float) $o['pickup_lat'], (float) $o['pickup_lng'])) : null;
+        Database::execute("DELETE FROM dispatch_offers WHERE order_id = :o AND provider_id = :p AND status IN ('expired','refused','superseded')", ['o' => $orderId, 'p' => $providerId]);
+        $created = self::insertOffer($o, $providerId, $dist, Settings::int('dispatch.offer_ttl_seconds', 60) * 5);
+        if ($o['dispatch_status'] !== 'searching') {
+            Database::execute("UPDATE orders SET dispatch_status = 'searching', version = version + 1 WHERE id = :id AND provider_id IS NULL", ['id' => $orderId]);
+        }
+        return ['offered' => $created, 'online' => (bool) $p['is_online'], 'busy' => $p['current_order_id'] !== null];
+    }
+
+    private static function vehicleFits(array $o, array $vehicles): bool
+    {
+        $cats = $o['flow'] === 'ride' ? ($o['vehicle_category'] ? [$o['vehicle_category']] : PricingService::RIDE_VEHICLES)
+            : ($o['vehicle_category'] ? [$o['vehicle_category']] : PricingService::COURIER_VEHICLES);
+        foreach ($vehicles as $v) {
+            if (in_array($v['category'], $cats, true) && ($o['flow'] !== 'ride' || (int) $v['capacity'] >= max(1, (int) $o['passengers']))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static function insertOffer(array $o, int $providerId, ?int $dist, ?int $ttl = null): bool
+    {
+        $ttl ??= Settings::int('dispatch.offer_ttl_seconds', 60);
+        if ($o['pricing_mode'] === 'negotiated') {
+            $ttl = max($ttl, Settings::int('negotiation.counter_ttl_seconds', 90) * 2);
+        }
+        $expires = date('Y-m-d H:i:s', time() + $ttl);
+        $round = (int) Database::value('SELECT COALESCE(MAX(round_no),0) FROM dispatch_offers WHERE order_id = :o', ['o' => $o['id']]) + 1;
+        $n = Database::execute(
+            "INSERT INTO dispatch_offers (order_id, provider_id, round_no, distance_m, expires_at) VALUES (:o, :p, :r, :d, :e)
+             ON DUPLICATE KEY UPDATE round_no = IF(status = 'superseded', VALUES(round_no), round_no), sent_at = IF(status = 'superseded', NOW(), sent_at),
+               expires_at = IF(status = 'superseded', VALUES(expires_at), expires_at), responded_at = IF(status = 'superseded', NULL, responded_at),
+               status = IF(status = 'superseded', 'pending', status)",
+            ['o' => $o['id'], 'p' => $providerId, 'r' => min(255, $round), 'd' => $dist, 'e' => $expires]
+        );
+        if ($n > 0) {
+            Database::execute('UPDATE provider_profiles SET offers_received = offers_received + 1 WHERE user_id = :p', ['p' => $providerId]);
+            $price = (int) ($o['offered_price'] ?? $o['final_price'] ?? $o['estimated_price']);
+            NotificationService::notify($providerId, 'new_request', $o['flow'] === 'ride' ? 'Nouvelle demande de course' : 'Nouvelle demande de livraison',
+                sprintf('%s — %s%s. Répondez avant expiration.', $o['reference'], fcfa($price), $dist !== null ? ' à ' . number_format($dist, 0, ',', ' ') . ' m de vous' : ''),
+                ['order_id' => (int) $o['id'], 'expires_at' => $expires]);
+        }
+        return $n > 0;
+    }
+
+    /**
      * Attribution atomique. $agreedPrice = prix accepté par les deux parties
      * (null = tarif automatique / frais de livraison déjà fixés).
      */

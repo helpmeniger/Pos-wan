@@ -43,6 +43,9 @@ Les nouvelles migrations sont appliquées automatiquement à l'ouverture suivant
 | Page « Installation de MARWA » avec « serveur injoignable » | MySQL/MariaDB non démarré : icône Wamp verte ? |
 | « accès refusé » | Mot de passe MySQL personnalisé : saisissez-le dans le formulaire |
 | 403 sur toutes les pages | `AllowOverride` désactivé dans la configuration Apache de `www` (Wamp l'active par défaut) |
+| « Activer » les notifications renvoie une erreur | Corrigé : MARWA fournit maintenant le fichier `config/openssl.cnf` qui manquait sous Windows. Le message affiché indique la cause exacte (autorisation refusée, service du navigateur injoignable…) |
+| Notifications indisponibles sur un téléphone connecté par `http://192.168.x.x` | Les navigateurs exigent HTTPS (sauf `localhost`) : elles fonctionneront une fois MARWA en ligne avec HTTPS |
+| Le client ne reçoit pas de code SMS | En local, aucun SMS réel n'est envoyé : le code s'affiche à l'écran. En ligne, configurez un fournisseur SMS (docs/SERVICES_EXTERNES.md) |
 | 404 sur `http://localhost/marwa/connexion` mais l'accueil fonctionne | `rewrite_module` désactivé : utilisez les liens de l'application (ils passent par `index.php`) ou activez le module |
 
 ---

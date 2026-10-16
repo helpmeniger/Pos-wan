@@ -540,3 +540,44 @@ code, .small code { overflow-wrap: anywhere; }
 .list-item .grow, .list-item .title, .list-item .meta { min-width: 0; overflow-wrap: anywhere; }
 .place-input .input { padding-right: 56px; text-overflow: ellipsis; }
 .place-input:has(.place-tools button + button) .input { padding-right: 100px; }
+.phone-input { display: flex; align-items: stretch; }
+.phone-input .prefix { display: grid; place-items: center; padding: 0 12px; border: 1.5px solid var(--sand-200); border-right: 0; border-radius: 12px 0 0 12px; background: var(--sand-100); font-weight: 700; color: var(--ink-700); }
+.phone-input .input { border-radius: 0 12px 12px 0; }
+.otp-input { letter-spacing: .5em; font-size: 1.4rem !important; text-align: center; font-weight: 800; }
+
+/* ---- Suivi en direct (administration) ---- */
+.live-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.live-stats .stat.alert-red { border-color: var(--red-600); background: #fdecea; }
+.live-stats .stat.alert-amber { border-color: #f4a623; background: var(--amber-100); }
+.live-layout { display: grid; gap: 14px; }
+@media (min-width: 1100px) { .live-layout { grid-template-columns: 1fr 460px; align-items: start; } .live-layout > .card { position: sticky; top: calc(var(--header-h) + 10px); } }
+.live-order.has-alert { border-left: 4px solid var(--red-600); }
+.live-people { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--sand-200); }
+@media (max-width: 420px) { .live-people { grid-template-columns: 1fr; } }
+.live-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; padding: 6px 4px 2px; }
+.live-legend span[class^="dot-"] { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.dot-free { background: #0b6e4f; } .dot-busy { background: #1f6fb2; } .dot-off { background: #9aa5a0; } .dot-wait { background: #f4a623; }
+.pulse-marker { animation: mw-pulse 1.2s ease-in-out infinite; }
+@keyframes mw-pulse { 50% { stroke-width: 8; stroke-opacity: .4; } }
+.contact-links { flex-wrap: wrap; gap: 8px; }
+
+/* ---- Promotions avec photo ---- */
+.promo-strip { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; scrollbar-width: thin; }
+.promo-card { flex: 0 0 min(300px, 85%); scroll-snap-align: start; background: #fff; border: 1px solid var(--sand-200); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+.promo-card img { width: 100%; aspect-ratio: 16 / 7; object-fit: cover; display: block; }
+.promo-card .promo-body { padding: 12px; }
+.promo-card .title { font-weight: 700; margin: 6px 0 2px; }
+.promo-card:not(.has-img) { background: linear-gradient(135deg, #fff7e6, #fff); }
+.promo-thumb { width: 64px; height: 32px; object-fit: cover; border-radius: 6px; }
+.suggestions .s-head { padding: 8px 14px 4px; font-size: .78rem; font-weight: 700; color: var(--ink-500); text-transform: uppercase; letter-spacing: .04em; }
+
+/* ---- Notifications : glisser pour effacer ---- */
+.swipe-hint { padding: 6px 14px 0; margin: 0; }
+.swipe-row { position: relative; overflow: hidden; transition: height .2s; }
+.swipe-row.removing { height: 0 !important; }
+.swipe-bg { position: absolute; inset: 0; display: flex; align-items: center; gap: 6px; padding-left: 18px; background: var(--red-600); color: #fff; font-weight: 700; opacity: 0; }
+.swipe-bg svg { width: 18px; height: 18px; }
+.swipe-row.swiping .swipe-bg { opacity: 1; }
+.swipe-item { position: relative; background: #fff; touch-action: pan-y; user-select: none; }
+.swipe-item.unread { background: var(--green-50); }
+.swipe-del { width: 40px !important; height: 40px !important; border: 0; background: transparent; color: var(--ink-500); flex: none; }

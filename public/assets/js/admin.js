@@ -56,20 +56,107 @@
   }
 
   // ------------------------------------------------------------------ Carte opérationnelle
-  async function liveMap(el) {
-    el.innerHTML = `<div class="container">${head('Carte opérationnelle', '<span class="small muted" data-info></span>')}<div class="card" style="padding:8px"><div id="ops-map" class="map tall"></div></div>
-      <p class="small muted">Positions réelles transmises par les appareils des prestataires en ligne (actualisation toutes les 10 s). Données réservées au personnel habilité.</p></div>`;
-    const map = await MW.createMap(el.querySelector('#ops-map'), { zoom: 12 });
-    const layer = L.layerGroup().addTo(map);
-    const load = async () => {
-      const d = await MW.get('/admin/map', { retries: 0 }).catch(() => null); if (!d) return;
+  // ------------------------------------------------------------------ Suivi en direct de toutes les commandes
+  const waLink = (phone, text) => phone ? `https://wa.me/${String(phone).replace(/\D/g, '')}?text=${encodeURIComponent(text || '')}` : null;
+  const telLink = (phone) => phone ? `tel:${String(phone).replace(/[^\d+]/g, '')}` : null;
+  const presence = (p) => p.in_app ? '<span class="badge green">dans l\'app</span>' : '<span class="badge gray">hors de l\'app</span>';
+  const FLAG = { attente: ['amber', 'Attente longue'], sans_prestataire: ['red', 'Aucun prestataire'], gps: ['red', 'GPS non actualisé'], hors_app: ['amber', 'Prestataire hors de l\'app'], commerce: ['amber', 'Commerce sans réponse'] };
+
+  /** Fenêtre de contact : notification (app + téléphone), SMS facultatif, proposition de la commande, liens directs. */
+  function contactModal(person, order, onDone) {
+    const isProvider = person.kind === 'provider';
+    const def = order ? (isProvider
+      ? (order.provider && order.provider.id === person.id ? `Commande ${order.reference} : merci d'ouvrir MARWA et de mettre à jour votre position et l'étape de la course.` : `Un client attend une prise en charge (${order.reference}, ${order.pickup.text}). Ouvrez MARWA pour accepter la demande.`)
+      : `Bonjour, l'équipe MARWA suit votre commande ${order.reference}. Nous cherchons un prestataire, merci de patienter.`) : '';
+    const m = MW.formModal('Contacter ' + person.name, [
+      { html: `<p class="small">${presence(person)} ${person.phone ? `· <span translate="no">${MW.esc(person.phone)}</span>` : ''}</p>
+        <div class="row contact-links">${person.phone ? `<a class="btn btn-outline btn-sm" href="${telLink(person.phone)}">${MW.icon('phone')} Appeler</a>
+          <a class="btn btn-outline btn-sm" href="${waLink(person.phone, def)}" target="_blank" rel="noopener">WhatsApp</a>
+          <a class="btn btn-outline btn-sm" href="sms:${MW.esc(person.phone)}?body=${encodeURIComponent(def)}">SMS depuis ce téléphone</a>` : '<span class="small muted">Pas de numéro enregistré.</span>'}</div>
+        <p class="small muted">Ou envoyez un message par MARWA : il apparaît dans l'application et sur l'écran du téléphone (notification push), même application fermée si les notifications sont activées.</p>` },
+      { name: 'message', label: 'Message', type: 'textarea', required: true, maxlength: 300, value: def },
+      { name: 'sms', label: 'Envoyer aussi par SMS (fournisseur SMS configuré, payant)', type: 'checkbox', value: !person.in_app && !person.push_devices },
+      ...(isProvider && order && !order.provider ? [{ name: 'offer', label: 'Proposer cette commande à ce prestataire (il peut l\'accepter depuis l\'application)', type: 'checkbox', value: true }] : [])],
+    async (v) => {
+      const r = await MW.post('/admin/live/contact', { user_id: person.id, order_id: order ? order.id : null, message: v.message, sms: v.sms, offer: v.offer });
+      const o = r.data.offer;
+      MW.toast(`Message envoyé${r.data.sms ? ' (application + SMS)' : ''}.${o ? (o.offered ? ' Commande proposée' + (o.online ? '.' : ' : le prestataire est hors ligne, il la verra en se connectant.') : ' (déjà proposée).') : ''}`, 'success', 6000);
+      onDone && onDone();
+    }, { ok: 'Envoyer' });
+    return m;
+  }
+
+  async function candidatesModal(order, onDone) {
+    const d = await MW.get(`/admin/live/orders/${order.id}/candidates`);
+    const m = MW.modal('Prestataires proches — ' + order.reference, `<p class="small muted">Départ : ${MW.esc(order.pickup.text)}. Classés par distance (dernière position connue).</p>
+      <div class="list">${d.candidates.map((p, i) => `<div class="list-item"><div class="grow"><div class="title">${MW.esc(p.name)} ${p.online ? (p.busy ? '<span class="badge blue">en course</span>' : '<span class="badge green">en ligne</span>') : '<span class="badge gray">hors ligne</span>'} ${presence(p)}</div>
+        <div class="meta">${p.distance_m !== null ? MW.dist(p.distance_m) : 'position inconnue'}${p.gps_age_seconds !== null ? ' · GPS ' + MW.ago(p.gps_age_seconds) : ''} · ${p.push_devices ? 'notifications activées' : 'sans notifications'}${p.offer_status ? ' · proposition : ' + MW.esc(p.offer_status) : ''}</div></div>
+        <div class="row" style="gap:6px;flex:none">${p.phone ? `<a class="icon-btn" href="${telLink(p.phone)}" aria-label="Appeler">${MW.icon('phone')}</a>` : ''}<button class="btn btn-sm btn-primary" data-c="${i}">Notifier</button></div></div>`).join('') || MW.empty('Aucun prestataire validé de ce type.')}</div>`, { wide: true });
+    m.el.querySelectorAll('[data-c]').forEach((b) => b.addEventListener('click', () => { const p = d.candidates[Number(b.dataset.c)]; m.close(); contactModal(Object.assign({ kind: 'provider' }, p), order, onDone); }));
+  }
+
+  async function live(el, params) {
+    const filter = params.f || 'tout';
+    el.innerHTML = `<div class="container">${head('Suivi en direct', '<span class="small muted" data-clock></span>')}
+      <div class="live-stats" data-stats></div>
+      <div class="segmented" style="margin:10px 0" data-filters>${[['tout', 'Toutes'], ['attente', 'En attente'], ['cours', 'En cours'], ['alertes', 'Alertes']].map(([k, l]) => `<a href="#/direct?f=${k}" class="${k === filter ? 'active' : ''}">${l}</a>`).join('')}</div>
+      <div class="live-layout"><div class="card" style="padding:8px"><div class="map-wrap"><div id="live-map" class="map tall"></div></div>
+        <div class="small muted live-legend"><span class="dot-free"></span> libre · <span class="dot-busy"></span> en course · <span class="dot-off"></span> hors de l'app · <span class="dot-wait"></span> client en attente</div></div>
+        <div data-list class="stack"></div></div></div>`;
+    const map = await MW.createMap(el.querySelector('#live-map'), { zoom: 12 });
+    const layer = map ? L.layerGroup().addTo(map) : null;
+    let data = null; let fitted = false; let lastAlerts = 0;
+    const keep = (o) => filter === 'tout' || (filter === 'attente' && !o.provider) || (filter === 'cours' && o.provider) || (filter === 'alertes' && o.flags.length);
+    const render = () => {
+      const d = data; const s = d.summary;
+      el.querySelector('[data-stats]').innerHTML = [['Ouvertes', s.open, ''], ['En attente', s.waiting, s.waiting ? 'amber' : ''], ['En cours', s.in_progress, ''], ['Alertes', s.alerts, s.alerts ? 'red' : ''], ['Prestataires en ligne', `${s.providers_online} (${s.providers_free} libres)`, '']]
+        .map(([l, v, c]) => `<div class="stat ${c ? 'alert-' + c : ''}"><p class="label">${l}</p><div class="value">${v}</div></div>`).join('');
+      el.querySelector('[data-clock]').textContent = 'Mis à jour à ' + MW.time(new Date()) + ' · actualisation toutes les 5 s';
+      const list = d.orders.filter(keep);
+      el.querySelector('[data-list]').innerHTML = list.length ? list.map((o) => `<div class="card live-order ${o.flags.length ? 'has-alert' : ''}" data-o="${o.id}">
+          <div class="row between"><div><strong>${MW.esc(MW.L.service[o.service_type] || o.service_type)} · <a href="#/commande/${o.id}" translate="no">${MW.esc(o.reference)}</a></strong>
+            <div class="small muted">créée ${MW.ago(o.age_seconds)} · ${MW.fcfa(o.total)}${o.merchant ? ' · ' + MW.esc(o.merchant) : ''}</div></div>${MW.statusBadge(o.status)}</div>
+          ${o.flags.length ? `<div class="row" style="gap:6px;margin-top:6px">${o.flags.map((f) => `<span class="badge ${FLAG[f][0]}">${FLAG[f][1]}</span>`).join('')}</div>` : ''}
+          <div class="small" style="margin-top:6px">${MW.icon('pin')} ${MW.esc(o.pickup.text)} → ${MW.esc(o.dropoff.text)}</div>
+          <div class="live-people">
+            <div><div class="small muted">Client</div><strong>${MW.esc(o.customer.name)}</strong> ${presence(o.customer)}
+              <div class="row" style="gap:6px;margin-top:4px">${o.customer.phone ? `<a class="btn btn-sm btn-outline" href="${telLink(o.customer.phone)}">${MW.icon('phone')} Appeler</a>` : ''}<button class="btn btn-sm btn-ghost" data-cc="${o.id}">Message</button></div></div>
+            <div><div class="small muted">Prestataire</div>${o.provider ? `<strong>${MW.esc(o.provider.name)}</strong> ${presence(o.provider)}
+              <div class="small muted">${o.provider.gps_age_seconds !== null ? 'GPS ' + MW.ago(o.provider.gps_age_seconds) : 'aucune position'}</div>
+              <div class="row" style="gap:6px;margin-top:4px">${o.provider.phone ? `<a class="btn btn-sm btn-outline" href="${telLink(o.provider.phone)}">${MW.icon('phone')} Appeler</a>` : ''}<button class="btn btn-sm btn-primary" data-cp="${o.id}">Notifier</button></div>`
+              : `<span class="small">${o.offers_open ? `${o.offers_open} proposition(s) en cours` : 'aucune proposition en cours'} · ${o.offers_total} envoyée(s)</span>
+              <div style="margin-top:4px"><button class="btn btn-sm btn-primary" data-near="${o.id}">Prestataires proches</button></div>`}</div></div></div>`).join('')
+        : MW.empty('Aucune commande dans cette catégorie.');
+      const find = (id) => d.orders.find((x) => String(x.id) === String(id));
+      el.querySelectorAll('[data-cp]').forEach((b) => b.addEventListener('click', () => { const o = find(b.dataset.cp); contactModal(Object.assign({ kind: 'provider' }, o.provider), o, refresh); }));
+      el.querySelectorAll('[data-cc]').forEach((b) => b.addEventListener('click', () => { const o = find(b.dataset.cc); contactModal(Object.assign({ kind: 'customer' }, o.customer), o, refresh); }));
+      el.querySelectorAll('[data-near]').forEach((b) => b.addEventListener('click', () => MW.busy(b, () => candidatesModal(find(b.dataset.near), refresh))));
+      if (!layer) return;
       layer.clearLayers();
-      d.providers.forEach((p) => L.marker([p.lat, p.lng], { icon: MW.vehicleIcon(p.icon, p.heading, { stale: p.age_seconds > 120, color: p.current_order_id ? '#c0392b' : undefined }) })
-        .bindPopup(`<strong>${MW.esc(p.full_name)}</strong><br>${MW.esc(p.provider_type === 'driver' ? 'Chauffeur' : 'Livreur')} · ${p.current_order_id ? 'en commande' : 'disponible'}<br>MAJ ${MW.ago(p.age_seconds)}`).addTo(layer));
-      d.orders.forEach((o) => { if (o.pickup_lat) L.circleMarker([o.pickup_lat, o.pickup_lng], { radius: 7, color: o.provider_id ? '#1f6fb2' : '#f4a623', fillOpacity: .8 }).bindPopup(`<a href="#/commande/${o.id}">${MW.esc(o.reference)}</a><br>${MW.esc(MW.L.status[o.status])}`).addTo(layer); });
-      const info = el.querySelector('[data-info]'); if (info) info.textContent = `${d.providers.length} prestataire(s) en ligne · ${d.orders.length} commande(s) active(s)`;
+      const pts = [];
+      d.providers.forEach((p) => { pts.push([p.lat, p.lng]); L.marker([p.lat, p.lng], { icon: MW.vehicleIcon(p.icon, p.heading, { stale: !p.in_app || p.gps_age_seconds > 120, color: p.busy ? '#1f6fb2' : '#0b6e4f' }) })
+        .bindPopup(`<strong>${MW.esc(p.name)}</strong><br>${p.busy ? 'en course' : 'libre'} · ${p.in_app ? 'dans l\'app' : 'hors de l\'app'}<br>GPS ${MW.ago(p.gps_age_seconds)}${p.phone ? `<br><a href="${telLink(p.phone)}">Appeler</a> · <a href="${waLink(p.phone, '')}" target="_blank" rel="noopener">WhatsApp</a>` : ''}`).addTo(layer); });
+      d.orders.filter(keep).forEach((o) => {
+        pts.push([o.pickup.lat, o.pickup.lng]);
+        if (!o.provider) L.circleMarker([o.pickup.lat, o.pickup.lng], { radius: 9, color: '#d97706', weight: 3, fillColor: '#f4a623', fillOpacity: .85, className: o.flags.length ? 'pulse-marker' : '' }).bindPopup(`<a href="#/commande/${o.id}">${MW.esc(o.reference)}</a><br>${MW.esc(o.status_label)} · ${MW.ago(o.age_seconds)}`).addTo(layer);
+        else if (o.provider.position) {
+          const target = ['assigned', 'en_route_pickup', 'accepted', 'preparing', 'ready'].includes(o.status) ? o.pickup : o.dropoff;
+          L.polyline([[o.provider.position.lat, o.provider.position.lng], [target.lat, target.lng]], { color: '#1f6fb2', weight: 3, dashArray: '6 8', opacity: .8 }).addTo(layer);
+          L.circleMarker([target.lat, target.lng], { radius: 6, color: '#1f6fb2', fillOpacity: .6 }).bindPopup(`<a href="#/commande/${o.id}">${MW.esc(o.reference)}</a> · ${MW.esc(o.status_label)}`).addTo(layer);
+        }
+      });
+      if (!fitted && pts.length) { MW.fitTo(map, pts); fitted = true; }
     };
-    await load(); const t = setInterval(load, 10000); MW.onLeave(() => clearInterval(t));
+    const refresh = async () => {
+      try { data = await MW.get('/admin/live', { retries: 0 }); } catch (e) { return; }
+      if (data.summary.alerts > lastAlerts && lastAlerts !== 0 && navigator.vibrate) navigator.vibrate([150, 80, 150]);
+      lastAlerts = data.summary.alerts; render();
+    };
+    await refresh();
+    const t = setInterval(() => { if (!document.hidden && !document.querySelector('.modal-backdrop')) refresh(); }, 5000);
+    const onEv = () => { if (!document.querySelector('.modal-backdrop')) refresh(); };
+    MW.realtime.on(onEv); MW.realtime.setFast(true);
+    MW.onLeave(() => { clearInterval(t); MW.realtime.setFast(false); MW.realtime.listeners = MW.realtime.listeners.filter((f) => f !== onEv); });
   }
 
   // ------------------------------------------------------------------ Utilisateurs
@@ -115,8 +202,14 @@
     t.innerHTML = MW.table([{ key: 'full_name', label: 'Nom' }, { key: 'phone', label: 'Téléphone' }, { key: 'category', label: 'Véhicule', fmt: (r) => `${MW.esc(MW.L.vehicle[r.category] || '—')} ${MW.esc(r.plate || '')}` },
       { key: 'verification_status', label: 'Validation', fmt: (r) => verifBadge(r.verification_status) + (Number(r.pending_docs) ? ` <span class="badge amber">${r.pending_docs} doc.</span>` : '') },
       { key: 'license_expires_at', label: 'Permis', fmt: (r) => r.license_expires_at ? (r.license_expires_at < today() ? `<span class="badge red">expiré ${MW.date(r.license_expires_at)}</span>` : MW.date(r.license_expires_at)) : '—' },
-      { key: 'is_online', label: 'En ligne', fmt: (r) => yes(r.is_online) }, { key: 'rating_avg', label: 'Note', fmt: (r) => Number(r.rating_count) ? Number(r.rating_avg).toFixed(1) + ` (${r.rating_count})` : '—' }], list, { onRow: true, empty: 'Aucun prestataire.' });
+      { key: 'is_online', label: 'En ligne', fmt: (r) => yes(r.is_online) + (r.last_seen_at && (Date.now() - new Date(String(r.last_seen_at).replace(' ', 'T'))) < 120000 ? ' <span class="badge green">dans l\'app</span>' : '') }, { key: 'rating_avg', label: 'Note', fmt: (r) => Number(r.rating_count) ? Number(r.rating_avg).toFixed(1) + ` (${r.rating_count})` : '—' },
+      { key: 'id', label: '', fmt: (r) => `<button class="btn btn-sm btn-outline" data-contact="${r.id}">Contacter</button>` }], list, { onRow: true, empty: 'Aucun prestataire.' });
     MW.bindRows(t, list, (r) => providerDetail(r.id, () => providers(el, params, type)));
+    t.querySelectorAll('[data-contact]').forEach((b) => b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const r = list.find((x) => String(x.id) === b.dataset.contact);
+      contactModal({ kind: 'provider', id: r.id, name: r.full_name, phone: r.phone, in_app: !!(r.last_seen_at && (Date.now() - new Date(String(r.last_seen_at).replace(' ', 'T'))) < 120000), push_devices: 0 }, null);
+    }));
   }
   async function providerDetail(id, done) {
     const p = await MW.get('/admin/providers/' + id);
@@ -243,11 +336,24 @@
     el.innerHTML = `<div class="container">${head(cfg.title, `${cfg.extraButtons || ''}<button class="btn btn-primary" data-new>${MW.icon('plus')} Ajouter</button>`)}${cfg.intro || ''}<div data-t></div></div>`;
     const t = el.querySelector('[data-t]');
     t.innerHTML = MW.table(cfg.cols, list, { onRow: true, empty: 'Aucune règle.' });
-    const edit = (row = {}) => MW.formModal(row.id ? 'Modifier' : 'Ajouter', cfg.fields(row), async (v) => {
-      cfg.normalize && cfg.normalize(v);
-      if (row.id) await MW.put(`${cfg.path}/${row.id}`, v); else await MW.post(cfg.path, v);
-      MW.toast('Enregistré (action journalisée).', 'success'); crud(el, cfg);
-    }, { values: row, wide: true });
+    const edit = (row = {}) => {
+      let pending = null;
+      const fields = cfg.image ? [{ html: '<div data-img></div>' }, ...cfg.fields(row)] : cfg.fields(row);
+      MW.formModal(row.id ? 'Modifier' : 'Ajouter', fields, async (v) => {
+        cfg.normalize && cfg.normalize(v);
+        let id = row.id;
+        if (row.id) await MW.put(`${cfg.path}/${row.id}`, v); else id = (await MW.post(cfg.path, v)).data.id;
+        if (pending && id) await MW.uploadImage(cfg.image.path(id), pending);
+        MW.toast('Enregistré (action journalisée).', 'success'); crud(el, cfg);
+      }, { values: row, wide: true, onOpen: (form) => {
+        const box = form.querySelector('[data-img]'); if (!box || !cfg.image) return;
+        if (row.id) MW.singleImage(box, { label: cfg.image.label, url: row[cfg.image.key], path: cfg.image.path(row.id), shape: 'wide' });
+        else {
+          box.innerHTML = `<div class="field"><span class="label">${MW.esc(cfg.image.label)}</span><div class="single-image wide" data-prev><span class="muted small">Aucune image</span></div>${MW.photoButtons(false)}</div>`;
+          box.querySelectorAll('[data-camera],[data-gallery]').forEach((i) => i.addEventListener('change', () => { if (!i.files[0]) return; pending = i.files[0]; box.querySelector('[data-prev]').innerHTML = `<img src="${URL.createObjectURL(pending)}" alt="">`; }));
+        }
+      } });
+    };
     MW.bindRows(t, list, edit);
     el.querySelector('[data-new]').addEventListener('click', () => edit(cfg.defaults || {}));
     cfg.after && cfg.after(el, list);
@@ -305,7 +411,8 @@
 
   const promotions = (el) => crud(el, {
     title: 'Promotions', path: '/admin/promotions',
-    cols: [{ key: 'code', label: 'Code' }, { key: 'description', label: 'Description' }, { key: 'value', label: 'Valeur', fmt: (r) => r.discount_type === 'percent' ? (r.value / 100) + ' %' : MW.fcfa(r.value) },
+    image: { key: 'image_url', label: 'Photo de la promotion (affichée aux clients)', path: (id) => `/admin/promotions/${id}/image` },
+    cols: [{ key: 'image_url', label: '', fmt: (r) => r.image_url ? `<img src="${MW.esc(r.image_url)}" alt="" class="promo-thumb">` : '' }, { key: 'code', label: 'Code' }, { key: 'description', label: 'Description' }, { key: 'value', label: 'Valeur', fmt: (r) => r.discount_type === 'percent' ? (r.value / 100) + ' %' : MW.fcfa(r.value) },
       { key: 'funded_by', label: 'Financée par', fmt: (r) => r.funded_by === 'marwa' ? 'MARWA' : MW.esc(r.merchant || 'Commerce') }, { key: 'used_count', label: 'Utilisations', num: true, fmt: (r) => `${r.used_count}${r.max_uses ? ' / ' + r.max_uses : ''}` },
       { key: 'ends_at', label: 'Fin', fmt: (r) => MW.date(r.ends_at) }, { key: 'is_active', label: 'Active', fmt: (r) => yes(r.is_active) }],
     defaults: { discount_type: 'percent', value: 1000, funded_by: 'marwa', per_user_limit: 1, is_active: true, is_public: true, starts_at: today() + ' 00:00:00', ends_at: today() + ' 23:59:00' },
@@ -604,7 +711,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     const items = [
       { key: '', label: 'Tableau de bord', short: 'Accueil', icon: 'chart', perm: 'admin.dashboard', primary: true, section: 'Pilotage' },
-      { key: 'carte', label: 'Carte opérationnelle', short: 'Carte', icon: 'map', perm: 'orders.view', primary: true },
+      { key: 'direct', label: 'Suivi en direct', short: 'Direct', icon: 'map', perm: 'orders.view', primary: true },
       { key: 'commandes', label: 'Commandes', icon: 'list', perm: 'orders.view', primary: true },
       { key: 'reclamations', label: 'Réclamations et sécurité', short: 'Support', icon: 'help', perm: 'complaints.manage', primary: true },
       { key: 'utilisateurs', label: 'Utilisateurs', icon: 'users', perm: 'users.view', section: 'Communauté' },
@@ -632,7 +739,7 @@
     const first = items[0] ? items[0].key : 'profil';
     MW.router({
       '/': (el, p) => can('admin.dashboard') ? dashboard(el, p) : (location.hash = '#/' + first),
-      '/carte': liveMap, '/utilisateurs': users, '/chauffeurs': (el, p) => providers(el, p, 'driver'), '/livreurs': (el, p) => providers(el, p, 'courier'),
+      '/carte': live, '/direct': live, '/utilisateurs': users, '/chauffeurs': (el, p) => providers(el, p, 'driver'), '/livreurs': (el, p) => providers(el, p, 'courier'),
       '/commerces': merchants, '/entreprises': businesses, '/commandes': orders, '/commande/:id': order, '/tarifs': pricing, '/commissions': commissions, '/zones': zones,
       '/promotions': promotions, '/paiements': payments, '/versements': payouts, '/grand-livre': ledger, '/depenses': expenses, '/remboursements': refunds,
       '/reclamations': complaints, '/rapports': reports, '/notifications': broadcast, '/parametres': settings, '/traductions': translations, '/audit': audit, '/profil': (el) => MW.views.profile(el)

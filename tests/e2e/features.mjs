@@ -27,6 +27,7 @@ const watch = (page, who) => {
 };
 const login = async (page, email) => {
   await page.goto(BASE + '/connexion', { waitUntil: 'domcontentloaded' });
+  if (await page.locator('[data-tab="password"]').count()) await page.click('[data-tab="password"]');
   await page.fill('#identifier', email);
   await page.fill('#password', PASS);
   await Promise.all([page.waitForNavigation(), page.click('#login-form button[type=submit]')]);

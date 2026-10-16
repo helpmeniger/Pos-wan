@@ -35,7 +35,8 @@ BASE_URL=http://127.0.0.1:8080 node tests/e2e/full-journey.mjs  # parcours compl
 php -S 127.0.0.1:8099 tests/e2e/fake-osrm.php                   # faux OSRM si pas d'accès Internet (OSRM_URL=http://127.0.0.1:8099)
 BASE_URL=http://127.0.0.1:8080 node tests/e2e/features.mjs      # téléphone : autorisation GPS, taxis proches, navigation, photos, push
 BASE_URL=http://127.0.0.1:8080 node tests/e2e/i18n.mjs          # interface en haoussa, zarma, anglais
-BASE_URL=http://127.0.0.1:8080 node tests/e2e/mobile.mjs        # 29 écrans sur Android 360 px et iPhone
+BASE_URL=http://127.0.0.1:8080 node tests/e2e/mobile.mjs        # écrans sur Android 360 px et iPhone
+BASE_URL=http://127.0.0.1:8080 node tests/e2e/live-ops.mjs      # connexion par SMS, se souvenir de moi, favoris, suivi en direct, promotions, notifications
 ```
 
 Exécutez `full-journey.mjs` puis `features.mjs` sur une base fraîche (le second laisse une course

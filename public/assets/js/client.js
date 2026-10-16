@@ -29,12 +29,10 @@
           .map(([h, i, l]) => `<a class="service-btn" href="#/${h}"><span class="ic">${MW.icon(i)}</span>${l}</a>`).join('')}
       </div>
       ${orders.length ? `<div class="card"><div class="card-title"><h2>En cours</h2></div><div class="list">${orders.map(orderRow).join('')}</div></div>` : ''}
-      <div class="grid-2" style="margin-top:14px">
-        <div class="card"><div class="card-title"><h2>Adresses favorites</h2><a href="#/adresses">Gérer</a></div>
-          ${favorites.length ? `<div class="list">${favorites.map((f) => `<a class="list-item" href="#/taxi?to=${f.id}">${MW.icon('pin')}<div class="grow"><div class="title">${MW.esc(f.label)}</div><div class="meta ellipsis">${MW.esc(f.address_text)}</div></div></a>`).join('')}</div>` : MW.empty('Enregistrez vos lieux habituels (maison, bureau…).', 'pin')}</div>
-        <div class="card"><div class="card-title"><h2>Promotions</h2></div>
-          ${promos.length ? promos.map((p) => `<div class="list-item"><span class="badge amber">${MW.esc(p.code)}</span><div class="grow"><div class="title">${MW.esc(p.description)}</div><div class="meta">Jusqu'au ${MW.date(p.ends_at)}</div></div></div>`).join('') : MW.empty('Aucune promotion en ce moment.', 'tag')}</div>
-      </div>
+      ${promos.length ? `<div class="promo-strip" style="margin-top:14px">${promos.map((p) => `<div class="promo-card ${p.image_url ? 'has-img' : ''}">${p.image_url ? `<img src="${MW.esc(p.image_url)}" alt="" loading="lazy">` : ''}
+          <div class="promo-body"><span class="badge amber" translate="no">${MW.esc(p.code)}</span><div class="title">${MW.esc(p.description)}</div><div class="meta small">Jusqu'au ${MW.date(p.ends_at)}</div></div></div>`).join('')}</div>` : ''}
+      ${favorites.length ? `<div class="card" style="margin-top:14px"><div class="card-title"><h2>Adresses favorites</h2><a href="#/adresses">Gérer</a></div>
+          <div class="list">${favorites.map((f) => `<a class="list-item" href="#/taxi?to=${f.id}">${MW.icon('pin')}<div class="grow"><div class="title">${MW.esc(f.label)}</div><div class="meta ellipsis">${MW.esc(f.address_text)}</div></div></a>`).join('')}</div></div>` : ''}
       <div class="card" style="margin-top:14px"><div class="row between"><div><h3 style="margin:0">Besoin d'aide ?</h3><p class="small muted" style="margin:0">Réclamation, objet perdu, question de paiement.</p></div><a class="btn btn-outline" href="#/assistance">Assistance</a></div></div>
     </div>`;
   }
@@ -116,7 +114,7 @@
       const fav = params.to && favorites.find((f) => String(f.id) === params.to);
       if (fav && fav.lat) dropoff.set({ text: fav.address_text, lat: fav.lat, lng: fav.lng }, true);
       MW.askLocation({ reason: 'MARWA utilise votre position comme point de départ et pour afficher les taxis libres autour de vous.', silent: true })
-        .then((p) => { if (p && !pickup.valid()) { pickup.set({ text: 'Ma position', lat: p.lat, lng: p.lng }, true); pickup.reverse(p.lat, p.lng); nearby && nearby.refresh(); } });
+        .then((p) => { if (p && !pickup.valid()) { pickup.set({ text: 'Ma position', lat: p.lat, lng: p.lng }, true); pickup.showAccuracy(p); pickup.reverse(p.lat, p.lng); nearby && nearby.refresh(); } });
     }
     // Taxis libres autour du point de départ (ou du centre de la carte), mis à jour toutes les 10 s
     const nearby = map ? new MW.NearbyLayer(map, { service, badge: el.querySelector('[data-nearby]'),
@@ -197,7 +195,7 @@
     const draft = JSON.parse(sessionStorage.getItem('mw:draft') || 'null');
     if (draft && draft.pickup) { sessionStorage.removeItem('mw:draft'); pickup.set(draft.pickup); dropoff.set(draft.dropoff, true); }
     else MW.askLocation({ reason: 'MARWA utilise votre position comme lieu de récupération et pour afficher les livreurs disponibles autour de vous.', silent: true })
-      .then((p) => { if (p && !pickup.valid()) { pickup.set({ text: 'Ma position', lat: p.lat, lng: p.lng }, true); pickup.reverse(p.lat, p.lng); } });
+      .then((p) => { if (p && !pickup.valid()) { pickup.set({ text: 'Ma position', lat: p.lat, lng: p.lng }, true); pickup.showAccuracy(p); pickup.reverse(p.lat, p.lng); } });
     const nearby = map ? new MW.NearbyLayer(map, { service: 'parcel', badge: el.querySelector('[data-nearby]'),
       center: () => { if (pickup.valid()) { const p = pickup.get(); return [p.lat, p.lng]; } const c = map.getCenter(); return [c.lat, c.lng]; } }) : null;
     MW.onLeave(() => nearby && nearby.stop());

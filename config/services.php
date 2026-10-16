@@ -35,6 +35,14 @@ return [
         // log = écrit le SMS dans storage/logs/outbox.log (aucun envoi réel). Les SMS réels sont payants.
         'driver' => Env::get('SMS_DRIVER', 'log'),
         'sender' => Env::get('SMS_SENDER', 'MARWA'),
+        // Pilote « http » générique (voir app/Services/Notification/HttpSmsGateway.php)
+        'http' => [
+            'url' => Env::get('SMS_HTTP_URL', ''),
+            'format' => Env::get('SMS_HTTP_FORMAT', 'json'),
+            'body' => (string) Env::get('SMS_HTTP_BODY', ''),
+            'headers' => (string) Env::get('SMS_HTTP_HEADERS', ''),
+            'phone_format' => Env::get('SMS_HTTP_PHONE_FORMAT', 'e164'),
+        ],
     ],
     'mail' => [
         // log | smtp | mail (fonction mail() de PHP)

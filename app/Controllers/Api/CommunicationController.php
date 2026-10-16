@@ -39,14 +39,27 @@ final class CommunicationController extends Controller
         return $this->ok('Notifications lues.');
     }
 
+    /** Supprime une notification (geste « glisser vers la droite »). */
+    public function deleteNotification(Request $r): Response
+    {
+        $n = Database::execute('DELETE FROM notifications WHERE id = :id AND user_id = :u', ['id' => $r->intParam('id'), 'u' => $this->user()['id']]);
+        if (!$n) {
+            throw \App\Core\HttpException::notFound('Notification introuvable.');
+        }
+        return $this->ok('Notification supprimée.');
+    }
+
     /** Interrogation incrémentale : renvoie uniquement les événements de l'utilisateur connecté. */
     public function events(Request $r): Response
     {
         $u = $this->user();
-        $since = (int) $r->input('since', 0);
-        if ($since <= 0) {
+        // Première synchronisation (init=1) : simple position du curseur, sans rejouer l'historique.
+        // Ensuite, « since=0 » signifie bien « tous les événements » (un compte sans événement
+        // préalable ne perd plus le premier qui arrive).
+        if ($r->input('init')) {
             return $this->json(['cursor' => RealtimeService::latestId((int) $u['id']), 'events' => []]);
         }
+        $since = max(0, (int) $r->input('since', 0));
         $events = RealtimeService::since((int) $u['id'], $since);
         return $this->json(['cursor' => $events ? (int) end($events)['id'] : $since, 'events' => $events, 'server_time' => date('Y-m-d H:i:s')]);
     }

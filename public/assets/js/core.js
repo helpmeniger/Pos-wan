@@ -345,7 +345,7 @@
     },
     async start() {
       if (!MW.user) return;
-      try { const d = await MW.get('/events?since=0', { silent401: true }); this.cursor = d.cursor; } catch (e) { /* hors ligne */ }
+      try { const d = await MW.get('/events?init=1', { silent401: true }); this.cursor = d.cursor; } catch (e) { /* hors ligne */ }
       this.timer = setTimeout(() => this.poll(), 3000);
       document.addEventListener('visibilitychange', () => { if (!document.hidden) { clearTimeout(this.timer); this.poll(); } });
     }
@@ -371,8 +371,15 @@
       const box = document.createElement('div'); box.className = 'dropdown';
       box.innerHTML = `<div class="row between" style="padding:12px 14px;border-bottom:1px solid var(--sand-200)"><strong>Notifications</strong>
         <span class="row">${'Notification' in window && Notification.permission !== 'denied' ? '<button class="btn btn-sm btn-outline" data-perm hidden>Activer</button>' : ''}<button class="btn btn-sm btn-ghost" data-readall>Tout lire</button></span></div>
-        ${d && d.items.length ? d.items.map((n) => `<div class="list-item ${n.read_at ? '' : 'unread'}"><div class="grow"><div class="title">${MW.esc(n.title)}</div><div class="meta">${MW.esc(n.body)}</div><div class="meta">${MW.datetime(n.created_at)}</div></div></div>`).join('') : MW.empty('Aucune notification.', 'bell')}`;
+        ${d && d.items.length ? `<p class="small muted swipe-hint">Glissez une notification vers la droite pour l'effacer.</p>` + d.items.map((n) => `<div class="swipe-row" data-nid="${n.id}"><div class="swipe-bg">${MW.icon('x')} Effacer</div><div class="list-item swipe-item ${n.read_at ? '' : 'unread'}"><div class="grow"><div class="title">${MW.esc(n.title)}</div><div class="meta">${MW.esc(n.body)}</div><div class="meta">${MW.datetime(n.created_at)}</div></div>
+          <button class="icon-btn swipe-del" data-ndel aria-label="Effacer la notification">${MW.icon('x')}</button></div></div>`).join('') : MW.empty('Aucune notification.', 'bell')}`;
       document.body.appendChild(box);
+      box.querySelectorAll('.swipe-row').forEach((row) => MW.swipeToDelete(row, async () => {
+        await MW.del('/notifications/' + row.dataset.nid);
+        const n = d.items.find((x) => String(x.id) === row.dataset.nid);
+        if (n && !n.read_at) { this.count = Math.max(0, this.count - 1); this.render(); }
+        if (!box.querySelector('.swipe-row')) box.insertAdjacentHTML('beforeend', MW.empty('Aucune notification.', 'bell'));
+      }));
       box.querySelector('[data-readall]').onclick = async () => { await MW.post('/notifications/read', {}); this.count = 0; this.render(); box.remove(); };
       const perm = box.querySelector('[data-perm]');
       if (perm) {
@@ -390,16 +397,37 @@
     supported: () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && !!meta('mw-sw') && window.isSecureContext,
     isIos: () => /iphone|ipad|ipod/i.test(navigator.userAgent),
     standalone: () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)),
-    async registration() { return navigator.serviceWorker.getRegistration(MW.base + '/').then((r) => r || navigator.serviceWorker.ready); },
+    /** Service worker actif (enregistré si besoin), avec délai maximal pour ne jamais rester bloqué. */
+    async registration() {
+      let reg = await navigator.serviceWorker.getRegistration(MW.base + '/');
+      if (!reg && meta('mw-sw')) reg = await navigator.serviceWorker.register(meta('mw-sw'), { scope: MW.base + '/' });
+      if (reg && reg.active) return reg;
+      const ready = await Promise.race([navigator.serviceWorker.ready, new Promise((r) => setTimeout(() => r(null), 10000))]);
+      if (!ready) throw new Error('Le service de notification de MARWA (service worker) ne démarre pas. Rechargez la page ; si le problème continue, vérifiez que le fichier sw.js est accessible.');
+      return ready;
+    },
     async state() {
       if (!this.supported()) return this.isIos() && !this.standalone() ? 'ios-install' : 'unsupported';
       if (Notification.permission === 'denied') return 'denied';
       try { const reg = await this.registration(); const sub = reg && await reg.pushManager.getSubscription(); return sub && Notification.permission === 'granted' ? 'on' : 'off'; } catch (e) { return 'off'; }
     },
+    /** Raison lisible d'un échec d'abonnement (le message brut du navigateur est souvent obscur). */
+    explain(e) {
+      const m = String((e && e.message) || e || '');
+      if (e && e.status) return m; // erreur renvoyée par le serveur MARWA
+      if (!window.isSecureContext) return 'Les notifications exigent une adresse sécurisée (https://). Elles fonctionneront une fois MARWA en ligne avec HTTPS (ou sur http://localhost).';
+      if (/permission|denied|NotAllowed/i.test(m + (e && e.name))) return 'Notifications bloquées : touchez le cadenas à gauche de l\'adresse → Autorisations → Notifications → Autoriser, puis réessayez.';
+      if (/push service|AbortError|Registration failed/i.test(m + (e && e.name))) return 'Le service de notification du navigateur ne répond pas. Vérifiez la connexion Internet ; sur Brave, activez « Utiliser les services Google pour la messagerie push » ; sur un navigateur sans services Google, utilisez Chrome, Firefox ou Samsung Internet.';
+      if (/applicationServerKey|InvalidAccess/i.test(m + (e && e.name))) return 'Clé de notification invalide : rechargez la page et réessayez.';
+      return 'Activation impossible : ' + m;
+    },
     async enable() {
-      if (!this.supported()) throw new Error(this.isIos() && !this.standalone() ? 'Sur iPhone, installez d\'abord MARWA sur l\'écran d\'accueil (bouton Partager → « Sur l\'écran d\'accueil »), puis ouvrez-le depuis cette icône.' : 'Ce navigateur ne prend pas en charge les notifications push.');
+      if (!this.supported()) throw new Error(this.isIos() && !this.standalone() ? 'Sur iPhone, installez d\'abord MARWA sur l\'écran d\'accueil (bouton Partager → « Sur l\'écran d\'accueil »), puis ouvrez-le depuis cette icône.' : (!window.isSecureContext ? 'Les notifications exigent une adresse sécurisée (https://).' : 'Ce navigateur ne prend pas en charge les notifications push.'));
+      try { return await this._enable(); } catch (e) { const err = new Error(this.explain(e)); err.cause = e; throw err; }
+    },
+    async _enable() {
       const perm = await Notification.requestPermission();
-      if (perm !== 'granted') throw new Error('Notifications refusées. Vous pouvez les autoriser dans les réglages du navigateur (cadenas à côté de l\'adresse → Notifications).');
+      if (perm !== 'granted') throw Object.assign(new Error('permission denied'), { name: 'NotAllowedError' });
       const { public_key: key } = await MW.get('/push/key');
       const reg = await this.registration();
       let sub = await reg.pushManager.getSubscription();
@@ -438,8 +466,34 @@
       document.body.appendChild(box);
       const later = () => { try { localStorage.setItem('mw:pushOffer', String(Date.now())); } catch (e) { /* privé */ } box.remove(); };
       box.querySelector('[data-later]').onclick = later;
-      box.querySelector('[data-on]')?.addEventListener('click', (e) => MW.busy(e.currentTarget, async () => { await MW.push.enable(); MW.toast('Notifications activées sur cet appareil.', 'success'); box.remove(); }));
+      box.querySelector('[data-on]')?.addEventListener('click', async (e) => {
+        const b = e.currentTarget; b.disabled = true; b.classList.add('loading');
+        try { await MW.push.enable(); MW.toast('Notifications activées sur cet appareil.', 'success'); box.remove(); }
+        catch (err) { box.remove(); MW.modal('Notifications', `<p>${MW.esc(err.message)}</p>`); try { localStorage.setItem('mw:pushOffer', String(Date.now())); } catch (x) { /* privé */ } }
+      });
     }
+  };
+
+  /** Glisser un élément vers la droite (doigt ou souris) au-delà d'un tiers de sa largeur pour le supprimer. */
+  MW.swipeToDelete = function (row, onDelete) {
+    const item = row.querySelector('.swipe-item');
+    let startX = null, startY = 0, dx = 0, dragging = false;
+    const reset = () => { item.style.transition = 'transform .2s'; item.style.transform = ''; row.classList.remove('swiping'); };
+    const remove = async () => {
+      item.style.transition = 'transform .2s'; item.style.transform = 'translateX(110%)';
+      try { await onDelete(); row.style.height = row.offsetHeight + 'px'; requestAnimationFrame(() => { row.classList.add('removing'); row.style.height = '0px'; }); setTimeout(() => row.remove(), 220); }
+      catch (e) { MW.error(e); reset(); }
+    };
+    item.addEventListener('pointerdown', (e) => { if (e.target.closest('button,a')) return; startX = e.clientX; startY = e.clientY; dx = 0; dragging = false; item.style.transition = ''; });
+    item.addEventListener('pointermove', (e) => {
+      if (startX === null) return;
+      dx = e.clientX - startX;
+      if (!dragging && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(e.clientY - startY)) { dragging = true; row.classList.add('swiping'); try { item.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } }
+      if (dragging) { e.preventDefault(); item.style.transform = `translateX(${Math.max(0, dx)}px)`; }
+    });
+    const end = () => { if (startX === null) return; startX = null; if (dragging && dx > row.offsetWidth / 3) remove(); else reset(); dragging = false; };
+    item.addEventListener('pointerup', end); item.addEventListener('pointercancel', end);
+    row.querySelector('[data-ndel]')?.addEventListener('click', (e) => { e.stopPropagation(); remove(); });
   };
 
   // ------------------------------------------------------------------ Menu utilisateur

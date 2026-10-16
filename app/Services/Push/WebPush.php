@@ -30,14 +30,42 @@ final class WebPush
         return $d;
     }
 
+    /**
+     * Options OpenSSL : sous Windows (WampServer), PHP ne trouve généralement pas de fichier
+     * openssl.cnf et la création de clés échoue. MARWA fournit config/openssl.cnf.
+     */
+    public static function sslArgs(array $extra = []): array
+    {
+        $cnf = defined('MARWA_ROOT') ? MARWA_ROOT . '/config/openssl.cnf' : '';
+        return $extra + ($cnf && is_file($cnf) ? ['config' => $cnf] : []);
+    }
+
+    /** Clé P-256 éphémère ou permanente (essaie d'abord la configuration système). */
+    public static function newEcKey(): \OpenSSLAsymmetricKey
+    {
+        $opts = ['curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC];
+        $key = @openssl_pkey_new($opts) ?: @openssl_pkey_new(self::sslArgs($opts));
+        if ($key) {
+            while (openssl_error_string()) {
+                // vide la file d'erreurs du premier essai
+            }
+        } else {
+            $err = [];
+            while ($e = openssl_error_string()) {
+                $err[] = $e;
+            }
+            throw new RuntimeException('OpenSSL ne peut pas générer de clé P-256 (' . implode(' ; ', array_slice($err, 0, 2)) . '). Vérifiez l\'extension openssl de PHP.');
+        }
+        return $key;
+    }
+
     /** Nouvelle paire de clés P-256 : ['private_pem' => …, 'public' => point non compressé (65 octets)] */
     public static function generateKeyPair(): array
     {
-        $key = openssl_pkey_new(['curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC]);
-        if (!$key) {
-            throw new RuntimeException('OpenSSL ne peut pas générer de clé P-256 : ' . openssl_error_string());
+        $key = self::newEcKey();
+        if (!@openssl_pkey_export($key, $pem) && !@openssl_pkey_export($key, $pem, null, self::sslArgs())) {
+            throw new RuntimeException('OpenSSL ne peut pas exporter la clé (openssl.cnf introuvable).');
         }
-        openssl_pkey_export($key, $pem);
         return ['private_pem' => $pem, 'public' => self::publicPoint($key)];
     }
 
@@ -79,7 +107,7 @@ final class WebPush
         if (strlen($authSecret) !== 16) {
             throw new RuntimeException('Secret d\'authentification invalide.');
         }
-        $as = $asKeyPem ? openssl_pkey_get_private($asKeyPem) : openssl_pkey_new(['curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC]);
+        $as = $asKeyPem ? openssl_pkey_get_private($asKeyPem) : self::newEcKey();
         if (!$as) {
             throw new RuntimeException('Clé éphémère indisponible.');
         }

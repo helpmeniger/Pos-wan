@@ -28,6 +28,7 @@ for (const lang of ['ha', 'dje', 'en']) {
     page.on('pageerror', (e) => errors.push(e.message));
     if (step.user) {
       await page.goto(BASE + '/connexion');
+      if (await page.locator('[data-tab="password"]').count()) await page.click('[data-tab="password"]');
       await page.fill('#identifier', step.user); await page.fill('#password', 'Demo2026!');
       await Promise.all([page.waitForNavigation(), page.click('#login-form button[type=submit]')]);
     }

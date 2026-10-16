@@ -60,12 +60,71 @@
   };
 
   // ------------------------------------------------------------------ Géolocalisation
+  /**
+   * Position la plus précise possible : le téléphone fournit souvent d'abord une position
+   * approximative (antennes, Wi-Fi), puis affine avec le GPS. On écoute pendant quelques secondes
+   * et on garde la meilleure mesure, en s'arrêtant dès qu'elle est assez précise (≤ 20 m par défaut).
+   */
   MW.locate = (opts = {}) => new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error('La géolocalisation n\'est pas disponible sur cet appareil.'));
-    navigator.geolocation.getCurrentPosition((p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
-      (e) => reject(new Error(e.code === 1 ? 'Autorisation de localisation refusée. Saisissez l\'adresse ou touchez la carte.' : 'Position introuvable. Saisissez l\'adresse ou touchez la carte.')),
-      { enableHighAccuracy: true, timeout: opts.timeout || 12000, maximumAge: 30000 });
+    const target = opts.accuracy || 20;
+    const maxWait = opts.timeout || 12000;
+    let best = null; let done = false; let id = null;
+    const finish = (err) => {
+      if (done) return; done = true;
+      if (id !== null) navigator.geolocation.clearWatch(id);
+      clearTimeout(timer); clearTimeout(soft);
+      if (best) resolve(best); else reject(err || new Error('Position introuvable. Saisissez l\'adresse ou touchez la carte.'));
+    };
+    // Après 6 s, on se contente d'une position correcte (≤ 60 m) si on en a une
+    const soft = setTimeout(() => { if (best && best.accuracy <= 60) finish(); }, Math.min(6000, maxWait));
+    const timer = setTimeout(() => finish(), maxWait);
+    id = navigator.geolocation.watchPosition((p) => {
+      const c = p.coords;
+      if (!best || c.accuracy < best.accuracy) best = { lat: c.latitude, lng: c.longitude, accuracy: Math.round(c.accuracy), at: p.timestamp };
+      if (c.accuracy <= target) finish();
+    }, (e) => { if (e.code === 1 || !best) finish(new Error(e.code === 1 ? 'Autorisation de localisation refusée. Saisissez l\'adresse ou touchez la carte.' : 'Position introuvable. Saisissez l\'adresse ou touchez la carte.')); },
+    { enableHighAccuracy: true, timeout: maxWait, maximumAge: 0 });
   });
+
+  /**
+   * Filtre des positions successives (suivi du chauffeur / livreur) :
+   *  - rejette les mesures très imprécises quand une bonne mesure récente existe ;
+   *  - rejette les sauts impossibles (> 200 km/h) ;
+   *  - lisse le tracé avec un filtre de Kalman simple pondéré par la précision annoncée ;
+   *  - calcule le cap à partir du déplacement si le téléphone ne le fournit pas.
+   */
+  MW.GpsFilter = class {
+    constructor() { this.lat = null; this.lng = null; this.variance = -1; this.t = 0; this.lastGood = 0; this.heading = null; this.raw = null; }
+    push(c, timestamp) {
+      const acc = Math.max(3, c.accuracy || 50);
+      const t = timestamp || Date.now();
+      if (this.variance >= 0) {
+        const dt = Math.max(0.001, (t - this.t) / 1000);
+        const d = dist2(this.lat, this.lng, c.latitude, c.longitude);
+        if (acc > 150 && t - this.lastGood < 30000) return null;              // mesure trop imprécise
+        if (d / dt > 60 && d > acc * 2) return null;                          // saut impossible
+      }
+      if (acc <= 50) this.lastGood = t;
+      const speed = c.speed !== null && c.speed !== undefined && !isNaN(c.speed) ? c.speed : 4;
+      if (this.variance < 0) { this.lat = c.latitude; this.lng = c.longitude; this.variance = acc * acc; }
+      else {
+        const dt = (t - this.t) / 1000;
+        if (dt > 0) this.variance += dt * Math.max(speed, 1) * Math.max(speed, 1);
+        const k = this.variance / (this.variance + acc * acc);
+        const pLat = this.lat, pLng = this.lng;
+        this.lat += k * (c.latitude - this.lat); this.lng += k * (c.longitude - this.lng);
+        this.variance = (1 - k) * this.variance;
+        const moved = dist2(pLat, pLng, this.lat, this.lng);
+        if (moved > 6) this.heading = bearing2(pLat, pLng, this.lat, this.lng);
+      }
+      this.t = t;
+      const heading = c.heading !== null && c.heading !== undefined && !isNaN(c.heading) && speed > 1 ? c.heading : this.heading;
+      return { lat: this.lat, lng: this.lng, accuracy: Math.round(Math.sqrt(this.variance)), rawAccuracy: Math.round(acc), heading: heading !== null ? Math.round(heading) : null, speed: c.speed, at: t };
+    }
+  };
+  const dist2 = (a, b, c, d) => { const R = Math.PI / 180, x = Math.sin((c - a) * R / 2) ** 2 + Math.cos(a * R) * Math.cos(c * R) * Math.sin((d - b) * R / 2) ** 2; return 12742000 * Math.asin(Math.sqrt(x)); };
+  const bearing2 = (a, b, c, d) => { const R = Math.PI / 180, y = Math.sin((d - b) * R) * Math.cos(c * R), x = Math.cos(a * R) * Math.sin(c * R) - Math.sin(a * R) * Math.cos(c * R) * Math.cos((d - b) * R); return (Math.atan2(y, x) / R + 360) % 360; };
 
   // ------------------------------------------------------------------ Autorisation de localisation
   /** État de l'autorisation : 'granted' | 'prompt' | 'denied' | 'unsupported'. */
@@ -162,8 +221,7 @@
           <input class="input" id="${id}" autocomplete="off" placeholder="${MW.esc(opts.placeholder || 'Quartier, repère, adresse…')}" aria-autocomplete="list">
           <div class="place-tools">${opts.kind === 'pickup' ? `<button type="button" title="Ma position" data-gps>${MW.icon('locate')}</button>` : ''}<button type="button" title="Choisir sur la carte" data-mappick>${MW.icon('pin')}</button></div>
           <div class="suggestions" hidden></div></div>
-        <div class="hint" data-hint></div>
-        ${opts.favorites && opts.favorites.length ? `<div class="chips">${opts.favorites.map((f, i) => `<button type="button" class="chip" data-fav="${i}">★ ${MW.esc(f.label)}</button>`).join('')}</div>` : ''}</div>`;
+        <div class="hint" data-hint></div></div>`;
       this.input = container.querySelector('input');
       this.box = container.querySelector('.suggestions');
       this.hint = container.querySelector('[data-hint]');
@@ -174,13 +232,22 @@
         this.setHint(this.value && this.value.lat ? 'Position conservée. Touchez la carte pour l\'ajuster.' : 'Choisissez une suggestion ou placez le point sur la carte.');
       });
       this.input.addEventListener('keydown', (e) => { if (e.key === 'Escape') this.box.hidden = true; });
+      // Adresses favorites : proposées quand le client choisit une adresse (champ vide), rien si aucune
+      const showFavorites = () => {
+        const favs = (opts.favorites || []);
+        if (!favs.length || this.input.value.trim().length >= 2) return;
+        this.box.innerHTML = `<div class="s-head">Adresses favorites</div>` + favs.map((f, i) => `<button type="button" data-favi="${i}"><div class="s-title">★ ${MW.esc(f.label)}</div><div class="s-detail">${MW.esc(f.address_text)}</div></button>`).join('');
+        this.box.hidden = false;
+        this.box.querySelectorAll('[data-favi]').forEach((b) => b.addEventListener('mousedown', (e) => { e.preventDefault(); this.useFavorite(favs[Number(b.dataset.favi)]); this.box.hidden = true; }));
+      };
+      this.input.addEventListener('focus', showFavorites);
+      this.input.addEventListener('input', () => { if (!this.input.value.trim()) showFavorites(); });
       this.input.addEventListener('blur', () => setTimeout(() => (this.box.hidden = true), 200));
       container.querySelector('[data-gps]')?.addEventListener('click', () => this.useGps());
       container.querySelector('[data-mappick]').addEventListener('click', () => this.armMapPick());
-      container.querySelectorAll('[data-fav]').forEach((b) => b.addEventListener('click', () => {
-        const f = opts.favorites[Number(b.dataset.fav)];
-        if (f.lat) this.set({ text: f.address_text, lat: Number(f.lat), lng: Number(f.lng) }, true); else { this.input.value = f.address_text; this.setHint('Adresse sans coordonnées : placez le point sur la carte.'); }
-      }));
+    }
+    useFavorite(f) {
+      if (f.lat) this.set({ text: f.address_text, lat: Number(f.lat), lng: Number(f.lng) }, true); else { this.input.value = f.address_text; this.setHint('Adresse sans coordonnées : placez le point sur la carte.'); }
     }
     setHint(t, warn) { this.hint.textContent = t || ''; this.hint.style.color = warn ? 'var(--red-600)' : ''; }
     async search() {
@@ -199,6 +266,7 @@
       const p = await MW.askLocation({ skipExplain: true });
       if (!p) { this.setHint('Position indisponible. Saisissez l\'adresse ou touchez la carte.', true); return; }
       this.set({ text: 'Ma position', lat: p.lat, lng: p.lng }, true);
+      this.showAccuracy(p);
       this.setHint(`Précision ≈ ${Math.round(p.accuracy)} m. Déplacez le point si besoin.`);
       this.reverse(p.lat, p.lng);
     }
@@ -210,6 +278,12 @@
       map.getContainer().scrollIntoView({ behavior: 'smooth', block: 'center' });
       map.once('click', (e) => { map.getContainer().style.cursor = ''; this.set({ text: 'Point choisi sur la carte', lat: e.latlng.lat, lng: e.latlng.lng }, true); this.reverse(e.latlng.lat, e.latlng.lng); });
     }
+    /** Cercle de précision autour de la position GPS (disparaît si le point est déplacé). */
+    showAccuracy(p) {
+      const map = this.opts.map; if (!map || !window.L || !p.accuracy) return;
+      if (this.circle) this.circle.remove();
+      this.circle = L.circle([p.lat, p.lng], { radius: p.accuracy, color: '#1f6fb2', weight: 1, fillOpacity: .12, interactive: false }).addTo(map);
+    }
     async reverse(lat, lng) {
       try { const r = await MW.get(`/geo/reverse?lat=${lat}&lng=${lng}`, { retries: 0 }); if (this.value && this.value.lat === lat) { this.value.text = r.label; this.input.value = r.label; this.emit(); } } catch (e) { /* hors ligne : on garde les coordonnées */ }
     }
@@ -220,7 +294,7 @@
       if (map && window.L) {
         if (!this.marker) {
           this.marker = L.marker([v.lat, v.lng], { icon: MW.pinIcon(this.opts.kind), draggable: true }).addTo(map);
-          this.marker.on('dragend', () => { const ll = this.marker.getLatLng(); this.value.lat = ll.lat; this.value.lng = ll.lng; this.reverse(ll.lat, ll.lng); this.emit(); });
+          this.marker.on('dragend', () => { if (this.circle) { this.circle.remove(); this.circle = null; } const ll = this.marker.getLatLng(); this.value.lat = ll.lat; this.value.lng = ll.lng; this.reverse(ll.lat, ll.lng); this.emit(); });
         } else this.marker.setLatLng([v.lat, v.lng]);
         if (pan) map.setView([v.lat, v.lng], Math.max(map.getZoom(), 15));
       }

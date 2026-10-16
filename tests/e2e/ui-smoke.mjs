@@ -16,7 +16,7 @@ const plan = [
   { user: 'chauffeur@marwa.demo', pages: ['/prestataire#/', '/prestataire#/course', '/prestataire#/revenus', '/prestataire#/historique', '/prestataire#/documents'] },
   { user: 'restaurant@marwa.demo', pages: ['/commerce#/', '/commerce#/commandes', '/commerce#/catalogue', '/commerce#/finances', '/commerce#/rapports', '/commerce#/livreurs', '/commerce#/parametres'] },
   { user: 'entreprise@marwa.demo', pages: ['/entreprise#/', '/entreprise#/collaborateurs', '/entreprise#/commandes', '/entreprise#/releves', '/entreprise#/adresses'] },
-  { user: 'admin@marwa.demo', pages: ['/admin#/', '/admin#/carte', '/admin#/commandes', '/admin#/utilisateurs', '/admin#/chauffeurs', '/admin#/livreurs', '/admin#/commerces', '/admin#/entreprises',
+  { user: 'admin@marwa.demo', pages: ['/admin#/', '/admin#/direct', '/admin#/carte', '/admin#/commandes', '/admin#/utilisateurs', '/admin#/chauffeurs', '/admin#/livreurs', '/admin#/commerces', '/admin#/entreprises',
     '/admin#/paiements', '/admin#/versements', '/admin#/remboursements', '/admin#/grand-livre', '/admin#/depenses', '/admin#/rapports', '/admin#/rapports?type=commissions', '/admin#/tarifs', '/admin#/commissions',
     '/admin#/zones', '/admin#/promotions', '/admin#/reclamations', '/admin#/notifications', '/admin#/parametres', '/admin#/audit'] },
 ];
@@ -31,6 +31,7 @@ for (const step of plan) {
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|tile\.openstreetmap|ERR_|net::/.test(m.text())) errors.push('console: ' + m.text()); });
   if (step.user) {
     await page.goto(BASE + '/connexion', { waitUntil: 'domcontentloaded' });
+    if (await page.locator('[data-tab="password"]').count()) await page.click('[data-tab="password"]');
     await page.fill('#identifier', step.user);
     await page.fill('#password', PASS);
     await Promise.all([page.waitForNavigation(), page.click('#login-form button[type=submit]')]);

@@ -30,11 +30,24 @@ final class Auth
             if ($row) {
                 Database::execute('UPDATE api_tokens SET last_used_at = NOW() WHERE id = :id', ['id' => $row['token_id']]);
                 self::loadUser((int) $row['user_id'], 'token');
+                self::touch();
             }
             return;
         }
 
         $uid = Session::get('uid');
+        if (!is_int($uid) && !empty($request->cookies[\App\Services\RememberService::COOKIE])) {
+            // « Se souvenir de moi » : nouvelle session ouverte automatiquement
+            $rid = \App\Services\RememberService::consume($request);
+            if ($rid !== null) {
+                $u = Database::first("SELECT u.id, u.session_version, u.totp_enabled_at FROM users u WHERE u.id = :id AND u.status IN ('active','pending')", ['id' => $rid]);
+                if ($u) {
+                    self::login($u, $request);
+                    self::touch();
+                    return;
+                }
+            }
+        }
         if (is_int($uid)) {
             // Lien faible session ↔ navigateur pour limiter le vol de session
             if (Session::get('ua') !== hash('sha256', $request->userAgent())) {
@@ -51,6 +64,15 @@ final class Auth
             if (self::$user === null) {
                 Session::destroy();
             }
+        }
+        self::touch();
+    }
+
+    /** Présence dans l'application (au plus une écriture par minute). */
+    private static function touch(): void
+    {
+        if (self::$user !== null && (empty(self::$user['last_seen_at']) || strtotime((string) self::$user['last_seen_at']) < time() - 60)) {
+            Database::execute('UPDATE users SET last_seen_at = NOW() WHERE id = :id', ['id' => self::$user['id']]);
         }
     }
 

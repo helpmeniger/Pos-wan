@@ -7,7 +7,8 @@ use App\Core\Config;
 use RuntimeException;
 
 /**
- * Envoi de SMS. Seul le pilote « log » est fourni : il n'envoie AUCUN SMS réel.
+ * Envoi de SMS. Pilotes : « log » (aucun SMS réel, écrit dans storage/logs/outbox.log) et « http »
+ * (API HTTP d'un fournisseur, réglée dans .env — voir HttpSmsGateway).
  * Pour un envoi réel, implémenter SmsGateway pour l'agrégateur retenu (opérateurs
  * présents au Niger ou agrégateur international) après contractualisation — les SMS sont payants.
  */
@@ -30,6 +31,10 @@ final class SmsSender
         if ($driver === 'log') {
             Outbox::write('SMS', $phone, $message);
             return 'log';
+        }
+        if ($driver === 'http') {
+            (new HttpSmsGateway())->send($phone, $message);
+            return 'http';
         }
         throw new RuntimeException("Pilote SMS « $driver » non implémenté. Voir docs/SERVICES_EXTERNES.md.");
     }

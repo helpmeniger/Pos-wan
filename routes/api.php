@@ -31,6 +31,9 @@ $router->group('/api', [], function ($router) {
     $router->post('/auth/login', [AuthController::class, 'login'], ['throttle:login,20,300']);
     $router->post('/auth/token', [AuthController::class, 'token'], ['throttle:login,20,300']);
     $router->post('/auth/2fa', [AuthController::class, 'twoFactor'], ['throttle:twofa,10,300']);
+    $router->post('/auth/phone/send', [AuthController::class, 'phoneSend'], ['throttle:phone_send,10,3600']);
+    $router->post('/auth/phone/verify', [AuthController::class, 'phoneVerify'], ['throttle:phone_verify,15,600']);
+    $router->post('/auth/phone/register', [AuthController::class, 'phoneRegister'], ['throttle:phone_register,10,3600']);
     $router->post('/auth/logout', [AuthController::class, 'logout']);
     $router->post('/auth/password/forgot', [AuthController::class, 'forgot'], ['throttle:forgot,10,3600']);
     $router->post('/auth/password/reset', [AuthController::class, 'reset'], ['throttle:reset,10,3600']);
@@ -68,6 +71,7 @@ $router->group('/api', [], function ($router) {
 
         $router->get('/notifications', [CommunicationController::class, 'notifications']);
         $router->post('/notifications/read', [CommunicationController::class, 'markRead']);
+        $router->delete('/notifications/{id}', [CommunicationController::class, 'deleteNotification']);
         $router->get('/events', [CommunicationController::class, 'events']);
         $router->get('/push/key', [CommunicationController::class, 'pushKey']);
         $router->post('/push/subscribe', [CommunicationController::class, 'pushSubscribe'], ['throttle:push,20,3600']);
@@ -177,6 +181,9 @@ $router->group('/api', [], function ($router) {
     $router->group('/admin', ['auth', 'role:admin,support,finance', 'staff_guard'], function ($router) {
         $router->get('/dashboard', [AdminController::class, 'dashboard'], ['perm:admin.dashboard']);
         $router->get('/map', [AdminController::class, 'map'], ['perm:orders.view']);
+        $router->get('/live', [App\Controllers\Admin\LiveController::class, 'live'], ['perm:orders.view']);
+        $router->get('/live/orders/{id}/candidates', [App\Controllers\Admin\LiveController::class, 'candidates'], ['perm:orders.view']);
+        $router->post('/live/contact', [App\Controllers\Admin\LiveController::class, 'contact'], ['perm:orders.manage', 'throttle:staff_contact,120,3600']);
         $router->get('/users', [AdminController::class, 'users'], ['perm:users.view']);
         $router->get('/users/{id}', [AdminController::class, 'showUser'], ['perm:users.view']);
         $router->post('/users/{id}/status', [AdminController::class, 'setUserStatus'], ['perm:users.manage']);
@@ -217,6 +224,7 @@ $router->group('/api', [], function ($router) {
         $router->get('/promotions', [ConfigController::class, 'promotions'], ['perm:promotions.manage']);
         $router->post('/promotions', [ConfigController::class, 'savePromotion'], ['perm:promotions.manage']);
         $router->put('/promotions/{id}', [ConfigController::class, 'savePromotion'], ['perm:promotions.manage']);
+        $router->post('/promotions/{id}/image', [ConfigController::class, 'promotionImage'], ['perm:promotions.manage', 'throttle:upload,60,3600']);
         $router->get('/settings', [ConfigController::class, 'settings'], ['perm:settings.manage']);
         $router->get('/translations', [App\Controllers\I18nController::class, 'list'], ['perm:settings.manage']);
         $router->put('/translations', [App\Controllers\I18nController::class, 'save'], ['perm:settings.manage']);
