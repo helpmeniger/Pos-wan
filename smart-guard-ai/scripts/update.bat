@@ -9,7 +9,7 @@ echo [2/4] Migrations de la base
 "%SG_PHP%" scripts\install_db.php || goto :fail
 echo [3/4] Dependances Python
 call "%~dp0stop.bat"
-"ai-service\.venv\Scripts\python.exe" -m pip install -r "ai-service\requirements.txt" || goto :fail
+call "%ROOT%\ai-service\setup_ai.bat" auto || goto :fail
 echo [4/4] Redemarrage du service IA
 call "%~dp0start.bat"
 echo Mise a jour terminee. Si l'extracteur d'empreintes a change, relancez la preparation IA (Apprentissage IA).

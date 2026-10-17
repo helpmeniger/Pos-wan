@@ -39,7 +39,10 @@ redirige tout vers `public\` et bloque `app\`, `config\`, `storage\`, `ai-servic
 ## 4 à 7. Base de données, Python et dépendances : `scripts\install.bat`
 
 Installer d'abord **Python 3.11 ou 3.12 64 bits** depuis python.org en cochant **« Add python.exe
-to PATH »**. Puis double-cliquer sur `scripts\install.bat`, qui :
+to PATH »** et **« py launcher »**. Puis double-cliquer sur `scripts\install.bat`, qui :
+
+0. prépare le service IA (environnement `ai-service\.venv` + dépendances) **dès le début**,
+   indépendamment de la base de données — voir aussi `ai-service\setup_ai.bat` ci-dessous ;
 
 1. vérifie PHP et les extensions ;
 2. crée `.env` et `ai-service\.env` et génère des **secrets aléatoires** (clé de chiffrement,
@@ -64,6 +67,15 @@ set PHP=C:\wamp64\bin\php\php8.3.14\php.exe
 py -3.12 -m venv ai-service\.venv
 ai-service\.venv\Scripts\python -m pip install -r ai-service\requirements.txt
 ```
+
+### Préparer uniquement le service IA : `ai-service\setup_ai.bat`
+
+Double-cliquer sur `ai-service\setup_ai.bat` (connexion Internet nécessaire la première fois) :
+il trouve un Python 3.10+ 64 bits réellement utilisable (en ignorant le faux `python.exe` du
+Microsoft Store), crée `ai-service\.venv`, installe les dépendances, crée `ai-service\.env` et
+synchronise ses secrets avec le `.env` de l'application. Il peut être relancé sans risque.
+`ai-service\run_ai.bat` (et donc `scripts\start.bat`) le lance **automatiquement** si
+l'environnement est absent ou incomplet.
 
 ## 8. Installer les modèles d'IA (facultatif mais recommandé)
 
@@ -157,6 +169,9 @@ distant : VPN (WireGuard, OpenVPN) ou reverse-proxy HTTPS avec authentification,
 |---|---|
 | Page blanche ou erreur 500 | `storage\logs\php-error.log`, `scripts\check_system.bat` |
 | « Service IA injoignable » | lancer `scripts\start.bat` ; voir `ai-service\runtime\ai-service.log` |
+| « Environnement Python absent » / « Aucun Python 3.10+ 64 bits utilisable » | lancer `ai-service\setup_ai.bat` ; installer Python 3.12 64 bits (python.org) avec « Add to PATH » et « py launcher » ; si `python` ouvre le Microsoft Store : Paramètres > Applications > Paramètres avancés des applications > **Alias d'exécution d'application** → désactiver `python.exe` et `python3.exe` |
+| « Les modules ne se chargent pas » (cv2, numpy) | installer le **Microsoft Visual C++ Redistributable x64**, puis relancer `ai-service\setup_ai.bat` |
+| Échec d'installation des dépendances avec Python 3.14 | installer Python 3.12, supprimer `ai-service\.venv`, relancer `ai-service\setup_ai.bat` |
 | Aucun événement reçu | `PHP_CALLBACK_URL` de `ai-service\.env` doit pointer vers `http://127.0.0.1/smart-guard-ai/api/ai/events` ; jetons identiques dans les deux `.env` |
 | Webcam introuvable | branchée sur un autre PC ? utilisée par une autre application (Teams, Zoom) ? essayer un autre index |
 | Caméra IP refusée | IP hors `CAMERA_ALLOWED_NETWORKS` ; utiliser une adresse IP (pas de nom d'hôte) |

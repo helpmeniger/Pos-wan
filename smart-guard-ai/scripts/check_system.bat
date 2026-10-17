@@ -9,7 +9,7 @@ echo === Service IA (Python) ===
 if exist "ai-service\.venv\Scripts\python.exe" (
   "ai-service\.venv\Scripts\python.exe" "ai-service\scripts\check_env.py"
 ) else (
-  echo Environnement Python absent : lancez scripts\install.bat
+  echo Environnement Python absent : lancez ai-service\setup_ai.bat
 )
 echo.
 echo Journaux : storage\logs\  et  ai-service\runtime\ai-service.log

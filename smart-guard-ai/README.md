@@ -44,7 +44,8 @@ présentée comme un vol ; aucune personne n'est identifiée ; aucune reconnaiss
 
 1. Copier le dossier dans `C:\wamp64\www\smart-guard-ai\`.
 2. Installer Python 3.11 ou 3.12 (64 bits, « Add to PATH »).
-3. Lancer `scripts\install.bat` (secrets, base, compte admin, environnement Python).
+3. Lancer `scripts\install.bat` (environnement Python, secrets, base, compte admin).
+   Le service IA seul se prépare avec `ai-service\setup_ai.bat` (lancé automatiquement au besoin).
 4. Démarrer WampServer, puis `scripts\start.bat` (service IA).
 5. Ouvrir `http://localhost/smart-guard-ai/`.
 

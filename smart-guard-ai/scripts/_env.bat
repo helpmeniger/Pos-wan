@@ -11,7 +11,5 @@ if not defined SG_PHP (
   echo [ERREUR] PHP introuvable. Installez WampServer ou definissez la variable SG_PHP vers php.exe
   exit /b 1
 )
-if defined SG_PY goto :eof
-where py >nul 2>nul && set "SG_PY=py -3"
-if not defined SG_PY where python >nul 2>nul && set "SG_PY=python"
+REM Python : recherche fiable dans ai-service\find_python.bat (appelee seulement si besoin)
 exit /b 0

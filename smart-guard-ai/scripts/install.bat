@@ -8,6 +8,9 @@ echo   SMART GUARD AI - Installation
 echo   PHP : %SG_PHP%
 echo ============================================================
 echo.
+echo [0/6] Preparation du service IA (Python), independante de la base de donnees
+call "%ROOT%\ai-service\setup_ai.bat" auto || echo [ATTENTION] Service IA non prepare : relancez ai-service\setup_ai.bat apres correction.
+echo.
 echo [1/6] Verification de PHP et des extensions
 "%SG_PHP%" -r "exit(version_compare(PHP_VERSION,'8.1','>=')?0:1);" || (echo PHP 8.1 minimum requis & goto :fail)
 for %%E in (pdo_mysql gd sodium curl fileinfo mbstring zip) do (
@@ -28,13 +31,7 @@ echo [4/6] Compte administrateur de l'application
 "%SG_PHP%" scripts\create_admin.php || goto :fail
 echo.
 echo [5/6] Environnement Python du service IA
-if not defined SG_PY (
-  echo [ERREUR] Python 3.10+ introuvable. Installez-le depuis python.org (cocher "Add to PATH") puis relancez.
-  goto :fail
-)
-if not exist "ai-service\.venv\Scripts\python.exe" %SG_PY% -m venv "ai-service\.venv" || goto :fail
-"ai-service\.venv\Scripts\python.exe" -m pip install --upgrade pip
-"ai-service\.venv\Scripts\python.exe" -m pip install -r "ai-service\requirements.txt" || goto :fail
+call "%ROOT%\ai-service\setup_ai.bat" auto || goto :fail
 choice /M "Installer onnxruntime (recommande pour une meilleure reconnaissance, environ 15 Mo)"
 if %errorlevel%==1 "ai-service\.venv\Scripts\python.exe" -m pip install onnxruntime
 echo.
