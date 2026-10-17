@@ -17,9 +17,10 @@ $line = static function (bool $ok, string $label, string $detail = '') use (&$er
     echo '[' . ($ok ? 'OK' : '!!') . '] ' . $label . ($detail !== '' ? ' : ' . $detail : '') . PHP_EOL;
 };
 $line(version_compare(PHP_VERSION, '8.1', '>='), 'PHP', PHP_VERSION);
-foreach (['pdo_mysql', 'gd', 'sodium', 'curl', 'fileinfo', 'mbstring', 'zip', 'zlib'] as $ext) {
+foreach (['pdo_mysql', 'gd', 'curl', 'fileinfo', 'mbstring', 'zip', 'zlib', 'openssl'] as $ext) {
     $line(extension_loaded($ext), "Extension {$ext}", extension_loaded($ext) ? '' : 'à activer dans WampServer (PHP > Extensions)');
 }
+echo '[' . (extension_loaded('sodium') ? 'OK' : '--') . '] Extension sodium' . (extension_loaded('sodium') ? '' : ' : facultative (OpenSSL AES-256-GCM utilisé à la place)') . PHP_EOL;
 $line(defined('PASSWORD_ARGON2ID'), 'Argon2id disponible', defined('PASSWORD_ARGON2ID') ? '' : 'bcrypt sera utilisé');
 $line(is_file(BASE_PATH . '/.env'), 'Fichier .env');
 $keyOk = (bool) preg_match('/^[0-9a-f]{64}$/i', (string) Env::get('APP_KEY'));
@@ -31,6 +32,8 @@ foreach (['logs', 'product_images', 'snapshots', 'videos', 'reports', 'backups',
 try {
     $v = Database::value('SELECT VERSION()');
     $line(true, 'Connexion MySQL/MariaDB', (string) $v);
+    $mode = (string) Database::value('SELECT @@SESSION.sql_mode');
+    echo '[--] Mode SQL : ' . ($mode ?: '(vide)') . PHP_EOL;
     $line((int) Database::value('SELECT COUNT(*) FROM roles') >= 5, 'Données de référence');
     $hasAdmin = (int) Database::value("SELECT COUNT(*) FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE r.code = 'admin'") > 0;
     $line($hasAdmin, 'Compte administrateur', $hasAdmin ? '' : 'à créer : php scripts/create_admin.php');

@@ -182,7 +182,7 @@ final class ReportService
     {
         $rows = Database::fetchAll("SELECT DATE(occurred_at) d, SUM(direction='sortie') exits, SUM(direction='entree') entries,
               SUM(direction='sortie' AND reconciliation_status IN ('aucune_vente','incertain')) unmatched
-            FROM exit_events WHERE store_id = :s AND occurred_at BETWEEN :f AND :t GROUP BY DATE(occurred_at) ORDER BY d",
+            FROM exit_events WHERE store_id = :s AND occurred_at BETWEEN :f AND :t GROUP BY DATE(occurred_at) ORDER BY DATE(occurred_at)",
             ['s' => $storeId, 'f' => $from . ' 00:00:00', 't' => $to . ' 23:59:59']);
         $map = [];
         foreach ($rows as $r) {

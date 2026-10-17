@@ -167,6 +167,9 @@ distant : VPN (WireGuard, OpenVPN) ou reverse-proxy HTTPS avec authentification,
 
 | Symptôme | Cause probable / solution |
 |---|---|
+| Tableau de bord vide (« … »), page Utilisateurs en erreur, avec **MySQL 8/9** | corrigé dans cette version (requêtes compatibles avec le mode SQL strict `ONLY_FULL_GROUP_BY`) ; remplacez les fichiers de l'application |
+| Page sans mise en forme (texte brut, sans couleurs) | ouvrir `http://localhost/smart-guard-ai/` (avec la barre finale) ; vider le cache du navigateur (Ctrl+F5) ; vérifier que `rewrite_module` est actif dans Apache ; le préfixe d'URL est maintenant détecté automatiquement même si `APP_BASE_PATH` est incorrect |
+| « Extension sodium » signalée | facultative : OpenSSL (AES-256-GCM) est utilisé à la place. Pour l'activer quand même : `C:\wamp64\bin\php\php8.3.x\php.ini` (ligne de commande) **et** WampServer > PHP > Extensions > `sodium` (Apache) |
 | Page blanche ou erreur 500 | `storage\logs\php-error.log`, `scripts\check_system.bat` |
 | « Service IA injoignable » | lancer `scripts\start.bat` ; voir `ai-service\runtime\ai-service.log` |
 | « Environnement Python absent » / « Aucun Python 3.10+ 64 bits utilisable » | lancer `ai-service\setup_ai.bat` ; installer Python 3.12 64 bits (python.org) avec « Add to PATH » et « py launcher » ; si `python` ouvre le Microsoft Store : Paramètres > Applications > Paramètres avancés des applications > **Alias d'exécution d'application** → désactiver `python.exe` et `python3.exe` |

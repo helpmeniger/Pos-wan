@@ -15,10 +15,11 @@ final class UserController extends Controller
 {
     public function index(Request $r): void
     {
-        $users = Database::fetchAll("SELECT u.*, GROUP_CONCAT(DISTINCT r.name SEPARATOR ', ') roles, GROUP_CONCAT(DISTINCT s.name SEPARATOR ', ') stores
-            FROM users u LEFT JOIN user_roles ur ON ur.user_id = u.id LEFT JOIN roles r ON r.id = ur.role_id
-            LEFT JOIN store_users su ON su.user_id = u.id LEFT JOIN stores s ON s.id = su.store_id
-            WHERE u.deleted_at IS NULL GROUP BY u.id ORDER BY u.full_name");
+        // Sous-requêtes corrélées : compatible avec ONLY_FULL_GROUP_BY (MySQL 8/9 par défaut)
+        $users = Database::fetchAll("SELECT u.*,
+              (SELECT GROUP_CONCAT(r.name ORDER BY r.id SEPARATOR ', ') FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = u.id) roles,
+              (SELECT GROUP_CONCAT(s.name ORDER BY s.id SEPARATOR ', ') FROM store_users su JOIN stores s ON s.id = su.store_id WHERE su.user_id = u.id) stores
+            FROM users u WHERE u.deleted_at IS NULL ORDER BY u.full_name");
         $roles = Database::fetchAll('SELECT * FROM roles ORDER BY id');
         $perms = Database::fetchAll('SELECT * FROM permissions ORDER BY module, code');
         $matrix = [];

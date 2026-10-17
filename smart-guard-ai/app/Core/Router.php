@@ -29,31 +29,45 @@ final class Router
         $this->routes[] = compact('method', 'path', 'regex', 'handler', 'mw');
     }
 
+    /**
+     * Préfixe d'URL de l'application. APP_BASE_PATH n'est utilisé que s'il correspond à l'URL
+     * réellement demandée ; sinon détection automatique (sous-dossier WampServer, VirtualHost
+     * pointant vers le projet ou vers public/). Évite une page sans mise en forme (CSS/JS en 404)
+     * lorsque l'adresse utilisée diffère de celle configurée.
+     */
     public static function basePath(): string
     {
         if (self::$base !== null) {
             return self::$base;
         }
+        if (PHP_SAPI === 'cli') {
+            return self::$base = rtrim((string) Env::get('APP_BASE_PATH', ''), '/');
+        }
+        $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
         $env = Env::get('APP_BASE_PATH');
         if ($env !== null) {
-            return self::$base = rtrim((string) $env, '/');
-        }
-        if (PHP_SAPI === 'cli') {
-            return self::$base = '';
+            $env = rtrim((string) $env, '/');
+            if ($env === '' || $uri === $env || str_starts_with($uri, $env . '/')) {
+                return self::$base = $env;
+            }
         }
         $script = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/'));
-        $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-        if (str_ends_with($script, '/public') && !str_starts_with($uri, $script)) {
+        if (str_ends_with($script, '/public') && !str_starts_with($uri, $script . '/') && $uri !== $script) {
             $script = substr($script, 0, -7);
         }
-        return self::$base = rtrim($script, '/');
+        $script = rtrim($script, '/');
+        // Insensible à la casse (Windows) : réutiliser la casse de l'URL demandée
+        if ($script !== '' && stripos($uri, $script) === 0) {
+            $script = substr($uri, 0, strlen($script));
+        }
+        return self::$base = $script;
     }
 
     public function dispatch(Request $request): void
     {
         $path = $request->path();
         $base = self::basePath();
-        if ($base !== '' && str_starts_with($path, $base)) {
+        if ($base !== '' && stripos($path, $base) === 0) {
             $path = substr($path, strlen($base));
         }
         if (str_starts_with($path, '/public/') || $path === '/public') {

@@ -7,12 +7,13 @@
         "php": ">=8.1",
         "ext-pdo_mysql": "*",
         "ext-gd": "*",
-        "ext-sodium": "*",
+        "ext-openssl": "*",
         "ext-curl": "*",
         "ext-fileinfo": "*",
         "ext-mbstring": "*",
         "ext-zip": "*"
     },
+    "suggest": { "ext-sodium": "Chiffrement libsodium (sinon OpenSSL AES-256-GCM est utilisé)" },
     "autoload": {
         "psr-4": { "App\\": "app/" },
         "files": ["app/helpers.php"]

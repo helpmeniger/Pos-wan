@@ -20,7 +20,7 @@ final class MaintenanceController extends Controller
         $checks = [
             ['PHP ' . PHP_VERSION, version_compare(PHP_VERSION, '8.1', '>=')],
             ['Extension pdo_mysql', extension_loaded('pdo_mysql')], ['Extension gd', extension_loaded('gd')],
-            ['Extension sodium (chiffrement)', extension_loaded('sodium')], ['Extension curl', extension_loaded('curl')],
+            ['Chiffrement (sodium ou openssl)', extension_loaded('sodium') || extension_loaded('openssl')], ['Extension curl', extension_loaded('curl')],
             ['Extension zip (export Excel)', class_exists(\ZipArchive::class)], ['Extension fileinfo', extension_loaded('fileinfo')],
             ['Dossier storage accessible en écriture', is_writable(STORAGE_PATH)],
             ['Fichier .env présent', is_file(BASE_PATH . '/.env')],

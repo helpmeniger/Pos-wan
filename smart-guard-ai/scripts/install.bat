@@ -13,7 +13,7 @@ call "%ROOT%\ai-service\setup_ai.bat" auto || echo [ATTENTION] Service IA non pr
 echo.
 echo [1/6] Verification de PHP et des extensions
 "%SG_PHP%" -r "exit(version_compare(PHP_VERSION,'8.1','>=')?0:1);" || (echo PHP 8.1 minimum requis & goto :fail)
-for %%E in (pdo_mysql gd sodium curl fileinfo mbstring zip) do (
+for %%E in (pdo_mysql gd curl fileinfo mbstring zip openssl) do (
   "%SG_PHP%" -r "exit(extension_loaded('%%E')?0:1);" || echo   [ATTENTION] Extension %%E inactive : WampServer ^> PHP ^> Extensions PHP ^> %%E
 )
 echo.

@@ -11,7 +11,12 @@
   const levelLabel = { information: 'Information', a_verifier: 'À vérifier', prioritaire: 'Prioritaire' };
   async function load() {
     let d;
-    try { d = await sgFetch('dashboard/data'); } catch (e) { document.getElementById('sysBox').textContent = e.message; return; }
+    try { d = await sgFetch('dashboard/data'); } catch (e) {
+      document.querySelectorAll('[data-kpi]').forEach((el) => { el.textContent = '—'; });
+      document.getElementById('sysBox').innerHTML = '<div class="text-danger">Impossible de charger les données : ' + sgEsc(e.message) +
+        '</div><div class="small text-muted mt-1">Consultez storage\\logs\\ et lancez scripts\\check_system.bat.</div>';
+      return;
+    }
     const k = d.kpi;
     for (const [key, v] of Object.entries(k)) {
       const el = document.querySelector(`[data-kpi="${key}"]`);

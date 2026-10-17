@@ -18,7 +18,9 @@ Apache 2.4 + mod_php (même disposition que WampServer : sous-dossier `/smart-gu
 `.htaccess`) et serveur PHP intégré.
 
 * `pytest` : **27 réussis**.
-* `tests/e2e_test.py` : **82/82 vérifications réussies**, via Apache et via le serveur intégré.
+* `tests/e2e_test.py` : **82/82 vérifications réussies**, via Apache et via le serveur intégré,
+  y compris avec le mode SQL strict de MySQL 8/9 (`ONLY_FULL_GROUP_BY`, `STRICT_TRANS_TABLES`…)
+  activé sur MariaDB. MySQL 9 lui-même n'a pas été testé.
 * Apache : `.env`, `app/`, `database/`, `storage/`, `ai-service/.env` → **403**.
 * Sauvegarde puis restauration : données et mots de passe de caméra chiffrés intacts.
 * Jeu **synthétique** (3 produits fictifs de couleurs/motifs très différents, 12 images chacun,

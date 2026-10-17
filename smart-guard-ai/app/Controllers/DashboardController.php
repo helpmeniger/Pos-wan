@@ -31,15 +31,15 @@ final class DashboardController extends Controller
         $sum = ReportService::summary($s, $today, $today);
         $cams = Database::fetch("SELECT SUM(status='en_ligne') online, SUM(status<>'en_ligne') offline, COUNT(*) total FROM cameras WHERE store_id = :s AND is_active = 1", ['s' => $s]);
         $topDetected = Database::fetchAll("SELECT p.name, COUNT(*) n FROM detection_results d JOIN products p ON p.id = d.product_id
-            WHERE p.store_id = :s AND d.is_test = 0 AND d.detected_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY p.id ORDER BY n DESC LIMIT 8", ['s' => $s]);
+            WHERE p.store_id = :s AND d.is_test = 0 AND d.detected_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY p.id, p.name ORDER BY n DESC LIMIT 8", ['s' => $s]);
         $topExits = Database::fetchAll("SELECT COALESCE(p.name,'Non identifié') name, COUNT(*) n FROM exit_events e LEFT JOIN products p ON p.id = e.product_id
-            WHERE e.store_id = :s AND e.direction = 'sortie' AND e.occurred_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY e.product_id ORDER BY n DESC LIMIT 8", ['s' => $s]);
+            WHERE e.store_id = :s AND e.direction = 'sortie' AND e.occurred_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY e.product_id, p.name ORDER BY n DESC LIMIT 8", ['s' => $s]);
         $byCamera = Database::fetchAll("SELECT c.name, COUNT(e.id) n FROM cameras c LEFT JOIN exit_events e ON e.camera_id = c.id AND e.occurred_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-            WHERE c.store_id = :s AND c.is_active = 1 GROUP BY c.id ORDER BY c.name", ['s' => $s]);
+            WHERE c.store_id = :s AND c.is_active = 1 GROUP BY c.id, c.name ORDER BY c.name", ['s' => $s]);
         $byLevel = Database::fetchAll("SELECT level, COUNT(*) n FROM alerts WHERE store_id = :s AND occurred_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY level", ['s' => $s]);
         $reviews = Database::fetchAll("SELECT status, COUNT(*) n FROM alerts WHERE store_id = :s AND level <> 'information' AND occurred_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY status", ['s' => $s]);
-        $variance = Database::fetchAll("SELECT DATE(taken_at) d, SUM(ABS(variance)) v FROM stock_snapshots WHERE store_id = :s AND snapshot_type = 'inventaire_physique'
-            AND taken_at >= DATE_SUB(NOW(), INTERVAL 90 DAY) GROUP BY DATE(taken_at) ORDER BY d", ['s' => $s]);
+        $variance = Database::fetchAll("SELECT DATE(taken_at) AS d, SUM(ABS(variance)) v FROM stock_snapshots WHERE store_id = :s AND snapshot_type = 'inventaire_physique'
+            AND taken_at >= DATE_SUB(NOW(), INTERVAL 90 DAY) GROUP BY DATE(taken_at) ORDER BY DATE(taken_at)", ['s' => $s]);
         $model = Database::fetch("SELECT v.version_number, v.metrics_json FROM ai_models m JOIN ai_model_versions v ON v.id = m.active_version_id WHERE m.store_id = :s", ['s' => $s]);
         $metrics = $model ? (json_decode((string) $model['metrics_json'], true)['metrics'] ?? null) : null;
 
