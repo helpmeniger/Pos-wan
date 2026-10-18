@@ -18,6 +18,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [
   - **Options :** mode continu, ajout automatique sous seuils réglables.
   - **Suivi :** statistiques (taux de bonnes propositions, confusions) et détection des
     articles qui se ressemblent.
+- **Précision mesurée sur un banc public difficile** (31 articles très proches photographiés
+  en rayon) : bon article en 1ᵉʳ dans 34 % des cas, parmi les 4 propositions dans 65 % des cas
+  avec 5 photos par article, 75 % avec 15 photos. Le caissier confirme donc toujours, sauf
+  activation de l'ajout automatique (désactivé par défaut). Détails : `addons/vision/README.md`.
 - **Modules :** clé `assets` du manifeste, qui charge les scripts et styles d'un module actif
   sur toutes les pages (gestion, caisse, restaurant).
 - **Lecteur caméra extensible** (`PMScanner.addTool`) : il sait si l'écran attend un article.

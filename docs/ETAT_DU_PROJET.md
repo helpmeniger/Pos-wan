@@ -57,6 +57,7 @@
 | **v2.0** Clinique 1.1 : caisse clinique, paiement partiel, contrôle par scan à la délivrance | ✅ | Tests HTTP + Chromium |
 | **v2.0** Pressing 1.1 : caisse, statuts, retrait partiel, retards, suivi, historique client | ✅ | Tests + Chromium |
 | **v2.0** Lanceur Windows, raccourci, tâche planifiée, PWA | ⚠️ | Écrits et relus ; **non exécutés sous Windows** (voir `docs/DEMARRAGE_WINDOWS.md` §5) |
+| **v2.1** Module Reconnaissance des articles par photo (apprentissage, propositions, correction apprise, continu, statistiques) | ✅ fonctionnel, ⚠️ précision limitée | Test automatisé (droits, index, plafonds, désactivation) + essai Chromium de bout en bout (apprentissage par l'écran → caméra simulée en caisse → bon article proposé en 1ᵉʳ → ajouté et appris ; correction). Banc public de 31 articles très proches : 34 % au 1ᵉʳ rang, 65 % parmi 4 avec 5 photos ; 75 % parmi 4 avec 15 photos. **Non testé dans une vraie caisse ni sur un vrai téléphone** |
 
 **Résultat de la suite de tests : 117 réussis, 0 échec** (`php tests/run.php`).
 

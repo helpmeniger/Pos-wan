@@ -87,6 +87,43 @@ Options :
 | `vision_refs` | Empreintes apprises : article, 512 octets, origine (photo, fiche, vente), vignette, auteur, date |
 | `vision_log` | Reconnaissances : proposé, choisi, note, écart, résultat (confirmé, corrigé, automatique, aucun) |
 
+## Précision mesurée (sans complaisance)
+
+**Banc d'essai :** « Grocery Store Dataset » (photos publiques prises au téléphone en
+magasin, avec la main, le rayon et des reflets).
+- 31 articles emballés très proches : laits, jus, yaourts, souvent de la même marque.
+- 248 photos de test jamais apprises.
+- Calcul fait dans Chromium avec le code livré.
+
+| Photos apprises par article | Bon article proposé en 1ᵉʳ | Bon article parmi les 4 propositions | Bonne marque en 1ᵉʳ |
+|---|---|---|---|
+| 1 | 20 % | 42 % | 49 % |
+| 3 | 28 % | 61 % | 65 % |
+| 5 | 34 % | 65 % | 71 % |
+| 10 | 35 % | 73 % | 73 % |
+| 15 | 37 % | 75 % | 75 % |
+
+**Lecture :**
+- Les erreurs sont surtout des confusions entre articles de la même marque, comme deux laits
+  Arla presque identiques.
+- Plus l'article a de photos (apprentissage pendant les ventes), plus il figure souvent parmi
+  les 4 propositions. La 1ʳᵉ place progresse peu au-delà de 5 photos.
+- C'est pourquoi le module **propose et le caissier confirme**, et l'ajout automatique est
+  désactivé par défaut. Les seuils par défaut (0,80 / 0,06) ne sont presque jamais atteints :
+  sur ce banc, aucune proposition n'a dépassé 0,6.
+- **Non mesuré :** les conditions réelles d'une caisse (même caméra, même éclairage, fond uni,
+  article bien cadré) sont plus favorables que ces photos en rayon. Faites l'essai avec vos
+  articles grâce à « Tester la reconnaissance » et suivez le taux affiché sur la page du module.
+
+**Autres méthodes essayées sans gain notable :**
+- regroupements max, GeM, R-MAC ;
+- résolution 320 px ;
+- normalisation en racine signée ;
+- blanchiment diagonal.
+
+Toutes donnent 31 à 35 % au 1ᵉʳ rang. Le modèle actuel est le meilleur compromis
+vitesse / précision disponible hors ligne.
+
 ## Limites (à connaître)
 
 - **Pas de reconnaissance « universelle ».** Le module reconnaît les articles **que vous lui
