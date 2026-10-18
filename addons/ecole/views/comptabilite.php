@@ -1,0 +1,18 @@
+<?php $modes = payment_methods(); $types = ['inscription' => 'Frais d\'inscription', 'scolarite' => 'Scolarité', 'autre' => 'Autres frais']; ?>
+<form method="get" class="card card-body py-2 mb-3"><div class="row g-2 align-items-end small">
+  <div class="col-auto"><label class="form-label mb-0">Du</label><input type="date" name="du" value="<?= e($du) ?>" class="form-control form-control-sm"></div>
+  <div class="col-auto"><label class="form-label mb-0">Au</label><input type="date" name="au" value="<?= e($au) ?>" class="form-control form-control-sm"></div>
+  <div class="col-auto"><button class="btn btn-sm btn-primary">Afficher</button> <a class="btn btn-sm btn-outline-secondary" href="<?= e(query_with(['export' => 'csv'])) ?>">CSV</a> <a class="btn btn-sm btn-outline-secondary" href="<?= e(query_with(['export' => 'pdf'])) ?>">PDF</a></div>
+</div></form>
+<div class="row g-2 mb-3">
+  <?php foreach ([['Frais encaissés', $r['recettes'], 'text-success'], ['Salaires versés', $r['salaires'], 'text-danger'], ['Autres dépenses', $r['depenses'], 'text-danger'], ['Solde de la période', $r['solde'], $r['solde'] < 0 ? 'text-danger' : 'text-primary']] as [$l, $v, $c]): ?>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body py-2"><div class="small text-secondary"><?= e($l) ?></div><div class="fs-4 fw-bold <?= $c ?>"><?= money($v) ?></div></div></div></div>
+  <?php endforeach; ?>
+</div>
+<div class="alert alert-light border small">Année en cours : total dû <b><?= money($r['annee']['du']) ?></b> · encaissé <b><?= money($r['annee']['paye']) ?></b> (<?= $r['annee']['du'] > 0 ? round(100 * $r['annee']['paye'] / $r['annee']['du']) : 0 ?> %) · échu non payé <b class="text-danger"><?= money($r['annee']['echu']) ?></b> — <a href="<?= e(url('/ecole/impayes')) ?>">voir les impayés</a>. Les « autres dépenses » sont celles saisies dans Dépenses &amp; recettes.</div>
+<div class="row g-3">
+  <div class="col-md-4"><div class="card"><div class="card-header">Par mode de paiement</div><ul class="list-group list-group-flush small"><?php foreach ($r['par_mode'] as $m): ?><li class="list-group-item d-flex"><?= e($modes[$m['mode']] ?? $m['mode']) ?> <span class="text-secondary ms-1">(<?= (int) $m['n'] ?>)</span><b class="ms-auto"><?= money($m['total']) ?></b></li><?php endforeach; ?><?php if (!$r['par_mode']): ?><li class="list-group-item text-secondary">Aucun encaissement.</li><?php endif; ?></ul></div>
+    <div class="card mt-3"><div class="card-header">Par nature</div><ul class="list-group list-group-flush small"><?php foreach ($r['par_type'] as $t): ?><li class="list-group-item d-flex"><?= e($types[$t['type']] ?? $t['type']) ?><b class="ms-auto"><?= money($t['total']) ?></b></li><?php endforeach; ?></ul></div></div>
+  <div class="col-md-4"><div class="card"><div class="card-header">Par classe</div><ul class="list-group list-group-flush small"><?php foreach ($r['par_classe'] as $c): ?><li class="list-group-item d-flex"><?= e($c['classe']) ?> <span class="text-secondary ms-1">(<?= (int) $c['eleves'] ?>)</span><b class="ms-auto"><?= money($c['total']) ?></b></li><?php endforeach; ?></ul></div></div>
+  <div class="col-md-4"><div class="card"><div class="card-header">Reçus de la période</div><div style="max-height:420px;overflow:auto"><ul class="list-group list-group-flush small"><?php foreach ($recus as $p): ?><li class="list-group-item d-flex <?= $p['annule'] ? 'text-secondary' : '' ?>"><a href="<?= e(url('/ecole/recus/' . $p['id'])) ?>"><?= e($p['numero']) ?></a><span class="ms-2 text-truncate"><?= e($p['prenom'] . ' ' . $p['nom']) ?></span><span class="ms-auto <?= $p['annule'] ? 'text-decoration-line-through' : '' ?>"><?= money($p['montant']) ?></span></li><?php endforeach; ?></ul></div></div></div>
+</div>

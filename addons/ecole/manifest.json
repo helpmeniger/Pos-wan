@@ -1,0 +1,217 @@
+{
+    "code": "ecole",
+    "name": "Établissement scolaire / université",
+    "version": "1.0.0",
+    "requires": "2.3.0",
+    "author": "Mahamadou Hamidou (Mohamed) — POS Marwa",
+    "description": "Gestion complète d'une école, d'un collège, d'un lycée ou d'une université : élèves / étudiants, inscriptions, classes et matières, personnel et enseignants, frais de scolarité et caisse d'inscription, reçus, impayés, salaires, comptabilité, notes, moyennes, rangs et bulletins imprimables, appel et présences, pointage automatique par reconnaissance faciale (caméras) avec consentement. Mode « Établissement » : la caisse et les menus n'affichent plus les termes commerciaux.",
+    "icon": "bi-mortarboard",
+    "color": "#1d4ed8",
+    "permissions": {
+        "ecole.view": "Établissement : consulter élèves, classes et personnel",
+        "ecole.manage": "Établissement : gérer élèves, classes, matières, personnel, années",
+        "ecole.caisse": "Établissement : inscriptions et encaissement des frais",
+        "ecole.finance": "Établissement : comptabilité, impayés, salaires, annulation de reçus",
+        "ecole.notes": "Établissement : saisie des évaluations et des notes",
+        "ecole.bulletins": "Établissement : bulletins (calcul, appréciations, impression)",
+        "ecole.presence": "Établissement : appel, présences et pointage par caméra",
+        "ecole.biometrie": "Établissement : données faciales (enregistrement, suppression, revue des passages)"
+    },
+    "new_roles": {
+        "ecole_direction": {
+            "name": "Direction d'établissement",
+            "description": "Tout le module Établissement",
+            "permissions": [
+                "ecole.view",
+                "ecole.manage",
+                "ecole.caisse",
+                "ecole.finance",
+                "ecole.notes",
+                "ecole.bulletins",
+                "ecole.presence",
+                "ecole.biometrie"
+            ]
+        },
+        "ecole_secretariat": {
+            "name": "Secrétariat / scolarité",
+            "description": "Élèves, inscriptions, caisse, présences, données faciales",
+            "permissions": [
+                "ecole.view",
+                "ecole.manage",
+                "ecole.caisse",
+                "ecole.presence",
+                "ecole.biometrie",
+                "ecole.bulletins"
+            ]
+        },
+        "ecole_comptable": {
+            "name": "Comptable d'établissement",
+            "description": "Caisse, comptabilité, impayés, salaires",
+            "permissions": [
+                "ecole.view",
+                "ecole.caisse",
+                "ecole.finance"
+            ]
+        },
+        "ecole_enseignant": {
+            "name": "Enseignant",
+            "description": "Notes, appel, consultation",
+            "permissions": [
+                "ecole.view",
+                "ecole.notes",
+                "ecole.presence"
+            ]
+        }
+    },
+    "roles": {
+        "owner": [
+            "ecole.view",
+            "ecole.manage",
+            "ecole.caisse",
+            "ecole.finance",
+            "ecole.notes",
+            "ecole.bulletins",
+            "ecole.presence",
+            "ecole.biometrie"
+        ],
+        "store_manager": [
+            "ecole.view",
+            "ecole.manage",
+            "ecole.caisse",
+            "ecole.finance",
+            "ecole.notes",
+            "ecole.bulletins",
+            "ecole.presence",
+            "ecole.biometrie"
+        ],
+        "cashier": [
+            "ecole.view",
+            "ecole.caisse"
+        ]
+    },
+    "menu": [
+        {
+            "group": "Établissement",
+            "label": "Tableau de bord de l'établissement",
+            "icon": "bi-mortarboard",
+            "url": "/ecole",
+            "permission": "ecole.view",
+            "color": "#1d4ed8"
+        },
+        {
+            "group": "Établissement",
+            "label": "Caisse : inscriptions et paiements",
+            "icon": "bi-cash-coin",
+            "url": "/ecole/caisse",
+            "permission": "ecole.caisse",
+            "color": "#16a34a"
+        },
+        {
+            "group": "Établissement",
+            "label": "Élèves / étudiants",
+            "icon": "bi-people",
+            "url": "/ecole/eleves",
+            "permission": "ecole.view",
+            "color": "#0891b2"
+        },
+        {
+            "group": "Établissement",
+            "label": "Classes et matières",
+            "icon": "bi-diagram-3",
+            "url": "/ecole/classes",
+            "permission": "ecole.manage",
+            "color": "#7c3aed"
+        },
+        {
+            "group": "Établissement",
+            "label": "Personnel et enseignants",
+            "icon": "bi-person-badge",
+            "url": "/ecole/personnel",
+            "permission": "ecole.view",
+            "color": "#0f766e"
+        },
+        {
+            "group": "Établissement",
+            "label": "Notes et évaluations",
+            "icon": "bi-pencil-square",
+            "url": "/ecole/notes",
+            "permission": "ecole.notes",
+            "color": "#b45309"
+        },
+        {
+            "group": "Établissement",
+            "label": "Bulletins",
+            "icon": "bi-file-earmark-text",
+            "url": "/ecole/bulletins",
+            "permission": "ecole.bulletins",
+            "color": "#be123c"
+        },
+        {
+            "group": "Établissement",
+            "label": "Appel et présences",
+            "icon": "bi-check2-square",
+            "url": "/ecole/presences",
+            "permission": "ecole.presence",
+            "color": "#2563eb"
+        },
+        {
+            "group": "Établissement",
+            "label": "Pointage par caméra",
+            "icon": "bi-person-bounding-box",
+            "url": "/ecole/pointage",
+            "permission": "ecole.presence",
+            "color": "#dc2626"
+        },
+        {
+            "group": "Établissement",
+            "label": "Comptabilité de l'établissement",
+            "icon": "bi-calculator",
+            "url": "/ecole/comptabilite",
+            "permission": "ecole.finance",
+            "color": "#4d7c0f"
+        },
+        {
+            "group": "Établissement",
+            "label": "Impayés",
+            "icon": "bi-exclamation-diamond",
+            "url": "/ecole/impayes",
+            "permission": "ecole.finance",
+            "color": "#c2410c"
+        },
+        {
+            "group": "Établissement",
+            "label": "Salaires du personnel",
+            "icon": "bi-wallet2",
+            "url": "/ecole/salaires",
+            "permission": "ecole.finance",
+            "color": "#9333ea"
+        },
+        {
+            "group": "Établissement",
+            "label": "Paramètres de l'établissement",
+            "icon": "bi-sliders",
+            "url": "/ecole/parametres",
+            "permission": "ecole.manage",
+            "color": "#475569"
+        }
+    ],
+    "settings": {
+        "ecole_type": "mixte",
+        "ecole_heure_debut": "07:30",
+        "ecole_tolerance": "10",
+        "ecole_heure_fin": "17:00",
+        "ecole_seuil_passage": "10",
+        "ecole_visage_actif": "0",
+        "ecole_visage_seuil": "0.50",
+        "ecole_visage_marge": "0.05",
+        "ecole_conservation": "30",
+        "ecole_signature": "Le Directeur / La Directrice",
+        "ecole_devise": "",
+        "ecole_absence_zero": "0"
+    },
+    "assets": {
+        "css": [
+            "ecole.css"
+        ]
+    }
+}
