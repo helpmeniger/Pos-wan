@@ -200,6 +200,53 @@
     return ids.map((id) => productCache.get(id)).filter(Boolean);
   }
 
+  // ------------------------------------------------------------------ caméras IP (images relayées par le serveur)
+  /**
+   * Flux vidéo d'une caméra IP : les images lues par le serveur sont dessinées dans un canevas
+   * qui fournit un flux vidéo ordinaire (lu par le scanner, la reconnaissance et la surveillance).
+   * Fonctionne aussi sans HTTPS : aucune autorisation de caméra du navigateur n'est nécessaire.
+   */
+  function ipStream(camId, fps = 3, onStatus) {
+    return new Promise((resolve, reject) => {
+      const cv = document.createElement('canvas'); const g = cv.getContext('2d');
+      let stopped = false, timer = null, first = true, fails = 0, stream = null;
+      const period = Math.max(100, Math.round(1000 / Math.max(1, Math.min(10, fps))));
+      const tick = () => {
+        if (stopped) return;
+        const img = new Image(); const t0 = Date.now();
+        img.onload = () => {
+          if (stopped) return;
+          fails = 0;
+          if (cv.width !== img.naturalWidth || cv.height !== img.naturalHeight) { cv.width = img.naturalWidth; cv.height = img.naturalHeight; }
+          g.drawImage(img, 0, 0);
+          if (first) {
+            first = false;
+            stream = cv.captureStream ? cv.captureStream(Math.max(1, fps)) : null;
+            if (!stream) { reject(new Error(T('Ce navigateur ne sait pas afficher une caméra IP (utilisez Chrome, Edge ou Firefox récents).'))); return; }
+            resolve({ stream, canvas: cv, stop });
+          }
+          if (onStatus) onStatus('ok');
+          timer = setTimeout(tick, Math.max(0, period - (Date.now() - t0)));
+        };
+        img.onerror = () => {
+          if (stopped) return;
+          fails++;
+          if (onStatus) onStatus('error', fails);
+          if (first && fails >= 3) { stop(); reject(new Error(T('Caméra IP injoignable : vérifiez son adresse dans Configuration → Caméras (bouton « Tester »).'))); return; }
+          timer = setTimeout(tick, Math.min(5000, period * (1 + fails)));
+        };
+        img.src = BASE + '/vision/cameras/' + camId + '/frame?t=' + Date.now();
+      };
+      function stop() { stopped = true; clearTimeout(timer); if (stream) stream.getTracks().forEach((tr) => tr.stop()); }
+      tick();
+    });
+  }
+  let sourcesP = null;
+  function cameraSources() {
+    if (!sourcesP) sourcesP = api('/vision/sources').then((d) => (d.ok ? d.items : [])).catch(() => []);
+    return sourcesP;
+  }
+
   // ------------------------------------------------------------------ outil du scanner
   const S = { ctx: null, busy: false, auto: false, timer: null, sceneVec: null, panelPid: null, last: null };
   const ctxName = () => (location.pathname.replace(BASE, '').split('/')[1] || 'accueil').replace(/[^a-z_]/g, '').slice(0, 30);
@@ -389,7 +436,14 @@
       cam.insertAdjacentElement('afterend', b);
     });
   }
-  config().then((c) => { if (c && c.ok !== false) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', quickButtons); else quickButtons(); } });
+  config().then((c) => {
+    if (!c || c.ok === false) return;
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', quickButtons); else quickButtons();
+    // Caméras IP déclarées pour la caisse : proposées dans le choix des caméras du scanner
+    cameraSources().then((items) => items.filter((cam) => cam.kind === 'ip' && cam.use_caisse).forEach((cam) => PMScanner.addSource({
+      id: 'ip' + cam.id, label: '📡 ' + cam.name, open: () => ipStream(cam.id, cam.fps),
+    })));
+  });
 
-  window.PMVision = { loadEngine, embed, aimRegion, centerRegion, thumbOf, loadImage, loadIndex, match, addLocal, products, config, api, b64, IDX, engine: E };
+  window.PMVision = { ipStream, cameraSources, loadEngine, embed, aimRegion, centerRegion, thumbOf, loadImage, loadIndex, match, addLocal, products, config, api, b64, IDX, engine: E };
 })();

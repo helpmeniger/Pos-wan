@@ -43,3 +43,22 @@
 .vis-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .vis-thumb span { position: absolute; left: 0; right: 0; bottom: 0; font-size: .62rem; background: rgba(0, 0, 0, .55); color: #fff; padding: 1px 3px; }
 .vis-thumb button { position: absolute; top: 2px; right: 2px; border: 0; border-radius: 50%; width: 22px; height: 22px; line-height: 20px; padding: 0; background: rgba(198, 40, 40, .9); color: #fff; font-size: .8rem; cursor: pointer; }
+
+/* Caméras et surveillance (1.1) */
+.cam-preview { background: #000; border-radius: 8px; overflow: hidden; max-height: 360px; display: flex; justify-content: center; }
+.cam-preview video, .cam-preview img { max-width: 100%; max-height: 360px; display: block; }
+.surv-stage { position: relative; background: #111; aspect-ratio: 4 / 3; overflow: hidden; }
+.surv-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; }
+.surv-overlay { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+.surv-wait { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: .95rem; padding: 12px; text-align: center; }
+.surv-wait[hidden] { display: none; }
+.surv-dot { width: 11px; height: 11px; border-radius: 50%; background: #adb5bd; display: inline-block; }
+.surv-dot.on { background: #2ea043; box-shadow: 0 0 0 3px rgba(46, 160, 67, .25); }
+.surv-dot.err { background: #dc3545; }
+.surv-events { display: flex; gap: 6px; overflow-x: auto; margin-top: 8px; min-height: 58px; align-items: center; }
+.surv-ev { display: flex; gap: 6px; align-items: center; border: 1px solid #dee2e6; border-left: 4px solid #adb5bd; border-radius: 8px; padding: 3px 8px 3px 3px; font-size: .74rem; white-space: nowrap; background: var(--bs-body-bg, #fff); }
+.surv-ev.ok { border-left-color: #2ea043; } .surv-ev.unsure { border-left-color: #ffc107; } .surv-ev.bad { border-left-color: #dc3545; }
+.surv-ev img { width: 46px; height: 46px; object-fit: cover; border-radius: 6px; }
+.rep-thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; background: #f2f2f5; }
+.rep-bar { height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; display: flex; }
+.rep-bar span { display: block; height: 100%; }

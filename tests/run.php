@@ -2337,6 +2337,173 @@ test('Module Reconnaissance par photo : installation, apprentissage, droits, ind
     App\Core\Addons::setActive('vision', true);
 });
 
+test('Surveillance : moteur de comptage (ligne, zone, sens, hésitation, lumière) — tests JavaScript', function () {
+    $node = trim((string) shell_exec('command -v node 2>/dev/null'));
+    if ($node === '') {
+        ok(true, 'node absent : tests JavaScript non exécutés');
+        return;
+    }
+    exec(escapeshellarg($node) . ' ' . escapeshellarg(BASE_PATH . '/tests/js/track.test.js') . ' 2>&1', $out, $code);
+    ok($code === 0, implode("\n", $out));
+    ok((bool) preg_match('/(\d+) réussi\(s\), 0 échec/', implode("\n", $out), $m) && (int) $m[1] >= 12, 'au moins 12 vérifications du moteur : ' . end($out));
+});
+
+test('Module Reconnaissance 1.1 : caméras USB / carte / IP, relais sécurisé, surveillance, comparaison avec les ventes', function () use ($B, $port) {
+    App\Core\Addons::install('vision', false);
+    eq('1.1.0', App\Core\Addons::installed()['vision']['version'] ?? null, 'module mis à jour en 1.1.0');
+    ok((bool) DB::value("SELECT 1 FROM role_permissions rp JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id WHERE r.code = 'store_manager' AND p.code = 'vision.watch'"), 'droit de surveillance pour le gérant');
+    // Fausse caméra IP (serveur PHP séparé)
+    $cport = (int) (getenv('TEST_CAM_PORT') ?: $port + 7);
+    $cam = proc_open(sprintf('exec php -S 127.0.0.1:%d %s', $cport, escapeshellarg(BASE_PATH . '/tests/fake-camera.php')), [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $cp);
+    usleep(500000);
+    $CB = "http://127.0.0.1:$cport";
+    try {
+        $a = new Http();
+        $a->login($B, 'admin', 'Essai-Niamey-2026');
+        $t = $a->token("$B/vision/cameras");
+        ok($t !== '', 'page Caméras');
+        // Caméra IP protégée par mot de passe
+        $a->req('POST', "$B/vision/cameras", http_build_query(['_csrf' => $t, 'name' => 'Sortie IP', 'kind' => 'ip', 'url' => "$CB/auth.jpg", 'url_kind' => 'snapshot', 'fps' => 4, 'username' => 'cam', 'password' => 'S3cret!', 'use_surveillance' => 1, 'use_caisse' => 1, 'mode' => 'ligne', 'sensitivity' => 5, 'active' => 1]));
+        $ipc = DB::one("SELECT * FROM vision_cameras WHERE name = 'Sortie IP'");
+        ok($ipc && $ipc['secret'] && !str_contains((string) $ipc['secret'], 'S3cret'), 'mot de passe chiffré en base');
+        eq('S3cret!', Addons\Vision\CameraService::decrypt($ipc['secret']), 'mot de passe déchiffrable par le serveur seulement');
+        $page = $a->req('GET', "$B/vision/cameras")['body'];
+        ok(!str_contains($page, 'S3cret') && !str_contains($page, '/auth.jpg'), 'ni le mot de passe ni le chemin complet affichés');
+        preg_match('/name="csrf-token" content="([^"]+)"/', $page, $mm);
+        $hdr = ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $mm[1]];
+        $tst = json_decode($a->req('POST', "$B/vision/cameras/{$ipc['id']}/test", json_encode([]), $hdr)['body'], true);
+        ok(($tst['ok'] ?? false) && $tst['width'] === 640 && $tst['mime'] === 'image/jpeg', 'essai de connexion : image 640 px reçue (identifiants envoyés) : ' . json_encode($tst));
+        $f = $a->req('GET', "$B/vision/cameras/{$ipc['id']}/frame");
+        ok($f['code'] === 200 && str_starts_with($f['body'], "\xFF\xD8") && str_contains($f['headers'], 'no-store'), 'image relayée au navigateur (même origine)');
+        $src = json_decode($a->req('GET', "$B/vision/sources", null, ['Accept: application/json'])['body'], true);
+        ok($src['ok'] && !str_contains(json_encode($src), 'auth.jpg') && !str_contains(json_encode($src), 'secret'), 'liste des caméras sans adresse ni identifiant');
+        // Erreurs claires : mauvais mot de passe, redirection, pas une image, MJPEG accepté
+        DB::update('vision_cameras', ['secret' => Addons\Vision\CameraService::encrypt('faux')], 'id = ?', [$ipc['id']]);
+        $e1 = json_decode($a->req('POST', "$B/vision/cameras/{$ipc['id']}/test", json_encode([]), $hdr)['body'], true);
+        ok(!$e1['ok'] && str_contains($e1['error'], 'refuse'), 'mauvais mot de passe signalé');
+        foreach (['/redirect' => 'redirige', '/text' => 'JPEG'] as $u => $w) {
+            DB::update('vision_cameras', ['url' => $CB . $u], 'id = ?', [$ipc['id']]);
+            $e = json_decode($a->req('POST', "$B/vision/cameras/{$ipc['id']}/test", json_encode([]), $hdr)['body'], true);
+            ok(!$e['ok'] && str_contains($e['error'], $w), "erreur explicite ($u) : " . ($e['error'] ?? ''));
+        }
+        DB::update('vision_cameras', ['url' => "$CB/mjpeg", 'url_kind' => 'mjpeg', 'username' => null, 'secret' => null], 'id = ?', [$ipc['id']]);
+        $mj = json_decode($a->req('POST', "$B/vision/cameras/{$ipc['id']}/test", json_encode([]), $hdr)['body'], true);
+        ok(($mj['ok'] ?? false) && $mj['width'] === 640 && $mj['ms'] < 3000, 'flux MJPEG : première image extraite rapidement');
+        // Sécurité : adresses hors réseau local refusées ; identifiants dans l'adresse refusés
+        throws(fn() => Addons\Vision\CameraService::checkUrl('http://8.8.8.8/snap.jpg'), 'réseau local');
+        throws(fn() => Addons\Vision\CameraService::checkUrl('http://cam:pw@192.168.1.5/x.jpg'), 'identifiant');
+        throws(fn() => Addons\Vision\CameraService::checkUrl('file:///etc/passwd'), 'http');
+        ok(count(Addons\Vision\CameraService::checkUrl('http://192.168.1.64/ISAPI/Streaming/channels/101/picture')) === 1, 'adresse locale acceptée');
+        // Caméra USB / carte d'acquisition : choisie par le navigateur, pas de relais serveur
+        $t = $a->token("$B/vision/cameras");
+        $a->req('POST', "$B/vision/cameras", http_build_query(['_csrf' => $t, 'name' => 'Carte HDMI', 'kind' => 'carte', 'device_label' => 'USB Video (HDMI)', 'use_surveillance' => 1, 'mode' => 'zone', 'active' => 1]));
+        $usb = DB::one("SELECT * FROM vision_cameras WHERE name = 'Carte HDMI'");
+        ok($usb && $usb['kind'] === 'carte' && $usb['url'] === null && $usb['mode'] === 'zone', 'carte d\'acquisition enregistrée');
+        $uf = $a->req('GET', "$B/vision/cameras/{$usb['id']}/frame");
+        ok($uf['code'] === 502 && str_contains($uf['body'], 'navigateur du poste'), 'pas de relais serveur pour une caméra locale (lue par le navigateur)');
+        // Tracé de la ligne
+        $g = json_decode($a->req('POST', "$B/vision/cameras/{$ipc['id']}/geometry", json_encode(['line' => ['x1' => 0.5, 'y1' => 0, 'x2' => 0.5, 'y2' => 1], 'invert' => true, 'mode' => 'ligne']), $hdr)['body'], true);
+        ok($g['ok'] && $g['geometry']['invert'] === true, 'ligne rouge et sens enregistrés');
+        eq(422, $a->req('POST', "$B/vision/cameras/{$ipc['id']}/geometry", json_encode(['line' => ['x1' => 0.5, 'y1' => 0.5, 'x2' => 0.51, 'y2' => 0.5]]), $hdr)['code'], 'ligne trop courte refusée');
+        // Caissier : ni caméras, ni surveillance ; il lit seulement les caméras « caisse »
+        $c = new Http();
+        $c->login($B, 'caissier', 'Mot-de-passe-2026');
+        eq(403, $c->req('GET', "$B/vision/cameras")['code'], 'caméras : réservé');
+        eq(403, $c->req('GET', "$B/vision/surveillance")['code'], 'surveillance : réservée');
+        DB::update('vision_cameras', ['use_caisse' => 0], 'id = ?', [$ipc['id']]);
+        eq(404, $c->req('GET', "$B/vision/cameras/{$ipc['id']}/frame")['code'], 'caméra non « caisse » : image refusée au caissier');
+        DB::update('vision_cameras', ['use_caisse' => 1], 'id = ?', [$ipc['id']]);
+        eq(200, $c->req('GET', "$B/vision/cameras/{$ipc['id']}/frame")['code'], 'caméra « caisse » : image disponible pour la reconnaissance');
+
+        // Passages enregistrés par l'écran de surveillance
+        $pa = (int) DB::value("SELECT id FROM products WHERE name = 'Inv scan A'");
+        $pb = (int) DB::value("SELECT id FROM products WHERE name = 'Inv scan B'");
+        DB::run('DELETE FROM vision_events');
+        $thumb = 'data:image/jpeg;base64,' . base64_encode("\xFF\xD8\xFF\xE0vignette");
+        $sv = $a->req('GET', "$B/vision/surveillance");
+        ok($sv['code'] === 200 && str_contains($sv['body'], 'vision-surv.js') && str_contains($sv['body'], 'Sortie IP') && str_contains($sv['body'], 'pas une preuve'), 'écran de surveillance');
+        $add = fn(array $d) => json_decode($a->req('POST', "$B/vision/events", json_encode($d + ['camera_id' => $ipc['id'], 'thumb' => $thumb]), $hdr)['body'], true);
+        $e = $add(['direction' => 'sortie', 'product_id' => $pa, 'score' => 0.62, 'margin' => 0.2]);
+        eq('identifie', $e['status'] ?? null, 'reconnaissance sûre : « identifié »');
+        eq('incertain', $add(['direction' => 'sortie', 'product_id' => $pa, 'score' => 0.30, 'margin' => 0.01])['status'], 'reconnaissance faible : « incertain »');
+        eq('incertain', $add(['direction' => 'sortie'])['status'], 'sans article : non identifié');
+        eq(422, $a->req('POST', "$B/vision/events", json_encode(['camera_id' => $ipc['id'], 'direction' => 'volé']), $hdr)['code'], 'sens inconnu refusé');
+        eq(422, $a->req('POST', "$B/vision/events", json_encode(['camera_id' => $usb['id'] + 999, 'direction' => 'sortie']), $hdr)['code'], 'caméra inconnue refusée');
+
+        // Comparaison avec les ventes : rapprochement dans une fenêtre de temps
+        DB::run('DELETE FROM vision_events');
+        $day = date('Y-m-d', strtotime('-2 days'));
+        actingAs('admin');
+        if (!DB::value("SELECT id FROM cash_sessions WHERE register_id = 1 AND status = 'open'")) { S\CashService::open(1, 0); }
+        $sale = function (int $pid, float $q, string $at) {
+            $r = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $pid, 'quantity' => $q]], 'payments' => [['method' => 'cash', 'amount' => 100000]]]);
+            $sid = $r['id'] ?? $r['sale_id'];
+            DB::update('sales', ['created_at' => $at], 'id = ?', [$sid]);
+            DB::run("UPDATE stock_movements SET created_at = ? WHERE ref_type = 'sale' AND ref_id = ?", [$at, $sid]);
+        };
+        DB::run("UPDATE sales SET created_at = created_at - INTERVAL 30 DAY WHERE created_at BETWEEN ? AND ?", ["$day 00:00:00", "$day 23:59:59"]);
+        $sale($pa, 2, "$day 10:00:00");     // 2 unités vendues à 10 h
+        $sale($pb, 1, "$day 15:00:00");     // B vendu à 15 h
+        $ev = fn(int $cid, string $dir, ?int $pid, string $st, string $at) => DB::insert('vision_events', ['camera_id' => $cid, 'direction' => $dir, 'product_id' => $pid, 'score' => 0.6, 'margin' => 0.2, 'status' => $st, 'seen_at' => $at]);
+        $ev($ipc['id'], 'sortie', $pa, 'identifie', "$day 10:05:00");   // justifié (vente 10:00)
+        $ev($ipc['id'], 'sortie', $pa, 'identifie', "$day 10:12:00");   // justifié (2e unité)
+        $ev($ipc['id'], 'sortie', $pa, 'identifie', "$day 10:14:00");   // 3e passage : aucune unité restante → sans vente
+        $ev($ipc['id'], 'sortie', $pa, 'incertain', "$day 18:00:00");   // incertain, sans vente
+        $ev($ipc['id'], 'entree', $pa, 'identifie', "$day 18:30:00");   // retour : non compté comme sortie
+        $ev($ipc['id'], 'sortie', $pb, 'identifie', "$day 16:30:00");   // vente B à 15:00 → hors fenêtre de 20 min
+        $ev($ipc['id'], 'sortie', null, 'incertain', "$day 12:00:00");  // non identifié
+        $ignored = $ev($ipc['id'], 'sortie', $pb, 'identifie', "$day 12:30:00");
+        DB::update('vision_events', ['status' => 'ignore'], 'id = ?', [$ignored]);
+        $cmp = Addons\Vision\SurveillanceService::compare($day, $day, [], 20);
+        $rA = array_values(array_filter($cmp['rows'], fn($r) => $r['product_id'] === $pa))[0];
+        $rB = array_values(array_filter($cmp['rows'], fn($r) => $r['product_id'] === $pb))[0];
+        ok($rA['seen'] === 4 && $rA['seen_sure'] === 3 && $rA['returns'] === 1, 'A : 4 sorties vues (3 sûres), 1 retour : ' . json_encode($rA));
+        ok($rA['sold'] == 2 && $rA['matched'] === 2 && $rA['unmatched'] === 2 && $rA['unmatched_sure'] === 1, 'A : 2 unités vendues justifient 2 passages ; 1 passage sûr + 1 incertain sans vente');
+        ok($rA['level'] === 'alerte' && $rA['gap'] == 2, 'A : à vérifier en priorité, écart +2');
+        ok($rB['matched'] === 0 && $rB['unmatched_sure'] === 1 && $rB['sold'] == 1, 'B : vente hors fenêtre → passage non justifié');
+        $cmp60 = Addons\Vision\SurveillanceService::compare($day, $day, [], 120);
+        $rB2 = array_values(array_filter($cmp60['rows'], fn($r) => $r['product_id'] === $pb))[0];
+        ok($rB2['matched'] === 1 && $rB2['level'] === 'ok', 'B : avec une fenêtre de 2 h, le passage est justifié');
+        ok($cmp['totals']['unidentified'] === 1 && $cmp['totals']['events'] === 6, 'totaux : 6 sorties (ignoré exclu), 1 non identifiée');
+        ok($rA['stock_out'] >= 2 && ($rA['out_types']['sale'] ?? 0) >= 2, 'sorties de stock par type (ventes)');
+        eq(67, $cmp['totals']['coverage'], 'couverture : 2 des 3 unités vendues vues par la caméra');
+        ok($cmp['by_hour'][10]['seen'] === 3 && $cmp['by_hour'][10]['unmatched'] === 1, 'répartition horaire');
+        // Rapport HTTP, exports, revue
+        $rp = $a->req('GET', "$B/vision/rapport?from=$day&to=$day&window=20");
+        ok($rp['code'] === 200 && str_contains($rp['body'], 'Inv scan A') && str_contains($rp['body'], 'À vérifier en priorité') && str_contains($rp['body'], 'pas des preuves'), 'rapport : comparaison et analyse');
+        ok(str_contains($rp['body'], 'passage(s) identifié(s) avec certitude sans vente'), 'analyse rédigée automatiquement');
+        $csv = $a->req('GET', "$B/vision/rapport?from=$day&to=$day&window=20&export=csv");
+        ok(str_contains($csv['body'], 'Inv scan A') && str_contains($csv['headers'], 'text/csv'), 'export CSV');
+        ok(str_starts_with($a->req('GET', "$B/vision/rapport?from=$day&to=$day&export=pdf")['body'], '%PDF'), 'export PDF');
+        $unk = (int) DB::value('SELECT id FROM vision_events WHERE product_id IS NULL LIMIT 1');
+        $rv = json_decode($a->req('POST', "$B/vision/events/$unk", json_encode(['action' => 'correct', 'product_id' => $pb]), $hdr)['body'], true);
+        ok($rv['ok'] && $rv['status'] === 'corrige', 'passage non identifié corrigé');
+        $rs = json_decode($a->req('POST', "$B/vision/refs", json_encode(['product_id' => $pb, 'vec' => base64_encode(str_repeat("\x05\xFB", 256)), 'source' => 'surveillance']), $hdr)['body'], true);
+        ok($rs['ok'], 'vignette apprise depuis la surveillance');
+        $cf = json_decode($a->req('POST', "$B/vision/events/$unk", json_encode(['action' => 'confirm']), $hdr)['body'], true);
+        ok($cf['ok'] && $cf['status'] === 'confirme' && (int) DB::value('SELECT product_id FROM vision_events WHERE id = ?', [$unk]) === $pb, 'confirmation du passage corrigé');
+        $none = (int) DB::insert('vision_events', ['camera_id' => $ipc['id'], 'direction' => 'sortie', 'status' => 'incertain', 'seen_at' => date('Y-m-d H:i:s')]);
+        eq(422, $a->req('POST', "$B/vision/events/$none", json_encode(['action' => 'confirm']), $hdr)['code'], 'confirmer sans article proposé : refusé');
+        $ign = json_decode($a->req('POST', "$B/vision/events/$unk", json_encode(['action' => 'ignore']), $hdr)['body'], true);
+        ok($ign['status'] === 'ignore', 'passage ignoré (main, personne…)');
+        // Conservation : vieux passages effacés, récents gardés
+        DB::insert('vision_events', ['camera_id' => $ipc['id'], 'direction' => 'sortie', 'status' => 'incertain', 'seen_at' => date('Y-m-d H:i:s', strtotime('-400 days')), 'thumb' => $thumb]);
+        setting_set('vision_surv_conservation', '30');
+        ok(Addons\Vision\SurveillanceService::purge() >= 1 && (int) DB::value('SELECT COUNT(*) FROM vision_events') >= 8, 'purge des passages trop anciens seulement');
+        // Suppression : caméra avec passages seulement désactivée
+        $t = $a->token("$B/vision/cameras");
+        $a->req('POST', "$B/vision/cameras/{$ipc['id']}/delete", http_build_query(['_csrf' => $t]));
+        ok((int) DB::value('SELECT active FROM vision_cameras WHERE id = ?', [$ipc['id']]) === 0 && DB::value('SELECT COUNT(*) FROM vision_events WHERE camera_id = ?', [$ipc['id']]) > 0, 'caméra désactivée, passages conservés');
+        $a->req('POST', "$B/vision/cameras/{$usb['id']}/delete", http_build_query(['_csrf' => $t]));
+        ok(!DB::value('SELECT 1 FROM vision_cameras WHERE id = ?', [$usb['id']]), 'caméra sans passage supprimée');
+        // Lecteur caméra : choix de la caméra et caméras des modules
+        $js = (string) file_get_contents(PUBLIC_PATH . '/assets/js/scanner.js');
+        ok(str_contains($js, 'enumerateDevices') && str_contains($js, 'addSource') && str_contains($js, 'deviceId: { exact'), 'scanner : choix de la caméra (USB, carte, IP)');
+    } finally {
+        proc_terminate($cam);
+    }
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

@@ -1,27 +1,78 @@
 {
     "code": "vision",
     "name": "Reconnaissance des articles par photo",
-    "version": "1.0.0",
-    "requires": "2.1.0",
+    "version": "1.1.0",
+    "requires": "2.2.0",
     "author": "Mahamadou Hamidou (Mohamed) — POS Marwa",
-    "description": "Reconnaît les articles par la caméra (webcam du PC ou smartphone du réseau), sans code-barres : en caisse, au restaurant, en inventaire, aux étiquettes, à la pharmacie et dans la recherche d'articles. L'intelligence fonctionne dans le navigateur, sans Internet ; elle apprend les articles à partir de quelques photos et s'améliore à chaque vente confirmée.",
+    "description": "Reconnaît les articles par la caméra (webcam, caméra USB, carte d'acquisition, caméra IP du réseau ou smartphone), sans code-barres : en caisse, au restaurant, en inventaire, aux étiquettes, à la pharmacie et dans la recherche d'articles. Surveillance anti-vol : comptage automatique et en continu des articles qui franchissent une ligne ou passent dans une zone, puis comparaison avec les ventes et les sorties de stock. L'intelligence fonctionne dans le navigateur, sans Internet.",
     "icon": "bi-eye",
     "color": "#7b2cbf",
     "permissions": {
         "vision.use": "Reconnaître les articles par photo (caisse, inventaire, étiquettes…)",
-        "vision.teach": "Apprendre les photos des articles et régler la reconnaissance"
+        "vision.teach": "Apprendre les photos des articles et régler la reconnaissance",
+        "vision.watch": "Surveillance : caméras, comptage des passages, rapport de comparaison"
     },
     "roles": {
-        "owner": ["vision.use", "vision.teach"],
-        "store_manager": ["vision.use", "vision.teach"],
-        "stock_manager": ["vision.use", "vision.teach"],
-        "cashier": ["vision.use"],
-        "pharmacist": ["vision.use"],
-        "waiter": ["vision.use"],
-        "clinic_reception": ["vision.use"]
+        "owner": [
+            "vision.use",
+            "vision.teach",
+            "vision.watch"
+        ],
+        "store_manager": [
+            "vision.use",
+            "vision.teach",
+            "vision.watch"
+        ],
+        "stock_manager": [
+            "vision.use",
+            "vision.teach"
+        ],
+        "cashier": [
+            "vision.use"
+        ],
+        "pharmacist": [
+            "vision.use"
+        ],
+        "waiter": [
+            "vision.use"
+        ],
+        "clinic_reception": [
+            "vision.use"
+        ]
     },
     "menu": [
-        { "group": "Gestion des articles", "label": "Reconnaissance par photo", "icon": "bi-eye", "url": "/vision", "permission": "vision.teach", "color": "#7b2cbf" }
+        {
+            "group": "Gestion des articles",
+            "label": "Reconnaissance par photo",
+            "icon": "bi-eye",
+            "url": "/vision",
+            "permission": "vision.teach",
+            "color": "#7b2cbf"
+        },
+        {
+            "group": "Gestion des articles",
+            "label": "Surveillance des articles",
+            "icon": "bi-camera-video",
+            "url": "/vision/surveillance",
+            "permission": "vision.watch",
+            "color": "#c1121f"
+        },
+        {
+            "group": "Gestion des articles",
+            "label": "Passages vus / ventes",
+            "icon": "bi-clipboard-data",
+            "url": "/vision/rapport",
+            "permission": "vision.watch",
+            "color": "#c1121f"
+        },
+        {
+            "group": "Configuration",
+            "label": "Caméras",
+            "icon": "bi-webcam",
+            "url": "/vision/cameras",
+            "permission": "vision.watch",
+            "color": "#7b2cbf"
+        }
     ],
     "settings": {
         "vision_auto": "0",
@@ -29,10 +80,20 @@
         "vision_marge": "0.06",
         "vision_apprendre_ventes": "1",
         "vision_max_ventes": "12",
-        "vision_version": "1"
+        "vision_version": "1",
+        "vision_surv_seuil": "0.45",
+        "vision_surv_marge": "0.04",
+        "vision_surv_fenetre": "20",
+        "vision_surv_conservation": "30",
+        "vision_cam_publique": "0"
     },
     "assets": {
-        "js": ["vision.js"],
-        "css": ["vision.css"]
+        "js": [
+            "vision-track.js",
+            "vision.js"
+        ],
+        "css": [
+            "vision.css"
+        ]
     }
 }

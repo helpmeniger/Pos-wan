@@ -14,6 +14,9 @@
  * - Extensions (modules) : PMScanner.addTool({ id, label, when(opts), run(ctx), onOpen(ctx), onClose(ctx) })
  *   ajoute un bouton dans la fenêtre. opts.products = true signale que l'écran attend un article
  *   (code-barres ou référence) : la reconnaissance par photo, par exemple, ne s'affiche que là.
+ *   PMScanner.addSource({ id, label, open: async () => ({ stream, stop }) }) ajoute une caméra
+ *   (ex. caméra IP relayée par le serveur) à la liste des caméras du poste.
+ * - Choix de la caméra (webcam, caméra USB, carte d'acquisition, caméra IP) mémorisé sur le poste.
  */
 (function () {
   'use strict';
@@ -24,6 +27,10 @@
   let last = { code: null, seenAt: 0, acceptedAt: 0 };
   let audio = null;
   const tools = [];
+  const sources = [];       // caméras fournies par les modules (ex. caméras IP)
+  let stopExtra = null;     // arrêt d'une source de module
+  const CAM_KEY = 'pm-scan-cam';
+  const camChoice = () => { try { return localStorage.getItem(CAM_KEY) || ''; } catch (e) { return ''; } };
   let pendingStart = null; // outil à lancer dès l'ouverture (ex. bouton « Reconnaître » de la caisse)
   const SELF = (document.currentScript && document.currentScript.src) || '';
   /** ZXing n'est chargé qu'au premier usage (≈ 330 Ko), et seulement si le navigateur n'a pas de lecteur intégré. */
@@ -93,6 +100,7 @@
       <div class="pm-scan-tools" data-tools></div>
       <div class="pm-scan-extra" data-extra></div>
       <div class="pm-scan-actions">
+        <select class="pm-cam" data-cam title="${T('Caméra utilisée')}" hidden></select>
         <button type="button" class="pm-btn" data-restart>⟳ ${T('Relancer la caméra')}</button>
         <label class="pm-btn">📷 ${T('Photo du code')}<input type="file" accept="image/*" capture="environment" hidden data-photo></label>
         <button type="button" class="pm-btn pm-plus" data-plus disabled>+1</button>
@@ -101,6 +109,7 @@
     document.body.appendChild(el);
     el.addEventListener('click', (e) => { if (e.target === el || e.target.closest('[data-close]')) close(); });
     el.querySelector('[data-restart]').addEventListener('click', () => startCamera());
+    el.querySelector('[data-cam]').addEventListener('change', (e) => { try { localStorage.setItem(CAM_KEY, e.target.value); } catch (err) { /* */ } startCamera(); });
     el.querySelector('[data-plus]').addEventListener('click', () => { if (last.code) handle(last.code, true); });
     el.querySelector('[data-photo]').addEventListener('change', photo);
     el.querySelector('[data-manual]').addEventListener('keydown', (e) => {
@@ -143,15 +152,42 @@
     setTimeout(() => requestAnimationFrame(() => loop(video, canvas)), detector ? 120 : 220);
   }
 
+  /** Liste des caméras du poste (webcam, USB, carte d'acquisition) + caméras des modules. */
+  async function fillCameras() {
+    const sel = $u('[data-cam]');
+    let devs = [];
+    try { devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput'); } catch (e) { /* non disponible en HTTP */ }
+    const opts = [['', T('Caméra par défaut')]].concat(devs.map((d, i) => ['dev:' + d.deviceId, d.label || T('Caméra') + ' ' + (i + 1)]), sources.map((s) => ['src:' + s.id, s.label]));
+    const want = camChoice();
+    sel.innerHTML = opts.map(([v, l]) => `<option value="${String(v).replace(/"/g, '&quot;')}">${String(l).replace(/[<>&]/g, '')}</option>`).join('');
+    if (opts.some(([v]) => v === want)) sel.value = want;
+    sel.hidden = opts.length <= 2 && !sources.length && devs.length <= 1;
+  }
   async function startCamera() {
     stopCamera();
+    const choice = $u('[data-cam]').value || camChoice();
+    const src = choice.startsWith('src:') && sources.find((s) => 'src:' + s.id === choice);
+    if (src) {
+      msg(T('Connexion à la caméra…'));
+      try {
+        const r = await src.open();
+        stream = r.stream; stopExtra = r.stop || null;
+      } catch (e) { msg(e.message || T('Caméra injoignable.'), 'bad'); return; }
+      const v = $u('video'); v.srcObject = stream;
+      try { await v.play(); } catch (e) { /* lecture automatique */ }
+      running = true;
+      msg(T('Présentez le code-barres devant la caméra.'));
+      loop(v, document.createElement('canvas'));
+      return;
+    }
     if (!liveSupported()) {
       msg(T('Caméra en direct indisponible ici (le navigateur exige une connexion HTTPS). Utilisez « Photo du code » ou une douchette.'), 'warn');
       return;
     }
     msg(T('Ouverture de la caméra…'));
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      const dev = choice.startsWith('dev:') ? choice.slice(4) : '';
+      stream = await navigator.mediaDevices.getUserMedia({ video: Object.assign({ width: { ideal: 1280 }, height: { ideal: 720 } }, dev ? { deviceId: { exact: dev } } : { facingMode: { ideal: 'environment' } }), audio: false });
     } catch (e) {
       msg(e.name === 'NotAllowedError' ? T('Accès à la caméra refusé : autorisez-le dans le navigateur puis « Relancer la caméra ».') : T('Caméra introuvable ou occupée par une autre application.'), 'bad');
       return;
@@ -160,12 +196,14 @@
     video.srcObject = stream;
     try { await video.play(); } catch (e) { /* lecture automatique */ }
     running = true;
+    fillCameras(); // noms des caméras disponibles une fois l'autorisation donnée
     msg(T('Présentez le code-barres devant la caméra.'));
     loop(video, document.createElement('canvas'));
   }
   function stopCamera() {
     running = false;
     if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
+    if (stopExtra) { try { stopExtra(); } catch (e) { /* */ } stopExtra = null; }
   }
 
   async function photo(e) {
@@ -237,6 +275,7 @@
     document.body.classList.add('pm-scan-on');
     if (detector === null) detector = (await nativeDetector()) || false;
     if (!detector) await loadZxing();
+    await fillCameras();
     await startCamera();
     active.forEach((t) => { try { if (t.onOpen) t.onOpen(ctx()); } catch (e) { /* extension */ } });
     const st = opts.startTool && active.find((t) => t.id === opts.startTool);
@@ -252,7 +291,7 @@
     if (opts && opts.onClose) opts.onClose();
   }
 
-  window.PMScanner = { open, close, liveSupported, decodeCanvas, addTool, clickWith, isOpen: () => !!(ui && ui.classList.contains('open')), _handle: handle };
+  window.PMScanner = { open, close, liveSupported, decodeCanvas, addTool, addSource: (s) => sources.push(s), clickWith, isOpen: () => !!(ui && ui.classList.contains('open')), _handle: handle };
 
   // Boutons déclaratifs : <button data-camera-scan="#champ"> remplit le champ et soumet son formulaire
   document.addEventListener('click', (e) => {

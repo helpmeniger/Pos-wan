@@ -20,7 +20,7 @@ final class VisionService
 {
     public const DIM = 512;
     public const MODEL = 'mnv2-p512';
-    public const SOURCES = ['photo' => 'Photo apprise', 'fiche' => 'Photo de la fiche article', 'vente' => 'Appris pendant une vente'];
+    public const SOURCES = ['photo' => 'Photo apprise', 'fiche' => 'Photo de la fiche article', 'vente' => 'Appris pendant une vente', 'surveillance' => 'Appris en surveillance'];
     private const MAX_PER_PRODUCT = 60;
 
     public static function version(): int
@@ -64,7 +64,10 @@ final class VisionService
         if (!isset(self::SOURCES[$source])) {
             throw new BusinessException('Origine de la photo inconnue.');
         }
-        if ($source !== 'vente' && !can('vision.teach')) {
+        if ($source === 'surveillance' && !can('vision.watch') && !can('vision.teach')) {
+            throw new BusinessException('Vous n\'avez pas le droit d\'apprendre des photos d\'articles.');
+        }
+        if (!in_array($source, ['vente', 'surveillance'], true) && !can('vision.teach')) {
             throw new BusinessException('Vous n\'avez pas le droit d\'apprendre des photos d\'articles.');
         }
         if ($source === 'vente' && setting('vision_apprendre_ventes', '1') !== '1') {

@@ -14,3 +14,21 @@ $router->post('/vision/refs/{id}/delete', [V::class, 'deleteRef'], 'vision.teach
 $router->post('/vision/products/{id}/clear', [V::class, 'clearProduct'], 'vision.teach');
 $router->post('/vision/log', [V::class, 'log'], 'vision.use');
 $router->post('/vision/settings', [V::class, 'settings'], 'vision.teach');
+
+// Caméras et surveillance des passages (1.1)
+use Addons\Vision\SurveillanceController as S;
+
+$router->get('/vision/cameras', [S::class, 'cameras'], 'vision.watch');
+$router->post('/vision/cameras', [S::class, 'createCamera'], 'vision.watch');
+$router->post('/vision/cameras/settings', [S::class, 'settings'], 'vision.watch');
+$router->post('/vision/cameras/{id}', [S::class, 'saveCamera'], 'vision.watch');
+$router->post('/vision/cameras/{id}/delete', [S::class, 'deleteCamera'], 'vision.watch');
+$router->post('/vision/cameras/{id}/test', [S::class, 'testCamera'], 'vision.watch');
+$router->post('/vision/cameras/{id}/geometry', [S::class, 'geometry'], 'vision.watch');
+$router->get('/vision/cameras/{id}/frame', [S::class, 'frame'], 'vision.use');
+$router->get('/vision/sources', [S::class, 'sources'], 'vision.use');
+$router->get('/vision/surveillance', [S::class, 'surveillance'], 'vision.watch');
+$router->get('/vision/surveillance/today', [S::class, 'today'], 'vision.watch');
+$router->post('/vision/events', [S::class, 'addEvent'], 'vision.watch');
+$router->post('/vision/events/{id}', [S::class, 'review'], 'vision.watch');
+$router->get('/vision/rapport', [S::class, 'report'], 'vision.watch');
