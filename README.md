@@ -46,6 +46,15 @@ configurables ; plein écran.
   passent dans une zone.
 - **Rapport :** comparaison avec les ventes et les sorties de stock en fin de journée.
 
+**Nouveauté 2.3 : module Établissement** (écoles, collèges, lycées, universités)
+- **Scolarité :** élèves / étudiants, personnel, classes, inscriptions et échéancier.
+- **Caisse de l'établissement :** reçus, impayés, salaires, comptabilité.
+- **Notes et bulletins** imprimables, par élève ou par classe.
+- **Présences :** appel, et pointage des arrivées et départs par reconnaissance faciale
+  (consentement obligatoire).
+- **Mode « Établissement » :** la caisse et les menus n'affichent plus de termes commerciaux.
+- Voir `addons/ecole/README.md` (précision mesurée et limites).
+
 **Devis et bons de livraison** — devis imprimables, suivi, conversion en vente ; bons de
 livraison avec ou sans prix.
 

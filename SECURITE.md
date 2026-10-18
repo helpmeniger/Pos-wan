@@ -190,6 +190,29 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
   - la surveillance de personnes est soumise à la réglementation (information, finalité,
     durée de conservation).
 
+### Établissement : données des élèves et reconnaissance faciale (v2.3)
+- **Données faciales :**
+  - désactivées par défaut ;
+  - enregistrées seulement avec un consentement noté (qui, quand ; le parent ou tuteur pour un
+    mineur) ;
+  - effacées au retrait du consentement ou sur demande ;
+  - seules les empreintes (128 nombres) sont conservées, pas les photos de visage ;
+  - empreintes reçues vérifiées (taille, valeurs finies, non nulles).
+- **Droit séparé** `ecole.biometrie` pour enregistrer des visages et vérifier les passages. Le
+  caissier ne lit pas la galerie des empreintes (403, testé).
+- **Photos des fiches :** ré-encodées en JPEG avec un nom aléatoire, rangées hors du dossier
+  public (`storage/ecole/photos`, accès web refusé) et servies seulement après connexion et
+  contrôle des droits.
+- **Vignettes des passages :** contrôlées (JPEG en base64, taille limitée) et effacées après le
+  délai de conservation.
+- **Caisse :** paiements idempotents (identifiant unique), refus du dépassement du reste dû,
+  annulations avec motif contre-passées en caisse, session de caisse exigée, transactions et
+  verrous.
+- **Limites :** la reconnaissance ne détecte pas une photo présentée devant la caméra. Elle ne
+  doit pas servir de contrôle d'accès ni de base unique à une sanction. Le traitement
+  biométrique relève de la loi nigérienne sur les données personnelles (HAPDP) : voir
+  `addons/ecole/README.md`.
+
 ### Intégrité métier
 - **Transactions SQL** pour ventes, paiements, stocks, retours, réceptions, inventaires, caisse.
 - Verrous de ligne (`SELECT … FOR UPDATE`) sur stocks, lots, sessions de caisse, comptes

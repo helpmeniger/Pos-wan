@@ -2,6 +2,48 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.3.0] — 2026-10-19
+
+### Ajouté
+- **Module « Établissement » 1.0** (`addons/ecole`) pour écoles, collèges / lycées et
+  universités :
+  - années scolaires, trimestres / semestres, classes, matières, coefficients, crédits ;
+  - élèves / étudiants (photo, parent / tuteur, carte scolaire à code-barres) et personnel ;
+  - inscriptions avec échéancier (frais d'inscription, scolarité en tranches, remises, autres
+    frais), abandon, changement de classe ;
+  - caisse de l'établissement : recherche par nom, matricule, téléphone, carte ou visage ;
+    paiement idempotent ; reçu ticket 80 mm ou A4 ; inscription avec premier versement ;
+  - comptabilité de la période, impayés échus, salaires du personnel, annulations tracées ;
+  - notes, moyennes pondérées, rangs ex æquo, bulletins A4 par élève ou par classe, par
+    période ou annuels ;
+  - appel par classe et du personnel, clôture de la journée, relevé des absences ;
+  - **pointage par reconnaissance faciale** (webcam, caméra USB / carte d'acquisition, caméra
+    IP) : contrôle de qualité, accord sur plusieurs images, seuil et écart avec la 2ᵉ
+    personne, inconnus gardés pour vérification, consentement obligatoire, effacement.
+- **Mode de fonctionnement « Établissement scolaire / université »** : la caisse ouvre la caisse
+  de l'établissement, l'accueil et le tableau de bord sont ceux de l'établissement, les menus
+  et alertes commerciaux sont masqués (rien n'est supprimé).
+- Alertes : inscriptions avec frais échus impayés, visages inconnus à vérifier.
+
+### Changé
+- Une date seule s'affiche sans « 00:00 ».
+- Les mouvements de caisse des modules (clinique, pressing, établissement) ont un libellé dans
+  l'état de caisse.
+
+### Base de données
+- Module ecole `0001_ecole.sql` : tables `ecole_*`, compteurs EL, PE, REC, SAL.
+
+### Vérifié
+- 125 tests automatisés réussis (dont 5 pour le module : calculs, caisse, droits, tous les
+  formulaires et toutes les pages, impressions) et 15 tests JavaScript.
+- Essai Chromium de bout en bout, détaillé dans `addons/ecole/README.md` :
+  - inscription avec photos, caisse, reçu, notes, bulletins ;
+  - pointage par caméra simulée : élève et enseignant reconnus, inconnu signalé, aucun double
+    pointage.
+- Corrigé pendant l'essai : un visage qui en remplaçait un autre au même endroit n'était pas
+  analysé ; le suivi trop court sur un ordinateur lent.
+- **Non testé** avec de vraies caméras ni avec de vrais élèves.
+
 ## [2.2.1] — 2026-10-18
 
 ### Corrigé
@@ -16,7 +58,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [
     journalisée, un nouvel essai a lieu 10 minutes plus tard, et le bouton « Mettre à jour »
     reste disponible dans Modules.
 
- — 2026-10-18
+## [2.2.0] — 2026-10-18
 
 ### Ajouté
 - **Module Reconnaissance par photo 1.1 : caméras.**
@@ -54,7 +96,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [
 ### Base de données
 - Module vision `0002_cameras_surveillance.sql` : tables `vision_cameras` et `vision_events`.
 
- — 2026-10-18
+## [2.1.0] — 2026-10-18
 
 ### Ajouté
 - **Module « Reconnaissance des articles par photo »** (`addons/vision`, à activer dans
@@ -83,7 +125,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [
 - Module vision `0001_vision.sql` : tables `vision_refs` (empreintes) et `vision_log`
   (journal).
 
- — 2026-10-16 — POS Marwa
+## [2.0.0] — 2026-10-16 — POS Marwa
 
 ### Changé
 - **POS Wan devient POS Marwa** : nom affiché, documents et documentation. Restent inchangés

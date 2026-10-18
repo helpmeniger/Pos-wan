@@ -49,8 +49,9 @@ php bin/addons.php enable livraisons
 Le module d'exemple `addons/livraisons/` est un modèle simple ; `addons/pressing/` est un
 module complet (tarifs, paiements en caisse, impressions, rapport, export PDF) ;
 `addons/clinique/` montre la création de rôles, un écran plein écran actualisé en JSON et
-l'utilisation des services du noyau (vente pharmacie via `SaleService`). Copiez-les et
-adaptez-les.
+l'utilisation des services du noyau (vente pharmacie via `SaleService`). `addons/ecole/` est le
+plus complet (mode de fonctionnement dédié, caisse propre, impressions A4, reconnaissance
+faciale dans le navigateur). Copiez-les et adaptez-les.
 
 ```
 addons/

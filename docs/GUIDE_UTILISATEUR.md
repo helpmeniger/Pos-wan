@@ -178,6 +178,35 @@ rendez-vous, consultations, ordonnances délivrées par la pharmacie, hospitalis
 
 La pharmacie reste une vente séparée, reliée par l'ordonnance.
 
+### Établissement scolaire / université
+Module `addons/ecole/`, à activer dans Modules complémentaires, puis choisir le mode
+« Établissement scolaire / université » dans Paramètres (la caisse et les menus s'adaptent).
+
+1. **Paramètres de l'établissement :**
+   - créez l'année (3 trimestres ou 2 semestres) ;
+   - réglez les horaires et la tolérance de retard.
+2. **Classes et matières :** créez les classes avec leurs frais, puis le programme de chaque
+   classe (matières, coefficients, enseignant).
+3. **Caisse :**
+   - « Nouvelle inscription » crée la fiche, inscrit dans la classe, calcule l'échéancier et
+     encaisse le premier versement ;
+   - pour un élève déjà inscrit : recherchez-le (nom, matricule, téléphone du parent, carte
+     scannée) puis encaissez. Les échéances les plus anciennes sont réglées d'abord, sauf si
+     vous en cochez ;
+   - le reçu s'imprime en ticket ou en A4.
+4. **Notes :**
+   - créez une évaluation (barème, coefficient), puis saisissez les notes au clavier (Entrée =
+     élève suivant, « abs » = absent) ;
+   - Bulletins : complétez les appréciations, puis « Imprimer tous les bulletins ».
+5. **Présences :** faites l'appel par classe ; en fin de journée, « Clôturer la journée » note
+   absents ceux qui n'ont été ni appelés ni pointés.
+6. **Pointage par caméra (facultatif) :**
+   - activez la reconnaissance faciale dans les paramètres, après avoir informé les familles ;
+   - sur chaque fiche, cochez le consentement et prenez 2 ou 3 photos de face ;
+   - ouvrez « Pointage par caméra » sur le poste relié à la caméra et cliquez sur
+     « Démarrer » ;
+   - vérifiez chaque jour les « Passages à vérifier ».
+
 ### Reconnaissance des articles par photo
 Module fourni (`addons/vision/`), à activer dans Modules complémentaires.
 

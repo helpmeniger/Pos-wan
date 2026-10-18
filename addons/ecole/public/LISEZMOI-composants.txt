@@ -1,0 +1,15 @@
+Composants tiers du module « Établissement » (POS Marwa)
+=======================================================
+
+face-api.js
+  @vladmandic/face-api 1.7.15 (fichier dist/face-api.js, non modifié), qui inclut TensorFlow.js
+  (c) Vladimir Mandic et contributeurs — Licence MIT (voir LICENCE-face-api-MIT.txt)
+  TensorFlow.js (c) Google LLC — Licence Apache 2.0 (voir LICENCE-Apache-2.0.txt)
+  https://github.com/vladmandic/face-api
+
+modeles/ (detecteur, reperes, empreinte, detecteur-rapide : *.txt + *-NN.bin)
+  Réseaux publiés avec face-api (détection SSD MobileNet v1, 68 points de repère du visage,
+  empreinte faciale ResNet-34 de 128 nombres, détecteur rapide) — Licence MIT.
+  Modifications par POS Marwa : poids identiques, redécoupés en fichiers de 1 Mo maximum
+  (limites d'envoi de WampServer) ; descriptions renommées en .txt (Apache refuse les .json
+  dans le dossier public de POS Marwa).
