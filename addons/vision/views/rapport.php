@@ -40,6 +40,7 @@ if ($t['events'] === 0) {
   <div class="col-6 col-md-2"><label class="form-label mb-0">Au</label><input type="date" name="to" value="<?= e($to) ?>" class="form-control form-control-sm"></div>
   <div class="col-6 col-md-2"><label class="form-label mb-0">Fenêtre (± min)</label><input type="number" name="window" min="1" max="240" value="<?= (int) $cmp['window'] ?>" class="form-control form-control-sm"></div>
   <div class="col-12 col-md"><label class="form-label mb-0">Caméras</label><div><?php foreach ($cameras as $c): ?><label class="me-2"><input type="checkbox" name="camera[]" value="<?= (int) $c['id'] ?>" <?= in_array((int) $c['id'], $cams, true) ? 'checked' : '' ?>> <?= e($c['name']) ?></label><?php endforeach; ?><?= $cameras ? '' : '<span class="text-secondary">aucune</span>' ?></div></div>
+  <div class="col-auto"><label class="small"><input type="checkbox" name="all" value="1" <?= $all ? 'checked' : '' ?>> tous les articles du magasin</label></div>
   <div class="col-auto"><input type="hidden" name="show" value="<?= e($show) ?>"><button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> Comparer</button>
     <a class="btn btn-sm btn-outline-secondary" href="<?= e(query_with(['export' => 'csv'])) ?>">CSV</a> <a class="btn btn-sm btn-outline-secondary" href="<?= e(query_with(['export' => 'pdf'])) ?>">PDF</a></div>
 </div></form>
@@ -52,7 +53,7 @@ if ($t['events'] === 0) {
 
 <div class="card mb-3"><div class="card-header"><i class="bi bi-lightbulb"></i> Analyse</div><div class="card-body small">
   <?php foreach ($notes as [$cls, $txt]): ?><div class="alert alert-<?= e($cls) ?> py-1 px-2 mb-1"><?= e($txt) ?></div><?php endforeach; ?>
-  <div class="text-secondary mt-2">Un passage est « justifié » quand une vente du même article a lieu à ± <?= (int) $cmp['window'] ?> minutes. Ces indications ne sont pas des preuves : la détection et la reconnaissance automatiques peuvent se tromper. Vérifiez les vignettes avant toute conclusion.</div>
+  <div class="text-secondary mt-2"><?= $cmp['learned_only'] ? 'Comparaison limitée aux articles appris par la reconnaissance ou vus par une caméra (les autres ne peuvent pas être identifiés). ' : '' ?>Un passage est « justifié » quand une vente du même article a lieu à ± <?= (int) $cmp['window'] ?> minutes. Ces indications ne sont pas des preuves : la détection et la reconnaissance automatiques peuvent se tromper. Vérifiez les vignettes avant toute conclusion.</div>
 </div></div>
 
 <div class="row g-3">

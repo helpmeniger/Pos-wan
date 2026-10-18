@@ -149,7 +149,8 @@ final class SurveillanceController extends Controller
         }
         $cams = array_values(array_filter(array_map('intval', (array) Request::query('camera', []))));
         $window = (int) Request::query('window', setting('vision_surv_fenetre', '20'));
-        $cmp = SurveillanceService::compare($from, $to, $cams, $window);
+        $all = Request::query('all') === '1';
+        $cmp = SurveillanceService::compare($from, $to, $cams, $window, !$all);
         if (Export::requested()) {
             $lvl = ['alerte' => 'À vérifier en priorité', 'verifier' => 'À vérifier', 'ok' => 'Conforme'];
             Export::download("passages_ventes_{$from}_{$to}.csv", 'Passages vus / ventes / sorties de stock', ['Référence', 'Article', 'Passages vus', 'dont identifiés sûrs', 'Ventes', 'Sorties de stock', 'Passages justifiés', 'Non justifiés', 'Écart vus − vendus', 'Appréciation'],
@@ -165,7 +166,7 @@ final class SurveillanceController extends Controller
         };
         $events = DB::all("SELECT e.*, p.name AS product, c.name AS camera FROM vision_events e JOIN vision_cameras c ON c.id = e.camera_id LEFT JOIN products p ON p.id = e.product_id
                            WHERE e.seen_at BETWEEN ? AND ? AND $where" . ($cams ? ' AND e.camera_id IN (' . implode(',', $cams) . ')' : '') . ' ORDER BY e.seen_at DESC LIMIT 120', [$from . ' 00:00:00', $to . ' 23:59:59']);
-        view('vision::rapport', ['title' => 'Passages vus / ventes', 'cmp' => $cmp, 'from' => $from, 'to' => $to, 'cams' => $cams, 'show' => $show, 'events' => $events,
+        view('vision::rapport', ['title' => 'Passages vus / ventes', 'cmp' => $cmp, 'from' => $from, 'to' => $to, 'cams' => $cams, 'show' => $show, 'events' => $events, 'all' => $all,
             'cameras' => DB::all('SELECT id, name FROM vision_cameras ORDER BY name'), 'scripts' => ['addons/vision/vision-report.js']]);
     }
 

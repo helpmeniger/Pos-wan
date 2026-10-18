@@ -1,4 +1,4 @@
-# Module « Reconnaissance des articles par photo » (vision) — 1.0.0
+# Module « Reconnaissance des articles par photo » (vision) — 1.1.0
 
 Reconnaît les articles **par la caméra, sans code-barres** : webcam du PC de caisse, tablette
 ou smartphone connecté au réseau local. Une fois le module activé, la reconnaissance est
@@ -15,6 +15,86 @@ disponible **partout où POS Marwa attend un article** :
 
 Le module ne s'affiche pas là où l'on attend autre chose qu'un article (par exemple le retrait
 d'un dépôt pressing par son ticket).
+
+## Caméras (1.1) — Configuration → Caméras
+
+| Type | Branchement | Comment POS Marwa la lit |
+|---|---|---|
+| Webcam / caméra USB | Sur le poste | Directement par le navigateur ; choix de l'appareil mémorisé (le nom est retrouvé sur chaque poste) |
+| Carte d'acquisition / table de mixage | Boîtier HDMI-USB, carte PCIe, mélangeur vidéo, logiciel de caméra virtuelle | Windows la présente comme une caméra : même fonctionnement. Permet d'utiliser une caméra analogique, un enregistreur DVR/NVR (sortie HDMI) ou une régie |
+| Caméra IP | Réseau local (Wi-Fi ou câble) | Le serveur lit l'**image fixe** (snapshot JPEG) ou le **flux MJPEG** et la transmet au navigateur. Caméras uniquement RTSP : passer par **go2rtc** (gratuit) installé sur le serveur |
+
+- **Identifiants des caméras IP :**
+  - chiffrés en base ;
+  - jamais envoyés au navigateur ;
+  - adresses limitées au réseau local, sauf autorisation explicite ;
+  - pas de redirection suivie.
+- **Bouton « Tester » :** il affiche l'image en direct, avec la taille et le temps de réponse.
+- **Caméras en caisse :** une caméra cochée « Caisse et reconnaissance » apparaît dans le choix des caméras de la fenêtre caméra (scan des codes-barres et « Reconnaître »).
+- **Caméra IP sans HTTPS :** une caméra IP fonctionne aussi en caisse sans HTTPS.
+
+## Surveillance des articles (1.1) — Gestion des articles → Surveillance des articles
+
+**Ce que fait l'écran :**
+- Il analyse **en continu et en temps réel** chaque caméra cochée « Surveillance ».
+- Le calcul se fait sur le poste qui affiche l'écran, qui doit rester ouvert ; l'écran est
+  maintenu allumé.
+
+**Comment un passage est compté :**
+1. Le fond de l'image est appris ; ce qui bouge est isolé puis suivi d'une image à l'autre.
+2. Un passage est compté selon le mode choisi :
+   - **Ligne rouge** : quand un objet franchit la ligne. Le sens est indiqué par la flèche
+     « SORTIE » ; le sens inverse compte comme « retour ». Un objet qui hésite sur la ligne
+     n'est pas compté plusieurs fois.
+   - **Zone** : chaque objet qui entre et reste dans la zone est compté une fois.
+3. À chaque passage, une vignette de l'objet est prise et l'article est reconnu (si les
+   articles ont été appris). Le passage est enregistré comme « identifié », « incertain » ou
+   « non identifié ».
+
+**Tracé :** la ligne se trace en cliquant deux points sur l'image, la zone en faisant glisser
+un rectangle. Bouton « Sens » pour inverser, puis « Enregistrer le tracé ».
+
+**Rapport « Passages vus / ventes »** (fin de journée ou toute période) :
+- **Par article :**
+  - passages vus (dont sûrs) et retours ;
+  - unités vendues ;
+  - sorties de stock (toutes, par type) ;
+  - passages **justifiés** par une vente du même article à ± N minutes (20 par défaut) ;
+  - passages **sans vente**, et écart vus − vendus ;
+  - appréciation : conforme / à vérifier / à vérifier en priorité.
+- **Couverture des caméras :** part des articles vendus effectivement vue par une caméra. Si
+  elle est faible, les écarts ne sont pas fiables.
+- **Répartition par heure.**
+- **Analyse rédigée automatiquement :**
+  - articles à vérifier en priorité ;
+  - heures sensibles ;
+  - passages non identifiés ;
+  - sorties de stock autres que des ventes.
+- **Revue des passages :** confirmer, **corriger** (la vignette est alors apprise : la
+  reconnaissance s'améliore), ou **ignorer** (main, personne, reflet). Exports CSV et PDF.
+- **Articles comparés :** par défaut, ceux que la reconnaissance connaît ou qu'une caméra a
+  vus. La case « tous les articles du magasin » les inclut tous.
+
+**Conservation :** aucune vidéo n'est enregistrée, seulement une vignette de 112 px par
+passage, effacée après 30 jours (réglable).
+
+### Ce que la surveillance ne fait pas (limites honnêtes)
+- **Pas une preuve de vol.** Un passage « sans vente » signale une situation à vérifier
+  (vignette, comptage du rayon) ; il peut venir d'une erreur de détection ou de
+  reconnaissance.
+- **Détection par le mouvement :**
+  - plusieurs articles collés passent pour un seul ;
+  - une personne ou un chariot peut être compté : il faut le revoir et l'ignorer ;
+  - un article caché (sac, poche) n'est pas vu.
+  Placez la caméra au-dessus du passage, ligne perpendiculaire au mouvement, éclairage stable.
+- **Reconnaissance :** elle a la même précision que celle mesurée plus bas. Lors de l'essai
+  automatique, un jus a été pris pour un lait d'une autre marque ; le passage est resté
+  « incertain ».
+- **Caméras IP :** le comptage par ligne a besoin d'au moins 5 images/s pour un passage rapide.
+  La lecture d'images fixes par le serveur est réglable de 1 à 10 images/s ; le débit réel dépend de la caméra (non mesuré sur une vraie caméra).
+- **Vie privée :** filmer des personnes est encadré par la loi. Informez le personnel et la
+  clientèle (affichage), limitez les caméras aux zones utiles et respectez la réglementation
+  sur les données personnelles en vigueur au Niger.
 
 ## Installation
 

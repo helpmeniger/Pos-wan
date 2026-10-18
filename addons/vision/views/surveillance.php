@@ -2,7 +2,7 @@
 <script type="application/json" id="surv-data"><?= json_encode(['cameras' => $cameras], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
 <div class="row g-2 mb-3 surv-stats">
   <div class="col-6 col-md"><div class="card h-100"><div class="card-body py-2"><div class="small text-secondary">Passages aujourd'hui</div><div class="fs-4 fw-bold" data-t="events"><?= (int) $t['events'] ?></div></div></div></div>
-  <div class="col-6 col-md"><div class="card h-100"><div class="card-body py-2"><div class="small text-secondary">Articles identifiés</div><div class="fs-4 fw-bold" data-t="identified"><?= (int) $t['identified'] ?></div></div></div></div>
+  <div class="col-6 col-md"><div class="card h-100"><div class="card-body py-2"><div class="small text-secondary">Articles reconnus</div><div class="fs-4 fw-bold" data-t="identified"><?= (int) $t['identified'] ?></div></div></div></div>
   <div class="col-6 col-md"><div class="card h-100"><div class="card-body py-2"><div class="small text-secondary">Non identifiés</div><div class="fs-4 fw-bold" data-t="unidentified"><?= (int) $t['unidentified'] ?></div></div></div></div>
   <div class="col-6 col-md"><div class="card h-100"><div class="card-body py-2"><div class="small text-secondary">Unités vendues</div><div class="fs-4 fw-bold" data-t="sold"><?= qty($t['sold']) ?></div></div></div></div>
   <div class="col-12 col-md"><a class="card h-100 text-decoration-none border-danger" href="<?= e(url('/vision/rapport')) ?>"><div class="card-body py-2"><div class="small text-danger">Passages sans vente correspondante</div><div class="fs-4 fw-bold text-danger" data-t="unmatched"><?= (int) $t['unmatched'] ?></div></div></a></div>

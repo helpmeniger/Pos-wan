@@ -119,7 +119,8 @@ Fichiers de `public/` du module, chargés sur toutes les pages (gestion, caisse,
 tant que le module est actif. Un script peut ajouter un bouton au lecteur caméra avec
 `PMScanner.addTool({ id, label, when(opts), run(ctx) })`. `opts.products === true` indique
 que l'écran attend un article ; `ctx.deliver(code)` transmet un code comme s'il avait été
-scanné. Exemple complet : `addons/vision`.
+scanné. `PMScanner.addSource({ id, label, open })` ajoute une caméra (par exemple une caméra
+IP relayée par le serveur) au choix des caméras. Exemple complet : `addons/vision`.
 
 ### routes.php
 

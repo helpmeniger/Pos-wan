@@ -195,6 +195,19 @@ caméra de l'inventaire, des étiquettes, de la pharmacie et de la recherche d'a
 Le module reconnaît **les articles qui lui ont été appris**. Pour les articles presque
 identiques, préférez le code-barres. Guide : `addons/vision/README.md`.
 
+### Caméras et surveillance des articles (module Reconnaissance 1.1)
+1. **Configuration → Caméras :** ajoutez une webcam ou caméra USB, une carte d'acquisition
+   ou une caméra IP (adresse de l'image ou du flux MJPEG). Utilisez « Tester » pour vérifier
+   l'image.
+2. **Gestion des articles → Surveillance des articles :**
+   - tracez la ligne rouge (deux clics) ou la zone (glisser), puis enregistrez le tracé ;
+   - touchez « Démarrer la surveillance » et laissez l'écran ouvert sur ce poste.
+3. **En fin de journée, « Passages vus / ventes » :** comparez les passages aux ventes et aux
+   sorties de stock. Revoyez les passages sans vente (confirmer, corriger, ignorer).
+
+Ce sont des indications à vérifier, pas des preuves. Informez le personnel et la clientèle de
+la présence de caméras.
+
 ### Pressing
 Module fourni (`addons/pressing/`) : à installer depuis Modules complémentaires. Guide :
 `addons/pressing/README.md`.

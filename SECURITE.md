@@ -173,6 +173,23 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
   confirmée par le caissier, sauf si l'ajout automatique est activé par un responsable. Les
   ajouts automatiques ne sont pas appris.
 
+### Caméras et surveillance (module vision 1.1)
+- **Caméras IP :**
+  - mot de passe chiffré en base (XSalsa20-Poly1305, clé dérivée de `APP_KEY`) ;
+  - jamais renvoyé au navigateur, et adresse complète jamais affichée ;
+  - adresses limitées au réseau local, résolution DNS figée et aucune redirection suivie :
+    le serveur ne peut pas être utilisé pour joindre Internet ou un autre site ;
+  - taille de réponse limitée.
+- **Droits :**
+  - caméras, surveillance et rapport réservés au droit `vision.watch` ;
+  - l'image d'une caméra n'est fournie au caissier que si elle est déclarée « caisse ».
+- **Données conservées :** aucune vidéo ; une vignette de 112 px par passage, effacée après la
+  durée de conservation (30 jours par défaut).
+- **Limites :**
+  - un passage « sans vente » n'est pas une preuve ;
+  - la surveillance de personnes est soumise à la réglementation (information, finalité,
+    durée de conservation).
+
 ### Intégrité métier
 - **Transactions SQL** pour ventes, paiements, stocks, retours, réceptions, inventaires, caisse.
 - Verrous de ligne (`SELECT … FOR UPDATE`) sur stocks, lots, sessions de caisse, comptes

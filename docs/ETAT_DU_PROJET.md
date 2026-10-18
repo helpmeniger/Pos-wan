@@ -1,4 +1,4 @@
-# État du projet — version 2.1.0 (POS Marwa)
+# État du projet — version 2.2.0 (POS Marwa)
 
 ## Terminé et vérifié
 
@@ -58,8 +58,9 @@
 | **v2.0** Pressing 1.1 : caisse, statuts, retrait partiel, retards, suivi, historique client | ✅ | Tests + Chromium |
 | **v2.0** Lanceur Windows, raccourci, tâche planifiée, PWA | ⚠️ | Écrits et relus ; **non exécutés sous Windows** (voir `docs/DEMARRAGE_WINDOWS.md` §5) |
 | **v2.1** Module Reconnaissance des articles par photo (apprentissage, propositions, correction apprise, continu, statistiques) | ✅ fonctionnel, ⚠️ précision limitée | Test automatisé (droits, index, plafonds, désactivation) + essai Chromium de bout en bout (apprentissage par l'écran → caméra simulée en caisse → bon article proposé en 1ᵉʳ → ajouté et appris ; correction). Banc public de 31 articles très proches : 34 % au 1ᵉʳ rang, 65 % parmi 4 avec 5 photos ; 75 % parmi 4 avec 15 photos. **Non testé dans une vraie caisse ni sur un vrai téléphone** |
+| **v2.2** Caméras USB / carte d'acquisition / IP ; surveillance continue (ligne rouge, zone) ; rapport passages vus / ventes / sorties de stock | ✅ fonctionnel, ⚠️ indicatif | Tests (fausse caméra IP, sécurité, rapprochement horaire, couverture) + 15 tests du moteur de comptage + Chromium (webcam et caméra IP simulées : 3/3 passages comptés sur la caméra IP). **Non testé avec de vraies caméras, carte d'acquisition ou table de mixage** ; reconnaissance des passages limitée (voir module) |
 
-**Résultat de la suite de tests : 117 réussis, 0 échec** (`php tests/run.php`).
+**Résultat de la suite de tests : 119 réussis, 0 échec** (dont 15 vérifications JavaScript du moteur de comptage) (`php tests/run.php`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 

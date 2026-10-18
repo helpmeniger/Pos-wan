@@ -140,7 +140,7 @@
     event(ev) {
       const v = this.video; const k = v.videoWidth / this.small.width;
       const cx = (ev.box.x + ev.box.w / 2) * k, cy = (ev.box.y + ev.box.h / 2) * k;
-      const side = Math.min(Math.max(ev.box.w, ev.box.h) * k * 1.35, v.videoWidth, v.videoHeight);
+      const side = Math.min(Math.max(ev.box.w, ev.box.h) * k * 1.15, v.videoWidth, v.videoHeight);
       const x = Math.max(0, Math.min(v.videoWidth - side, cx - side / 2)), y = Math.max(0, Math.min(v.videoHeight - side, cy - side / 2));
       const crop = document.createElement('canvas'); crop.width = crop.height = Math.max(64, Math.min(448, Math.round(side)));
       crop.getContext('2d').drawImage(v, x, y, side, side, 0, 0, crop.width, crop.height);

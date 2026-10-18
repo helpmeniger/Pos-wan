@@ -40,6 +40,12 @@ configurables ; plein écran.
 - L'intelligence est locale, sans Internet. Elle apprend à partir de quelques photos et
   s'améliore à chaque vente confirmée.
 
+**Nouveauté 2.2 : caméras et surveillance des articles**
+- **Caméras :** USB, carte d'acquisition / table de mixage, ou caméra IP.
+- **Surveillance en continu :** comptage des articles qui franchissent une ligne rouge ou
+  passent dans une zone.
+- **Rapport :** comparaison avec les ventes et les sorties de stock en fin de journée.
+
 **Devis et bons de livraison** — devis imprimables, suivi, conversion en vente ; bons de
 livraison avec ou sans prix.
 

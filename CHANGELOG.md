@@ -2,7 +2,45 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
-## [2.1.0] — 2026-10-18
+## [2.2.0] — 2026-10-18
+
+### Ajouté
+- **Module Reconnaissance par photo 1.1 : caméras.**
+  - Webcam / USB et carte d'acquisition (table de mixage, HDMI) choisies sur le poste.
+  - Caméras IP lues par le serveur (image fixe ou MJPEG), avec identifiants chiffrés, réseau
+    local uniquement et bouton « Tester ».
+- **Lecteur caméra :** choix de la caméra mémorisé sur le poste ; les caméras IP sont
+  disponibles en caisse, même sans HTTPS.
+- **Surveillance des articles en continu :**
+  - détection du mouvement et suivi ;
+  - comptage par ligne rouge (sortie / retour) ou par zone ;
+  - vignette et reconnaissance de l'article à chaque passage ;
+  - plusieurs caméras sur un même écran.
+- **Rapport « Passages vus / ventes » :**
+  - rapprochement horaire de chaque passage avec une vente du même article ;
+  - passages sans vente, sorties de stock par type, couverture des caméras, répartition par
+    heure ;
+  - analyse rédigée automatiquement ;
+  - revue des passages (confirmer, corriger et apprendre, ignorer) ;
+  - exports CSV et PDF ;
+  - conservation limitée des vignettes.
+- **Cœur :** `PMScanner.addSource` (caméras fournies par un module).
+
+### Vérifié
+- Moteur de comptage : 15 vérifications JavaScript sur images synthétiques (sens, hésitation
+  sur la ligne, aller-retour, deux objets, bruit, lumière, extrémité de la ligne, zone).
+- Fausse caméra IP : mot de passe, MJPEG, redirection refusée, réponse non image.
+- Chromium avec une webcam simulée et une caméra IP simulée, chacune filmant un article qui
+  traverse l'image :
+  - **Caméra IP :** 3 passages comptés sur 3.
+  - **Webcam :** 2 passages, le premier ayant eu lieu pendant le démarrage de la caméra.
+  - **Reconnaissance :** juste pour le lait (webcam), fausse pour le jus (caméra IP, resté
+    « incertain »).
+
+### Base de données
+- Module vision `0002_cameras_surveillance.sql` : tables `vision_cameras` et `vision_events`.
+
+ — 2026-10-18
 
 ### Ajouté
 - **Module « Reconnaissance des articles par photo »** (`addons/vision`, à activer dans

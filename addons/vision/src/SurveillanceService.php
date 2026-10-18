@@ -82,7 +82,7 @@ final class SurveillanceService
      * du même article dans une fenêtre de ± N minutes ; les passages sans vente sont « non
      * justifiés » (à vérifier), les ventes sans passage mesurent la couverture des caméras.
      */
-    public static function compare(string $from, string $to, array $cameraIds, int $windowMin): array
+    public static function compare(string $from, string $to, array $cameraIds, int $windowMin, bool $learnedOnly = true): array
     {
         $windowMin = max(1, min(240, $windowMin));
         $start = $from . ' 00:00:00';
@@ -175,6 +175,20 @@ final class SurveillanceService
                 }
             }
         }
+        // Articles surveillés : ceux que la reconnaissance connaît (photos apprises) ou qu'une caméra a vus ;
+        // les autres articles du magasin ne peuvent pas être identifiés et fausseraient la comparaison.
+        if ($learnedOnly && $P) {
+            $known = array_flip(array_map('intval', array_column(DB::all('SELECT DISTINCT product_id FROM vision_refs WHERE product_id IN (' . implode(',', array_keys($P)) . ')'), 'product_id')));
+            $P = array_filter($P, fn($r) => isset($known[$r['product_id']]) || $r['seen'] > 0 || $r['returns'] > 0, ARRAY_FILTER_USE_BOTH);
+            foreach ($byHour as $h => $x) {
+                $byHour[$h]['sold'] = 0.0;
+            }
+            foreach ($sales as $s) {
+                if (isset($P[(int) $s['product_id']]) && $s['created_at'] >= $start && $s['created_at'] <= $end) {
+                    $byHour[(int) substr($s['created_at'], 11, 2)]['sold'] += (float) $s['qty'];
+                }
+            }
+        }
         $names = $P ? array_column(DB::all('SELECT id, name, reference FROM products WHERE id IN (' . implode(',', array_keys($P)) . ')'), null, 'id') : [];
         foreach ($P as $pid => &$r) {
             $r['name'] = $names[$pid]['name'] ?? ('#' . $pid);
@@ -196,9 +210,9 @@ final class SurveillanceService
                 'sold' => $soldTotal, 'stock_out' => array_sum(array_column($rows, 'stock_out')),
                 'matched' => array_sum(array_column($rows, 'matched')), 'unmatched' => array_sum(array_column($rows, 'unmatched')),
                 'unmatched_sure' => array_sum(array_column($rows, 'unmatched_sure')),
-                'coverage' => $soldTotal > 0 ? round(100 * $seenSales / $soldTotal) : null,
+                'coverage' => $soldTotal > 0 ? (int) round(100 * $seenSales / $soldTotal) : null,
             ],
-            'window' => $windowMin,
+            'window' => $windowMin, 'learned_only' => $learnedOnly,
         ];
     }
 }

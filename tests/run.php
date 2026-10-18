@@ -2444,6 +2444,9 @@ test('Module Reconnaissance 1.1 : caméras USB / carte / IP, relais sécurisé, 
         DB::run("UPDATE sales SET created_at = created_at - INTERVAL 30 DAY WHERE created_at BETWEEN ? AND ?", ["$day 00:00:00", "$day 23:59:59"]);
         $sale($pa, 2, "$day 10:00:00");     // 2 unités vendues à 10 h
         $sale($pb, 1, "$day 15:00:00");     // B vendu à 15 h
+        $pc = (int) DB::value("SELECT id FROM products WHERE name = 'Inv scan C'");
+        DB::run('DELETE FROM vision_refs WHERE product_id = ?', [$pc]);
+        $sale($pc, 1, "$day 11:00:00");     // C : jamais appris ni filmé
         $ev = fn(int $cid, string $dir, ?int $pid, string $st, string $at) => DB::insert('vision_events', ['camera_id' => $cid, 'direction' => $dir, 'product_id' => $pid, 'score' => 0.6, 'margin' => 0.2, 'status' => $st, 'seen_at' => $at]);
         $ev($ipc['id'], 'sortie', $pa, 'identifie', "$day 10:05:00");   // justifié (vente 10:00)
         $ev($ipc['id'], 'sortie', $pa, 'identifie', "$day 10:12:00");   // justifié (2e unité)
@@ -2466,7 +2469,10 @@ test('Module Reconnaissance 1.1 : caméras USB / carte / IP, relais sécurisé, 
         ok($rB2['matched'] === 1 && $rB2['level'] === 'ok', 'B : avec une fenêtre de 2 h, le passage est justifié');
         ok($cmp['totals']['unidentified'] === 1 && $cmp['totals']['events'] === 6, 'totaux : 6 sorties (ignoré exclu), 1 non identifiée');
         ok($rA['stock_out'] >= 2 && ($rA['out_types']['sale'] ?? 0) >= 2, 'sorties de stock par type (ventes)');
-        eq(67, $cmp['totals']['coverage'], 'couverture : 2 des 3 unités vendues vues par la caméra');
+        eq(67, $cmp['totals']['coverage'], 'couverture : 2 des 3 unités vendues (articles surveillés) vues par la caméra');
+        ok(!array_filter($cmp['rows'], fn($r) => $r['product_id'] === $pc), 'article jamais appris ni filmé : hors comparaison par défaut');
+        $cAll = Addons\Vision\SurveillanceService::compare($day, $day, [], 20, false);
+        ok((bool) array_filter($cAll['rows'], fn($r) => $r['product_id'] === $pc) && $cAll['totals']['coverage'] === 50, 'option « tous les articles » : inclus, couverture 2 / 4 : ' . json_encode($cAll['totals']));
         ok($cmp['by_hour'][10]['seen'] === 3 && $cmp['by_hour'][10]['unmatched'] === 1, 'répartition horaire');
         // Rapport HTTP, exports, revue
         $rp = $a->req('GET', "$B/vision/rapport?from=$day&to=$day&window=20");
