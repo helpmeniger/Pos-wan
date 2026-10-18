@@ -87,9 +87,11 @@ final class Menu
                 $out[$g] = $f;
             }
         }
-        // Mode Établissement : le groupe de l'établissement en tête
+        // Mode Établissement : le groupe de l'établissement en tête, aucun intitulé commercial
         if (BusinessMode::is('ecole') && isset($out['Établissement'])) {
             $out = ['Établissement' => $out['Établissement']] + $out;
+            $noms = ['Gestion des ventes' => 'Caisse', 'Finances & rapports' => 'Finances'];
+            $out = array_combine(array_map(fn($g) => $noms[$g] ?? $g, array_keys($out)), array_values($out));
         }
         return $out;
     }

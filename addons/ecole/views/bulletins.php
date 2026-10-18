@@ -13,14 +13,14 @@ $pq = $annuel ? 'annee' : $periode; $univ = $res && array_filter($res['matieres'
 <form method="post" action="<?= e(url('/ecole/bulletins/appreciations')) ?>" class="card"><?= csrf_field() ?>
   <input type="hidden" name="classe_id" value="<?= (int) $classe ?>"><input type="hidden" name="periode_id" value="<?= (int) $periode ?>">
   <div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0 ec-resultats"><thead><tr><th>Rang</th><th>Nom et prénom(s)</th>
-    <?php foreach ($res['matieres'] as $m): ?><th class="text-center small" title="<?= e($m['nom']) ?> · coefficient <?= e(rtrim(rtrim((string) $m['coefficient'], '0'), '.')) ?>"><?= e($m['code'] ?: mb_substr($m['nom'], 0, 6)) ?><br><span class="text-secondary">×<?= e(rtrim(rtrim((string) $m['coefficient'], '0'), '.')) ?></span></th><?php endforeach; ?>
+    <?php foreach ($res['matieres'] as $m): ?><th class="text-center small" title="<?= e($m['nom']) ?> · coefficient <?= e(Addons\Ecole\Ecole::nb($m['coefficient'])) ?>"><?= e($m['code'] ?: mb_substr($m['nom'], 0, 6)) ?><br><span class="text-secondary">×<?= e(Addons\Ecole\Ecole::nb($m['coefficient'])) ?></span></th><?php endforeach; ?>
     <th class="text-center">Moy.</th><?php if ($univ): ?><th class="text-center">Crédits</th><?php endif; ?><?php if (!$annuel): ?><th>Appréciation du conseil · conduite · décision</th><?php endif; ?><th></th></tr></thead><tbody>
   <?php foreach ($rows as $r): $el = $r['eleve']; $b = $app[$el['inscription_id']] ?? []; ?>
     <tr><td class="text-nowrap"><?= $r['rang'] ? '<b>' . (int) $r['rang'] . '</b>' . ($r['rang'] === 1 ? '<sup>er</sup>' : '<sup>e</sup>') . ($r['ex_aequo'] ? ' <span class="small text-secondary">ex</span>' : '') : '—' ?></td>
       <td><a href="<?= e(url('/ecole/eleves/' . $el['id'])) ?>"><?= e($el['nom'] . ' ' . $el['prenom']) ?></a></td>
       <?php foreach ($res['matieres'] as $m): $v = $r['matieres'][(int) $m['matiere_id']]; ?><td class="text-center <?= $v !== null && $v < 10 ? 'text-danger' : '' ?>"><?= $f($v) ?></td><?php endforeach; ?>
       <td class="text-center fw-bold <?= $r['moyenne'] !== null && $r['moyenne'] < (float) setting('ecole_seuil_passage', '10') ? 'text-danger' : '' ?>" title="<?= e(Notes::appreciation($r['moyenne'])) ?>"><?= $f($r['moyenne']) ?></td>
-      <?php if ($univ): ?><td class="text-center"><?= e(rtrim(rtrim(number_format($r['credits'], 2, '.', ''), '0'), '.')) ?></td><?php endif; ?>
+      <?php if ($univ): ?><td class="text-center"><?= e(Addons\Ecole\Ecole::nb($r['credits'])) ?></td><?php endif; ?>
       <?php if (!$annuel): ?><td><div class="d-flex gap-1"><input name="b[<?= (int) $el['inscription_id'] ?>][appreciation]" class="form-control form-control-sm" maxlength="500" value="<?= e((string) ($b['appreciation'] ?? '')) ?>" placeholder="<?= e(Notes::appreciation($r['moyenne'])) ?>">
         <input name="b[<?= (int) $el['inscription_id'] ?>][conduite]" class="form-control form-control-sm" style="max-width:110px" maxlength="100" value="<?= e((string) ($b['conduite'] ?? '')) ?>" placeholder="Conduite">
         <input name="b[<?= (int) $el['inscription_id'] ?>][decision]" class="form-control form-control-sm" style="max-width:130px" maxlength="100" value="<?= e((string) ($b['decision'] ?? '')) ?>" placeholder="Décision" list="ecDecisions"></div></td><?php endif; ?>

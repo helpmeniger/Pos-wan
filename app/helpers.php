@@ -176,7 +176,8 @@ function fdate(?string $d, bool $time = true): string
         return '';
     }
     $ts = strtotime($d);
-    return $ts ? date($time ? 'd/m/Y H:i' : 'd/m/Y', $ts) : '';
+    // Une date seule (AAAA-MM-JJ) s'affiche sans « 00:00 »
+    return $ts ? date($time && strlen($d) > 10 ? 'd/m/Y H:i' : 'd/m/Y', $ts) : '';
 }
 
 /** Paramètres applicatifs stockés en base (table settings). */

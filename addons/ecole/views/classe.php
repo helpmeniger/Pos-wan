@@ -14,8 +14,8 @@
       <div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Matière</th><th style="width:90px">Coef.</th><th style="width:90px" title="Université : crédits (ECTS) acquis si moyenne ≥ seuil">Crédits</th><th>Enseignant</th></tr></thead><tbody>
       <?php $prog = array_column($programme, null, 'matiere_id'); foreach ($matieres as $i => $m): $l = $prog[$m['id']] ?? null; ?>
         <tr><td><label><input type="checkbox" name="lignes[<?= $i ?>][matiere_id]" value="<?= (int) $m['id'] ?>" <?= $l ? 'checked' : '' ?>> <?= e($m['nom']) ?></label></td>
-          <td><input name="lignes[<?= $i ?>][coefficient]" class="form-control form-control-sm" inputmode="decimal" value="<?= e($l ? rtrim(rtrim((string) $l['coefficient'], '0'), '.') : '1') ?>"></td>
-          <td><input name="lignes[<?= $i ?>][credits]" class="form-control form-control-sm" inputmode="decimal" value="<?= e($l && $l['credits'] !== null ? rtrim(rtrim((string) $l['credits'], '0'), '.') : '') ?>"></td>
+          <td><input name="lignes[<?= $i ?>][coefficient]" class="form-control form-control-sm" inputmode="decimal" value="<?= e($l ? Addons\Ecole\Ecole::nb($l['coefficient']) : '1') ?>"></td>
+          <td><input name="lignes[<?= $i ?>][credits]" class="form-control form-control-sm" inputmode="decimal" value="<?= e($l && $l['credits'] !== null ? Addons\Ecole\Ecole::nb($l['credits']) : '') ?>"></td>
           <td><select name="lignes[<?= $i ?>][enseignant_id]" class="form-select form-select-sm"><option value="">—</option><?php foreach ($personnel as $p): if ($p['fonction'] !== 'enseignant' && $p['fonction'] !== 'direction') { continue; } ?><option value="<?= (int) $p['id'] ?>" <?= $l && (int) $l['enseignant_id'] === (int) $p['id'] ? 'selected' : '' ?>><?= e($p['nom'] . ' ' . $p['prenom']) ?></option><?php endforeach; ?></select></td></tr>
       <?php endforeach; ?>
       <?php if (!$matieres): ?><tr><td colspan="4" class="text-secondary">Créez d'abord les matières (Classes et matières).</td></tr><?php endif; ?>

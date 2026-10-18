@@ -1,6 +1,6 @@
 <?php use Addons\Ecole\Ecole; use Addons\Ecole\Notes;
 $f = fn($v) => $v === null ? '—' : number_format((float) $v, 2, ',', ' ');
-$c = fn($v) => rtrim(rtrim((string) $v, '0'), '.');
+$c = fn($v) => Addons\Ecole\Ecole::nb($v);
 $s = $res['stat']; $logo = setting('company_logo', ''); $seuil = (float) setting('ecole_seuil_passage', '10');
 $univ = (bool) array_filter($res['matieres'], fn($m) => $m['credits'] !== null);
 $titre = $periode ? 'Bulletin de notes · ' . $periode['nom'] : 'Bulletin annuel'; ?>

@@ -163,6 +163,12 @@ final class Ecole
                         WHERE c.annee_id = ?' . ($actives ? ' AND c.active = 1' : '') . ' ORDER BY c.cycle, c.niveau, c.nom', [$anneeId]);
     }
 
+    /** Nombre sans zéros inutiles : 10 → « 10 », 2.50 → « 2.5 » (barèmes, coefficients, crédits). */
+    public static function nb(mixed $v): string
+    {
+        return rtrim(rtrim(number_format((float) $v, 2, '.', ''), '0'), '.');
+    }
+
     public static function date(?string $d): bool
     {
         return (bool) ($d && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) && strtotime($d));

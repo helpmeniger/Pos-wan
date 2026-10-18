@@ -2796,6 +2796,8 @@ test('Mode Établissement : caisse de l\'établissement, aucun menu commercial, 
     ok($bul['code'] === 200 && str_contains($bul['body'], 'SANI') && str_contains($bul['body'], 'Moyenne générale') && str_contains($bul['body'], '13,53') && str_contains($bul['body'], 'Bon trimestre') && str_contains($bul['body'], 'ex æquo'), 'bulletin de l\'élève');
     $tous = $a->req('GET', "$B/ecole/bulletins/imprimer?classe=$c&periode=$per")['body'];
     eq(3, substr_count($tous, 'class="sheet bul"'), 'bulletins de toute la classe (une page par élève)');
+    ok(str_contains($bul['body'], 'Moyenne ≥ 10 :'), 'seuil d\'admission imprimé « 10 » (et non « 1 »)');
+    eq(['10', '2.5', '4', '0.75'], array_map([Addons\Ecole\Ecole::class, 'nb'], [10.0, '2.50', '4.00', 0.75]), 'nombres sans zéros inutiles');
     ok(str_contains($a->req('GET', "$B/ecole/bulletins/imprimer?classe=$c&periode=annee")['body'], 'Bulletin annuel'), 'bulletin annuel');
     foreach (["/ecole/eleves/$e1/carte", "/ecole/classes/$c/cartes", "/ecole/personnel/$prof/carte", "/ecole/recus/$rec", "/ecole/recus/$rec?format=a4", "/ecole/salaires/$sal"] as $u) {
         eq(200, $a->req('GET', $B . $u)['code'], "impression $u");

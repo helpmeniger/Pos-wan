@@ -224,14 +224,14 @@ final class ScolariteController extends Controller
             $point = (int) Request::input('point_id', 0) ?: null;
             $role = $point ? (string) DB::value('SELECT role FROM ecole_points WHERE id = ?', [$point]) : (string) Request::input('role', 'passage');
             if (Request::input('inconnu')) {
-                return ['passage' => Presences::inconnu($role, $point, $thumb ?: null)];
+                return ['passage' => Presences::inconnu($role, $point, $thumb ?: null), 'heure' => date('H:i')];
             }
             $type = (string) Request::input('type');
             if (!in_array($type, ['eleve', 'personnel'], true)) {
                 throw new BusinessException('Type inconnu.');
             }
             $num = fn($k) => is_numeric(Request::input($k)) ? round((float) Request::input($k), 3) : null;
-            return Presences::pointer($type, (int) Request::input('id'), $role ?: 'passage', $point, $num('distance'), $num('marge'), $thumb ?: null);
+            return Presences::pointer($type, (int) Request::input('id'), $role ?: 'passage', $point, $num('distance'), $num('marge'), $thumb ?: null) + ['heure' => date('H:i')];
         });
     }
 

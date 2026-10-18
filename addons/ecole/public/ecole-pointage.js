@@ -22,8 +22,11 @@
   if (!cfgEl || !window.EcoleVisage) return;
   const CFG = JSON.parse(cfgEl.textContent);
   const SEUIL = CFG.reglages.seuil || 0.5, MARGE = CFG.reglages.marge || 0.05;
-  const VOTES = 3, FENETRE = 5, INCONNU_APRES = 6, PAUSE_PERSONNE = 120000, OUBLI_SUIVI = 2000;
+  // Un visage est « oublié » s'il manque sur 2 images analysées de suite (ou 10 s) : le suivi reste
+  // fiable même sur un ordinateur lent où une analyse prend plus d'une seconde.
+  const VOTES = 3, FENETRE = 5, INCONNU_APRES = 6, PAUSE_PERSONNE = 120000, OUBLI_IMAGES = 2, OUBLI_MS = 10000;
   const APPRENDRE_DIST = 0.4, APPRENDRE_MARGE = 0.15;
+  const MEME_VISAGE = 0.6; // au-delà, deux images ne montrent pas la même personne
 
   const video = $('#ptVideo'), ov = $('#ptOverlay'), ctx = ov.getContext('2d'), msg = $('#ptMsg'), etat = $('#ptEtat');
   const selPoint = $('#ptPoint'), selRole = $('#ptRole'), selDev = $('#ptDevice'), bStart = $('#ptStart'), bStop = $('#ptStop');
@@ -76,13 +79,16 @@
 
   // ------------------------------------------------------------------ suivi des visages
   function associer(visages, t) {
-    S.suivis = S.suivis.filter((s) => t - s.vu < OUBLI_SUIVI);
+    S.suivis = S.suivis.filter((s) => S.image - s.image <= OUBLI_IMAGES && t - s.vu < OUBLI_MS);
     const libres = new Set(S.suivis);
     for (const v of visages) {
       const cx = v.box.x + v.box.width / 2, cy = v.box.y + v.box.height / 2;
       let best = null, bd = Infinity;
       for (const s of libres) {
         const d = Math.hypot(cx - s.cx, cy - s.cy);
+        // Même endroit mais visage différent (une personne en remplace une autre entre deux
+        // analyses) : nouveau suivi, sinon la 2ᵉ personne hériterait de la décision de la 1ʳᵉ.
+        if (s.visage && EcoleVisage.distance(v.empreinte, s.visage.empreinte) > MEME_VISAGE) continue;
         if (d < Math.max(v.box.width, s.w) * 0.8 && d < bd) { bd = d; best = s; }
       }
       if (!best) { best = { id: S.nextId++, images: [], decision: null, texte: '' }; S.suivis.push(best); }
@@ -127,8 +133,9 @@
     if ((s.bonnes >= INCONNU_APRES && !cle) || s.bonnes >= 15) { // 15 images sans certitude : douteux → vérification humaine
       s.decision = 'inconnu'; s.texte = 'Inconnu';
       S.nb.i++; $('#ptNbI').textContent = S.nb.i;
-      journal({ inconnu: true, thumb: s.meilleure && s.meilleure.thumb });
-      post('/ecole/pointage/evenement', { inconnu: 1, point_id: S.point ? S.point.id : null, role: S.point ? null : selRole.value, thumb: s.meilleure ? s.meilleure.thumb : '' }).catch((e) => { S.erreur = true; dire(e.message); });
+      const thumb = s.meilleure ? s.meilleure.thumb : '';
+      post('/ecole/pointage/evenement', { inconnu: 1, point_id: S.point ? S.point.id : null, role: S.point ? null : selRole.value, thumb })
+        .then((j) => journal({ inconnu: true, thumb, heure: j.heure })).catch((e) => { S.erreur = true; dire(e.message); });
     }
   }
 
@@ -148,7 +155,7 @@
       if (j.evenement === 'arrivee') { S.nb.a++; $('#ptNbA').textContent = S.nb.a; }
       if (j.evenement === 'depart') { S.nb.d++; $('#ptNbD').textContent = S.nb.d; }
       carte(p, evt, r, j.statut);
-      journal({ personne: p, evt, retard: j.statut === 'retard' });
+      journal({ personne: p, evt, retard: j.statut === 'retard', heure: j.heure });
       apprendre(s, r);
     } catch (e) { S.vus.delete(r.cle); s.decision = null; s.images = []; S.erreur = true; dire(e.message); }
   }
@@ -179,7 +186,7 @@
     if (ul.firstElementChild && ul.firstElementChild.classList.contains('text-secondary')) ul.innerHTML = '';
     const li = document.createElement('li');
     li.className = 'list-group-item d-flex gap-2 align-items-center';
-    const h = new Date().toTimeString().slice(0, 5);
+    const h = esc(x.heure || new Date().toTimeString().slice(0, 5)); // heure du serveur (celle enregistrée)
     li.innerHTML = x.inconnu
       ? `${x.thumb ? `<img class="ec-mini" src="${esc(x.thumb)}" alt="">` : ''}<span class="text-danger">Visage inconnu</span><span class="ms-auto text-secondary">${h}</span>`
       : `${x.personne.photo ? `<img class="ec-mini" src="${esc(x.personne.photo)}" alt="">` : '<span class="ec-mini ec-mini-empty"><i class="bi bi-person"></i></span>'}<span><b>${esc(x.personne.nom)}</b><br><span class="${x.retard ? 'text-warning' : 'text-secondary'}">${esc(x.evt)}</span></span><span class="ms-auto text-secondary">${h}</span>`;
@@ -194,6 +201,7 @@
     ctx.lineWidth = Math.max(2, w / 320);
     ctx.font = `${Math.max(14, Math.round(w / 45))}px sans-serif`;
     for (const s of S.suivis) {
+      if (s.image !== S.image) continue; // seulement les visages de l'image affichée
       const b = s.box, col = s.decision === 'reconnu' ? '#16a34a' : s.decision === 'inconnu' ? '#dc2626' : '#f59e0b';
       ctx.strokeStyle = col; ctx.strokeRect(b.x, b.y, b.width, b.height);
       const t = s.texte || '';
@@ -219,6 +227,9 @@
         await EcoleVisage.galerie(false).catch(() => {});
         const visages = await EcoleVisage.analyser(src, { minLargeur: 60, minScore: 0.7, maxVisages: 10 });
         S.image++;
+        const dt = performance.now() - t0;
+        S.vitesse = S.vitesse ? S.vitesse * 0.8 + dt * 0.2 : dt;
+        if (S.image % 5 === 0) etat.textContent = S.etat + ' · ' + (1000 / S.vitesse).toFixed(1) + ' image(s)/s' + (S.vitesse > 700 ? ' (ordinateur lent : la personne doit marquer un temps d\'arrêt devant la caméra)' : '');
         associer(visages, Date.now());
         for (const s of S.suivis) if (s.image === S.image) await decider(s, src);
         dessiner(src, w, h, p && p.ip);
@@ -246,7 +257,8 @@
       if (S.point && S.point.ip) { video.hidden = true; prendre = () => imageIP(S.point); } else { prendre = await ouvrirLocale(); }
       S.marche = true; S.suivis = [];
       bStart.hidden = true; bStop.hidden = false; selPoint.disabled = true; selDev.disabled = true;
-      etat.textContent = 'En marche · ' + g.personnes + ' personne(s) · ' + EcoleVisage.moteur.backend;
+      S.etat = 'En marche · ' + g.personnes + ' personne(s) · ' + EcoleVisage.moteur.backend; S.vitesse = 0;
+      etat.textContent = S.etat;
       dire('');
       boucle(prendre);
     } catch (e) {

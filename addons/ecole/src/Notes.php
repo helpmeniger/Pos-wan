@@ -80,7 +80,7 @@ final class Notes
                 $abs = in_array($v, ['abs', 'a', 'absent'], true);
                 $note = $abs ? null : round((float) str_replace(',', '.', $v), 2);
                 if (!$abs && (!is_numeric(str_replace(',', '.', $v)) || $note < 0 || $note > (float) $ev['bareme'])) {
-                    throw new BusinessException('Note invalide « ' . $v . ' » : elle doit être entre 0 et ' . rtrim(rtrim((string) $ev['bareme'], '0'), '.') . ' (ou « abs »).');
+                    throw new BusinessException('Note invalide « ' . $v . ' » : elle doit être entre 0 et ' . Ecole::nb($ev['bareme']) . ' (ou « abs »).');
                 }
                 DB::run('INSERT INTO ecole_notes (evaluation_id, eleve_id, note, absent) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE note = VALUES(note), absent = VALUES(absent)', [$evaluationId, $eleveId, $note, $abs ? 1 : 0]);
                 $n++;
