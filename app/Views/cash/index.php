@@ -1,5 +1,5 @@
 <?php
-$typeLabels = ['sale' => 'Ventes', 'sale_cancel' => 'Annulations', 'refund' => 'Remboursements', 'cash_in' => 'Apports', 'cash_out' => 'Retraits', 'expense' => 'Dépenses', 'income' => 'Recettes diverses', 'customer_payment' => 'Règlements clients', 'supplier_payment' => 'Paiements fournisseurs', 'expense_reversal' => 'Contrepassation dépense', 'income_reversal' => 'Contrepassation recette'];
+$typeLabels = ['sale' => 'Ventes', 'sale_cancel' => 'Annulations', 'refund' => 'Remboursements', 'cash_in' => 'Apports', 'cash_out' => 'Retraits', 'expense' => 'Dépenses', 'income' => 'Recettes diverses', 'customer_payment' => 'Règlements clients', 'supplier_payment' => 'Paiements fournisseurs', 'expense_reversal' => 'Contrepassation dépense', 'income_reversal' => 'Contrepassation recette', 'clinique' => 'Prestations clinique', 'pressing' => 'Pressing', 'pressing_refund' => 'Remboursements pressing', 'ecole' => 'Frais de scolarité', 'ecole_annulation' => 'Reçus de scolarité annulés', 'ecole_salaire' => 'Salaires du personnel', 'ecole_salaire_annule' => 'Salaires annulés'];
 ?>
 <?php if (!$register): ?>
   <div class="alert alert-warning">Aucune caisse n'est associée à votre compte. Un administrateur doit vous en affecter une (menu Utilisateurs).</div>

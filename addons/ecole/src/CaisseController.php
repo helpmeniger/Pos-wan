@@ -20,7 +20,7 @@ final class CaisseController extends Controller
         view('ecole::caisse', ['title' => 'Caisse de l\'établissement', 'sessionOuverte' => (bool) CashService::currentSession($u),
             'sessionRequise' => setting('require_cash_session', '1') === '1', 'annee' => Ecole::anneeCourante(), 'classes' => Ecole::classes(),
             'modes' => payment_methods(), 'operateurs' => mobile_money_providers(), 'eleveId' => (int) Request::query('eleve', 0),
-            'visage' => Biometrie::active(), 'scripts' => ['addons/ecole/ecole-visage.js', 'addons/ecole/ecole-caisse.js']]);
+            'visage' => Biometrie::active(), 'scripts' => ['addons/ecole/ecole-visage.js', 'addons/ecole/ecole-form.js', 'addons/ecole/ecole-caisse.js']]);
     }
 
     /** Dossier d'un élève pour la caisse : identité, inscription de l'année, échéances, reçus. */

@@ -57,14 +57,16 @@ final class EcoleController extends Controller
     public function sauverParametres(): void
     {
         $this->attempt(function () {
+            // Tout est vérifié avant d'enregistrer quoi que ce soit
+            foreach (['ecole_heure_debut', 'ecole_heure_fin'] as $k) {
+                if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', (string) Request::input($k, ''))) {
+                    throw new BusinessException('Heure invalide (format HH:MM).');
+                }
+            }
             $type = (string) Request::input('ecole_type', 'mixte');
             setting_set('ecole_type', isset(Ecole::TYPES[$type]) ? $type : 'mixte');
             foreach (['ecole_heure_debut', 'ecole_heure_fin'] as $k) {
-                $v = (string) Request::input($k, '');
-                if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $v)) {
-                    throw new BusinessException('Heure invalide (format HH:MM).');
-                }
-                setting_set($k, $v);
+                setting_set($k, (string) Request::input($k));
             }
             setting_set('ecole_tolerance', (string) max(0, min(120, (int) Request::input('ecole_tolerance', 10))));
             setting_set('ecole_seuil_passage', (string) max(0, min(20, round((float) str_replace(',', '.', (string) Request::input('ecole_seuil_passage', 10)), 2))));
@@ -136,7 +138,12 @@ final class EcoleController extends Controller
 
     public function supprimerPoint(int $id): void
     {
-        DB::run('DELETE FROM ecole_points WHERE id = ?', [$id]);
+        // Un point qui a déjà vu des passages est seulement désactivé (l'historique garde son nom)
+        if (DB::value('SELECT 1 FROM ecole_passages WHERE point_id = ? LIMIT 1', [$id])) {
+            DB::update('ecole_points', ['actif' => 0], 'id = ?', [$id]);
+        } else {
+            DB::run('DELETE FROM ecole_points WHERE id = ?', [$id]);
+        }
         flash('success', t('Point de pointage supprimé.'));
         redirect('/ecole/parametres');
     }

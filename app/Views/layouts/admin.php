@@ -35,9 +35,9 @@ $notes = $u ? Notifications::get() : [];
       <img src="<?= e(asset('img/logo.svg')) ?>" alt="" width="34" height="34">
       <span>POS <b>Marwa</b></span>
     </a>
-    <?php $posUrl = App\Services\BusinessMode::posUrl(); $posPerm = ['/clinique/caisse' => 'clinique.reception', '/pressing/caisse' => 'pressing.deposit'][$posUrl] ?? 'pos.sell'; ?>
+    <?php $posUrl = App\Services\BusinessMode::posUrl(); $posPerm = ['/clinique/caisse' => 'clinique.reception', '/pressing/caisse' => 'pressing.deposit', '/ecole/caisse' => 'ecole.caisse'][$posUrl] ?? 'pos.sell'; ?>
     <?php if (can($posPerm)): ?>
-    <a href="<?= e(url($posUrl)) ?>" class="btn btn-pos-launch"><i class="bi bi-cart3"></i> Ouvrir la caisse</a>
+    <a href="<?= e(url($posUrl)) ?>" class="btn btn-pos-launch"><i class="bi <?= $posUrl === '/pos' ? 'bi-cart3' : 'bi-cash-coin' ?>"></i> Ouvrir la caisse</a>
     <?php endif; ?>
     <nav class="side-nav">
       <?php foreach (Menu::visible() as $group => $items): ?>

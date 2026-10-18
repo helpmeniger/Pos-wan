@@ -1,5 +1,5 @@
 <?php use Addons\Ecole\Ecole; use Addons\Ecole\Finance; $ptype = 'eleve'; $e = null; $eleve = true; /* $eleve : formulaire « élève » (consentement) */ ?>
-<script type="application/json" id="ecole-caisse-data"><?= json_encode(['eleve' => (int) $eleveId, 'recu' => (int) ($_GET['recu'] ?? 0), 'visage' => $visage], JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
+<script type="application/json" id="ecole-caisse-data"><?= json_encode(['eleve' => (int) $eleveId, 'recu' => (int) ($_GET['recu'] ?? 0), 'visage' => $visage, 'seuil' => (float) setting('ecole_visage_seuil', '0.50'), 'marge' => (float) setting('ecole_visage_marge', '0.05')], JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
 <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
   <h2 class="h5 mb-0"><i class="bi bi-cash-coin"></i> Caisse <?= $annee ? '· ' . e($annee['libelle']) : '' ?></h2>
   <?php if ($sessionRequise): ?><span class="badge <?= $sessionOuverte ? 'bg-success' : 'bg-danger' ?>"><?= $sessionOuverte ? 'Caisse ouverte' : 'Caisse fermée' ?></span><?php if (!$sessionOuverte): ?> <a class="small" href="<?= e(url('/cash')) ?>">Ouvrir ma caisse</a><?php endif; ?><?php endif; ?>

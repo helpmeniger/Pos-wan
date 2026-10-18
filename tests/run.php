@@ -2553,6 +2553,430 @@ test('Mise à jour du logiciel : modules actifs mis à jour automatiquement (jam
     }
 });
 
+test('Module Établissement : installation, année, classes, inscriptions, échéances, caisse, reçus, salaires', function () {
+    App\Core\Addons::install('ecole', false);
+    ok(App\Core\Addons::isActive('ecole'), 'module actif');
+    $hasPerm = fn(string $role, string $perm) => (bool) DB::value('SELECT 1 FROM role_permissions rp JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id WHERE r.code = ? AND p.code = ?', [$role, $perm]);
+    ok($hasPerm('cashier', 'ecole.caisse') && !$hasPerm('cashier', 'ecole.finance') && !$hasPerm('cashier', 'ecole.biometrie') && $hasPerm('ecole_direction', 'ecole.biometrie') && $hasPerm('ecole_enseignant', 'ecole.notes'), 'rôles et droits');
+    // Reconnaissance faciale livrée en local : fragments ≤ 1 Mo, descriptions cohérentes
+    $dir = PUBLIC_PATH . '/assets/addons/ecole';
+    ok(is_file("$dir/face-api.js") && is_file("$dir/ecole-pointage.js") && is_file("$dir/ecole.css"), 'scripts publiés');
+    foreach (['detecteur', 'reperes', 'empreinte'] as $m) {
+        $man = json_decode((string) file_get_contents("$dir/modeles/$m.txt"), true);
+        $need = 0; $have = 0;
+        foreach ($man[0]['weights'] as $w) { $need += ($w['quantization']['dtype'] ?? $w['dtype']) === 'uint8' ? (int) array_product($w['shape'] ?: [1]) : 4 * (int) array_product($w['shape'] ?: [1]); }
+        foreach ($man[0]['paths'] as $f) { ok(is_file("$dir/modeles/$f") && filesize("$dir/modeles/$f") <= 1024 * 1024, "fragment $f ≤ 1 Mo"); $have += filesize("$dir/modeles/$f"); }
+        eq($need, $have, "modèle $m complet");
+    }
+    actingAs('admin');
+    throws(fn() => Addons\Ecole\Ecole::creerAnnee('X', '2026-09-01', '2026-01-01', 'trimestre', true), 'invalide');
+    $an = Addons\Ecole\Ecole::creerAnnee('2026-2027', date('Y-m-d', strtotime('-30 days')), date('Y-m-d', strtotime('+270 days')), 'trimestre', true);
+    eq(3, count(Addons\Ecole\Ecole::periodes($an)), '3 trimestres créés');
+    $c = Addons\Ecole\Ecole::sauverClasse(['nom' => 'CM2 A', 'cycle' => 'primaire', 'capacite' => 3, 'frais_inscription' => '10 000', 'frais_scolarite' => '90000', 'nb_tranches' => 3]);
+    throws(fn() => Addons\Ecole\Ecole::sauverClasse(['nom' => 'CM2 A']), 'existe déjà');
+    $maths = Addons\Ecole\Ecole::sauverMatiere('Mathématiques', 'MATH');
+    $fr = Addons\Ecole\Ecole::sauverMatiere('Français', 'FR');
+    $prof = Addons\Ecole\Personnes::sauverPersonnel(['nom' => 'Issa', 'prenom' => 'Moussa', 'fonction' => 'enseignant', 'salaire' => '150000']);
+    Addons\Ecole\Ecole::programme($c, [['matiere_id' => $maths, 'coefficient' => 4, 'enseignant_id' => $prof], ['matiere_id' => $fr, 'coefficient' => '3']]);
+    eq(2, (int) DB::value('SELECT COUNT(*) FROM ecole_classe_matieres WHERE classe_id = ?', [$c]), 'programme : 2 matières');
+
+    // Fiches : consentement facial tracé (qui l'a donné), matricule automatique
+    throws(fn() => Addons\Ecole\Personnes::sauverEleve(['nom' => 'Sani', 'prenom' => 'Aïcha', 'sexe' => 'F', 'consentement_visage' => '1']), 'indiquez qui');
+    $e1 = Addons\Ecole\Personnes::sauverEleve(['nom' => 'Sani', 'prenom' => 'Aïcha', 'sexe' => 'F', 'tuteur_nom' => 'Sani Ali', 'tuteur_tel' => '96 00 00 01', 'consentement_visage' => '1', 'consentement_par' => 'Sani Ali (père)']);
+    $e2 = Addons\Ecole\Personnes::sauverEleve(['nom' => 'Garba', 'prenom' => 'Ibrahim', 'sexe' => 'M']);
+    $e3 = Addons\Ecole\Personnes::sauverEleve(['nom' => 'Hamani', 'prenom' => 'Zeinab', 'sexe' => 'F']);
+    $e4 = Addons\Ecole\Personnes::sauverEleve(['nom' => 'Oumarou', 'prenom' => 'Adamou', 'sexe' => 'M']);
+    ok(str_starts_with((string) DB::value('SELECT matricule FROM ecole_eleves WHERE id = ?', [$e1]), 'EL'), 'matricule automatique');
+    eq('SANI', DB::value('SELECT nom FROM ecole_eleves WHERE id = ?', [$e1]), 'nom en majuscules');
+    eq(1, count(Addons\Ecole\Personnes::chercherEleves('96000001')), 'recherche par téléphone du parent');
+
+    // Inscription : échéances (inscription + scolarité en 3 tranches, remise déduite), doublon, capacité
+    throws(fn() => Addons\Ecole\Finance::inscrire($e1, $c, ['remise' => 95000]), 'dépasse');
+    $i1 = Addons\Ecole\Finance::inscrire($e1, $c, ['remise' => 1000, 'frais' => [['libelle' => 'Tenue', 'montant' => '5000']]]);
+    $ech = Addons\Ecole\Finance::echeances($i1);
+    eq(['Frais d\'inscription', 'Scolarité – tranche 1 / 3', 'Scolarité – tranche 2 / 3', 'Scolarité – tranche 3 / 3', 'Tenue'], array_column($ech, 'libelle'), 'échéances');
+    eq([10000.0, 29666.0, 29666.0, 29668.0, 5000.0], array_map('floatval', array_column($ech, 'montant')), 'tranches rondes, la dernière reçoit le reste');
+    throws(fn() => Addons\Ecole\Finance::inscrire($e1, $c, []), 'déjà inscrit');
+    $i2 = Addons\Ecole\Finance::inscrire($e2, $c, ['sans_frais_inscription' => 1]);
+    eq(90000.0, Addons\Ecole\Finance::solde($i2)['du'], 'sans frais d\'inscription');
+    $i3 = Addons\Ecole\Finance::inscrire($e3, $c, []);
+    throws(fn() => Addons\Ecole\Finance::inscrire($e4, $c, []), 'complète');
+
+    // Caisse : session de caisse exigée, idempotence, répartition, dépassement, annulation
+    if (!S\CashService::currentSession(Auth::user())) {
+        throws(fn() => Addons\Ecole\Finance::encaisser($i1, ['uuid' => uuid(), 'montant' => 1000]), 'caisse est fermée');
+        S\CashService::open((int) DB::value('SELECT id FROM registers ORDER BY id LIMIT 1 OFFSET 1') ?: 1, 0);
+    }
+    throws(fn() => Addons\Ecole\Finance::encaisser($i1, ['montant' => 1000]), 'Identifiant');
+    throws(fn() => Addons\Ecole\Finance::encaisser($i1, ['uuid' => uuid(), 'montant' => 200000]), 'dépasse');
+    $u = uuid();
+    $p1 = Addons\Ecole\Finance::encaisser($i1, ['uuid' => $u, 'montant' => '25 000', 'mode' => 'cash']);
+    ok(str_starts_with($p1['numero'], 'REC'), 'numéro de reçu');
+    $p1b = Addons\Ecole\Finance::encaisser($i1, ['uuid' => $u, 'montant' => '25000']);
+    ok(!empty($p1b['deja']) && $p1b['id'] === $p1['id'], 'double clic : un seul reçu');
+    eq([10000.0, 15000.0, 0.0], array_map('floatval', array_slice(array_column(Addons\Ecole\Finance::echeances($i1), 'paye'), 0, 3)), 'les plus anciennes d\'abord');
+    $tenue = (int) DB::value("SELECT id FROM ecole_echeances WHERE inscription_id = ? AND libelle = 'Tenue'", [$i1]);
+    throws(fn() => Addons\Ecole\Finance::encaisser($i1, ['uuid' => uuid(), 'montant' => 6000, 'echeances' => [$tenue]]), 'échéances choisies');
+    Addons\Ecole\Finance::encaisser($i1, ['uuid' => uuid(), 'montant' => 5000, 'echeances' => [$tenue]]);
+    eq(5000.0, (float) DB::value('SELECT paye FROM ecole_echeances WHERE id = ?', [$tenue]), 'échéance choisie réglée');
+    eq(30000.0, (float) DB::value("SELECT SUM(amount) FROM cash_movements WHERE type = 'ecole' AND ref_type = 'ecole_paiement'"), 'encaissements en caisse');
+    throws(fn() => Addons\Ecole\Finance::annuler($p1['id'], ''), 'Motif');
+    Addons\Ecole\Finance::annuler($p1['id'], 'Erreur de saisie');
+    eq(5000.0, Addons\Ecole\Finance::solde($i1)['paye'], 'annulation : montants de nouveau dus');
+    eq(-25000.0, (float) DB::value("SELECT amount FROM cash_movements WHERE type = 'ecole_annulation'"), 'contre-passation en caisse');
+    throws(fn() => Addons\Ecole\Finance::annuler($p1['id'], 'encore'), 'déjà annulé');
+    Addons\Ecole\Finance::encaisser($i1, ['uuid' => uuid(), 'montant' => 10000]);
+    $imp = array_column(Addons\Ecole\Finance::impayes(), 'echu', 'eleve_id');
+    eq(29666.0, (float) $imp[$e1], 'impayé échu : tranche 1');
+    eq(30000.0, (float) $imp[$e2], 'impayé échu sans frais d\'inscription');
+    $r = Addons\Ecole\Finance::rapport(date('Y-m-d'), date('Y-m-d'));
+    eq(15000.0, $r['recettes'], 'recettes du jour (reçu annulé exclu)');
+
+    // Salaires : un seul paiement par mois (sauf complément), annulation
+    $s1 = Addons\Ecole\Finance::payerSalaire($prof, date('Y-m'), []);
+    eq(150000.0, (float) DB::value('SELECT montant FROM ecole_salaires WHERE id = ?', [$s1['id']]), 'salaire de la fiche par défaut');
+    throws(fn() => Addons\Ecole\Finance::payerSalaire($prof, date('Y-m'), ['montant' => 1000]), 'déjà payé');
+    Addons\Ecole\Finance::payerSalaire($prof, date('Y-m'), ['montant' => 20000, 'complement' => 1]);
+    eq(-170000.0, (float) DB::value("SELECT SUM(amount) FROM cash_movements WHERE type = 'ecole_salaire'"), 'salaires sortis de la caisse');
+    Addons\Ecole\Finance::annulerSalaire($s1['id'], 'Erreur de mois');
+    eq(20000.0, Addons\Ecole\Finance::rapport(date('Y-m-d'), date('Y-m-d'))['salaires'], 'salaire annulé exclu du rapport');
+
+    // Abandon : les montants non payés ne sont plus dus, rien n'est effacé
+    Addons\Ecole\Finance::abandon($i3, 'abandon');
+    eq(0.0, Addons\Ecole\Finance::solde($i3)['reste'], 'abandon : plus rien de dû');
+    ok((int) DB::value('SELECT COUNT(*) FROM ecole_echeances WHERE inscription_id = ?', [$i3]) > 0, 'échéances conservées (annulées)');
+});
+
+test('Module Établissement : notes, moyennes pondérées, rangs ex æquo, bulletins, clôture', function () {
+    actingAs('admin');
+    $c = (int) DB::value("SELECT id FROM ecole_classes WHERE nom = 'CM2 A'");
+    [$maths, $fr] = [(int) DB::value("SELECT id FROM ecole_matieres WHERE code = 'MATH'"), (int) DB::value("SELECT id FROM ecole_matieres WHERE code = 'FR'")];
+    $per = Addons\Ecole\Ecole::periodes((int) DB::value('SELECT annee_id FROM ecole_classes WHERE id = ?', [$c]));
+    [$e1, $e2] = [(int) DB::value("SELECT id FROM ecole_eleves WHERE nom = 'SANI'"), (int) DB::value("SELECT id FROM ecole_eleves WHERE nom = 'GARBA'")];
+    $e3 = (int) DB::value("SELECT id FROM ecole_eleves WHERE nom = 'HAMANI'");
+    throws(fn() => Addons\Ecole\Notes::creerEvaluation(['classe_id' => $c, 'matiere_id' => 999999, 'periode_id' => $per[0]['id']]), 'pas au programme');
+    $d1 = Addons\Ecole\Notes::creerEvaluation(['classe_id' => $c, 'matiere_id' => $maths, 'periode_id' => $per[0]['id'], 'type' => 'devoir', 'bareme' => 10, 'coefficient' => 1]);
+    $d2 = Addons\Ecole\Notes::creerEvaluation(['classe_id' => $c, 'matiere_id' => $maths, 'periode_id' => $per[0]['id'], 'type' => 'composition', 'bareme' => 20, 'coefficient' => 2]);
+    $d3 = Addons\Ecole\Notes::creerEvaluation(['classe_id' => $c, 'matiere_id' => $fr, 'periode_id' => $per[0]['id'], 'bareme' => 20]);
+    throws(fn() => Addons\Ecole\Notes::saisir($d1, [$e1 => '11']), 'entre 0 et 10');
+    Addons\Ecole\Notes::saisir($d1, [$e1 => '8', $e2 => '6,5', $e3 => '10']); // e3 a abandonné : ignoré
+    eq(0, (int) DB::value('SELECT COUNT(*) FROM ecole_notes WHERE eleve_id = ?', [$e3]), 'élève parti : aucune note');
+    Addons\Ecole\Notes::saisir($d2, [$e1 => '14', $e2 => 'abs']);
+    Addons\Ecole\Notes::saisir($d3, [$e1 => '12', $e2 => '15']);
+    $r = Addons\Ecole\Notes::resultats($c, (int) $per[0]['id']);
+    // e1 : maths = (16×1 + 14×2) / 3 = 14,67 ; français 12 → (14,67×4 + 12×3) / 7 = 13,53
+    // (calculée sur les moyennes de matière arrondies, comme les colonnes « moy. × coef. » imprimées)
+    eq(14.67, $r['eleves'][$e1]['matieres'][$maths], 'moyenne de matière (barème ramené sur 20, coefficients)');
+    eq(13.53, $r['eleves'][$e1]['moyenne'], 'moyenne générale pondérée');
+    // e2 : absence ignorée → maths 13, français 15 → (13×4 + 15×3) / 7 = 13,86
+    eq(13.86, $r['eleves'][$e2]['moyenne'], 'absence ignorée par défaut');
+    eq(1, $r['eleves'][$e2]['rang']); eq(2, $r['eleves'][$e1]['rang']);
+    setting_set('ecole_absence_zero', '1');
+    $r0 = Addons\Ecole\Notes::resultats($c, (int) $per[0]['id']);
+    eq(4.33, $r0['eleves'][$e2]['matieres'][$maths], 'absence comptée 0 si l\'option est choisie');
+    setting_set('ecole_absence_zero', '0');
+    // e2 : note du devoir retirée, absent à la composition → plus aucune note de maths
+    Addons\Ecole\Notes::saisir($d3, [$e1 => '12', $e2 => '9.75']);
+    Addons\Ecole\Notes::saisir($d1, [$e2 => '']);
+    $r = Addons\Ecole\Notes::resultats($c, (int) $per[0]['id']);
+    eq(null, $r['eleves'][$e2]['matieres'][$maths], 'note retirée et absence : matière non évaluée');
+    eq(9.75, $r['eleves'][$e2]['moyenne'], 'moyenne sur les seules matières évaluées');
+    eq('Tableau d\'honneur', Addons\Ecole\Notes::distinction(13.53));
+    eq('Passable', Addons\Ecole\Notes::appreciation(10.0));
+    // Ex æquo
+    Addons\Ecole\Notes::saisir($d1, [$e2 => '8']); Addons\Ecole\Notes::saisir($d2, [$e2 => '14']); Addons\Ecole\Notes::saisir($d3, [$e2 => '12']);
+    $r = Addons\Ecole\Notes::resultats($c, (int) $per[0]['id']);
+    ok($r['eleves'][$e1]['rang'] === 1 && $r['eleves'][$e2]['rang'] === 1 && $r['eleves'][$e1]['ex_aequo'], 'ex æquo : même rang');
+    eq(2, $r['stat']['classes']); eq(13.53, $r['stat']['moy'], 'statistiques de classe');
+    $ins1 = (int) DB::value('SELECT id FROM ecole_inscriptions WHERE eleve_id = ?', [$e1]);
+    Addons\Ecole\Notes::sauverBulletin($ins1, (int) $per[0]['id'], ['appreciation' => 'Bon trimestre', 'decision' => 'Admis(e)']);
+    eq('Bon trimestre', DB::value('SELECT appreciation FROM ecole_bulletins WHERE inscription_id = ?', [$ins1]));
+    // Année entière = moyenne des périodes évaluées
+    eq(13.53, Addons\Ecole\Notes::resultats($c, null)['eleves'][$e1]['moyenne'], 'moyenne annuelle');
+    // Période clôturée : notes verrouillées
+    DB::update('ecole_periodes', ['cloturee' => 1], 'id = ?', [$per[0]['id']]);
+    throws(fn() => Addons\Ecole\Notes::saisir($d1, [$e1 => '9']), 'clôturée');
+    throws(fn() => Addons\Ecole\Notes::creerEvaluation(['classe_id' => $c, 'matiere_id' => $maths, 'periode_id' => $per[0]['id']]), 'clôturée');
+    DB::update('ecole_periodes', ['cloturee' => 0], 'id = ?', [$per[0]['id']]);
+});
+
+test('Module Établissement : appel, pointage caméra (arrivée, retard, départ), inconnus, données faciales et consentement', function () {
+    actingAs('admin');
+    [$e1, $e2] = [(int) DB::value("SELECT id FROM ecole_eleves WHERE nom = 'SANI'"), (int) DB::value("SELECT id FROM ecole_eleves WHERE nom = 'GARBA'")];
+    $prof = (int) DB::value("SELECT id FROM ecole_personnel WHERE nom = 'ISSA'");
+    throws(fn() => Addons\Ecole\Presences::appel('eleve', [$e2 => 'absent'], date('Y-m-d', strtotime('+1 day'))), 'future');
+    eq(1, Addons\Ecole\Presences::appel('eleve', [$e2 => 'absent', $e1 => 'n_importe'], date('Y-m-d')), 'statut inconnu ignoré');
+    setting_set('ecole_heure_debut', '00:00'); setting_set('ecole_tolerance', '0');
+    $pt = DB::insert('ecole_points', ['nom' => 'Portail', 'role' => 'passage', 'actif' => 1]);
+    $a = Addons\Ecole\Presences::pointer('personnel', $prof, 'passage', $pt, 0.41, 0.2);
+    ok($a['evenement'] === 'arrivee' && $a['statut'] === 'retard' && $a['personne']['nom'] === 'Moussa ISSA', 'arrivée en retard, fiche renvoyée');
+    eq('deja', Addons\Ecole\Presences::pointer('personnel', $prof, 'passage', $pt)['evenement'], 'passage moins de 30 min après : pas de départ');
+    eq('depart', Addons\Ecole\Presences::pointer('personnel', $prof, 'sortie', $pt)['evenement'], 'point de sortie : départ');
+    // L'appel manuel « absent » est corrigé par la caméra (la personne est bien venue)
+    $b = Addons\Ecole\Presences::pointer('eleve', $e2, 'entree', $pt);
+    ok($b['evenement'] === 'arrivee' && $b['statut'] === 'retard', 'appel corrigé par la caméra');
+    eq(2, (int) DB::value("SELECT COUNT(*) FROM ecole_passages WHERE statut = 'reconnu' AND personne_type = 'personnel'") - 1, 'passages journalisés');
+    // Visage inconnu → revue : attribution à la bonne personne (pointée à l'heure du passage)
+    $inc = Addons\Ecole\Presences::inconnu('entree', $pt, 'data:image/jpeg;base64,AAAA');
+    $rv = Addons\Ecole\Presences::revue($inc, 'attribuer', 'eleve', $e1);
+    eq('confirme', $rv['statut']);
+    ok((bool) DB::value("SELECT arrivee FROM ecole_presences WHERE personne_type = 'eleve' AND personne_id = ? AND date = CURDATE()", [$e1]), 'élève pointé à l\'heure du passage');
+    $j = Addons\Ecole\Presences::jour(date('Y-m-d'));
+    eq(0, (int) $j['classes'][0]['non_pointes'], 'tous pointés');
+    setting_set('ecole_heure_debut', '07:30'); setting_set('ecole_tolerance', '10');
+
+    // Données faciales : désactivées par défaut, consentement obligatoire, empreintes validées
+    $v = function (int $seed, int $bruit = 0): string {
+        mt_srand($seed); $x = [];
+        for ($i = 0; $i < 128; $i++) { $x[] = (mt_rand() / mt_getrandmax() - 0.5) * 0.3; }
+        if ($bruit) { mt_srand($bruit); foreach ($x as $k => $y) { $x[$k] = $y + (mt_rand() / mt_getrandmax() - 0.5) * 0.02; } }
+        return base64_encode(pack('g*', ...$x));
+    };
+    throws(fn() => Addons\Ecole\Biometrie::enregistrer('eleve', $e1, [$v(1)]), 'désactivée');
+    setting_set('ecole_visage_actif', '1');
+    throws(fn() => Addons\Ecole\Biometrie::enregistrer('eleve', $e2, [$v(2)]), 'Consentement');
+    throws(fn() => Addons\Ecole\Biometrie::enregistrer('eleve', $e1, [base64_encode(str_repeat("\0", 100))]), 'invalide');
+    throws(fn() => Addons\Ecole\Biometrie::enregistrer('eleve', $e1, [base64_encode(pack('g*', ...array_fill(0, 128, NAN)))]), 'invalide');
+    throws(fn() => Addons\Ecole\Biometrie::enregistrer('eleve', $e1, [base64_encode(pack('g*', ...array_fill(0, 128, 0.0)))]), 'vide');
+    $v0 = Addons\Ecole\Biometrie::version();
+    eq(2, Addons\Ecole\Biometrie::enregistrer('eleve', $e1, [$v(1), $v(1, 7)]), '2 empreintes');
+    ok(Addons\Ecole\Biometrie::version() > $v0, 'version de la galerie incrémentée (postes de pointage rafraîchis)');
+    // Limite par personne : les photos d'inscription ne sont jamais évincées par l'apprentissage au pointage
+    for ($k = 0; $k < 14; $k++) { Addons\Ecole\Biometrie::enregistrer('eleve', $e1, [$v(1, 100 + $k)], 'pointage'); }
+    eq(12, Addons\Ecole\Biometrie::nombre('eleve', $e1), 'au plus 12 empreintes');
+    eq(2, (int) DB::value("SELECT COUNT(*) FROM ecole_visages WHERE personne_id = ? AND source = 'inscription'", [$e1]), 'empreintes d\'inscription gardées');
+    $g = Addons\Ecole\Biometrie::galerie();
+    eq(12 * 512, strlen(base64_decode($g['empreintes'])), 'galerie : 128 nombres × 4 octets par empreinte');
+    // Retrait du consentement : effacement immédiat
+    Addons\Ecole\Personnes::sauverEleve(['nom' => 'Sani', 'prenom' => 'Aïcha', 'sexe' => 'F'], $e1);
+    eq(0, Addons\Ecole\Biometrie::nombre('eleve', $e1), 'consentement retiré : visage effacé');
+    Addons\Ecole\Personnes::sauverEleve(['nom' => 'Sani', 'prenom' => 'Aïcha', 'sexe' => 'F', 'consentement_visage' => '1', 'consentement_par' => 'Sani Ali (père)'], $e1);
+    Addons\Ecole\Biometrie::enregistrer('eleve', $e1, [$v(1)]);
+    // Clôture de la journée : les inscrits non pointés deviennent absents (sans écraser l'appel)
+    $e4 = (int) DB::value("SELECT id FROM ecole_eleves WHERE nom = 'OUMAROU'");
+    Addons\Ecole\Finance::inscrire($e4, (int) DB::value("SELECT id FROM ecole_classes WHERE nom = 'CM2 A'"), []);
+    eq(1, Addons\Ecole\Presences::cloturerJour(date('Y-m-d')), 'un absent ajouté');
+    eq('retard', DB::value("SELECT statut FROM ecole_presences WHERE personne_type = 'eleve' AND personne_id = ? AND date = CURDATE()", [$e2]), 'pointage conservé');
+    // Vignettes : conservation limitée
+    DB::insert('ecole_passages', ['role' => 'entree', 'statut' => 'inconnu', 'thumb' => 'data:image/jpeg;base64,AAAA', 'vu_a' => date('Y-m-d H:i:s', strtotime('-90 days'))]);
+    ok(Addons\Ecole\Presences::purgerVignettes() >= 1 && !DB::value("SELECT 1 FROM ecole_passages WHERE vu_a < NOW() - INTERVAL 60 DAY"), 'anciens inconnus effacés');
+});
+
+test('Mode Établissement : caisse de l\'établissement, aucun menu commercial, pages et impressions', function () use ($B) {
+    actingAs('admin');
+    S\BusinessMode::set('ecole');
+    ok(S\BusinessMode::hides('/products') && S\BusinessMode::hides('/sales') && S\BusinessMode::hides('/vision') && !S\BusinessMode::hides('/vision/cameras') && !S\BusinessMode::hides('/expenses'), 'menus commerciaux masqués, caméras et dépenses gardées');
+    eq('/ecole/caisse', S\BusinessMode::posUrl());
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    ok(str_contains($a->req('GET', "$B/")['headers'], '/ecole'), 'accueil : établissement');
+    ok(str_contains($a->req('GET', "$B/pos")['headers'], '/ecole/caisse'), 'caisse : caisse de l\'établissement');
+    ok(str_contains($a->req('GET', "$B/dashboard")['headers'], '/ecole'), 'tableau de bord : celui de l\'établissement');
+    $home = $a->req('GET', "$B/ecole")['body'];
+    ok(str_contains($home, 'Établissement') && !str_contains($home, 'Gestion des articles') && !str_contains($home, 'Achats &amp; fournisseurs') && !str_contains($home, '>Ventes<'), 'menu sans termes commerciaux');
+    ok(strpos($home, 'side-group">Établissement') < strpos($home, 'side-group">Configuration'), 'groupe Établissement en tête');
+    ok((bool) preg_match('#/ecole/caisse" class="btn btn-pos-launch"#', $home), 'bouton « Ouvrir la caisse » → caisse de l\'établissement');
+    $c = (int) DB::value("SELECT id FROM ecole_classes WHERE nom = 'CM2 A'");
+    $per = (int) DB::value('SELECT id FROM ecole_periodes ORDER BY id LIMIT 1');
+    $e1 = (int) DB::value("SELECT id FROM ecole_eleves WHERE nom = 'SANI'");
+    $prof = (int) DB::value("SELECT id FROM ecole_personnel WHERE nom = 'ISSA'");
+    $ev = (int) DB::value('SELECT id FROM ecole_evaluations ORDER BY id LIMIT 1');
+    $rec = (int) DB::value('SELECT id FROM ecole_paiements WHERE annule = 0 ORDER BY id LIMIT 1');
+    $sal = (int) DB::value('SELECT id FROM ecole_salaires ORDER BY id LIMIT 1');
+    foreach (['/ecole', '/ecole/caisse', "/ecole/caisse?eleve=$e1", '/ecole/eleves', '/ecole/eleves?classe=' . $c, '/ecole/eleves/nouveau', "/ecole/eleves/$e1", "/ecole/eleves/$e1/modifier", '/ecole/classes', "/ecole/classes/$c",
+              '/ecole/personnel', '/ecole/personnel/nouveau', "/ecole/personnel/$prof", "/ecole/personnel/$prof/modifier", '/ecole/notes', "/ecole/notes?classe=$c&periode=$per", "/ecole/evaluations/$ev",
+              '/ecole/bulletins', "/ecole/bulletins?classe=$c&periode=annee", '/ecole/presences', "/ecole/presences/classe/$c", '/ecole/presences/personnel', '/ecole/presences/rapport', '/ecole/pointage',
+              '/ecole/passages', '/ecole/passages?f=tous', '/ecole/comptabilite', '/ecole/impayes', '/ecole/salaires', '/ecole/parametres', '/cash', '/expenses', '/menu'] as $u) {
+        $r = $a->req('GET', $B . $u);
+        eq(200, $r['code'], "page $u");
+        ok(!str_contains($r['body'], 'Une erreur interne'), "page $u sans erreur");
+    }
+    // Impressions : carte, cartes de classe, reçu (ticket et A4), bulletins (élève, classe, année), bulletin de paie
+    $bul = $a->req('GET', "$B/ecole/bulletins/imprimer?classe=$c&periode=$per&eleve=$e1");
+    ok($bul['code'] === 200 && str_contains($bul['body'], 'SANI') && str_contains($bul['body'], 'Moyenne générale') && str_contains($bul['body'], '13,53') && str_contains($bul['body'], 'Bon trimestre') && str_contains($bul['body'], 'ex æquo'), 'bulletin de l\'élève');
+    $tous = $a->req('GET', "$B/ecole/bulletins/imprimer?classe=$c&periode=$per")['body'];
+    eq(3, substr_count($tous, 'class="sheet bul"'), 'bulletins de toute la classe (une page par élève)');
+    ok(str_contains($a->req('GET', "$B/ecole/bulletins/imprimer?classe=$c&periode=annee")['body'], 'Bulletin annuel'), 'bulletin annuel');
+    foreach (["/ecole/eleves/$e1/carte", "/ecole/classes/$c/cartes", "/ecole/personnel/$prof/carte", "/ecole/recus/$rec", "/ecole/recus/$rec?format=a4", "/ecole/salaires/$sal"] as $u) {
+        eq(200, $a->req('GET', $B . $u)['code'], "impression $u");
+    }
+    $ra4 = $a->req('GET', "$B/ecole/recus/$rec?format=a4")['body'];
+    ok(str_contains($ra4, 'SANI') && str_contains($ra4, 'CM2 A') && str_contains($ra4, 'class="sheet'), 'reçu A4');
+    foreach (['/ecole/eleves?export=csv', '/ecole/comptabilite?export=csv', '/ecole/impayes?export=csv', "/ecole/bulletins?classe=$c&periode=$per&export=csv", '/ecole/presences/rapport?export=csv'] as $u) {
+        $r = $a->req('GET', $B . $u);
+        ok($r['code'] === 200 && str_contains($r['headers'], 'text/csv'), "export $u");
+    }
+    ok(str_starts_with($a->req('GET', "$B/ecole/impayes?export=pdf")['body'], '%PDF'), 'export PDF des impayés');
+    // Caisse (JSON) : dossier, paiement idempotent
+    $hdr = ['Accept: application/json'];
+    $d = json_decode($a->req('GET', "$B/ecole/caisse/eleve/$e1", null, $hdr)['body'], true);
+    ok($d['ok'] && $d['inscription']['classe'] === 'CM2 A' && count($d['echeances']) === 5 && $d['solde']['reste'] > 0, 'dossier de caisse');
+    $t = $a->token("$B/ecole/caisse");
+    $u = uuid();
+    $pay = fn() => json_decode($a->req('POST', "$B/ecole/caisse/paiement", http_build_query(['_csrf' => $t, 'inscription_id' => $d['inscription']['id'], 'uuid' => $u, 'montant' => '1000', 'mode' => 'cash']), $hdr)['body'], true);
+    $p1 = $pay(); $p2 = $pay();
+    ok($p1['ok'] && $p2['ok'] && $p1['id'] === $p2['id'] && !empty($p2['deja']), 'paiement depuis la caisse : un seul reçu même envoyé deux fois');
+    $s = json_decode($a->req('GET', "$B/ecole/eleves/recherche?q=sani", null, $hdr)['body'], true);
+    ok($s['ok'] && $s['items'][0]['id'] === $e1, 'recherche dans la caisse');
+    // Inscription depuis la caisse (nouvel élève + premier versement), reçu affiché
+    $r = $a->req('POST', "$B/ecole/caisse/inscription", http_build_query(['_csrf' => $t, 'nom' => 'Moussa', 'prenom' => 'Fati', 'sexe' => 'F', 'classe_id' => $c, 'uuid' => uuid(), 'premier_paiement' => '10000', 'mode' => 'cash']));
+    ok($r['code'] === 302 && !str_contains($r['headers'], 'recu=') && !DB::value("SELECT 1 FROM ecole_eleves WHERE nom = 'MOUSSA'"), 'classe complète : rien n\'est créé (ni fiche, ni reçu)');
+    DB::update('ecole_classes', ['capacite' => null], 'id = ?', [$c]);
+    $r = $a->req('POST', "$B/ecole/caisse/inscription", http_build_query(['_csrf' => $t, 'nom' => 'Moussa', 'prenom' => 'Fati', 'sexe' => 'F', 'classe_id' => $c, 'uuid' => uuid(), 'premier_paiement' => '10000', 'mode' => 'cash']));
+    ok($r['code'] === 302 && str_contains($r['headers'], 'recu='), 'inscription + premier versement depuis la caisse');
+    ok((bool) DB::value("SELECT 1 FROM ecole_inscriptions i JOIN ecole_eleves e ON e.id = i.eleve_id WHERE e.nom = 'MOUSSA'"), 'élève inscrit');
+    // Pointage : événement envoyé par le poste, galerie des visages
+    $g = json_decode($a->req('GET', "$B/ecole/visages/galerie", null, $hdr)['body'], true);
+    ok($g['ok'] && strlen(base64_decode($g['empreintes'])) === 512 * count($g['ids']) && count($g['ids']) >= 1, 'galerie des empreintes');
+    $tp = $a->token("$B/ecole/pointage");
+    $ev = json_decode($a->req('POST', "$B/ecole/pointage/evenement", http_build_query(['_csrf' => $tp, 'type' => 'eleve', 'id' => $e1, 'role' => 'entree', 'distance' => '0.38', 'marge' => '0.21', 'thumb' => 'data:image/jpeg;base64,AAAA']), $hdr)['body'], true);
+    ok($ev['ok'] && $ev['personne']['id'] === $e1, 'pointage enregistré');
+    $bad = $a->req('POST', "$B/ecole/pointage/evenement", http_build_query(['_csrf' => $tp, 'type' => 'eleve', 'id' => $e1, 'thumb' => 'javascript:alert(1)']), $hdr);
+    eq(422, $bad['code'], 'vignette non JPEG refusée');
+    // Droits : le caissier encaisse mais ne voit ni la galerie des visages, ni l'annulation, ni les notes
+    $k = new Http();
+    $k->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(200, $k->req('GET', "$B/ecole/caisse")['code'], 'caissier : caisse de l\'établissement');
+    eq(403, $k->req('GET', "$B/ecole/visages/galerie", null, $hdr)['code'], 'caissier : pas d\'accès aux visages');
+    eq(403, $k->req('GET', "$B/ecole/notes")['code'], 'caissier : pas d\'accès aux notes');
+    $tk = $k->token("$B/ecole/caisse");
+    eq(403, $k->req('POST', "$B/ecole/recus/$rec/annuler", http_build_query(['_csrf' => $tk, 'reason' => 'essai']))['code'], 'caissier : annulation de reçu refusée');
+    // Retour au mode commerce : rien n'est perdu
+    S\BusinessMode::set('commerce');
+    ok(!S\BusinessMode::hides('/products'), 'mode commerce rétabli');
+});
+
+test('Module Établissement (HTTP) : tous les formulaires enregistrent réellement', function () use ($B) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $t = $a->token("$B/ecole/parametres");
+    $post = fn(string $u, array $d) => $a->req('POST', $B . $u, http_build_query(['_csrf' => $t] + $d));
+    $flash = fn() => $a->req('GET', "$B/ecole")['body'];
+    $hdr = ['Accept: application/json'];
+    // Paramètres (heure invalide refusée), année, période, point de pointage
+    $post('/ecole/parametres', ['ecole_type' => 'secondaire', 'ecole_heure_debut' => '25:00', 'ecole_heure_fin' => '17:00']);
+    eq('mixte', DB::value("SELECT svalue FROM settings WHERE skey = 'ecole_type'") ?: 'mixte', 'heure invalide : rien enregistré');
+    $post('/ecole/parametres', ['ecole_type' => 'universite', 'ecole_heure_debut' => '08:00', 'ecole_heure_fin' => '18:00', 'ecole_tolerance' => '5', 'ecole_seuil_passage' => '10', 'ecole_visage_actif' => '1', 'ecole_visage_seuil' => '0.9', 'ecole_visage_marge' => '0.05', 'ecole_conservation' => '30', 'ecole_devise' => 'Travail – Discipline']);
+    eq('universite', DB::value("SELECT svalue FROM settings WHERE skey = 'ecole_type'"), 'type d\'établissement');
+    eq('0.7', DB::value("SELECT svalue FROM settings WHERE skey = 'ecole_visage_seuil'"), 'seuil de reconnaissance borné à 0,70 (jamais trop permissif)');
+    ok(str_contains($a->req('GET', "$B/ecole/eleves")['body'], 'Étudiant'), 'université : « étudiants »');
+    $post('/ecole/annees', ['libelle' => '2027-2028', 'debut' => '2027-10-01', 'fin' => '2028-07-31', 'decoupage' => 'semestre']);
+    $an2 = (int) DB::value("SELECT id FROM ecole_annees WHERE libelle = '2027-2028'");
+    ok($an2 && !DB::value('SELECT courante FROM ecole_annees WHERE id = ?', [$an2]) && (int) DB::value('SELECT COUNT(*) FROM ecole_periodes WHERE annee_id = ?', [$an2]) === 2, 'année future en 2 semestres, non courante');
+    $p2 = (int) DB::value('SELECT id FROM ecole_periodes WHERE annee_id = ? ORDER BY ordre LIMIT 1', [$an2]);
+    $post("/ecole/periodes/$p2", ['nom' => 'S1', 'debut' => '2027-10-01', 'fin' => '2028-02-15', 'cloturee' => '1']);
+    eq(['S1', 1], array_values(DB::one('SELECT nom, cloturee FROM ecole_periodes WHERE id = ?', [$p2])), 'période modifiée et clôturée');
+    $post('/ecole/points', ['nom' => 'Entrée bâtiment B', 'role' => 'entree']);
+    $pt = (int) DB::value("SELECT id FROM ecole_points WHERE nom = 'Entrée bâtiment B'");
+    ok($pt > 0, 'point de pointage créé');
+    $post("/ecole/points/$pt/delete", []);
+    ok(!DB::value('SELECT 1 FROM ecole_points WHERE id = ? AND actif = 1', [$pt]), 'point supprimé');
+    // Classes, matières, programme
+    $post('/ecole/matieres', ['nom' => 'Sciences physiques', 'code' => 'PC']);
+    $pc = (int) DB::value("SELECT id FROM ecole_matieres WHERE nom = 'Sciences physiques'");
+    $post('/ecole/classes', ['nom' => 'Licence 1 Info', 'cycle' => 'superieur', 'frais_inscription' => '25000', 'frais_scolarite' => '300000', 'nb_tranches' => '2']);
+    $l1 = (int) DB::value("SELECT id FROM ecole_classes WHERE nom = 'Licence 1 Info'");
+    ok($l1 > 0, 'classe créée');
+    $post("/ecole/classes/$l1", ['nom' => 'Licence 1 Informatique', 'cycle' => 'superieur', 'frais_inscription' => '25000', 'frais_scolarite' => '300000', 'nb_tranches' => '3', 'active' => '1']);
+    eq(['Licence 1 Informatique', 3], array_values(DB::one('SELECT nom, nb_tranches FROM ecole_classes WHERE id = ?', [$l1])), 'classe modifiée');
+    $post("/ecole/classes/$l1/programme", ['lignes' => [['matiere_id' => $pc, 'coefficient' => '2', 'credits' => '6']]]);
+    eq(6.0, (float) DB::value('SELECT credits FROM ecole_classe_matieres WHERE classe_id = ? AND matiere_id = ?', [$l1, $pc]), 'programme avec crédits');
+    // Étudiant : fiche + inscription + visages (consentement) en une fois ; photo envoyée par la caméra
+    $png = 'data:image/png;base64,' . base64_encode((function () { $im = imagecreatetruecolor(60, 60); imagefilledrectangle($im, 0, 0, 59, 59, imagecolorallocate($im, 200, 120, 40)); ob_start(); imagepng($im); return ob_get_clean(); })());
+    $fp = fn(int $s) => base64_encode(pack('g*', ...array_map(fn($i) => sin($i * $s) * 0.1, range(1, 128))));
+    $r = $post('/ecole/eleves', ['nom' => 'Tanko', 'prenom' => 'Halima', 'sexe' => 'F', 'classe_id' => $l1, 'type' => 'nouvelle', 'photo_data' => $png,
+        'consentement_visage' => '1', 'consentement_par' => 'Elle-même (majeure)', 'visages' => json_encode([$fp(3), $fp(5)])]);
+    $et = (int) DB::value("SELECT id FROM ecole_eleves WHERE nom = 'TANKO'");
+    ok($et && str_contains($r['headers'], '/ecole/eleves/' . $et), 'fiche créée');
+    eq(2, Addons\Ecole\Biometrie::nombre('eleve', $et), 'visages enregistrés avec la fiche');
+    ok((bool) DB::value('SELECT photo FROM ecole_eleves WHERE id = ?', [$et]), 'photo enregistrée');
+    $ph = $a->req('GET', "$B/ecole/photo/eleve/$et");
+    ok($ph['code'] === 200 && str_contains($ph['headers'], 'image/jpeg'), 'photo ré-encodée en JPEG et servie après contrôle des droits');
+    eq(302, (new Http())->req('GET', "$B/ecole/photo/eleve/$et")['code'], 'photo inaccessible sans connexion');
+    $ins = (int) DB::value('SELECT id FROM ecole_inscriptions WHERE eleve_id = ?', [$et]);
+    eq(325000.0, Addons\Ecole\Finance::solde($ins)['du'], 'inscrite en Licence 1 avec ses frais');
+    // Échec en cours de route (visage invalide) : ni fiche, ni inscription (tout ou rien)
+    $post('/ecole/eleves', ['nom' => 'Erreur', 'prenom' => 'Test', 'sexe' => 'M', 'classe_id' => $l1, 'consentement_visage' => '1', 'consentement_par' => 'Lui-même', 'visages' => json_encode(['abc'])]);
+    ok(!DB::value("SELECT 1 FROM ecole_eleves WHERE nom = 'ERREUR'"), 'tout ou rien : aucune fiche partielle');
+    // Modification, frais, changement de classe, abandon
+    $post("/ecole/eleves/$et", ['nom' => 'Tanko', 'prenom' => 'Halima', 'sexe' => 'F', 'tuteur_tel' => '90 11 22 33', 'consentement_visage' => '1', 'consentement_par' => 'Elle-même (majeure)']);
+    eq('90 11 22 33', DB::value('SELECT tuteur_tel FROM ecole_eleves WHERE id = ?', [$et]), 'fiche modifiée');
+    eq(2, Addons\Ecole\Biometrie::nombre('eleve', $et), 'visages gardés (consentement maintenu)');
+    $post("/ecole/inscriptions/$ins/frais", ['libelle' => 'Bibliothèque', 'montant' => '7500']);
+    eq(7500.0, (float) DB::value("SELECT montant FROM ecole_echeances WHERE inscription_id = ? AND libelle = 'Bibliothèque'", [$ins]), 'frais ajoutés');
+    $c = (int) DB::value("SELECT id FROM ecole_classes WHERE nom = 'CM2 A'");
+    $post("/ecole/inscriptions/$ins/classe", ['classe_id' => $c]);
+    eq($c, (int) DB::value('SELECT classe_id FROM ecole_inscriptions WHERE id = ?', [$ins]), 'changement de classe');
+    $post("/ecole/inscriptions/$ins/abandon", ['statut' => 'abandon']);
+    eq('abandon', DB::value('SELECT statut FROM ecole_inscriptions WHERE id = ?', [$ins]), 'départ enregistré');
+    // Effacement des données faciales à la demande
+    $post('/ecole/visages/supprimer', ['type' => 'eleve', 'id' => $et]);
+    eq(0, Addons\Ecole\Biometrie::nombre('eleve', $et), 'données faciales effacées');
+    $rv = json_decode($a->req('POST', "$B/ecole/visages", http_build_query(['_csrf' => $t, 'type' => 'eleve', 'id' => $et, 'source' => 'pointage', 'empreintes' => [$fp(7)]]), $hdr)['body'], true);
+    ok($rv['ok'] && $rv['total'] === 1, 'apprentissage au pointage (consentement présent)');
+    // Inscription d'un élève existant depuis sa fiche
+    $e4 = (int) DB::value("SELECT id FROM ecole_eleves WHERE nom = 'OUMAROU'");
+    $nv = Addons\Ecole\Personnes::sauverEleve(['nom' => 'Bako', 'prenom' => 'Yacouba', 'sexe' => 'M']);
+    $post("/ecole/eleves/$nv/inscrire", ['classe_id' => $l1, 'type' => 'reinscription']);
+    ok((bool) DB::value("SELECT 1 FROM ecole_inscriptions WHERE eleve_id = ? AND type = 'reinscription'", [$nv]), 'inscription depuis la fiche');
+    // Personnel : création + modification
+    $post('/ecole/personnel', ['nom' => 'Mahamadou', 'prenom' => 'Rabi', 'fonction' => 'administration', 'poste' => 'Secrétaire', 'salaire' => '90000']);
+    $sec = (int) DB::value("SELECT id FROM ecole_personnel WHERE nom = 'MAHAMADOU'");
+    ok($sec > 0, 'membre du personnel créé');
+    $post("/ecole/personnel/$sec", ['nom' => 'Mahamadou', 'prenom' => 'Rabi', 'fonction' => 'administration', 'poste' => 'Secrétaire principale', 'salaire' => '95000']);
+    eq('Secrétaire principale', DB::value('SELECT poste FROM ecole_personnel WHERE id = ?', [$sec]), 'fiche du personnel modifiée');
+    // Notes : évaluation, saisie, appréciations, suppression d'une évaluation vide
+    $per = (int) DB::value('SELECT p.id FROM ecole_periodes p JOIN ecole_annees a ON a.id = p.annee_id WHERE a.courante = 1 ORDER BY p.ordre LIMIT 1');
+    $maths = (int) DB::value("SELECT id FROM ecole_matieres WHERE code = 'MATH'");
+    $r = $post('/ecole/evaluations', ['classe_id' => $c, 'periode_id' => $per, 'matiere_id' => $maths, 'type' => 'interrogation', 'titre' => 'Interro 2', 'bareme' => '20', 'coefficient' => '1']);
+    $ev = (int) DB::value("SELECT id FROM ecole_evaluations WHERE titre = 'Interro 2'");
+    ok($ev && str_contains($r['headers'], "/ecole/evaluations/$ev"), 'évaluation créée → saisie des notes');
+    $e1 = (int) DB::value("SELECT id FROM ecole_eleves WHERE nom = 'SANI'");
+    $post("/ecole/evaluations/$ev", ['notes' => [$e1 => '17,5']]);
+    eq(17.5, (float) DB::value('SELECT note FROM ecole_notes WHERE evaluation_id = ? AND eleve_id = ?', [$ev, $e1]), 'note enregistrée (virgule acceptée)');
+    $post("/ecole/evaluations/$ev", ['notes' => [$e1 => '25']]);
+    eq(17.5, (float) DB::value('SELECT note FROM ecole_notes WHERE evaluation_id = ? AND eleve_id = ?', [$ev, $e1]), 'note hors barème refusée');
+    $post("/ecole/evaluations/$ev/delete", []);
+    ok((bool) DB::value('SELECT 1 FROM ecole_evaluations WHERE id = ?', [$ev]), 'évaluation notée : suppression refusée');
+    $post("/ecole/evaluations/$ev", ['notes' => [$e1 => '']]);
+    $post("/ecole/evaluations/$ev/delete", []);
+    ok(!DB::value('SELECT 1 FROM ecole_evaluations WHERE id = ?', [$ev]), 'évaluation vide supprimée');
+    $i1 = (int) DB::value('SELECT id FROM ecole_inscriptions WHERE eleve_id = ?', [$e1]);
+    $post('/ecole/bulletins/appreciations', ['classe_id' => $c, 'periode_id' => $per, 'b' => [$i1 => ['appreciation' => 'Très bon travail', 'conduite' => 'Bonne', 'decision' => 'Félicitations']]]);
+    eq('Très bon travail', DB::value('SELECT appreciation FROM ecole_bulletins WHERE inscription_id = ? AND periode_id = ?', [$i1, $per]), 'appréciation du conseil');
+    // Appel de classe et du personnel, clôture
+    $hier = date('Y-m-d', strtotime('-1 day'));
+    $post("/ecole/presences/classe/$c", ['date' => $hier, 'statut' => [$e1 => 'excuse'], 'note' => [$e1 => 'Malade']]);
+    eq(['excuse', 'Malade'], array_values(DB::one("SELECT statut, note FROM ecole_presences WHERE personne_type = 'eleve' AND personne_id = ? AND date = ?", [$e1, $hier])), 'appel de la veille');
+    $post('/ecole/presences/personnel', ['date' => $hier, 'statut' => [$sec => 'present']]);
+    ok((bool) DB::value("SELECT 1 FROM ecole_presences WHERE personne_type = 'personnel' AND personne_id = ? AND date = ?", [$sec, $hier]), 'présence du personnel');
+    $post('/ecole/presences/cloturer', ['date' => $hier]);
+    ok((int) DB::value("SELECT COUNT(*) FROM ecole_presences WHERE personne_type = 'eleve' AND date = ? AND statut = 'absent'", [$hier]) >= 1, 'clôture de la veille');
+    eq('excuse', DB::value("SELECT statut FROM ecole_presences WHERE personne_type = 'eleve' AND personne_id = ? AND date = ?", [$e1, $hier]), 'clôture sans écraser l\'appel');
+    // Revue d'un passage inconnu
+    $inc = Addons\Ecole\Presences::inconnu('passage', null, null);
+    $j = json_decode($a->req('POST', "$B/ecole/passages/$inc", http_build_query(['_csrf' => $t, 'action' => 'ignorer']), $hdr)['body'], true);
+    ok($j['ok'] && $j['statut'] === 'ignore', 'passage ignoré');
+    // Salaires et reçus : versement, annulation (motif), annulation de reçu
+    $post('/ecole/salaires', ['personnel_id' => $sec, 'periode' => date('Y-m'), 'montant' => '95000', 'mode' => 'cash']);
+    $s = (int) DB::value('SELECT id FROM ecole_salaires WHERE personnel_id = ? AND annule = 0', [$sec]);
+    ok($s > 0, 'salaire versé');
+    eq(200, $a->req('GET', "$B/ecole/salaires/$s")['code'], 'bulletin de paie');
+    $post("/ecole/salaires/$s/annuler", ['reason' => 'Mauvais montant']);
+    eq(1, (int) DB::value('SELECT annule FROM ecole_salaires WHERE id = ?', [$s]), 'salaire annulé');
+    $rec = (int) DB::value('SELECT id FROM ecole_paiements WHERE annule = 0 ORDER BY id DESC LIMIT 1');
+    $post("/ecole/recus/$rec/annuler", ['reason' => 'Chèque refusé']);
+    eq(['1', 'Chèque refusé'], array_map('strval', array_values(DB::one('SELECT annule, motif_annulation FROM ecole_paiements WHERE id = ?', [$rec]))), 'reçu annulé avec motif');
+    // Année courante
+    $post("/ecole/annees/$an2/courante", []);
+    eq(1, (int) DB::value('SELECT courante FROM ecole_annees WHERE id = ?', [$an2]), 'changement d\'année');
+    eq(1, (int) DB::value('SELECT COUNT(*) FROM ecole_annees WHERE courante = 1'), 'une seule année courante');
+    eq(200, $a->req('GET', "$B/ecole/caisse")['code'], 'caisse sans classes pour la nouvelle année');
+    eq(200, $a->req('GET', "$B/ecole/notes")['code'], 'notes sans classes pour la nouvelle année');
+    eq(200, $a->req('GET', "$B/ecole/bulletins")['code'], 'bulletins sans classes pour la nouvelle année');
+    setting_set('ecole_visage_actif', '0');
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

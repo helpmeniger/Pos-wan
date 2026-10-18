@@ -3,7 +3,7 @@
 $visageActif = Addons\Ecole\Biometrie::active() && can('ecole.biometrie');
 $nbVisages = $e ? Addons\Ecole\Biometrie::nombre($ptype, (int) $e['id']) : 0;
 ?>
-<div class="ec-photo" data-photo-widget data-visage="<?= $visageActif ? '1' : '0' ?>">
+<div class="ec-photo" data-photo-widget data-visage="<?= $visageActif ? '1' : '0' ?>" data-seuil="<?= e((string) setting('ecole_visage_seuil', '0.50')) ?>" data-personne="<?= $e ? e($ptype . ':' . (int) $e['id']) : '' ?>">
   <div class="ec-photo-view"><video playsinline muted hidden></video>
     <img alt="" data-preview <?= $e && $e['photo'] ? 'src="' . e(url('/ecole/photo/' . $ptype . '/' . $e['id'])) . '"' : 'hidden' ?>>
     <div class="ec-photo-empty" <?= $e && $e['photo'] ? 'hidden' : '' ?>><i class="bi bi-person-square"></i></div></div>

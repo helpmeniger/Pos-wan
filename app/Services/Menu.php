@@ -87,6 +87,10 @@ final class Menu
                 $out[$g] = $f;
             }
         }
+        // Mode Établissement : le groupe de l'établissement en tête
+        if (BusinessMode::is('ecole') && isset($out['Établissement'])) {
+            $out = ['Établissement' => $out['Établissement']] + $out;
+        }
         return $out;
     }
 }

@@ -44,6 +44,23 @@ final class Notifications
                 $items[] = ['bi-hourglass-split text-danger', "$late client(s) avec crédit échu", '/reports/debts'];
             }
         }
+        if (\App\Core\Addons::isActive('ecole')) {
+            if (can('ecole.finance')) {
+                $n = (int) DB::value("SELECT COUNT(DISTINCT i.id) FROM ecole_echeances e JOIN ecole_inscriptions i ON i.id = e.inscription_id JOIN ecole_annees a ON a.id = i.annee_id
+                                      WHERE a.courante = 1 AND i.statut = 'active' AND e.annule = 0 AND e.paye < e.montant AND e.date_limite <= CURDATE()");
+                if ($n > 0) {
+                    $items[] = ['bi-cash-stack text-danger', "$n inscription(s) avec des frais échus impayés", '/ecole/impayes'];
+                }
+            }
+            if (can('ecole.biometrie') && setting('ecole_visage_actif', '0') === '1') {
+                $n = (int) DB::value("SELECT COUNT(*) FROM ecole_passages WHERE statut = 'inconnu' AND vu_a >= CURDATE() - INTERVAL 7 DAY");
+                if ($n > 0) {
+                    $items[] = ['bi-person-exclamation text-warning', "$n visage(s) inconnu(s) à vérifier", '/ecole/passages'];
+                }
+            }
+        }
+        // Pas d'alerte vers des menus masqués par le mode de fonctionnement (ex. : stock en mode Établissement)
+        $items = array_values(array_filter($items, fn($i) => !BusinessMode::hides((string) strtok($i[2], '?'))));
         return $cache = $items;
     }
 }

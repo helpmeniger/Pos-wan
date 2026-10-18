@@ -23,11 +23,13 @@ final class BusinessMode
         'clinique' => ['Clinique', 'Caisse des prestations médicales (consultations, soins, analyses) liée aux dossiers patients.', ['clinique']],
         'clinique_pharmacie' => ['Clinique + Pharmacie', 'Prestations médicales et vente de médicaments, opérations séparées et reliées par les ordonnances.', ['clinique']],
         'pressing' => ['Pressing', 'Caisse des dépôts de vêtements, retraits et paiements, sans vente commerciale.', ['pressing']],
+        'ecole' => ['Établissement scolaire / université', 'Caisse des inscriptions et frais de scolarité, élèves, enseignants, notes, bulletins, présences ; aucun menu commercial.', ['ecole']],
     ];
 
     /**
      * Menus masqués selon le mode (préfixes d'adresse) : on n'affiche pas les activités qui ne
      * concernent pas l'établissement. Option « Afficher aussi les menus des autres activités ».
+     * Un préfixe commençant par « = » ne masque que cette adresse exacte.
      */
     private const HIDDEN = [
         'commerce' => ['/clinique', '/pressing'],
@@ -36,6 +38,11 @@ final class BusinessMode
         'clinique' => ['/pressing', '/restaurant', '/kitchen', '/quotes'],
         'clinique_pharmacie' => ['/pressing', '/restaurant', '/kitchen'],
         'pressing' => ['/clinique', '/restaurant', '/kitchen', '/quotes', '/reports/prescriptions'],
+        // Établissement : aucun terme commercial (ventes, articles, stock, achats, clients) ; la caisse
+        // de l'établissement remplace la caisse ; dépenses, sessions de caisse et caméras restent.
+        'ecole' => ['/pos', '/sales', '/returns', '/quotes', '/verify', '/customers', '/restaurant', '/kitchen', '/products', '/categories', '/stock', '/inventories',
+            '/suppliers', '/purchases', '/receptions', '/supplier-returns', '/dashboard', '/reports/sales', '/reports/profit', '/reports/vat', '/reports/stock', '/reports/debts',
+            '/reports/prescriptions', '/clinique', '/pressing', '/livraisons', '=/vision', '/vision/surveillance', '/vision/rapport'],
     ];
 
     public static function current(): string
@@ -98,6 +105,7 @@ final class BusinessMode
         return match (self::current()) {
             'clinique' => '/clinique/caisse',
             'pressing' => '/pressing/caisse',
+            'ecole' => '/ecole/caisse',
             default => '/pos',
         };
     }
@@ -109,6 +117,12 @@ final class BusinessMode
             return false;
         }
         foreach (self::HIDDEN[self::current()] ?? [] as $prefix) {
+            if ($prefix[0] === '=') {
+                if ($url === substr($prefix, 1)) {
+                    return true;
+                }
+                continue;
+            }
             if ($url === $prefix || str_starts_with($url, $prefix . '/') || str_starts_with($url, $prefix . '?')) {
                 return true;
             }

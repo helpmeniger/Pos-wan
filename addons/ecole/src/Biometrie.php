@@ -71,8 +71,9 @@ final class Biometrie
             foreach ($bins as $b) {
                 DB::insert('ecole_visages', ['personne_type' => $type, 'personne_id' => $id, 'descriptor' => $b, 'source' => $source, 'user_id' => Auth::id()]);
             }
-            // On garde les plus récentes au-delà du maximum
-            $trop = DB::all('SELECT id FROM ecole_visages WHERE personne_type = ? AND personne_id = ? ORDER BY id DESC LIMIT 1000 OFFSET ' . self::MAX_PAR_PERSONNE, [$type, $id]);
+            // Au-delà du maximum : les photos d'inscription sont gardées en priorité, puis les plus récentes
+            // (l'apprentissage au pointage ne peut pas évincer les photos de référence)
+            $trop = DB::all('SELECT id FROM ecole_visages WHERE personne_type = ? AND personne_id = ? ORDER BY source = \'pointage\', id DESC LIMIT 1000 OFFSET ' . self::MAX_PAR_PERSONNE, [$type, $id]);
             if ($trop) {
                 DB::run('DELETE FROM ecole_visages WHERE id IN (' . implode(',', array_map('intval', array_column($trop, 'id'))) . ')');
             }

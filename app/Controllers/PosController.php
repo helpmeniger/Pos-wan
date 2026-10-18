@@ -16,7 +16,7 @@ final class PosController extends Controller
     {
         $u = $this->user();
         $mode = \App\Services\BusinessMode::current();
-        if (in_array($mode, ['clinique', 'pressing'], true)) {
+        if (in_array($mode, ['clinique', 'pressing', 'ecole'], true)) {
             redirect(\App\Services\BusinessMode::posUrl()); // caisse dédiée à l'activité
         }
         if (!can('pos.sell')) {

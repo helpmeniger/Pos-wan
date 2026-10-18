@@ -125,24 +125,27 @@ final class PersonnesController extends Controller
         redirect('/ecole/eleves/' . $id);
     }
 
-    public function frais(int $inscriptionId): void
+    public function frais(int $id): void
     {
+        $inscriptionId = $id; // le routeur transmet le paramètre {id}
         $eid = (int) DB::value('SELECT eleve_id FROM ecole_inscriptions WHERE id = ?', [$inscriptionId]);
         $this->attempt(fn() => Finance::ajouterFrais($inscriptionId, Request::str('libelle'), Request::input('montant'), Request::str('date') ?: null), '/ecole/eleves/' . $eid);
         flash('success', t('Frais ajoutés.'));
         redirect('/ecole/eleves/' . $eid);
     }
 
-    public function changerClasse(int $inscriptionId): void
+    public function changerClasse(int $id): void
     {
+        $inscriptionId = $id; // le routeur transmet le paramètre {id}
         $eid = (int) DB::value('SELECT eleve_id FROM ecole_inscriptions WHERE id = ?', [$inscriptionId]);
         $this->attempt(fn() => Finance::changerClasse($inscriptionId, (int) Request::input('classe_id', 0)), '/ecole/eleves/' . $eid);
         flash('success', t('Classe modifiée.'));
         redirect('/ecole/eleves/' . $eid);
     }
 
-    public function abandon(int $inscriptionId): void
+    public function abandon(int $id): void
     {
+        $inscriptionId = $id; // le routeur transmet le paramètre {id}
         $eid = (int) DB::value('SELECT eleve_id FROM ecole_inscriptions WHERE id = ?', [$inscriptionId]);
         $this->attempt(fn() => Finance::abandon($inscriptionId, Request::str('statut')), '/ecole/eleves/' . $eid);
         flash('success', t('Inscription mise à jour.'));
@@ -176,8 +179,9 @@ final class PersonnesController extends Controller
             'annee' => Ecole::anneeCourante(), 'backUrl' => url('/ecole/eleves/' . $id)], 'layouts/print');
     }
 
-    public function cartesClasse(int $classeId): void
+    public function cartesClasse(int $id): void
     {
+        $classeId = $id; // le routeur transmet le paramètre {id}
         $rows = DB::all("SELECT e.* FROM ecole_inscriptions i JOIN ecole_eleves e ON e.id = i.eleve_id WHERE i.classe_id = ? AND i.statut = 'active' ORDER BY e.nom, e.prenom", [$classeId]);
         $cl = (string) DB::value('SELECT nom FROM ecole_classes WHERE id = ?', [$classeId]);
         view('ecole::carte', ['title' => 'Cartes ' . $cl, 'cartes' => array_map(fn($e) => ['p' => $e, 'detail' => Ecole::apprenant() . ' · ' . $cl, 'photo' => $e['photo'] ? url('/ecole/photo/eleve/' . $e['id']) : null, 'titre' => 'CARTE ' . (Ecole::apprenant() === 'Étudiant' ? "D'ÉTUDIANT" : 'SCOLAIRE')], $rows),

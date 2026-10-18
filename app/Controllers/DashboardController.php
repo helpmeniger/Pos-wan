@@ -22,6 +22,13 @@ final class DashboardController extends Controller
                 redirect('/clinique');
             }
         }
+        if ($mode === 'ecole') {
+            foreach (['ecole.view' => '/ecole', 'ecole.caisse' => '/ecole/caisse', 'ecole.presence' => '/ecole/presences', 'ecole.notes' => '/ecole/notes'] as $perm => $to) {
+                if (can($perm)) {
+                    redirect($to);
+                }
+            }
+        }
         if ($mode === 'pressing' && !can('dashboard.view')) {
             if (can('pressing.deposit')) {
                 redirect('/pressing/caisse');
@@ -49,6 +56,9 @@ final class DashboardController extends Controller
 
     public function index(): void
     {
+        if (\App\Services\BusinessMode::is('ecole') && \App\Services\BusinessMode::hides('/dashboard') && can('ecole.view')) {
+            redirect('/ecole'); // mode Établissement : tableau de bord de l'établissement
+        }
         $u = $this->user();
         $storeId = (int) ($_GET['store'] ?? 0) ?: null;
         if (!can('sales.view_all')) {

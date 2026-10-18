@@ -1,0 +1,27 @@
+/* POS Marwa — module Établissement */
+.ec-mini { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; display: inline-flex; }
+.ec-mini-empty { background: var(--bs-secondary-bg, #e9ecef); color: var(--bs-secondary-color, #6c757d); align-items: center; justify-content: center; display: inline-flex; }
+.ec-photo-mid { width: 84px; height: 100px; border-radius: 8px; object-fit: cover; flex: 0 0 auto; display: flex; font-size: 2rem; }
+.ec-photo-big { width: 150px; height: 180px; border-radius: 10px; object-fit: cover; display: inline-flex; font-size: 3.5rem; }
+.ec-photo-view { position: relative; aspect-ratio: 1; background: var(--bs-secondary-bg, #e9ecef); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.ec-photo-view video, .ec-photo-view img { width: 100%; height: 100%; object-fit: cover; }
+.ec-photo-empty { font-size: 4rem; color: var(--bs-secondary-color, #6c757d); }
+.ec-stats .card:hover { border-color: var(--bs-primary); }
+.ec-recap { background: var(--bs-tertiary-bg, #f8f9fa); border-radius: 6px; padding: 6px 10px; min-height: 1.5em; }
+.ec-recap:empty { display: none; }
+.ec-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, .5); z-index: 1060; display: flex; align-items: flex-start; justify-content: center; padding: 3vh 12px; overflow-y: auto; }
+.ec-modal[hidden] { display: none; }
+.ec-modal-box { background: var(--bs-body-bg, #fff); border-radius: 10px; width: 100%; max-width: 860px; box-shadow: 0 10px 40px rgba(0, 0, 0, .3); }
+.ec-resultats th, .ec-resultats td { white-space: nowrap; }
+.ec-st { display: inline-flex; align-items: center; gap: 3px; margin-right: 10px; cursor: pointer; font-size: .875rem; }
+.ec-st-present:has(input:checked) { color: var(--bs-success); font-weight: 600; }
+.ec-st-retard:has(input:checked) { color: #b45309; font-weight: 600; }
+.ec-st-absent:has(input:checked) { color: var(--bs-danger); font-weight: 600; }
+.ec-st-excuse:has(input:checked) { color: var(--bs-secondary-color); font-weight: 600; }
+.ec-thumb { width: 100%; aspect-ratio: 1; object-fit: cover; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+.ec-sugg { position: absolute; z-index: 5; left: 0; right: 0; max-height: 240px; overflow-y: auto; }
+.ec-pt-stage { position: relative; background: #111; aspect-ratio: 16 / 9; overflow: hidden; }
+.ec-pt-stage video, .ec-pt-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.ec-pt-msg { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, .65); color: #fff; padding: 6px 10px; font-size: .9rem; }
+.ec-pt-msg[hidden] { display: none; }
+.ec-note.is-invalid { background: #fde2e2; }

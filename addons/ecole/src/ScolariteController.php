@@ -145,7 +145,7 @@ final class ScolariteController extends Controller
         $c = DB::one('SELECT * FROM ecole_classes WHERE id = ?', [$id]) ?? throw new HttpException(404);
         $eleves = DB::all("SELECT e.id, e.matricule, e.nom, e.prenom, e.photo, p.statut, p.arrivee, p.depart, p.source, p.note FROM ecole_inscriptions i JOIN ecole_eleves e ON e.id = i.eleve_id
                            LEFT JOIN ecole_presences p ON p.personne_type = 'eleve' AND p.personne_id = e.id AND p.date = ? WHERE i.classe_id = ? AND i.statut = 'active' ORDER BY e.nom, e.prenom", [$date, $id]);
-        view('ecole::appel', ['title' => 'Appel · ' . $c['nom'], 'c' => $c, 'date' => $date, 'liste' => $eleves, 'type' => 'eleve', 'action' => url('/ecole/presences/classe/' . $id)]);
+        view('ecole::appel', ['title' => 'Appel · ' . $c['nom'], 'c' => $c, 'date' => $date, 'liste' => $eleves, 'type' => 'eleve', 'action' => url('/ecole/presences/classe/' . $id), 'scripts' => ['addons/ecole/ecole-notes.js']]);
     }
 
     public function enregistrerAppelClasse(int $id): void
@@ -161,7 +161,7 @@ final class ScolariteController extends Controller
         $date = Ecole::date((string) Request::query('date')) && (string) Request::query('date') <= date('Y-m-d') ? (string) Request::query('date') : date('Y-m-d');
         $liste = DB::all("SELECT s.id, s.matricule, s.nom, s.prenom, s.photo, s.poste, p.statut, p.arrivee, p.depart, p.source, p.note FROM ecole_personnel s
                           LEFT JOIN ecole_presences p ON p.personne_type = 'personnel' AND p.personne_id = s.id AND p.date = ? WHERE s.statut = 'actif' ORDER BY s.nom, s.prenom", [$date]);
-        view('ecole::appel', ['title' => 'Présences du personnel', 'c' => null, 'date' => $date, 'liste' => $liste, 'type' => 'personnel', 'action' => url('/ecole/presences/personnel')]);
+        view('ecole::appel', ['title' => 'Présences du personnel', 'c' => null, 'date' => $date, 'liste' => $liste, 'type' => 'personnel', 'action' => url('/ecole/presences/personnel'), 'scripts' => ['addons/ecole/ecole-notes.js']]);
     }
 
     public function enregistrerAppelPersonnel(): void
@@ -203,11 +203,11 @@ final class ScolariteController extends Controller
     public function pointage(): void
     {
         Presences::purgerVignettes();
-        $points = DB::all('SELECT pt.*' . (EcoleController::camerasVision() ? ', vc.name AS camera, vc.kind AS camera_kind, vc.fps' : ', NULL AS camera, NULL AS camera_kind, NULL AS fps') . ' FROM ecole_points pt'
+        $points = DB::all('SELECT pt.*' . (EcoleController::camerasVision() ? ', vc.name AS camera, vc.kind AS camera_kind, vc.fps, vc.device_label AS camera_device' : ', NULL AS camera, NULL AS camera_kind, NULL AS fps, NULL AS camera_device') . ' FROM ecole_points pt'
             . (EcoleController::camerasVision() ? ' LEFT JOIN vision_cameras vc ON vc.id = pt.vision_camera_id' : '') . ' WHERE pt.actif = 1 ORDER BY pt.nom');
         view('ecole::pointage', ['title' => 'Pointage par caméra', 'points' => $points, 'actif' => Biometrie::active(),
             'reglages' => ['seuil' => (float) setting('ecole_visage_seuil', '0.50'), 'marge' => (float) setting('ecole_visage_marge', '0.05')],
-            'personnes' => (int) DB::value('SELECT COUNT(DISTINCT personne_type, personne_id) FROM ecole_visages'),
+            'personnes' => (int) DB::value('SELECT COUNT(DISTINCT personne_type, personne_id) FROM ecole_visages'), 'apprendre' => can('ecole.biometrie'),
             'scripts' => ['addons/ecole/ecole-visage.js', 'addons/ecole/ecole-pointage.js']]);
     }
 
