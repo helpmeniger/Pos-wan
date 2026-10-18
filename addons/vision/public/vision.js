@@ -285,11 +285,12 @@
     p.querySelector('[data-h]').textContent = sure ? T('Article reconnu :') : T('Est-ce l\'un de ces articles ?');
     p.querySelector('[data-list]').innerHTML = res.map((r, i) => {
       const it = info.find((x) => x.id === r.pid); if (!it) return '';
-      const pct = Math.max(0, Math.min(100, Math.round(r.score * 100)));
+      // Barre relative au meilleur candidat (la note brute n'a pas de sens pour le caissier)
+      const pct = Math.max(4, Math.min(100, Math.round(100 * Math.max(0, r.score) / Math.max(0.0001, res[0].score))));
       return `<button type="button" class="pm-vis-card ${i === 0 && sure ? 'best' : ''}" data-pick="${it.id}" title="${esc(T('Touchez pour ajouter'))}">
         ${it.image ? `<img src="${esc(it.image)}" alt="">` : '<span class="pm-vis-noimg">📦</span>'}
         <b>${esc(it.name)}</b><small>${fmt(it.price)}${it.track ? ' · ' + T('stock') + ' ' + (Math.round(it.stock * 100) / 100) : ''}</small>
-        <span class="pm-vis-score" title="${pct} %"><span style="width:${pct}%"></span></span></button>`;
+        <span class="pm-vis-score" title="${esc(T('Ressemblance comparée au 1er article'))} : ${pct} %"><span style="width:${pct}%"></span></span></button>`;
     }).join('');
     p.querySelector('[data-found]').innerHTML = ''; p.querySelector('[data-q]').value = '';
     note(ctx, sure ? T('Touchez l\'article pour l\'ajouter.') : T('Pas sûr : touchez le bon article, ou cherchez-le ci-dessous (il sera appris).'));
