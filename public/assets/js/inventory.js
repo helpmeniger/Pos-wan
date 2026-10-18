@@ -62,7 +62,7 @@
     });
   }
   const cam = document.getElementById('invCamera');
-  if (cam && window.PMScanner) cam.addEventListener('click', () => PMScanner.open({ title: T('Inventaire : scanner les articles'), onCode: scan }));
+  if (cam && window.PMScanner) cam.addEventListener('click', () => PMScanner.open({ title: T('Inventaire : scanner les articles'), products: true, onCode: scan }));
 
   // Saisie manuelle : enregistrement immédiat (et formulaire « Enregistrer » en secours)
   const timers = {};

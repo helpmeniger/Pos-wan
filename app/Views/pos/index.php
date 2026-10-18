@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/pos.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/scanner.css')) ?>">
+<?php $addonAssets = App\Core\Addons::globalAssets(); foreach ($addonAssets['css'] as $s): ?><link rel="stylesheet" href="<?= e(asset($s)) ?>"><?php endforeach; ?>
 </head>
 <body class="pos-body">
 <div class="pos">
@@ -258,6 +259,7 @@
 <script src="<?= e(asset('js/money.js')) ?>"></script>
 <script src="<?= e(asset('vendor/zxing/zxing.min.js')) ?>"></script>
 <script src="<?= e(asset('js/scanner.js')) ?>"></script>
+<?php foreach ($addonAssets['js'] as $s): ?><script src="<?= e(asset($s)) ?>"></script><?php endforeach; ?>
 <script src="<?= e(asset('js/pos.js')) ?>"></script>
 <script src="<?= e(asset('js/pwa.js')) ?>"></script>
 </body>

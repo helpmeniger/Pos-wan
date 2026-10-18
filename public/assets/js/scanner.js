@@ -11,6 +11,9 @@
  *   (≥ 0,8 s) — le laisser devant l'objectif ne l'ajoute pas en boucle. Le bouton « +1 » ajoute
  *   volontairement une unité du dernier article.
  * - Les douchettes USB / sans fil continuent de fonctionner comme un clavier (inchangé).
+ * - Extensions (modules) : PMScanner.addTool({ id, label, when(opts), run(ctx), onOpen(ctx), onClose(ctx) })
+ *   ajoute un bouton dans la fenêtre. opts.products = true signale que l'écran attend un article
+ *   (code-barres ou référence) : la reconnaissance par photo, par exemple, ne s'affiche que là.
  */
 (function () {
   'use strict';
@@ -20,6 +23,8 @@
   let ui = null, stream = null, running = false, opts = null, detector = null, zx = null;
   let last = { code: null, seenAt: 0, acceptedAt: 0 };
   let audio = null;
+  const tools = [];
+  let pendingStart = null; // outil à lancer dès l'ouverture (ex. bouton « Reconnaître » de la caisse)
   const SELF = (document.currentScript && document.currentScript.src) || '';
   /** ZXing n'est chargé qu'au premier usage (≈ 330 Ko), et seulement si le navigateur n'a pas de lecteur intégré. */
   function loadZxing() {
@@ -85,6 +90,8 @@
       <div class="pm-scan-view"><video playsinline muted></video><div class="pm-scan-aim"></div><div class="pm-scan-flash"></div></div>
       <div class="pm-scan-msg" data-msg>${T('Présentez le code-barres devant la caméra.')}</div>
       <div class="pm-scan-last" data-last></div>
+      <div class="pm-scan-tools" data-tools></div>
+      <div class="pm-scan-extra" data-extra></div>
       <div class="pm-scan-actions">
         <button type="button" class="pm-btn" data-restart>⟳ ${T('Relancer la caméra')}</button>
         <label class="pm-btn">📷 ${T('Photo du code')}<input type="file" accept="image/*" capture="environment" hidden data-photo></label>
@@ -120,6 +127,7 @@
     $u('[data-last]').innerHTML = `<span class="${r.ok === false ? 'bad' : 'good'}">${r.ok === false ? '✖' : '✔'}</span> <code>${String(code).replace(/[<>&]/g, '')}</code> — ${r.html || String(r.text || '').replace(/[<>&]/g, '')}`;
     $u('[data-plus]').disabled = r.ok === false || opts.plus === false;
     if (opts.continuous === false && r.ok !== false) setTimeout(close, 700);
+    return r;
   }
 
   async function loop(video, canvas) {
@@ -183,28 +191,68 @@
     msg(T('Aucun code-barres reconnu : rapprochez-vous, évitez les reflets, cadrez le code en entier.'), 'bad');
   }
 
+  // ------------------------------------------------------------ extensions
+  function ctx() {
+    return {
+      opts, el: ui, extra: $u('[data-extra]'), video: $u('video'), live: () => running && !!stream,
+      msg, beep, deliver: (code) => handle(String(code), true), close,
+      /** Image actuelle de la caméra (canvas), ou null si la caméra n'est pas ouverte. */
+      frame() {
+        const v = $u('video');
+        if (!running || !v || v.readyState < 2 || !v.videoWidth) return null;
+        const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0); return c;
+      },
+    };
+  }
+  function renderTools() {
+    const box = $u('[data-tools]');
+    const list = tools.filter((t) => { try { return !t.when || t.when(opts); } catch (e) { return false; } });
+    box.innerHTML = '';
+    list.forEach((t) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'pm-btn pm-tool ' + (t.className || ''); b.dataset.tool = t.id; b.innerHTML = t.label;
+      if (t.title) b.title = t.title;
+      b.addEventListener('click', () => t.run(ctx(), b));
+      box.appendChild(b);
+    });
+    box.hidden = !list.length;
+    return list;
+  }
+  function addTool(t) { tools.push(t); }
+
   async function open(o) {
     opts = Object.assign({ title: T('Scanner un code-barres'), continuous: true, plus: true, onCode: async (c) => ({ ok: true, text: c }) }, o || {});
+    if (!opts.startTool && pendingStart) opts.startTool = pendingStart;
+    pendingStart = null;
     if (!ui) ui = build();
     $u('[data-title]').textContent = opts.title;
     $u('[data-last]').innerHTML = '';
     $u('[data-plus]').disabled = true;
     $u('[data-plus]').hidden = opts.plus === false;
+    $u('[data-extra]').innerHTML = '';
     last = { code: null, seenAt: 0, acceptedAt: 0 };
+    const active = renderTools();
     ui.classList.add('open');
     document.body.classList.add('pm-scan-on');
     if (detector === null) detector = (await nativeDetector()) || false;
     if (!detector) await loadZxing();
-    startCamera();
+    await startCamera();
+    active.forEach((t) => { try { if (t.onOpen) t.onOpen(ctx()); } catch (e) { /* extension */ } });
+    const st = opts.startTool && active.find((t) => t.id === opts.startTool);
+    if (st) st.run(ctx(), $u(`[data-tool="${st.id}"]`));
   }
+  /** Ouvre le scanner d'un bouton existant en lançant directement un outil. */
+  function clickWith(button, toolId) { pendingStart = toolId; button.click(); setTimeout(() => { pendingStart = null; }, 0); }
   function close() {
+    tools.forEach((t) => { try { if (t.onClose && opts) t.onClose(ctx()); } catch (e) { /* extension */ } });
     stopCamera();
     if (ui) ui.classList.remove('open');
     document.body.classList.remove('pm-scan-on');
     if (opts && opts.onClose) opts.onClose();
   }
 
-  window.PMScanner = { open, close, liveSupported, decodeCanvas, _handle: handle };
+  window.PMScanner = { open, close, liveSupported, decodeCanvas, addTool, clickWith, isOpen: () => !!(ui && ui.classList.contains('open')), _handle: handle };
 
   // Boutons déclaratifs : <button data-camera-scan="#champ"> remplit le champ et soumet son formulaire
   document.addEventListener('click', (e) => {
@@ -212,7 +260,7 @@
     if (!b) return;
     e.preventDefault();
     const target = document.querySelector(b.dataset.cameraScan);
-    open({ title: b.dataset.scanTitle || undefined, continuous: false, plus: false, onCode: async (code) => {
+    open({ title: b.dataset.scanTitle || undefined, continuous: false, plus: false, products: b.dataset.scanProducts !== undefined, onCode: async (code) => {
       if (target) { target.value = code; target.dispatchEvent(new Event('input', { bubbles: true })); if (b.dataset.scanSubmit !== undefined && target.form) target.form.requestSubmit ? target.form.requestSubmit() : target.form.submit(); }
       return { ok: true, text: T('Code lu') };
     } });

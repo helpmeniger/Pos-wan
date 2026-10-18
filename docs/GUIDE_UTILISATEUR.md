@@ -178,6 +178,23 @@ rendez-vous, consultations, ordonnances délivrées par la pharmacie, hospitalis
 
 La pharmacie reste une vente séparée, reliée par l'ordonnance.
 
+### Reconnaissance des articles par photo
+Module fourni (`addons/vision/`), à activer dans Modules complémentaires.
+
+1. **Apprendre :** dans **Gestion des articles → Reconnaissance par photo**, prenez 5 à 10
+   photos de chaque article avec la caméra de la caisse. Le bouton « Apprendre les photos des
+   fiches » donne un premier départ.
+2. **Vendre :** en caisse, touchez le bouton violet **👁** avec l'article dans le cadre, puis
+   touchez le bon article parmi les propositions.
+3. **Corriger :** si l'article n'est pas proposé, cherchez-le par son nom. La photo est alors
+   apprise.
+
+Le même bouton existe au restaurant, et « Reconnaître l'article » apparaît dans la fenêtre
+caméra de l'inventaire, des étiquettes, de la pharmacie et de la recherche d'articles.
+
+Le module reconnaît **les articles qui lui ont été appris**. Pour les articles presque
+identiques, préférez le code-barres. Guide : `addons/vision/README.md`.
+
 ### Pressing
 Module fourni (`addons/pressing/`) : à installer depuis Modules complémentaires. Guide :
 `addons/pressing/README.md`.

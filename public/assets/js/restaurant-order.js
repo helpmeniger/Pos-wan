@@ -93,15 +93,29 @@
         <div class="p-name">${esc(p.name)}</div><div class="p-price">${fmt(p.price)}</div></div>`;
     }).join('') || '<div class="empty-msg">Aucun article</div>';
   }
-  $('#productGrid').addEventListener('click', async (e) => {
-    const c = e.target.closest('.p-card'); if (!c || busy) return;
-    const p = items[Number(c.dataset.i)];
+  async function addProduct(p) {
     busy = true;
     const q = pendingQty; setQty(1);
     const d = await api(`/restaurant/orders/${CFG.orderId}/items`, { product_id: p.id, quantity: q, course });
     busy = false;
     if (d.ok) { const last = order.items.filter((i) => i.status === 'new').pop(); selected = last ? last.id : null; render(); }
+    return d;
+  }
+  $('#productGrid').addEventListener('click', async (e) => {
+    const c = e.target.closest('.p-card'); if (!c || busy) return;
+    await addProduct(items[Number(c.dataset.i)]);
   });
+  // Caméra : code-barres, référence ou reconnaissance par photo (module) → article ajouté à la commande
+  const cam = $('#restCamera');
+  if (cam && window.PMScanner) cam.addEventListener('click', () => PMScanner.open({ title: __('Ajouter à la commande'), products: true, onCode: async (code) => {
+    $('#productSearch').value = code;
+    await loadProducts();
+    if (items.length !== 1) return { ok: false, text: items.length ? __('Plusieurs articles : touchez le bon dans la liste.') : __('Article introuvable.') };
+    const p = items[0];
+    const d = await addProduct(p);
+    $('#productSearch').value = ''; loadProducts();
+    return d.ok ? { ok: true, html: `<b>${esc(p.name)}</b> · ${fmt(p.price)}` } : { ok: false, text: d.error || __('Erreur') };
+  } }));
   $('#catBar').addEventListener('click', (e) => { const t = e.target.closest('.cat-tile'); if (!t) return; $$('.cat-tile').forEach((x) => x.classList.toggle('active', x === t)); currentCat = Number(t.dataset.cat); loadProducts(); });
   $('#productSearch').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(loadProducts, 250); });
   $('#courseSel').addEventListener('click', (e) => { const b = e.target.closest('[data-course]'); if (!b) return; course = b.dataset.course === '' ? null : Number(b.dataset.course); $$('#courseSel .btn').forEach((x) => x.classList.toggle('active', x === b)); });

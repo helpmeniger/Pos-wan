@@ -75,7 +75,7 @@
     const r = await byCode(v);
     if (r.ok) { search.value = ''; $('#lblResults').innerHTML = ''; }
   });
-  $('#lblCamera').addEventListener('click', () => window.PMScanner && PMScanner.open({ title: T('Ajouter des articles aux étiquettes'), onCode: byCode }));
+  $('#lblCamera').addEventListener('click', () => window.PMScanner && PMScanner.open({ title: T('Ajouter des articles aux étiquettes'), products: true, onCode: byCode }));
   $('#lblAddCat').addEventListener('click', async () => {
     const c = $('#lblCategory').value;
     if (!c) return;

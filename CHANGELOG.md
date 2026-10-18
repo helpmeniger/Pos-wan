@@ -2,7 +2,32 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
-## [2.0.0] — 2026-10-16 — POS Marwa
+## [2.1.0] — 2026-10-18
+
+### Ajouté
+- **Module « Reconnaissance des articles par photo »** (`addons/vision`, à activer dans
+  Modules complémentaires). Il reconnaît les articles par la caméra (webcam ou smartphone du
+  réseau), sans code-barres :
+  - **Où :** caisse, restaurant, inventaire, étiquettes, délivrance pharmacie et recherche
+    d'articles.
+  - **Comment :** le réseau de neurones MobileNet v2 et TensorFlow.js sont livrés avec le
+    module et fonctionnent dans le navigateur, sans Internet.
+  - **Apprentissage :** quelques photos par article, ou les photos des fiches.
+  - **Confirmation :** 4 propositions avec photo, prix et stock. La correction pendant une
+    vente apprend la photo.
+  - **Options :** mode continu, ajout automatique sous seuils réglables.
+  - **Suivi :** statistiques (taux de bonnes propositions, confusions) et détection des
+    articles qui se ressemblent.
+- **Modules :** clé `assets` du manifeste, qui charge les scripts et styles d'un module actif
+  sur toutes les pages (gestion, caisse, restaurant).
+- **Lecteur caméra extensible** (`PMScanner.addTool`) : il sait si l'écran attend un article.
+- **Prise de commande restaurant :** bouton caméra (code-barres, référence, reconnaissance).
+
+### Base de données
+- Module vision `0001_vision.sql` : tables `vision_refs` (empreintes) et `vision_log`
+  (journal).
+
+ — 2026-10-16 — POS Marwa
 
 ### Changé
 - **POS Wan devient POS Marwa** : nom affiché, documents et documentation. Restent inchangés

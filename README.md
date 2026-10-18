@@ -34,6 +34,12 @@ configurables ; plein écran.
 - **Caisse clinique.**
 - **Lanceur Windows** : il démarre WampServer puis ouvre POS Marwa.
 
+**Nouveauté 2.1 : reconnaissance des articles par photo** (module à activer)
+- L'article est reconnu par la webcam ou le smartphone, sans code-barres : caisse, restaurant,
+  inventaire, étiquettes et pharmacie.
+- L'intelligence est locale, sans Internet. Elle apprend à partir de quelques photos et
+  s'améliore à chaque vente confirmée.
+
 **Devis et bons de livraison** — devis imprimables, suivi, conversion en vente ; bons de
 livraison avec ou sans prix.
 

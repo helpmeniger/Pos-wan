@@ -1,0 +1,17 @@
+Composants tiers du module « Reconnaissance des articles par photo » (POS Marwa)
+==============================================================================
+
+tf.min.js
+  TensorFlow.js 4.22.0 (@tensorflow/tfjs, fichier dist/tf.min.js, non modifié)
+  (c) Google LLC — Licence Apache 2.0 (voir LICENCE-Apache-2.0.txt)
+  https://github.com/tensorflow/tfjs
+
+modele/ (modele.txt + poids-01.bin … poids-09.bin)
+  MobileNet v2 (alpha 1.0, 224 x 224), version TensorFlow.js publiée par Google
+  (https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/).
+  (c) Google LLC — Licence Apache 2.0 (voir LICENCE-Apache-2.0.txt)
+  Modifications par POS Marwa : couche finale de classification (1 001 catégories ImageNet)
+  retirée — seule la sortie « AvgPool » (empreinte de 1 280 valeurs) est utilisée ; poids
+  identiques, redécoupés en fichiers de 1 Mo maximum (limites d'envoi de WampServer).
+  Le fichier de description du modèle porte l'extension .txt car Apache refuse les .json
+  dans le dossier public de POS Marwa.

@@ -19,6 +19,8 @@ use App\Services\InstallService;
  *   migrations/     NNNN_nom.sql, appliquées à l'installation et aux mises à jour
  *   lang/           traductions (en.php, ar.php…) clé = texte français
  *   public/         CSS / JS / images, publiés dans public/assets/addons/<code>/
+ *   « assets » du manifeste : {"js": ["x.js"], "css": ["x.css"]} — fichiers de public/ chargés
+ *                   sur toutes les pages (gestion et caisse) tant que le module est actif
  *
  * Un module est du code PHP exécuté avec les droits de l'application : n'installer que
  * des modules de confiance. Désactiver un module conserve ses données.
@@ -105,6 +107,13 @@ final class Addons
             foreach (array_keys((array) ($data['permissions'] ?? [])) as $p) {
                 if (!preg_match('/^[a-z][a-z0-9_]*\.[a-z0-9_]+$/', (string) $p)) {
                     $m['errors'][] = 'Permission invalide : ' . $p;
+                }
+            }
+            foreach (['js', 'css'] as $kind) {
+                foreach ((array) ($data['assets'][$kind] ?? []) as $f) {
+                    if (!preg_match('#^[a-z0-9_][a-z0-9_./-]*\.' . $kind . '$#i', (string) $f) || str_contains((string) $f, '..')) {
+                        $m['errors'][] = 'Fichier « assets » invalide : ' . $f;
+                    }
                 }
             }
             foreach ((array) ($data['menu'] ?? []) as $it) {
@@ -201,6 +210,23 @@ final class Addons
             }
         }
         return $groups;
+    }
+
+    /**
+     * Scripts et feuilles de style que les modules actifs chargent sur toutes les pages.
+     * @return array{js: string[], css: string[]} adresses relatives à public/assets/
+     */
+    public static function globalAssets(): array
+    {
+        $out = ['js' => [], 'css' => []];
+        foreach (self::active() as $code => $m) {
+            foreach (['js', 'css'] as $kind) {
+                foreach ((array) ($m['assets'][$kind] ?? []) as $f) {
+                    $out[$kind][] = 'addons/' . $code . '/' . $f;
+                }
+            }
+        }
+        return $out;
     }
 
     /** Permissions des modules installés, groupées par module (pour le catalogue des rôles). */
@@ -393,7 +419,7 @@ final class Addons
             return;
         }
         $dst = PUBLIC_PATH . '/assets/addons/' . $code;
-        $allowed = ['css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'woff', 'woff2', 'ttf', 'json', 'txt'];
+        $allowed = ['css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'woff', 'woff2', 'ttf', 'json', 'txt', 'bin'];
         $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($src, \FilesystemIterator::SKIP_DOTS));
         foreach ($it as $f) {
             $rel = substr($f->getPathname(), strlen($src) + 1);

@@ -42,7 +42,7 @@ $tabs = ['' => ['Tous', $sum['items']], 'uncounted' => ['Non comptés', $sum['un
 
 <div class="d-flex flex-wrap gap-1 mb-2 align-items-center">
   <?php foreach ($tabs as $k => [$l, $n]): ?><a class="btn btn-sm <?= $filter === $k ? 'btn-dark' : 'btn-outline-secondary' ?>" href="<?= e(url('/inventories/' . $inv['id'], array_filter(['f' => $k, 'q' => $q]))) ?>"><?= e($l) ?> <span class="badge bg-secondary"><?= (int) $n ?></span></a><?php endforeach; ?>
-  <form method="get" class="ms-auto" style="max-width:320px"><input type="hidden" name="f" value="<?= e($filter) ?>"><div class="input-group input-group-sm"><input name="q" id="invFilterQ" value="<?= e($q) ?>" class="form-control" placeholder="Rechercher un article"><button type="button" class="btn btn-outline-secondary" data-camera-scan="#invFilterQ" data-scan-submit title="Caméra"><i class="bi bi-camera"></i></button><button class="btn btn-outline-secondary">Filtrer</button></div></form>
+  <form method="get" class="ms-auto" style="max-width:320px"><input type="hidden" name="f" value="<?= e($filter) ?>"><div class="input-group input-group-sm"><input name="q" id="invFilterQ" value="<?= e($q) ?>" class="form-control" placeholder="Rechercher un article"><button type="button" class="btn btn-outline-secondary" data-camera-scan="#invFilterQ" data-scan-submit data-scan-products title="Caméra"><i class="bi bi-camera"></i></button><button class="btn btn-outline-secondary">Filtrer</button></div></form>
 </div>
 
 <form method="post" action="<?= e(url('/inventories/' . $inv['id'])) ?>" id="invForm"><?= csrf_field() ?>

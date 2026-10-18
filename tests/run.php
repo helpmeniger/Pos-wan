@@ -2234,6 +2234,109 @@ test('POS Marwa (HTTP) : inventaire par scan, saisie, rapport ; étiquettes (rec
     ok($del['ok'] && !DB::value('SELECT id FROM label_templates WHERE id = ?', [$tpl['id']]), 'modèle supprimé');
     DB::update('inventories', ['status' => 'cancelled'], 'id = ?', [$inv]);
 });
+test('Module Reconnaissance par photo : installation, apprentissage, droits, index, apprentissage en vente, partout', function () use ($B) {
+    App\Core\Addons::install('vision', false);
+    ok(App\Core\Addons::isActive('vision'), 'module actif');
+    $hasPerm = fn(string $role, string $perm) => (bool) DB::value('SELECT 1 FROM role_permissions rp JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id WHERE r.code = ? AND p.code = ?', [$role, $perm]);
+    ok($hasPerm('cashier', 'vision.use') && !$hasPerm('cashier', 'vision.teach') && $hasPerm('store_manager', 'vision.teach'), 'droits : le caissier reconnaît, le gérant apprend');
+    // Intelligence livrée en local : fichiers ≤ 1 Mo (limites d'envoi de Wamp), description cohérente
+    $dir = PUBLIC_PATH . '/assets/addons/vision';
+    $m = json_decode((string) file_get_contents("$dir/modele/modele.txt"), true);
+    $paths = $m['weightsManifest'][0]['paths'] ?? [];
+    ok(count($paths) >= 5 && is_file("$dir/tf.min.js"), 'modèle et moteur publiés');
+    $bytes = 0;
+    foreach ($paths as $f) { ok(is_file("$dir/modele/$f") && filesize("$dir/modele/$f") <= 1024 * 1024, "fragment $f ≤ 1 Mo"); $bytes += filesize("$dir/modele/$f"); }
+    $need = 0;
+    foreach ($m['weightsManifest'][0]['weights'] as $w) { $need += 4 * (int) array_product($w['shape'] ?: [1]); }
+    eq($need, $bytes, 'taille des poids = description du modèle');
+    ok(!str_contains((string) file_get_contents("$dir/modele/modele.txt"), 'Logits/Conv2d_1c_1x1'), 'couche de classification retirée (empreinte seulement)');
+    ok(str_contains((string) file_get_contents("$dir/vision.js"), "window.regeneratorRuntime = undefined"), 'compatible avec la politique de sécurité (sans unsafe-eval)');
+
+    $pa = (int) DB::value("SELECT id FROM products WHERE name = 'Inv scan A'");
+    $pb = (int) DB::value("SELECT id FROM products WHERE name = 'Inv scan B'");
+    $vec = fn(int $seed) => base64_encode(implode('', array_map(fn($i) => chr((($i * 37 + $seed * 11) % 255) - 127 & 0xFF), range(0, 511))));
+    $thumb = 'data:image/jpeg;base64,' . base64_encode("\xFF\xD8\xFF\xE0fausse-vignette");
+
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $page = $a->req('GET', "$B/vision");
+    ok($page['code'] === 200 && str_contains($page['body'], 'Apprendre') && str_contains($page['body'], 'vision-teach.js'), 'page d\'apprentissage');
+    $pos = $a->req('GET', "$B/pos")['body'];
+    ok(str_contains($pos, 'addons/vision/vision.js') && str_contains($pos, 'addons/vision/vision.css'), 'reconnaissance chargée dans la caisse');
+    ok(str_contains($a->req('GET', "$B/products")['body'], 'addons/vision/vision.js'), '… et dans les pages de gestion');
+    preg_match('/name="csrf-token" content="([^"]+)"/', $pos, $mm);
+    $hdr = ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $mm[1]];
+    $v0 = (int) setting('vision_version', '1');
+    $r = json_decode($a->req('POST', "$B/vision/refs", json_encode(['product_id' => $pa, 'vec' => $vec(1), 'thumb' => $thumb, 'source' => 'photo']), $hdr)['body'], true);
+    ok(($r['ok'] ?? false) && $r['id'] > 0 && $r['version'] > $v0, 'photo apprise, version de l\'index augmentée');
+    $a->req('POST', "$B/vision/refs", json_encode(['product_id' => $pa, 'vec' => $vec(2), 'source' => 'photo']), $hdr);
+    $a->req('POST', "$B/vision/refs", json_encode(['product_id' => $pb, 'vec' => $vec(3), 'source' => 'photo']), $hdr);
+    eq(422, $a->req('POST', "$B/vision/refs", json_encode(['product_id' => $pa, 'vec' => base64_encode(str_repeat('a', 511)), 'source' => 'photo']), $hdr)['code'], 'empreinte de mauvaise taille refusée');
+    eq(422, $a->req('POST', "$B/vision/refs", json_encode(['product_id' => $pa, 'vec' => $vec(4), 'thumb' => 'data:text/html;base64,PHNjcmlwdD4=', 'source' => 'photo']), $hdr)['code'], 'vignette non JPEG refusée');
+    eq(422, $a->req('POST', "$B/vision/refs", json_encode(['product_id' => 999999, 'vec' => $vec(4), 'source' => 'photo']), $hdr)['code'], 'article inconnu refusé');
+
+    $cfg = json_decode($a->req('GET', "$B/vision/config", null, ['Accept: application/json'])['body'], true);
+    ok($cfg['ok'] && $cfg['teach'] && $cfg['refs'] === 3, 'configuration lue par les appareils');
+    $idx = $a->req('GET', "$B/vision/index?v=" . $cfg['version'], null, ['Accept: application/json']);
+    $ix = json_decode($idx['body'], true);
+    ok(count($ix['pids']) === 3 && strlen(base64_decode($ix['vecs'])) === 3 * 512 && $ix['dim'] === 512, 'index : 3 empreintes de 512 octets');
+    ok(str_contains($idx['headers'], 'max-age=86400'), 'index mis en cache par version');
+    $pr = json_decode($a->req('GET', "$B/vision/products?ids=$pa,$pb", null, ['Accept: application/json'])['body'], true);
+    eq('2100000000012', $pr['items'][$pa]['code'], 'code transmis à l\'écran = code-barres de l\'article');
+    ok(isset($pr['items'][$pb]['stock'], $pr['items'][$pb]['price']), 'prix et stock proposés');
+
+    // Caissier : reconnaît et apprend pendant la vente, mais n'administre pas
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    preg_match('/name="csrf-token" content="([^"]+)"/', $c->req('GET', "$B/pos")['body'], $cm);
+    $ch = ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $cm[1]];
+    eq(403, $c->req('GET', "$B/vision")['code'], 'page d\'apprentissage réservée');
+    $cc = json_decode($c->req('GET', "$B/vision/config", null, ['Accept: application/json'])['body'], true);
+    ok($cc['ok'] && !$cc['teach'], 'le caissier utilise la reconnaissance');
+    eq(422, $c->req('POST', "$B/vision/refs", json_encode(['product_id' => $pa, 'vec' => $vec(5), 'source' => 'photo']), $ch)['code'], 'photos d\'apprentissage : refusées au caissier');
+    setting_set('vision_max_ventes', '2');
+    foreach ([6, 7, 8] as $sd) {
+        $v = json_decode($c->req('POST', "$B/vision/refs", json_encode(['product_id' => $pb, 'vec' => $vec($sd), 'source' => 'vente']), $ch)['body'], true);
+        ok($v['ok'] && $v['id'] > 0, 'confirmation en vente apprise');
+    }
+    eq(2, (int) DB::value("SELECT COUNT(*) FROM vision_refs WHERE product_id = ? AND source = 'vente'", [$pb]), 'seules les 2 dernières photos de vente sont gardées');
+    setting_set('vision_apprendre_ventes', '0');
+    $v = json_decode($c->req('POST', "$B/vision/refs", json_encode(['product_id' => $pb, 'vec' => $vec(9), 'source' => 'vente']), $ch)['body'], true);
+    ok($v['ok'] && !empty($v['skipped']), 'apprentissage en vente désactivable');
+    setting_set('vision_apprendre_ventes', '1');
+    setting_set('vision_max_ventes', '12');
+    ok(json_decode($c->req('POST', "$B/vision/log", json_encode(['outcome' => 'confirme', 'suggested_id' => $pa, 'chosen_id' => $pa, 'score' => 0.91, 'margin' => 0.2, 'context' => 'pos']), $ch)['body'], true)['ok'], 'reconnaissance journalisée');
+    $c->req('POST', "$B/vision/log", json_encode(['outcome' => 'corrige', 'suggested_id' => $pa, 'chosen_id' => $pb, 'score' => 0.7, 'margin' => 0.01, 'context' => 'pos']), $ch);
+    eq(422, $c->req('POST', "$B/vision/log", json_encode(['outcome' => 'pirate']), $ch)['code'], 'résultat inconnu refusé');
+    $f = json_decode($c->req('GET', "$B/vision/search?q=Inv%20scan", null, ['Accept: application/json'])['body'], true);
+    ok(count($f['items']) >= 2, 'recherche pour corriger une proposition');
+    eq(403, $c->req('POST', "$B/vision/products/$pa/clear", json_encode([]), $ch)['code'], 'effacement réservé');
+    $st = Addons\Vision\VisionService::stats();
+    ok($st['uses'] >= 2 && $st['rate'] !== null && $st['confused'], 'statistiques : taux et confusions');
+
+    // Article archivé : absent de l'index ; oubli d'une photo et d'un article
+    DB::update('products', ['status' => 'archived'], 'id = ?', [$pb]);
+    $ix = Addons\Vision\VisionService::index();
+    ok(!in_array($pb, $ix['pids'], true), 'article archivé jamais proposé');
+    DB::update('products', ['status' => 'active'], 'id = ?', [$pb]);
+    $ref = (int) DB::value('SELECT id FROM vision_refs WHERE product_id = ? LIMIT 1', [$pa]);
+    ok(json_decode($a->req('POST', "$B/vision/refs/$ref/delete", json_encode([]), $hdr)['body'], true)['ok'], 'photo oubliée');
+    $d = json_decode($a->req('POST', "$B/vision/products/$pb/clear", json_encode([]), $hdr)['body'], true);
+    ok($d['ok'] && $d['deleted'] === 3, 'toutes les photos d\'un article oubliées');
+    $t = $a->token("$B/vision");
+    $a->req('POST', "$B/vision/settings", http_build_query(['_csrf' => $t, 'vision_auto' => '1', 'vision_seuil_auto' => '5', 'vision_marge' => '0,1', 'vision_apprendre_ventes' => '1', 'vision_max_ventes' => '9']));
+    $sv = array_column(DB::all("SELECT skey, svalue FROM settings WHERE skey LIKE 'vision\\_%'"), 'svalue', 'skey');
+    ok($sv['vision_auto'] === '1' && $sv['vision_seuil_auto'] === '0.99' && $sv['vision_marge'] === '0.1' && $sv['vision_max_ventes'] === '9', 'réglages bornés et enregistrés : ' . json_encode($sv));
+    setting_set('vision_auto', '0');
+
+    // Désactivé : plus rien n'est chargé, les données restent
+    App\Core\Addons::setActive('vision', false);
+    eq(404, $a->req('GET', "$B/vision")['code'], 'module désactivé : page absente');
+    ok(!str_contains($a->req('GET', "$B/pos")['body'], 'vision.js'), 'module désactivé : rien dans la caisse');
+    ok((int) DB::value('SELECT COUNT(*) FROM vision_refs') >= 1, 'données conservées');
+    App\Core\Addons::setActive('vision', true);
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

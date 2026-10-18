@@ -154,6 +154,25 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
     `docs/DEMARRAGE_WINDOWS.md`) ;
   - l'identifiant d'appareil peut être copié par quelqu'un qui a accès au navigateur.
 
+### Reconnaissance des articles par photo (module vision, v2.1)
+- **Calcul local** : images analysées dans le navigateur. Les photos complètes ne sont jamais
+  envoyées au serveur ni sur Internet. Seules une empreinte de 512 octets et une vignette de
+  112 px sont enregistrées.
+- **Contrôles du serveur** :
+  - empreinte de taille exacte et vignette JPEG uniquement (data URL vérifiée et limitée) ;
+  - article actif ;
+  - droit `vision.teach` pour apprendre des photos et effacer ;
+  - droit `vision.use` pour reconnaître et apprendre pendant une vente (photos de vente
+    plafonnées par article).
+- **Sécurité de la vente inchangée** : un article reconnu est transmis à la caisse comme un
+  code-barres. Prix, stock, lots, ordonnance et droits sont contrôlés par le serveur, comme
+  pour un scan.
+- **Politique de sécurité du contenu inchangée** (pas d'`unsafe-eval`) : TensorFlow.js
+  fonctionne sans évaluation de code ; caméra autorisée pour le site seulement.
+- **Limites** : une reconnaissance peut se tromper (articles semblables). Elle est donc
+  confirmée par le caissier, sauf si l'ajout automatique est activé par un responsable. Les
+  ajouts automatiques ne sont pas appris.
+
 ### Intégrité métier
 - **Transactions SQL** pour ventes, paiements, stocks, retours, réceptions, inventaires, caisse.
 - Verrous de ligne (`SELECT … FOR UPDATE`) sur stocks, lots, sessions de caisse, comptes

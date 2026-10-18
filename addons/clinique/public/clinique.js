@@ -100,7 +100,7 @@
     let scanned = {};
     if (sb && window.PMScanner) sb.addEventListener('click', () => {
       scanned = {};
-      PMScanner.open({ title: T('Scanner les boîtes délivrées'), onCode: async (code) => {
+      PMScanner.open({ title: T('Scanner les boîtes délivrées'), products: true, onCode: async (code) => {
         const inp = $$('[data-dq]', df).find((i) => (i.dataset.codes || '').split('|').includes(code));
         if (!inp) return { ok: false, text: T('Ce produit ne figure pas sur l\'ordonnance') };
         const id = inp.name;

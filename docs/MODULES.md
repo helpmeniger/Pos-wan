@@ -111,6 +111,16 @@ addons/
 | `settings` | non | Paramètres créés à l'installation (jamais écrasés), lus avec `setting('clé')` |
 | `icon`, `color`, `author`, `description` | non | Affichage dans la page Modules |
 
+### Scripts chargés sur toutes les pages (« assets »)
+```json
+"assets": { "js": ["vision.js"], "css": ["vision.css"] }
+```
+Fichiers de `public/` du module, chargés sur toutes les pages (gestion, caisse, restaurant)
+tant que le module est actif. Un script peut ajouter un bouton au lecteur caméra avec
+`PMScanner.addTool({ id, label, when(opts), run(ctx) })`. `opts.products === true` indique
+que l'écran attend un article ; `ctx.deliver(code)` transmet un code comme s'il avait été
+scanné. Exemple complet : `addons/vision`.
+
 ### routes.php
 
 ```php

@@ -1,4 +1,4 @@
-# État du projet — version 2.0.0 (POS Marwa)
+# État du projet — version 2.1.0 (POS Marwa)
 
 ## Terminé et vérifié
 
@@ -58,7 +58,7 @@
 | **v2.0** Pressing 1.1 : caisse, statuts, retrait partiel, retards, suivi, historique client | ✅ | Tests + Chromium |
 | **v2.0** Lanceur Windows, raccourci, tâche planifiée, PWA | ⚠️ | Écrits et relus ; **non exécutés sous Windows** (voir `docs/DEMARRAGE_WINDOWS.md` §5) |
 
-**Résultat de la suite de tests : 116 réussis, 0 échec** (`php tests/run.php`).
+**Résultat de la suite de tests : 117 réussis, 0 échec** (`php tests/run.php`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 

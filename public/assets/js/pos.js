@@ -246,6 +246,7 @@
   const cam = $('#cameraScan');
   if (cam && window.PMScanner) cam.addEventListener('click', () => PMScanner.open({
     title: __('Scanner des articles'),
+    products: true,
     onCode: async (code) => {
       const d = await api('/pos/lookup?code=' + encodeURIComponent(code));
       if (!d.ok) return { ok: false, text: d.error || __('Article introuvable.') };

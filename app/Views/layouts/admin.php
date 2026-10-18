@@ -26,6 +26,7 @@ $notes = $u ? Notifications::get() : [];
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/scanner.css')) ?>">
+<?php $addonAssets = App\Core\Addons::globalAssets(); foreach ($addonAssets['css'] as $s): ?><link rel="stylesheet" href="<?= e(asset($s)) ?>"><?php endforeach; ?>
 </head>
 <body class="admin-body <?= setting('menu_position', 'right') === 'left' ? 'menu-left' : 'menu-right' ?>">
 <div class="app-shell">
@@ -114,6 +115,7 @@ $notes = $u ? Notifications::get() : [];
 <script src="<?= e(asset('js/money.js')) ?>"></script>
 <script src="<?= e(asset('js/app.js')) ?>"></script>
 <script src="<?= e(asset('js/scanner.js')) ?>"></script>
+<?php foreach ($addonAssets['js'] as $s): ?><script src="<?= e(asset($s)) ?>"></script><?php endforeach; ?>
 <?php foreach (($scripts ?? []) as $s): ?><script src="<?= e(asset($s)) ?>"></script><?php endforeach; ?>
 <script src="<?= e(asset('js/pwa.js')) ?>"></script>
 </body>

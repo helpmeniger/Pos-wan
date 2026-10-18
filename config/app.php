@@ -3,7 +3,7 @@ use App\Core\Env;
 
 return [
     'name' => 'POS Marwa',
-    'version' => '2.0.0',
+    'version' => '2.1.0',
     'env' => Env::get('APP_ENV', 'production'),
     'debug' => (bool) Env::get('APP_DEBUG', false),
     // Laisser vide pour une détection automatique du sous-dossier (ex. /pos-marwa/public)

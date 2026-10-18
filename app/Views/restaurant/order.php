@@ -5,11 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <meta name="pw-currency" content="<?= e(json_encode(currency(), JSON_UNESCAPED_UNICODE)) ?>">
 <meta name="base-url" content="<?= e(url('/')) ?>">
+<meta name="csrf-token" content="<?= e(csrf_token()) ?>">
 <title><?= e($o['number']) ?> · Restaurant · POS Marwa</title>
 <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>">
 <link rel="stylesheet" href="<?= e(bootstrap_css()) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/pos.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/scanner.css')) ?>">
+<?php $addonAssets = App\Core\Addons::globalAssets(); foreach ($addonAssets['css'] as $s): ?><link rel="stylesheet" href="<?= e(asset($s)) ?>"><?php endforeach; ?>
 </head>
 <body class="pos-body">
 <div class="pos rest">
@@ -21,7 +24,7 @@
       <?php endforeach; ?>
     </div>
     <div class="search-row">
-      <div class="input-group"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="search" id="productSearch" class="form-control" placeholder="Rechercher un plat, une boisson…" autocomplete="off"></div>
+      <div class="input-group"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="search" id="productSearch" class="form-control" placeholder="Rechercher un plat, une boisson…" autocomplete="off"><button type="button" class="btn btn-outline-secondary" id="restCamera" title="Scanner ou reconnaître avec la caméra"><i class="bi bi-camera"></i></button></div>
       <div class="btn-group" role="group" aria-label="Service" id="courseSel">
         <button class="btn btn-light active" data-course="" title="Service déduit du poste (bar → boisson)">Auto</button>
         <?php foreach ($config['courses'] as $k => $l): ?><button class="btn btn-light" data-course="<?= (int) $k ?>"><?= e($l) ?></button><?php endforeach; ?>
@@ -131,6 +134,8 @@
 <script src="<?= e(asset('vendor/bootstrap/bootstrap.bundle.min.js')) ?>"></script>
 <?= i18n_script() ?>
 <script src="<?= e(asset('js/money.js')) ?>"></script>
+<script src="<?= e(asset('js/scanner.js')) ?>"></script>
+<?php foreach ($addonAssets['js'] as $s): ?><script src="<?= e(asset($s)) ?>"></script><?php endforeach; ?>
 <script src="<?= e(asset('js/restaurant-order.js')) ?>"></script>
 </body>
 </html>
