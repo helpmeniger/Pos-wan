@@ -187,9 +187,60 @@ final class Addons
 
     // ------------------------------------------------------------------ intégration
 
+    /** Module actif dont les fichiers sont plus récents que sa version installée en base. */
+    public static function pendingUpgrade(string $code): bool
+    {
+        $m = self::discover()[$code] ?? null;
+        $row = self::installed()[$code] ?? null;
+        return $m && $row && !$m['errors'] && version_compare((string) $m['version'], (string) $row['version'], '>');
+    }
+
+    /**
+     * Après une mise à jour du logiciel (nouveaux fichiers copiés), les modules actifs dont la
+     * version a changé sont mis à jour automatiquement (sauvegarde puis nouvelles tables), comme
+     * la base du logiciel : leurs nouveaux écrans ne doivent jamais tourner sur l'ancienne base.
+     * En cas d'échec : erreur journalisée, nouvel essai dans 10 minutes, écrans du module masqués
+     * en attendant (Configuration → Modules affiche « Mettre à jour » et la cause).
+     */
+    public static function autoUpgrade(): array
+    {
+        $todo = array_values(array_filter(array_keys(self::active()), [self::class, 'pendingUpgrade']));
+        if (!$todo || (int) DB::value("SELECT GET_LOCK('poswan_addon_upgrade', 30)") !== 1) {
+            return [];
+        }
+        $done = [];
+        try {
+            self::reset();
+            $backup = true;
+            foreach ($todo as $code) {
+                $flag = STORAGE_PATH . '/cache/addon_upgrade_failed_' . $code;
+                if (!self::pendingUpgrade($code) || (is_file($flag) && filemtime($flag) > time() - 600)) {
+                    continue;
+                }
+                try {
+                    self::install($code, $backup);
+                    $backup = false; // une seule sauvegarde pour tous les modules
+                    @unlink($flag);
+                    $done[] = $code;
+                    Logger::info('Module mis à jour automatiquement', ['module' => $code, 'version' => self::discover()[$code]['version'] ?? '']);
+                } catch (\Throwable $e) {
+                    Logger::error('Mise à jour automatique du module « ' . $code . ' » impossible : ' . $e->getMessage());
+                    @file_put_contents($flag, $e->getMessage());
+                }
+                self::reset();
+            }
+        } finally {
+            DB::value("SELECT RELEASE_LOCK('poswan_addon_upgrade')");
+        }
+        return $done;
+    }
+
     public static function registerRoutes(Router $router): void
     {
         foreach (self::active() as $code => $m) {
+            if (self::pendingUpgrade($code)) {
+                continue; // base du module pas encore à jour : ses écrans attendent la mise à jour
+            }
             $file = self::dir() . '/' . $code . '/routes.php';
             if (is_file($file)) {
                 (static function (string $__file, Router $router): void {
@@ -203,7 +254,10 @@ final class Addons
     public static function menu(): array
     {
         $groups = [];
-        foreach (self::active() as $m) {
+        foreach (self::active() as $code => $m) {
+            if (self::pendingUpgrade($code)) {
+                continue;
+            }
             foreach ((array) ($m['menu'] ?? []) as $it) {
                 $g = (string) ($it['group'] ?? $m['name']);
                 $groups[$g][] = [(string) $it['label'], (string) ($it['icon'] ?? 'bi-puzzle'), (string) $it['url'], isset($it['permission']) ? (string) $it['permission'] : null, (string) ($it['color'] ?? '#5d6d7e')];
@@ -220,6 +274,9 @@ final class Addons
     {
         $out = ['js' => [], 'css' => []];
         foreach (self::active() as $code => $m) {
+            if (self::pendingUpgrade($code)) {
+                continue;
+            }
             foreach (['js', 'css'] as $kind) {
                 foreach ((array) ($m['assets'][$kind] ?? []) as $f) {
                     $out[$kind][] = 'addons/' . $code . '/' . $f;

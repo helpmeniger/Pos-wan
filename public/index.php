@@ -39,6 +39,10 @@ if (is_file($maint) && filemtime($maint) > time() - 900 && !str_starts_with($pat
 }
 // Fichiers mis à jour (nouvelle version copiée) : la base est mise à jour automatiquement
 InstallService::autoMigrate();
+// … puis les modules actifs dont la version a changé (nouvelles tables avant leurs nouveaux écrans)
+if (InstallService::isInstalled()) {
+    App\Core\Addons::autoUpgrade();
+}
 // Licence : sans clé valide après la période d'essai, lecture seule (aucune donnée bloquée)
 if (App\Services\LicenceService::blocks(Request::method(), $path)) {
     $msg = 'Licence non activée : POS Marwa est en lecture seule. Activez la licence (Configuration → Licence et activation) ou contactez l\'auteur : ' . implode(' / ', (array) config('licence.author.phones')) . '.';

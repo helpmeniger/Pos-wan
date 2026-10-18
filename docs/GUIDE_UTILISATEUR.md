@@ -235,6 +235,11 @@ daté.
    automatique de la base. Vos données, `.env`, photos et sauvegardes ne sont pas touchés.
 En cas de problème : « Revenir à la version précédente » sur la même page.
 
+Les modules complémentaires actifs (Clinique, Pressing, Reconnaissance…) sont mis à jour
+automatiquement à la première page ouverte après la mise à jour. Si l'un d'eux ne peut pas
+l'être, ses écrans sont masqués et Configuration → Modules indique « Mettre à jour » avec la
+cause.
+
 ## Licence, contrat, À propos
 - **À propos de POS Marwa** (en bas du menu) : auteur, version, contacts, contrat de licence.
 - **Licence et activation** : communiquez l'identifiant d'installation à l'auteur

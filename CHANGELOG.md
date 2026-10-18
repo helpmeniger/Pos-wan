@@ -2,7 +2,21 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
-## [2.2.0] — 2026-10-18
+## [2.2.1] — 2026-10-18
+
+### Corrigé
+- **Erreur 500 sur « Surveillance des articles », « Passages vus / ventes » et « Caméras »
+  après la mise à jour.**
+  - **Cause :** les fichiers du module Reconnaissance 1.1 avaient été copiés, mais le module
+    restait en 1.0.0 dans la base, sans ses nouvelles tables.
+  - **Correction :** après une mise à jour du logiciel, les modules actifs dont la version a
+    changé sont maintenant mis à jour automatiquement, avec une sauvegarde préalable, comme la
+    base du logiciel.
+  - **En cas d'échec :** les écrans du module sont masqués (plus d'erreur 500), la cause est
+    journalisée, un nouvel essai a lieu 10 minutes plus tard, et le bouton « Mettre à jour »
+    reste disponible dans Modules.
+
+ — 2026-10-18
 
 ### Ajouté
 - **Module Reconnaissance par photo 1.1 : caméras.**

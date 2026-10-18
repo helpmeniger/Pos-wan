@@ -2510,6 +2510,49 @@ test('Module Reconnaissance 1.1 : caméras USB / carte / IP, relais sécurisé, 
     }
 });
 
+test('Mise à jour du logiciel : modules actifs mis à jour automatiquement (jamais d\'erreur 500 sur leurs nouveaux écrans)', function () use ($B) {
+    // Situation signalée : fichiers 2.2 copiés, module « vision » encore en 1.0.0 dans la base
+    DB::update('addons', ['version' => '1.0.0'], 'code = ?', ['vision']);
+    DB::run("DELETE FROM schema_migrations WHERE version = 'addon:vision:0002_cameras_surveillance'");
+    DB::run('SET FOREIGN_KEY_CHECKS = 0');
+    DB::run('DROP TABLE IF EXISTS vision_events');
+    DB::run('DROP TABLE IF EXISTS vision_cameras');
+    DB::run('SET FOREIGN_KEY_CHECKS = 1');
+    @unlink(STORAGE_PATH . '/cache/addon_upgrade_failed_vision');
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    foreach (['/vision/surveillance', '/vision/rapport', '/vision/cameras'] as $u) {
+        eq(200, $a->req('GET', $B . $u)['code'], "$u après copie des fichiers");
+    }
+    eq('1.1.0', DB::value("SELECT version FROM addons WHERE code = 'vision'"), 'module mis à jour automatiquement');
+    ok((bool) DB::value("SHOW TABLES LIKE 'vision_events'") && (bool) DB::value("SHOW TABLES LIKE 'vision_cameras'"), 'nouvelles tables créées');
+
+    // Mise à jour d'un module impossible : ses écrans sont masqués (404), jamais une erreur 500
+    $dir = App\Core\Addons::dir() . '/zz_maj_test';
+    @mkdir($dir . '/migrations', 0775, true);
+    file_put_contents("$dir/manifest.json", json_encode(['code' => 'zz_maj_test', 'name' => 'Essai mise à jour', 'version' => '1.0.0', 'menu' => [['group' => 'Configuration', 'label' => 'Essai MAJ', 'url' => '/zz-maj']]]));
+    file_put_contents("$dir/routes.php", "<?php \$router->get('/zz-maj', [App\\Controllers\\MobileController::class, 'landing'], null);");
+    try {
+        App\Core\Addons::reset();
+        App\Core\Addons::install('zz_maj_test', false);
+        eq(200, $a->req('GET', "$B/zz-maj")['code'], 'module d\'essai installé');
+        file_put_contents("$dir/manifest.json", json_encode(['code' => 'zz_maj_test', 'name' => 'Essai mise à jour', 'version' => '1.1.0', 'menu' => [['group' => 'Configuration', 'label' => 'Essai MAJ', 'url' => '/zz-maj']]]));
+        file_put_contents("$dir/migrations/0001_casse.sql", 'CREATE TABLE zz_casse (id TYPE_INCONNU);');
+        $r = $a->req('GET', "$B/zz-maj");
+        eq(404, $r['code'], 'mise à jour du module impossible : écran masqué au lieu d\'une erreur 500');
+        ok(is_file(STORAGE_PATH . '/cache/addon_upgrade_failed_zz_maj_test'), 'échec mémorisé (nouvel essai dans 10 minutes)');
+        ok(!str_contains($a->req('GET', "$B/dashboard")['body'], 'Essai MAJ'), 'entrée de menu masquée en attendant');
+        ok(str_contains($a->req('GET', "$B/addons")['body'], 'Essai mise à jour'), 'module visible dans Modules (« Mettre à jour »)');
+    } finally {
+        DB::run("DELETE FROM addons WHERE code = 'zz_maj_test'");
+        DB::run("DELETE FROM schema_migrations WHERE version LIKE 'addon:zz_maj_test:%'");
+        @unlink(STORAGE_PATH . '/cache/addon_upgrade_failed_zz_maj_test');
+        foreach (['migrations/0001_casse.sql', 'manifest.json', 'routes.php'] as $f) { @unlink("$dir/$f"); }
+        @rmdir("$dir/migrations"); @rmdir($dir);
+        App\Core\Addons::reset();
+    }
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });
