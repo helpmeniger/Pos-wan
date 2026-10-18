@@ -69,15 +69,16 @@
 
   /** Enregistre une empreinte et prévient si l'article ressemble beaucoup à un autre. */
   async function learn(e, thumb, source) {
-    const others = V.match(e.f, cur.id);
+    const ranking = V.match(e.f); // avant l'ajout : à quoi cette photo ressemble-t-elle le plus ?
+    const hasOwn = ranking.some((r) => r.pid === cur.id);
     const d = await V.api('/vision/refs', { product_id: cur.id, vec: V.b64(e.q), thumb, source });
     if (!d.ok) { msg(d.error || T('Erreur'), 'bad'); return false; }
     V.addLocal(cur.id, e.q); V.IDX.version = d.version;
     shots++; tip();
-    const near = others[0];
-    if (near && near.score > 0.85) {
+    const near = ranking[0];
+    if (hasOwn && near && near.pid !== cur.id) {
       const [p] = await V.products([near.pid]);
-      msg(`${T('Photo apprise. Attention : ressemble beaucoup à')} « ${p ? p.name : '?'} ». ${T('Photographiez la face qui les distingue.')}`, 'bad');
+      msg(`${T('Photo apprise. Attention : elle ressemble plus à')} « ${p ? p.name : '?'} » ${T('qu\'à cet article : photographiez la face qui les distingue, ou utilisez le code-barres.')}`, 'bad');
     } else msg(T('Photo apprise.'), 'good');
     return true;
   }
@@ -155,11 +156,11 @@
         pairs.push([d, pids[a], pids[b]]);
       }
       pairs.sort((x, y) => y[0] - x[0]);
-      const top = pairs.slice(0, 10).filter((p) => p[0] > 0.6);
-      if (!top.length) { box.textContent = pids.length < 2 ? T('Apprenez au moins deux articles.') : T('Aucune paire d\'articles très ressemblante.'); return; }
+      const top = pairs.slice(0, 10); // les 10 paires les plus proches (classement relatif)
+      if (!top.length) { box.textContent = pids.length < 2 ? T('Apprenez au moins deux articles.') : T('Aucune paire d\'articles à comparer.'); return; }
       const info = new Map((await V.products([...new Set(top.flatMap((p) => [p[1], p[2]]))])).map((p) => [p.id, p]));
       box.innerHTML = `<p class="mb-1">${T('Ces articles se ressemblent à la caméra : ajoutez des photos de la face qui les distingue, ou utilisez leur code-barres.')}</p><ol class="mb-0">`
-        + top.map(([d, a, b]) => `<li>« ${esc((info.get(a) || {}).name)} » ↔ « ${esc((info.get(b) || {}).name)} » — ${Math.round(d * 100)} %</li>`).join('') + '</ol>'
+        + top.map(([d, a, b]) => `<li>« ${esc((info.get(a) || {}).name)} » ↔ « ${esc((info.get(b) || {}).name)} » </li>`).join('') + '</ol>'
         + (capped ? `<p class="text-secondary mb-0">${T('Calcul limité aux 800 articles les plus photographiés.')}</p>` : '');
     } catch (e) { box.textContent = e.message; }
   });
