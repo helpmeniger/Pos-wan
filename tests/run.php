@@ -1556,6 +1556,7 @@ test('En-têtes de sécurité HTTP présents', function () use ($B) {
     }
     ok(stripos($r['headers'], 'HttpOnly') !== false && stripos($r['headers'], 'SameSite=Strict') !== false, 'cookie de session HttpOnly + SameSite');
     ok(stripos($r['headers'], 'X-Powered-By') === false, 'version PHP masquée');
+    ok(str_contains($r['body'], '<h1>POS Marwa</h1>') && !str_contains($r['body'], 'POS WAN'), 'page de connexion au nom de POS Marwa');
     ok((bool) preg_match('/Permissions-Policy:[^\n]*camera=\(self\)/i', $r['headers']), 'caméra autorisée pour le site (scan des codes-barres), refusée aux autres origines');
 });
 test('Pages protégées : redirection vers la connexion / 401 en JSON', function () use ($B) {

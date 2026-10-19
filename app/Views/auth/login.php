@@ -15,7 +15,7 @@
 <div class="login-card">
   <div class="login-head">
     <img src="<?= e(asset('img/logo.svg')) ?>" alt="" width="58" height="58">
-    <h1>POS WAN</h1>
+    <h1>POS Marwa</h1>
     <small><?= e(setting('company_name', 'Caisse & gestion commerciale')) ?></small>
   </div>
   <div class="px-4 pb-4">
