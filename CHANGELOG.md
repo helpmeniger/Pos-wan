@@ -2,6 +2,18 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.3.1] — 2026-10-19
+
+### Corrigé
+- Page de connexion : le titre affichait encore l'ancien nom « POS WAN ». Un test le vérifie
+  désormais.
+- Le paquet 2.3.0 contenait par erreur des photos produites par les tests automatiques
+  (dossier `storage/ecole/photos`). Elles sont retirées et ce dossier n'est plus jamais livré.
+  Si vous avez installé la 2.3.0 sans encore utiliser le module Établissement, vous pouvez
+  vider ce dossier.
+- Le ZIP 2.3.0 publié en premier ne contenait pas `release.json` (vérification d'intégrité) ;
+  les paquets incluent de nouveau ce fichier.
+
 ## [2.3.0] — 2026-10-19
 
 ### Ajouté
