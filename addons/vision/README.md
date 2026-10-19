@@ -1,4 +1,4 @@
-# Module « Reconnaissance des articles par photo » (vision) — 1.1.0
+# Module « Reconnaissance des articles par photo » (vision) — 1.2.0
 
 Reconnaît les articles **par la caméra, sans code-barres** : webcam du PC de caisse, tablette
 ou smartphone connecté au réseau local. Une fois le module activé, la reconnaissance est
@@ -96,6 +96,90 @@ passage, effacée après 30 jours (réglable).
   clientèle (affichage), limitez les caméras aux zones utiles et respectez la réglementation
   sur les données personnelles en vigueur au Niger.
 
+## Isolement de l'article et ajout automatique (1.2)
+
+Objectif : que la caméra s'intéresse **à l'article**, pas au mur, au comptoir ni aux objets
+posés autour, et qu'en caisse chaque article reconnu avec certitude soit **ajouté tout seul**,
+puis que l'article suivant soit reconnu à son tour.
+
+### Fond appris (recommandé à la caisse)
+
+- Dans la fenêtre caméra : **« 🧱 Apprendre le fond »**, le cadre étant **vide** (comptoir sans
+  article). Une image du fond est gardée sur ce poste, pour cette caméra (pas sur le serveur).
+- Ensuite, seule la partie de l'image qui **diffère du fond** est analysée :
+  - compensation des changements de lumière ;
+  - les **ombres** de l'article sont ignorées ;
+  - l'article est **détouré** (fond rendu transparent), recadré, posé sur un gris neutre,
+    puis comparé aux photos apprises de la même façon.
+- Cadre vide : rien n'est analysé, rien n'est ajouté (« Posez un article dans le cadre »).
+- Si la caméra bouge ou si la lumière change beaucoup, POS Marwa le signale : réapprenez le fond.
+
+### Pendant l'apprentissage
+
+- Aperçu en direct de l'article **détouré sur fond transparent** (damier) : vous voyez ce qui
+  sera réellement appris.
+- Chaque photo produit **deux empreintes** : l'article détouré et l'image entière.
+- Case **« Isoler l'article »** (cochée par défaut) et bouton « Apprendre le fond » aussi
+  dans la fenêtre d'apprentissage.
+- Si une photo ressemble davantage à un autre article, un avertissement s'affiche.
+
+### En caisse : « En continu » + « Ajout automatique »
+
+1. Cochez **En continu** et **Ajout automatique** (mémorisés sur ce poste).
+2. Posez un article : il doit être reconnu **sur deux images de suite** avec une note et un
+   écart avec le 2ᵉ article suffisants ; il est alors **ajouté au panier**.
+3. Retirez l'article : le suivant est reconnu à son tour. (Sans fond appris, POS Marwa attend
+   que l'image change nettement.)
+4. **↶ Annuler** retire l'unité ajoutée. L'annulation est enregistrée.
+5. Pas sûr : POS Marwa **propose** les articles les plus proches et le caissier touche le bon.
+
+Garde-fous :
+- seuils propres aux articles détourés (Réglages : `0,45` et écart `0,25`, choisis par mesure
+  pour **aucun ajout faux** sur les essais) ;
+- écart exigé **doublé** pour les paires d'articles corrigées au moins 2 fois en 90 jours et
+  pour les articles annulés au moins 2 fois ;
+- les ajouts automatiques ne sont **jamais appris** (une erreur ne se renforce pas) ;
+- le code-barres reste prioritaire.
+
+### Mesures 1.2 (honnêtes)
+
+**Caisse simulée** (12 articles dessinés dont des sosies : Cola 33/50 cl, Cola/Cola Zéro,
+Orange/Mangue ; lumière variable ; objets parasites autour ; calcul dans Chromium avec le code
+livré) :
+
+| Essai | Bon article en 1ᵉʳ | Ajouts automatiques justes | Ajouts automatiques faux |
+|---|---|---|---|
+| 1.1 (image entière) | 75 % / 83 % | — | — |
+| 1.2 avec fond appris | 86 % / 96 % | 32 / 38 | **0** |
+| 1.2, appris par photos, fond appris en caisse | 92 % | 21 | **0** |
+| Comptoir vide (40 images) | — | — | **0** |
+
+- Avec des objets parasites dans le cadre : 79 % → 92 % au 1ᵉʳ rang.
+- Les erreurs restantes sont des sosies (Cola 33/50 cl…) : ils sont **proposés**, pas ajoutés.
+
+**Essai de bout en bout** (caisse réelle de POS Marwa, caméra simulée, 3 articles appris par
+4 photos, fond appris) : Mangue et Cola 33 cl ajoutés automatiquement, **aucun ajout faux**,
+rien sur le comptoir vide, « Annuler » retire bien la ligne. Le Cola 33 cl, très proche du
+Cola 50 cl, n'a été ajouté qu'une fois sur trois présentations ; les autres fois il a été
+proposé.
+
+**Photos réelles en rayon** (banc public, article tenu à la main devant des étagères) : le
+détourage d'après les bords de l'image, **sans fond appris**, n'améliore pas la reconnaissance
+(34,7 % → 31,0 %). Il n'est donc **pas** utilisé en caisse sans fond appris ; il sert seulement
+à l'apprentissage par photos sur fond uni.
+
+**Limite importante mesurée :** un article **jamais appris** qui ressemble à un article appris
+peut être ajouté **sous le nom de l'article appris** (simulation avec 3 à 6 articles appris
+sur 12 présentés : 8 à 16 ajouts faux sur 36 à 54 présentations d'articles inconnus). Deux
+contre-mesures ont été essayées (ressemblance brute, dispersion propre à chaque article) :
+elles ne séparent pas ces cas de façon fiable et n'ont pas été retenues. Règle pratique :
+**activez l'ajout automatique seulement quand tous les articles posés devant cette caméra
+ont été appris**, sinon gardez le mode « propose, le caissier confirme ». Surveillez les
+annulations dans les statistiques du module.
+
+Taille apparente de l'article (33 cl / 50 cl) : implémentée, mesurée **sans gain** (la
+distance à la caméra varie) ; désactivée.
+
 ## Installation
 
 1. Le dossier `addons/vision` est fourni avec POS Marwa 2.1.0 (ou copiez-le dans `addons/`).
@@ -164,8 +248,8 @@ Options :
 
 | Table | Contenu |
 |---|---|
-| `vision_refs` | Empreintes apprises : article, 512 octets, origine (photo, fiche, vente), vignette, auteur, date |
-| `vision_log` | Reconnaissances : proposé, choisi, note, écart, résultat (confirmé, corrigé, automatique, aucun) |
+| `vision_refs` | Empreintes apprises : article, 512 octets, nature (image entière ou article détouré), taille apparente, origine (photo, fiche, vente), vignette, auteur, date |
+| `vision_log` | Reconnaissances : proposé, choisi, note, écart, résultat (confirmé, corrigé, automatique, annulé, aucun) |
 
 ## Précision mesurée (sans complaisance)
 

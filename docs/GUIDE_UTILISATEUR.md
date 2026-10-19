@@ -221,6 +221,12 @@ Module fourni (`addons/vision/`), à activer dans Modules complémentaires.
 Le même bouton existe au restaurant, et « Reconnaître l'article » apparaît dans la fenêtre
 caméra de l'inventaire, des étiquettes, de la pharmacie et de la recherche d'articles.
 
+**Caisse en continu (1.2) :** dans la fenêtre caméra, cadre vide, touchez **« 🧱 Apprendre le
+fond »** : le mur et le comptoir sont alors ignorés. Cochez **En continu** et **Ajout
+automatique** : chaque article posé et reconnu avec certitude est ajouté au panier ; retirez-le
+pour passer au suivant. **↶ Annuler** retire l'ajout. Activez l'ajout automatique seulement
+quand tous les articles présentés devant la caméra ont été appris.
+
 Le module reconnaît **les articles qui lui ont été appris**. Pour les articles presque
 identiques, préférez le code-barres. Guide : `addons/vision/README.md`.
 

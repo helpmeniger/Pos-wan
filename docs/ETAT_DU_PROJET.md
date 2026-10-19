@@ -1,4 +1,4 @@
-# État du projet — version 2.3.1 (POS Marwa)
+# État du projet — version 2.4.0 (POS Marwa)
 
 ## Terminé et vérifié
 
@@ -62,6 +62,7 @@
 | **v2.3** Module Établissement : années, classes, élèves, personnel, inscriptions, échéancier, caisse, reçus, impayés, salaires, comptabilité, notes, bulletins, appel | ✅ | 5 tests (calculs vérifiés à la main, idempotence, droits, tous les formulaires HTTP, toutes les pages et impressions) + Chromium (inscription, caisse, reçu, notes au clavier, bulletins) |
 | **v2.3** Mode Établissement (caisse et menus sans termes commerciaux) | ✅ | Tests HTTP (redirections, menus, alertes) + Chromium |
 | **v2.3** Pointage par reconnaissance faciale | ✅ fonctionnel, ⚠️ à valider sur place | Mesure hors ligne (8 personnes : 95 % reconnus, 0 % d'erreur de personne au seuil 0,50) + Chromium avec caméra simulée (2 personnes reconnues, 1 inconnu signalé, pas de double pointage). **Non testé avec de vraies caméras, de vrais élèves, ni sur un PC de l'établissement** ; pas de détection de photo présentée devant la caméra |
+| **v2.4** Reconnaissance 1.2 : fond appris, article détouré, ajout automatique en continu, annulation | ✅ fonctionnel, ⚠️ à valider sur place | 11 tests JS du détourage + test PHP (empreintes détourées, journal « annulé », paires confondues) + caisse simulée (12 articles : 0 ajout faux, 0 ajout sur comptoir vide) + Chromium de bout en bout (ajouts automatiques justes, « Annuler »). **Limite mesurée :** un article non appris semblable à un article appris peut être ajouté à tort. **Non testé avec une vraie webcam en magasin** |
 
 **Résultat de la suite de tests : 125 réussis, 0 échec** (`php tests/run.php`), plus 15 vérifications JavaScript du moteur de comptage (`node tests/js/track.test.js`).
 

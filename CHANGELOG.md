@@ -2,6 +2,34 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.4.0] — 2026-10-19
+
+### Ajouté
+- **Reconnaissance des articles 1.2** (`addons/vision`) :
+  - **fond appris** (« 🧱 Apprendre le fond », cadre vide) : seul l'article posé devant le fond
+    est analysé ; murs, comptoir et objets autour ne sont plus pris pour un article ; ombres et
+    variations de lumière compensées ;
+  - **article détouré** (fond transparent) pendant l'apprentissage, avec aperçu en direct ;
+    chaque photo donne deux empreintes (article détouré + image entière) ;
+  - en caisse, **« En continu » + « Ajout automatique »** : chaque article reconnu avec
+    certitude sur deux images de suite est ajouté au panier ; on retire l'article et le suivant
+    est reconnu ; bouton **↶ Annuler** (retire l'unité, annulation enregistrée) ;
+  - seuils propres aux articles détourés (Réglages, 0,45 / 0,25) ; écart doublé pour les
+    paires souvent corrigées et les articles souvent annulés.
+
+### Modifié
+- Le scanner caméra transmet l'annulation à la caisse (`onUndo`).
+- Migration du module : résultat « annulé » dans le journal, taille apparente des empreintes.
+
+### Limites connues (mesurées)
+- Un article **jamais appris** qui ressemble à un article appris peut être ajouté sous le nom
+  de ce dernier : n'activez l'ajout automatique que si tous les articles présentés devant
+  cette caméra ont été appris. Détails et chiffres : `addons/vision/README.md`.
+- Sans fond appris, le détourage d'après les bords n'améliore pas la reconnaissance sur photos
+  réelles ; il n'est pas utilisé en caisse.
+- Testé en simulation et avec une caméra simulée dans Chromium ; **pas encore avec une vraie
+  webcam en magasin**.
+
 ## [2.3.1] — 2026-10-19
 
 ### Corrigé

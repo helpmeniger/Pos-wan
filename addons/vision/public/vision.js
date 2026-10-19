@@ -37,7 +37,7 @@
 
   const D = 1280, P = 512, SIZE = 224;
   const CROPS = [1.0, 0.8];        // recadrages moyennés (stabilité)
-  const CENTER_MIN_REFS = 12;      // centrage des empreintes dès qu'il y a assez de photos apprises
+  const CENTER_MIN_REFS = 9;       // centrage des empreintes dès qu'il y a assez de photos apprises (par nature)
   const CENTER_MIN_PRODS = 3;      // … et au moins 3 articles (avec 2, le centrage les rendrait opposés)
   // wholePenalty : l'image entière (avec son arrière-plan) compte un peu moins qu'un article isolé.
   // sizeWeight : taille apparente — mesurée sans gain sur le banc (distance à la caméra variable) : désactivée.
@@ -310,8 +310,6 @@
     const qs = query instanceof Float32Array ? { whole: query, obj: null, size: 0 } : { whole: query.whole && (query.whole.f || query.whole), obj: query.obj && (query.obj.f || query.obj), size: query.size || 0 };
     const base = qs.whole || qs.obj; if (!base) return [];
     const Q = [prepareQuery(qs.whole || qs.obj, 0), prepareQuery(qs.obj || qs.whole, 1)];
-    // ressemblance brute (sans centrage) : un article jamais appris reste loin de toutes les photos
-    const R = [normalize(Float32Array.from(qs.whole || qs.obj)), normalize(Float32Array.from(qs.obj || qs.whole))];
     // Article détouré disponible : l'image entière (avec son arrière-plan) compte un peu moins
     const pen = qs.obj && qs.whole ? TUNE.wholePenalty : 0;
     const per = new Map();
@@ -322,12 +320,11 @@
       let s = dot(Q[m], IDX.mat, r * P) - (m === 0 ? pen : 0);
       // tailles connues des deux côtés : un format différent (33 cl / 50 cl) est pénalisé
       if (m === 1 && qs.size && IDX.sizes[r]) s -= TUNE.sizeWeight * Math.abs(Math.log(qs.size / IDX.sizes[r]));
-      const raw = dot(R[m], IDX.raw, r * P);
       const a = per.get(pid);
-      if (!a) { const rw = [-2, -2]; rw[m] = raw; per.set(pid, [s, -2, m, rw]); } else { if (s > a[0]) { a[1] = a[0]; a[0] = s; a[2] = m; } else if (s > a[1]) a[1] = s; if (raw > a[3][m]) a[3][m] = raw; }
+      if (!a) per.set(pid, [s, -2, m]); else if (s > a[0]) { a[1] = a[0]; a[0] = s; a[2] = m; } else if (s > a[1]) a[1] = s;
     }
     // obj : le meilleur score vient d'une empreinte « article isolé » (seuils propres, voir sure())
-    return [...per.entries()].map(([pid, [b, s2, m, raw]]) => ({ pid, score: s2 > -2 ? 0.75 * b + 0.25 * s2 : b, obj: m === 1, raw: raw[m] })).sort((a, b) => b.score - a.score);
+    return [...per.entries()].map(([pid, [b, s2, m]]) => ({ pid, score: s2 > -2 ? 0.75 * b + 0.25 * s2 : b, obj: m === 1 })).sort((a, b) => b.score - a.score);
   }
   const productCache = new Map();
   async function products(ids) {
