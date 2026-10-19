@@ -80,12 +80,16 @@ $pct = $s['total'] ? round(100 * $s['learned'] / $s['total']) : 0;
         <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" name="vision_apprendre_ventes" value="1" id="vsLearn" <?= setting('vision_apprendre_ventes', '1') === '1' ? 'checked' : '' ?>>
           <label class="form-check-label" for="vsLearn"><b>Apprendre pendant les ventes</b> : chaque article confirmé ou corrigé par le caissier est mémorisé (les <input type="number" name="vision_max_ventes" min="1" max="50" value="<?= e(setting('vision_max_ventes', '12')) ?>" class="form-control form-control-sm d-inline-block" style="width:64px"> dernières photos par article).</label></div>
         <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" name="vision_auto" value="1" id="vsAuto" <?= setting('vision_auto', '0') === '1' ? 'checked' : '' ?>>
-          <label class="form-check-label" for="vsAuto"><b>Ajout automatique</b> quand la reconnaissance est sûre (sinon le caissier confirme toujours). À n'activer qu'après avoir vérifié le taux de bonnes propositions.</label></div>
+          <label class="form-check-label" for="vsAuto"><b>Ajout automatique</b> activé par défaut sur les postes de caisse (chaque caissier peut le couper dans la fenêtre caméra). En continu, un article n'est ajouté que s'il est sûr sur 2 images de suite ; la caméra attend ensuite qu'il soit retiré ; un bouton « Annuler » permet de revenir en arrière. À n'activer qu'après avoir vérifié le taux de bonnes propositions.</label></div>
         <div class="row g-2">
           <div class="col-6"><label class="form-label mb-0">Ressemblance minimale (0–1)</label><input name="vision_seuil_auto" class="form-control form-control-sm" inputmode="decimal" value="<?= e(setting('vision_seuil_auto', '0.80')) ?>"></div>
           <div class="col-6"><label class="form-label mb-0">Écart avec le 2ᵉ article</label><input name="vision_marge" class="form-control form-control-sm" inputmode="decimal" value="<?= e(setting('vision_marge', '0.06')) ?>"></div>
+          <div class="col-12 small text-secondary mt-1">Article isolé de l'arrière-plan (fond appris) — échelle différente :</div>
+          <div class="col-6"><label class="form-label mb-0">Ressemblance minimale (article isolé)</label><input name="vision_seuil_objet" class="form-control form-control-sm" inputmode="decimal" value="<?= e(setting('vision_seuil_objet', '0.45')) ?>"></div>
+          <div class="col-6"><label class="form-label mb-0">Écart avec le 2ᵉ (article isolé)</label><input name="vision_marge_objet" class="form-control form-control-sm" inputmode="decimal" value="<?= e(setting('vision_marge_objet', '0.25')) ?>"></div>
         </div>
-        <p class="text-secondary mt-2 mb-2">L'ajout automatique n'a lieu que si les deux conditions sont réunies. Plus les valeurs sont hautes, moins il y a d'erreurs (mais plus de confirmations manuelles).</p>
+        <p class="text-secondary mt-2 mb-2">L'ajout automatique n'a lieu que si les deux conditions sont réunies. Plus les valeurs sont hautes, moins il y a d'erreurs (mais plus de confirmations manuelles). Entre deux articles déjà confondus (corrigés ou annulés au moins 2 fois), l'écart exigé est doublé automatiquement.</p>
+        <p class="text-secondary mb-2"><b>Conseil :</b> sur chaque poste, ouvrez la caméra, videz le cadre et touchez « Apprendre le fond » : le comptoir et le mur ne seront plus jamais analysés comme un article, et seul l'article posé est reconnu.</p>
         <button class="btn btn-sm btn-primary"><i class="bi bi-check2"></i> Enregistrer</button>
       </form>
     </div></div>
@@ -105,7 +109,16 @@ $pct = $s['total'] ? round(100 * $s['learned'] / $s['total']) : 0;
   <div class="vis-box" role="dialog" aria-modal="true">
     <div class="vis-head"><b data-title></b><button type="button" class="pm-x" data-close aria-label="Fermer">✕</button></div>
     <div class="vis-body">
-      <div class="vis-view" data-view><video playsinline muted></video><div class="vis-aim"></div><div class="vis-flash"></div></div>
+      <div class="vis-live">
+        <div class="vis-view" data-view><video playsinline muted></video><div class="vis-aim"></div><div class="vis-flash"></div></div>
+        <div class="vis-cutbox"><div class="vis-cut" title="Ce que l'intelligence apprend : l'article seul, sans l'arrière-plan"><canvas data-cut width="224" height="224"></canvas></div>
+          <div class="small" data-cutinfo>Article détouré</div></div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 align-items-center small my-1">
+        <label class="mb-0"><input type="checkbox" data-isoler checked> Isoler l'article (ignorer le mur, le comptoir, le rayon)</label>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-fond><i class="bi bi-bricks"></i> Apprendre le fond (cadre vide)</button>
+        <span data-fondst class="text-secondary"></span>
+      </div>
       <div class="vis-msg" data-msg></div>
       <div class="d-flex flex-wrap gap-2 my-2">
         <button type="button" class="btn btn-primary btn-lg flex-grow-1" data-shot><i class="bi bi-camera"></i> Prendre la photo <small class="opacity-75">(Espace)</small></button>

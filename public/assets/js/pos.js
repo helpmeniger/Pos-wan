@@ -256,6 +256,18 @@
       const low = it.track && line && line.qty * (line.factor || 1) > it.stock;
       return { ok: true, html: `<b>${esc(it.name)}</b> · ${esc(it.reference || '')} · ${fmt(it.price)} · ${__('Stock')} ${fmtQ(it.stock)}${line ? ' · ' + __('Qté') + ' ' + fmtQ(line.qty) : ''}${low ? ' <span style="color:#c62828">⚠ ' + __('stock insuffisant') + '</span>' : ''}` };
     },
+
+    // Annulation d'un ajout automatique (reconnaissance par photo) : une unité en moins
+    onUndo: async (code) => {
+      const d = await api('/pos/lookup?code=' + encodeURIComponent(code));
+      if (!d.ok) return { ok: false, text: d.error || __('Article introuvable.') };
+      const idx = cart.lines.findIndex((l) => l.id === d.item.id && !l.packId);
+      if (idx < 0) return { ok: false, text: __('Article absent du panier.') };
+      const l = cart.lines[idx];
+      if (l.qty > 1) l.qty = Math.round((l.qty - 1) * 1000) / 1000; else { cart.lines.splice(idx, 1); selected = Math.min(selected, cart.lines.length - 1); }
+      render();
+      return { ok: true };
+    },
   }));
   const bi = $('#barcodeInput');
   bi.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = bi.value; bi.value = ''; scan(v); } });

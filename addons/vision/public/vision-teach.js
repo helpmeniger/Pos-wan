@@ -9,7 +9,8 @@
   const modal = $('#visModal');
   const video = $('video', modal);
   const TIPS = ['face avant', 'dos', 'côté gauche', 'côté droit', 'de plus près', 'de plus loin', 'incliné', 'posé autrement', 'sous un autre éclairage', 'tenu dans la main'];
-  let cur = null, stream = null, shots = 0, busy = false;
+  let cur = null, stream = null, shots = 0, busy = false, fond = null, preview = null;
+  const isoler = () => $('[data-isoler]', modal).checked;
 
   const msg = (t, cls) => { const m = $('[data-msg]', modal); m.textContent = t; m.className = 'vis-msg ' + (cls || ''); };
   const progress = (html) => { const p = $('#visProgress'); p.classList.toggle('d-none', !html); p.innerHTML = html || ''; };
@@ -32,13 +33,35 @@
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
       video.srcObject = stream; await video.play().catch(() => {});
       $('[data-shot]', modal).disabled = false;
+      fond = await V.Fond.get(video); fondState(); startPreview();
       msg(T('Placez l\'article dans le cadre jaune, puis « Prendre la photo ».') + ' (' + (V.engine.backend === 'webgl' ? T('accélération graphique active') : T('calcul sans accélération graphique : plus lent')) + ')');
     } catch (e) {
       $('[data-shot]', modal).disabled = true;
       msg(T('Caméra indisponible : utilisez « Photos… ».'), 'bad');
     }
   }
+  function fondState() {
+    $('[data-fondst]', modal).textContent = fond ? '✔ ' + T('fond appris sur ce poste') : T('sans fond appris : le détourage se fait d\'après les bords de l\'image');
+  }
+  /** Aperçu en direct de l'article détouré (fond transparent, damier). */
+  function startPreview() {
+    clearInterval(preview);
+    const cv = $('[data-cut]', modal), g = cv.getContext('2d'), info = $('[data-cutinfo]', modal);
+    preview = setInterval(() => {
+      if (!stream || !video.videoWidth || busy) return;
+      const iso = V.isolate(video, V.aimRegion(video, $('.vis-aim', modal)), fond);
+      g.clearRect(0, 0, 224, 224);
+      if (iso.cut && isoler()) { g.drawImage(iso.cut, 0, 0); info.textContent = T('Article détouré') + ' · ' + Math.round(iso.frac * 100) + ' % ' + T('du cadre'); }
+      else info.textContent = fond && iso.present === false ? T('Aucun article dans le cadre') : T('Détourage impossible : l\'image entière sera apprise');
+    }, 500);
+  }
+  $('[data-fond]', modal).addEventListener('click', async () => {
+    if (!stream || !video.videoWidth) return;
+    if (!confirm(T('Le cadre jaune doit être VIDE (sans article). Apprendre ce fond ?'))) return;
+    fond = await V.Fond.learn(video); fondState(); msg(T('Fond appris : posez maintenant l\'article.'), 'good');
+  });
   function closeModal() {
+    clearInterval(preview);
     if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
     modal.hidden = true; document.body.classList.remove('pm-scan-on'); cur = null;
   }
@@ -52,7 +75,7 @@
   async function thumbs() {
     const d = await V.api('/vision/refs?product=' + cur.id);
     const box = $('[data-thumbs]', modal);
-    box.innerHTML = (d.items || []).map((r) => `<div class="vis-thumb" title="${esc(r.label + ' · ' + r.date)}">${r.thumb ? `<img src="${esc(r.thumb)}" alt="">` : ''}<span>${esc(r.label)}</span><button type="button" data-del="${r.id}" title="${esc(T('Oublier cette photo'))}">✕</button></div>`).join('')
+    box.innerHTML = (d.items || []).map((r) => `<div class="vis-thumb ${r.obj ? 'obj' : ''}" title="${esc(r.label + ' · ' + (r.obj ? T('objet isolé') : T('image entière')) + ' · ' + r.date)}">${r.thumb ? `<img src="${esc(r.thumb)}" alt="">` : ''}<span>${esc(r.label)}${r.obj ? ' · ' + T('isolé') : ''}</span><button type="button" data-del="${r.id}" title="${esc(T('Oublier cette photo'))}">✕</button></div>`).join('')
       + ((d.items || []).length ? `<button type="button" class="btn btn-sm btn-outline-danger align-self-center" data-clear>${T('Tout oublier')}</button>` : '');
     setCount((d.items || []).length);
   }
@@ -67,19 +90,31 @@
     if (e.target.closest('[data-clear]') && confirm(T('Oublier toutes les photos de cet article ?'))) { const r = await V.api('/vision/products/' + cur.id + '/clear', {}); if (!r.ok) alert(r.error); await thumbs(); await V.loadIndex(true); }
   });
 
-  /** Enregistre une empreinte et prévient si l'article ressemble beaucoup à un autre. */
-  async function learn(e, thumb, source) {
-    const ranking = V.match(e.f); // avant l'ajout : à quoi cette photo ressemble-t-elle le plus ?
-    const hasOwn = ranking.some((r) => r.pid === cur.id);
-    const d = await V.api('/vision/refs', { product_id: cur.id, vec: V.b64(e.q), thumb, source });
+  /**
+   * Enregistre une photo : empreinte de l'article détouré (si possible) + image entière,
+   * et prévient si elle ressemble plus à un autre article.
+   */
+  async function learn(a, source, pid = cur.id) {
+    const useObj = a.obj && isoler();
+    const q = useObj ? { obj: a.obj, whole: a.whole } : { whole: a.whole };
+    const ranking = V.match(q); // avant l'ajout : à quoi cette photo ressemble-t-elle le plus ?
+    const hasOwn = ranking.some((r) => r.pid === pid);
+    let d = null;
+    if (useObj) {
+      d = await V.api('/vision/refs', { product_id: pid, vec: V.b64(a.obj.q), thumb: a.thumbObj, source, model: V.MODEL_OBJ, size: a.size || undefined });
+      if (!d.ok) { msg(d.error || T('Erreur'), 'bad'); return false; }
+      V.addLocal(pid, a.obj.q, 1, a.size || 0); V.IDX.version = d.version;
+    }
+    d = await V.api('/vision/refs', { product_id: pid, vec: V.b64(a.whole.q), thumb: a.thumb, source });
     if (!d.ok) { msg(d.error || T('Erreur'), 'bad'); return false; }
-    V.addLocal(cur.id, e.q); V.IDX.version = d.version;
+    V.addLocal(pid, a.whole.q, 0); V.IDX.version = d.version;
+    if (!cur || pid !== cur.id) return true;
     shots++; tip();
     const near = ranking[0];
-    if (hasOwn && near && near.pid !== cur.id) {
+    if (hasOwn && near && near.pid !== pid) {
       const [p] = await V.products([near.pid]);
       msg(`${T('Photo apprise. Attention : elle ressemble plus à')} « ${p ? p.name : '?'} » ${T('qu\'à cet article : photographiez la face qui les distingue, ou utilisez le code-barres.')}`, 'bad');
-    } else msg(T('Photo apprise.'), 'good');
+    } else msg(useObj ? T('Photo apprise (article détouré + image entière).') : T('Photo apprise (image entière : détourage impossible).'), 'good');
     return true;
   }
   async function shoot() {
@@ -88,8 +123,10 @@
     try {
       const region = V.aimRegion(video, $('.vis-aim', modal));
       const f = $('.vis-flash', modal); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
-      const e = await V.embed(video, region);
-      if (await learn(e, V.thumbOf(video, region), 'photo')) await thumbs();
+      const a = await V.analyse(video, region, fond, { bords: true });
+      if (fond && a.present === false) { msg(T('Aucun article dans le cadre : posez l\'article devant la caméra.'), 'bad'); return; }
+      if (!a.whole) a.whole = await V.embed(video, region);
+      if (await learn(a, 'photo')) await thumbs();
     } catch (err) { msg(err.message || String(err), 'bad'); } finally { busy = false; $('[data-shot]', modal).disabled = false; }
   }
   $('[data-shot]', modal).addEventListener('click', shoot);
@@ -100,7 +137,7 @@
       try {
         const img = await V.loadImage(URL.createObjectURL(file));
         const region = V.centerRegion(img.naturalWidth, img.naturalHeight, 0.9);
-        await learn(await V.embed(img, region), V.thumbOf(img, region), 'photo');
+        await learn(await V.analyse(img, region, null, { bords: true }), 'photo');
         URL.revokeObjectURL(img.src);
       } catch (err) { msg(err.message || String(err), 'bad'); }
     }
@@ -127,9 +164,8 @@
         try {
           const img = await V.loadImage(it.image);
           const region = V.centerRegion(img.naturalWidth, img.naturalHeight, 1);
-          const e = await V.embed(img, region);
-          const r = await V.api('/vision/refs', { product_id: it.id, vec: V.b64(e.q), thumb: V.thumbOf(img, region), source: 'fiche' });
-          if (r.ok) ok++; else bad++;
+          const a = await V.analyse(img, region, null, { bords: true }); // photo de fiche : souvent sur fond blanc, détourage facile
+          if (await learn(a, 'fiche', it.id)) ok++; else bad++;
         } catch (err) { bad++; }
       }
       progress(`${ok} ${T('photo(s) de fiche apprise(s)')}${bad ? ` · ${bad} ${T('illisible(s)')}` : ''}. ${T('Actualisation…')}`);

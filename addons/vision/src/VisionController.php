@@ -50,7 +50,8 @@ final class VisionController extends Controller
         json_response(['ok' => true, 'version' => VisionService::version(), 'teach' => can('vision.teach'),
             'auto' => setting('vision_auto', '0') === '1', 'autoScore' => (float) setting('vision_seuil_auto', '0.80'),
             'margin' => (float) setting('vision_marge', '0.06'), 'learn' => setting('vision_apprendre_ventes', '1') === '1',
-            'refs' => (int) DB::value('SELECT COUNT(*) FROM vision_refs')]);
+            'autoScoreObj' => (float) setting('vision_seuil_objet', '0.45'), 'marginObj' => (float) setting('vision_marge_objet', '0.25'),
+            'refs' => (int) DB::value('SELECT COUNT(*) FROM vision_refs'), 'confusions' => VisionService::confusions()]);
     }
 
     /** Empreintes de tous les articles ; l'adresse contient la version : mise en cache par le navigateur. */
@@ -83,7 +84,7 @@ final class VisionController extends Controller
     {
         $pid = (int) Request::query('product', 0);
         json_response(['ok' => true, 'items' => array_map(fn($r) => ['id' => (int) $r['id'], 'source' => $r['source'], 'label' => VisionService::SOURCES[$r['source']] ?? $r['source'],
-            'thumb' => $r['thumb'], 'date' => fdate($r['created_at'])], DB::all('SELECT id, source, thumb, created_at FROM vision_refs WHERE product_id = ? ORDER BY id DESC', [$pid]))]);
+            'obj' => $r['model'] === VisionService::MODEL_OBJ, 'thumb' => $r['thumb'], 'date' => fdate($r['created_at'])], DB::all('SELECT id, source, model, thumb, created_at FROM vision_refs WHERE product_id = ? ORDER BY id DESC', [$pid]))]);
     }
 
     /** Articles qui ont une photo sur leur fiche mais pas encore apprise. */
@@ -96,7 +97,7 @@ final class VisionController extends Controller
 
     public function addRef(): void
     {
-        $this->jsonAttempt(fn() => VisionService::addRef((int) Request::input('product_id'), (string) Request::input('vec', ''), Request::input('thumb'), (string) Request::input('source', 'photo')));
+        $this->jsonAttempt(fn() => VisionService::addRef((int) Request::input('product_id'), (string) Request::input('vec', ''), Request::input('thumb'), (string) Request::input('source', 'photo'), Request::input('model') ? (string) Request::input('model') : null, Request::input('size')));
     }
 
     public function deleteRef(int $id): void

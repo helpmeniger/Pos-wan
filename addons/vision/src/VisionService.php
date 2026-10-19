@@ -20,8 +20,11 @@ final class VisionService
 {
     public const DIM = 512;
     public const MODEL = 'mnv2-p512';
+    /** Empreinte de l'article détouré (fond remplacé par du gris neutre) — version 1.2. */
+    public const MODEL_OBJ = 'mnv2-p512-obj';
+    public const MODELS = [self::MODEL => 'Image entière', self::MODEL_OBJ => 'Objet isolé'];
     public const SOURCES = ['photo' => 'Photo apprise', 'fiche' => 'Photo de la fiche article', 'vente' => 'Appris pendant une vente', 'surveillance' => 'Appris en surveillance'];
-    private const MAX_PER_PRODUCT = 60;
+    private const MAX_PER_PRODUCT = 80; // chaque photo donne 2 empreintes (objet isolé + image entière)
 
     public static function version(): int
     {
@@ -59,8 +62,14 @@ final class VisionService
      * Ajoute une empreinte à un article.
      * Source « vente » : photo confirmée par le caissier ; on garde les N plus récentes par article.
      */
-    public static function addRef(int $productId, string $vecB64, ?string $thumb, string $source): array
+    public static function addRef(int $productId, string $vecB64, ?string $thumb, string $source, ?string $model = null, mixed $size = null): array
     {
+        $model = $model ?: self::MODEL;
+        // taille apparente de l'article (0..1), connue seulement avec un fond appris (caméra fixe)
+        $size = $model === self::MODEL_OBJ && is_numeric($size) && (float) $size > 0.02 && (float) $size <= 1 ? round((float) $size, 3) : null;
+        if (!isset(self::MODELS[$model])) {
+            throw new BusinessException('Type d\'empreinte inconnu.');
+        }
         if (!isset(self::SOURCES[$source])) {
             throw new BusinessException('Origine de la photo inconnue.');
         }
@@ -75,7 +84,7 @@ final class VisionService
         }
         $vec = self::decodeVec($vecB64);
         $thumb = self::cleanThumb($thumb);
-        return DB::transaction(function () use ($productId, $vec, $thumb, $source) {
+        return DB::transaction(function () use ($productId, $vec, $thumb, $source, $model, $size) {
             $p = DB::one("SELECT id, name FROM products WHERE id = ? AND status = 'active' FOR UPDATE", [$productId]) ?? throw new BusinessException('Article introuvable ou archivé.');
             if ($source === 'vente') {
                 $keep = max(1, min(50, (int) setting('vision_max_ventes', '12')));
@@ -86,7 +95,7 @@ final class VisionService
             } elseif ((int) DB::value('SELECT COUNT(*) FROM vision_refs WHERE product_id = ?', [$productId]) >= self::MAX_PER_PRODUCT) {
                 throw new BusinessException('« ' . $p['name'] . ' » a déjà ' . self::MAX_PER_PRODUCT . ' photos : supprimez les moins bonnes avant d\'en ajouter.');
             }
-            $id = DB::insert('vision_refs', ['product_id' => $productId, 'vec' => $vec, 'model' => self::MODEL, 'source' => $source, 'thumb' => $thumb, 'user_id' => Auth::id()]);
+            $id = DB::insert('vision_refs', ['product_id' => $productId, 'vec' => $vec, 'model' => $model, 'size' => $size, 'source' => $source, 'thumb' => $thumb, 'user_id' => Auth::id()]);
             self::bump();
             if ($source !== 'vente') {
                 Audit::log('vision.learn', 'product', $productId, ['source' => $source]);
@@ -123,12 +132,14 @@ final class VisionService
      */
     public static function index(): array
     {
-        $rows = DB::all("SELECT r.id, r.product_id, r.vec FROM vision_refs r JOIN products p ON p.id = r.product_id
-                         WHERE p.status = 'active' AND r.model = ? ORDER BY r.product_id, r.id", [self::MODEL]);
+        $rows = DB::all("SELECT r.id, r.product_id, r.vec, r.model, r.size FROM vision_refs r JOIN products p ON p.id = r.product_id
+                         WHERE p.status = 'active' AND r.model IN (?, ?) ORDER BY r.product_id, r.id", [self::MODEL, self::MODEL_OBJ]);
         return [
             'version' => self::version(), 'dim' => self::DIM, 'model' => self::MODEL,
             'ids' => array_map('intval', array_column($rows, 'id')),
             'pids' => array_map('intval', array_column($rows, 'product_id')),
+            'modes' => array_map(fn($m) => $m === self::MODEL_OBJ ? 1 : 0, array_column($rows, 'model')),
+            'sizes' => array_map(fn($s) => $s === null ? 0 : (float) $s, array_column($rows, 'size')),
             'vecs' => base64_encode(implode('', array_column($rows, 'vec'))),
         ];
     }
@@ -159,7 +170,7 @@ final class VisionService
     public static function log(array $in): void
     {
         $outcome = (string) ($in['outcome'] ?? '');
-        if (!in_array($outcome, ['confirme', 'corrige', 'auto', 'aucun'], true)) {
+        if (!in_array($outcome, ['confirme', 'corrige', 'auto', 'aucun', 'annule'], true)) {
             throw new BusinessException('Résultat inconnu.');
         }
         $num = fn($k) => isset($in[$k]) && is_numeric($in[$k]) ? max(-1, min(1, round((float) $in[$k], 3))) : null;
@@ -173,7 +184,7 @@ final class VisionService
     {
         $learned = (int) DB::value("SELECT COUNT(DISTINCT r.product_id) FROM vision_refs r JOIN products p ON p.id = r.product_id WHERE p.status = 'active'");
         $total = (int) DB::value("SELECT COUNT(*) FROM products WHERE status = 'active' AND sellable = 1");
-        $l = DB::one("SELECT COUNT(*) AS n, SUM(outcome IN ('confirme','auto')) AS ok, SUM(outcome = 'corrige') AS fixed, SUM(outcome = 'aucun') AS none
+        $l = DB::one("SELECT COUNT(*) AS n, SUM(outcome IN ('confirme','auto')) - SUM(outcome = 'annule') AS ok, SUM(outcome IN ('corrige','annule')) AS fixed, SUM(outcome = 'aucun') AS none
                       FROM vision_log WHERE created_at >= NOW() - INTERVAL 30 DAY") ?? [];
         $n = (int) ($l['n'] ?? 0);
         return [
@@ -186,6 +197,20 @@ final class VisionService
         ];
     }
 
+    /**
+     * Articles déjà confondus (corrections et annulations des 90 derniers jours, au moins 2 fois) :
+     * entre eux, la reconnaissance exige un écart double avant d'ajouter seule.
+     */
+    public static function confusions(): array
+    {
+        $pairs = DB::all("SELECT LEAST(suggested_id, chosen_id) AS a, GREATEST(suggested_id, chosen_id) AS b FROM vision_log
+                          WHERE outcome = 'corrige' AND suggested_id IS NOT NULL AND chosen_id IS NOT NULL AND suggested_id <> chosen_id AND created_at >= NOW() - INTERVAL 90 DAY
+                          GROUP BY a, b HAVING COUNT(*) >= 2 ORDER BY COUNT(*) DESC LIMIT 200");
+        $risky = DB::all("SELECT suggested_id FROM vision_log WHERE outcome = 'annule' AND suggested_id IS NOT NULL AND created_at >= NOW() - INTERVAL 90 DAY
+                          GROUP BY suggested_id HAVING COUNT(*) >= 2 LIMIT 200");
+        return ['pairs' => array_map(fn($r) => [(int) $r['a'], (int) $r['b']], $pairs), 'risky' => array_map('intval', array_column($risky, 'suggested_id'))];
+    }
+
     public static function saveSettings(array $in): void
     {
         $f = fn($k, $min, $max, $def) => (string) max($min, min($max, round((float) str_replace(',', '.', (string) ($in[$k] ?? $def)), 2)));
@@ -193,7 +218,9 @@ final class VisionService
         setting_set('vision_apprendre_ventes', !empty($in['vision_apprendre_ventes']) ? '1' : '0');
         setting_set('vision_seuil_auto', $f('vision_seuil_auto', 0.3, 0.99, '0.80'));
         setting_set('vision_marge', $f('vision_marge', 0.0, 0.5, '0.06'));
+        setting_set('vision_seuil_objet', $f('vision_seuil_objet', 0.2, 0.99, '0.45'));
+        setting_set('vision_marge_objet', $f('vision_marge_objet', 0.02, 0.6, '0.25'));
         setting_set('vision_max_ventes', (string) max(1, min(50, (int) ($in['vision_max_ventes'] ?? 12))));
-        Audit::log('settings.vision', null, null, array_intersect_key($in, array_flip(['vision_auto', 'vision_seuil_auto', 'vision_marge', 'vision_apprendre_ventes', 'vision_max_ventes'])));
+        Audit::log('settings.vision', null, null, array_intersect_key($in, array_flip(['vision_auto', 'vision_seuil_auto', 'vision_marge', 'vision_seuil_objet', 'vision_marge_objet', 'vision_apprendre_ventes', 'vision_max_ventes'])));
     }
 }

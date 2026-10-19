@@ -1,8 +1,8 @@
 {
     "code": "vision",
     "name": "Reconnaissance des articles par photo",
-    "version": "1.1.0",
-    "requires": "2.2.0",
+    "version": "1.2.0",
+    "requires": "2.4.0",
     "author": "Mahamadou Hamidou (Mohamed) — POS Marwa",
     "description": "Reconnaît les articles par la caméra (webcam, caméra USB, carte d'acquisition, caméra IP du réseau ou smartphone), sans code-barres : en caisse, au restaurant, en inventaire, aux étiquettes, à la pharmacie et dans la recherche d'articles. Surveillance anti-vol : comptage automatique et en continu des articles qui franchissent une ligne ou passent dans une zone, puis comparaison avec les ventes et les sorties de stock. L'intelligence fonctionne dans le navigateur, sans Internet.",
     "icon": "bi-eye",
@@ -78,6 +78,8 @@
         "vision_auto": "0",
         "vision_seuil_auto": "0.80",
         "vision_marge": "0.06",
+        "vision_seuil_objet": "0.45",
+        "vision_marge_objet": "0.25",
         "vision_apprendre_ventes": "1",
         "vision_max_ventes": "12",
         "vision_version": "1",
@@ -90,6 +92,7 @@
     "assets": {
         "js": [
             "vision-track.js",
+            "vision-objet.js",
             "vision.js"
         ],
         "css": [

@@ -2351,7 +2351,7 @@ test('Surveillance : moteur de comptage (ligne, zone, sens, hésitation, lumièr
 
 test('Module Reconnaissance 1.1 : caméras USB / carte / IP, relais sécurisé, surveillance, comparaison avec les ventes', function () use ($B, $port) {
     App\Core\Addons::install('vision', false);
-    eq('1.1.0', App\Core\Addons::installed()['vision']['version'] ?? null, 'module mis à jour en 1.1.0');
+    eq('1.2.0', App\Core\Addons::installed()['vision']['version'] ?? null, 'module mis à jour en 1.2.0');
     ok((bool) DB::value("SELECT 1 FROM role_permissions rp JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id WHERE r.code = 'store_manager' AND p.code = 'vision.watch'"), 'droit de surveillance pour le gérant');
     // Fausse caméra IP (serveur PHP séparé)
     $cport = (int) (getenv('TEST_CAM_PORT') ?: $port + 7);
@@ -2511,6 +2511,48 @@ test('Module Reconnaissance 1.1 : caméras USB / carte / IP, relais sécurisé, 
     }
 });
 
+test('Module Reconnaissance 1.2 : article isolé de l\'arrière-plan, deux empreintes, annulation, articles confondus', function () use ($B) {
+    // Tests JavaScript du détourage (fond appris, ombre, exposition, bords)
+    $node = trim((string) shell_exec('command -v node 2>/dev/null'));
+    if ($node !== '') {
+        exec(escapeshellarg($node) . ' ' . escapeshellarg(BASE_PATH . '/tests/js/objet.test.js') . ' 2>&1', $out, $code);
+        ok($code === 0 && (bool) preg_match('/(\d+) réussi\(s\), 0 échec/', implode("\n", $out), $m) && (int) $m[1] >= 10, 'détourage : ' . implode(' | ', $out));
+    }
+    ok(is_file(PUBLIC_PATH . '/assets/addons/vision/vision-objet.js'), 'script de détourage publié');
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $hdr = ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $a->token("$B/vision")];
+    $pid = (int) DB::value("SELECT id FROM products WHERE status = 'active' AND sellable = 1 ORDER BY id LIMIT 1");
+    $pid2 = (int) DB::value("SELECT id FROM products WHERE status = 'active' AND sellable = 1 AND id > ? ORDER BY id LIMIT 1", [$pid]);
+    $vec = base64_encode(str_repeat("\x07\xF9", 256));
+    $post = fn($u, $d) => json_decode($a->req('POST', $B . $u, json_encode($d), $hdr)['body'], true);
+    $r = $post('/vision/refs', ['product_id' => $pid, 'vec' => $vec, 'source' => 'photo', 'model' => 'mnv2-p512-obj']);
+    ok($r['ok'] && $r['id'], 'empreinte « objet isolé » enregistrée');
+    eq('mnv2-p512-obj', DB::value('SELECT model FROM vision_refs WHERE id = ?', [$r['id']]));
+    $bad = $post('/vision/refs', ['product_id' => $pid, 'vec' => $vec, 'source' => 'photo', 'model' => 'autre-modele']);
+    ok(!$bad['ok'], 'type d\'empreinte inconnu refusé');
+    $post('/vision/refs', ['product_id' => $pid, 'vec' => $vec, 'source' => 'photo']);
+    $idx = json_decode($a->req('GET', "$B/vision/index", null, ['Accept: application/json'])['body'], true);
+    ok(count($idx['modes']) === count($idx['pids']) && in_array(1, $idx['modes'], true) && in_array(0, $idx['modes'], true), 'index : nature de chaque empreinte (entière / isolée)');
+    ok(strlen(base64_decode($idx['vecs'])) === 512 * count($idx['pids']), 'index cohérent');
+    $refs = json_decode($a->req('GET', "$B/vision/refs?product=$pid", null, ['Accept: application/json'])['body'], true);
+    ok(in_array(true, array_column($refs['items'], 'obj'), true), 'vignettes : photo « isolée » signalée');
+    // Annulation d'un ajout automatique et paires d'articles confondus
+    ok($post('/vision/log', ['outcome' => 'annule', 'suggested_id' => $pid])['ok'], 'annulation journalisée');
+    $post('/vision/log', ['outcome' => 'annule', 'suggested_id' => $pid]);
+    $post('/vision/log', ['outcome' => 'corrige', 'suggested_id' => $pid, 'chosen_id' => $pid2]);
+    $post('/vision/log', ['outcome' => 'corrige', 'suggested_id' => $pid2, 'chosen_id' => $pid]);
+    $cfg = json_decode($a->req('GET', "$B/vision/config", null, ['Accept: application/json'])['body'], true);
+    ok(in_array([min($pid, $pid2), max($pid, $pid2)], $cfg['confusions']['pairs'], true), 'paire confondue 2 fois : écart double exigé');
+    ok(in_array($pid, $cfg['confusions']['risky'], true), 'article annulé 2 fois : plus prudent');
+    ok(!$post('/vision/log', ['outcome' => 'inconnu'])['ok'], 'résultat inconnu refusé');
+    // La caisse sait annuler un ajout (bouton « Annuler » de l'ajout automatique)
+    $pos = (string) file_get_contents(PUBLIC_PATH . '/assets/js/pos.js');
+    $sc = (string) file_get_contents(PUBLIC_PATH . '/assets/js/scanner.js');
+    ok(str_contains($pos, 'onUndo') && str_contains($sc, 'undo: opts && opts.onUndo'), 'annulation transmise par le lecteur caméra à la caisse');
+    DB::run("DELETE FROM vision_log WHERE outcome IN ('annule','corrige')");
+});
+
 test('Mise à jour du logiciel : modules actifs mis à jour automatiquement (jamais d\'erreur 500 sur leurs nouveaux écrans)', function () use ($B) {
     // Situation signalée : fichiers 2.2 copiés, module « vision » encore en 1.0.0 dans la base
     DB::update('addons', ['version' => '1.0.0'], 'code = ?', ['vision']);
@@ -2525,7 +2567,7 @@ test('Mise à jour du logiciel : modules actifs mis à jour automatiquement (jam
     foreach (['/vision/surveillance', '/vision/rapport', '/vision/cameras'] as $u) {
         eq(200, $a->req('GET', $B . $u)['code'], "$u après copie des fichiers");
     }
-    eq('1.1.0', DB::value("SELECT version FROM addons WHERE code = 'vision'"), 'module mis à jour automatiquement');
+    eq('1.2.0', DB::value("SELECT version FROM addons WHERE code = 'vision'"), 'module mis à jour automatiquement');
     ok((bool) DB::value("SHOW TABLES LIKE 'vision_events'") && (bool) DB::value("SHOW TABLES LIKE 'vision_cameras'"), 'nouvelles tables créées');
 
     // Mise à jour d'un module impossible : ses écrans sont masqués (404), jamais une erreur 500

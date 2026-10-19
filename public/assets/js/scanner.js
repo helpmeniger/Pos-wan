@@ -1,7 +1,7 @@
 /*
  * POS Marwa — lecture des codes-barres par la caméra (smartphone, tablette, webcam).
  *
- *   PMScanner.open({ title, onCode: async (code) => ({ ok, text }), continuous: true })
+ *   PMScanner.open({ title, onCode: async (code) => ({ ok, text }), continuous: true, onUndo: async (code) => ({ ok }) })
  *
  * - Caméra en direct : BarcodeDetector du navigateur s'il existe, sinon la bibliothèque ZXing
  *   (fournie localement, fonctionne sans Internet). Exige une connexion sécurisée (HTTPS ou
@@ -234,6 +234,8 @@
     return {
       opts, el: ui, extra: $u('[data-extra]'), video: $u('video'), live: () => running && !!stream,
       msg, beep, deliver: (code) => handle(String(code), true), close,
+      /** Annule le dernier ajout d'un article (si l'écran appelant le permet : caisse). */
+      undo: opts && opts.onUndo ? (code) => opts.onUndo(String(code)) : null,
       /** Image actuelle de la caméra (canvas), ou null si la caméra n'est pas ouverte. */
       frame() {
         const v = $u('video');
