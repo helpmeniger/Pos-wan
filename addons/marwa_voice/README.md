@@ -136,8 +136,9 @@ les messages restent affichés et l'historique note « erreur_voix ».
   - C'est la meilleure qualité disponible en français pour Piper : il n'existe pas de voix
     française de niveau « high » dans Piper ; les voix françaises existent en « low » et
     « medium ».
-  - 147 fichiers, 77,5 Mo, découpés en fragments de 1 Mo au plus pour passer par la mise à
-    jour dans le navigateur (limites d'envoi de WampServer).
+  - 147 fichiers, 77,5 Mo, livrés **uniquement en fragments neutres** (`.partNNN`) de 1 Mo au plus.
+    Ainsi, la mise à jour dans le navigateur passe les limites d'envoi de WampServer, et aucun
+    `.exe`, `.dll` ou `.onnx` en clair ne peut être bloqué par un antivirus pendant l'envoi.
 - **Mise en place automatique** : au premier usage, les fichiers sont reconstitués dans
   `storage/voix/`. Cela prend moins d'une seconde, une seule fois.
   - **Chaque fichier est vérifié par son empreinte SHA-256** ; un fragment abîmé est refusé

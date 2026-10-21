@@ -2,6 +2,23 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.6.1] — 2026-10-21
+
+### Corrigé
+- **Mise à jour par le navigateur : « Failed to fetch ».**
+  - **Le paquet ne contient plus aucun `.exe`, `.dll` ou modèle vocal en clair.** La voix est
+    livrée uniquement en fragments neutres (`.partNNN`), reconstitués et vérifiés par SHA-256
+    sur le serveur. Un antivirus ne peut plus bloquer ces fichiers pendant l'envoi.
+  - **Envoi plus robuste** :
+    - avant l'envoi, chaque fichier est relu et les fichiers illisibles (verrouillés ou mis en
+      quarantaine) sont nommés ;
+    - jusqu'à 4 nouveaux essais par lot, puis le lot est découpé jusqu'au fichier seul ;
+    - le message d'erreur indique le fichier en cause et la marche à suivre.
+  - **Connexion coupée pendant l'installation** : le serveur termine l'installation, sans
+    copie à moitié faite ; la page attend qu'il réponde avec la nouvelle version.
+- Essai réel avec les limites de WampServer (8 Mo par envoi, 2 Mo par fichier) et 5 coupures
+  réseau simulées : mise à jour complète, intégrité vérifiée, version installée confirmée.
+
 ## [2.6.0] — 2026-10-21
 
 ### Ajouté

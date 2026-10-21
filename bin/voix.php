@@ -209,17 +209,15 @@ function prepare_bundle(string $zip, string $voiceTgz): void
     $index = [];
     foreach ($files as $rel => $src) {
         $size = filesize($src);
-        $parts = $size > 1000000 ? (int) ceil($size / 1000000) : 0;
+        // Toujours en fragments « .partNNN » (même les petits fichiers) : aucun .exe ni .dll en clair dans
+        // le dossier livré, que l'antivirus pourrait bloquer pendant l'envoi de la mise à jour par le navigateur
+        $parts = max(1, (int) ceil($size / 1000000));
         @mkdir(dirname("$dest/$rel"), 0775, true);
-        if ($parts === 0) {
-            copy($src, "$dest/$rel");
-        } else {
-            $h = fopen($src, 'rb');
-            for ($i = 0; $i < $parts; $i++) {
-                file_put_contents(sprintf('%s/%s.part%03d', $dest, $rel, $i), fread($h, 1000000));
-            }
-            fclose($h);
+        $h = fopen($src, 'rb');
+        for ($i = 0; $i < $parts; $i++) {
+            file_put_contents(sprintf('%s/%s.part%03d', $dest, $rel, $i), (string) fread($h, 1000000));
         }
+        fclose($h);
         $index[$rel] = ['size' => $size, 'sha256' => hash_file('sha256', $src), 'parts' => $parts];
     }
     file_put_contents("$dest/paquet.json", json_encode(['version' => 1, 'piper' => '2023.11.14-2 (Windows x64)', 'voix' => 'fr-siwis-medium',

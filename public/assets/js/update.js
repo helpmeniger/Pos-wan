@@ -30,6 +30,34 @@
     $('#upBar').style.width = pc + '%'; $('#upBar').textContent = pc + ' %';
     $('#upStatus').textContent = text || '';
   }
+  const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+  /** « Failed to fetch » : message compréhensible (connexion coupée, antivirus, fichier verrouillé). */
+  function netError(e, what) {
+    if (e instanceof TypeError || /fetch|network/i.test(e.message || '')) {
+      return new Error(T('Connexion au serveur interrompue') + (what ? ' (' + what + ')' : '') + ' : ' + T('vérifiez que WampServer est vert, puis réessayez. Un antivirus peut aussi bloquer l\'envoi : autorisez le dossier de POS Marwa.') + ' [' + (e.message || e) + ']');
+    }
+    return e;
+  }
+  /** Fichiers que le navigateur ne peut pas lire (supprimés, verrouillés ou mis en quarantaine par un antivirus). */
+  async function unreadable(list) {
+    const bad = [];
+    for (const x of list) { try { await x.f.slice(0, 1).arrayBuffer(); } catch (e) { bad.push(x.rel); } }
+    return bad;
+  }
+  /** Envoi d'un lot ; en cas d'échec répété, le lot est découpé jusqu'au fichier seul pour nommer le fichier en cause. */
+  async function sendBatch(batch) {
+    const make = (b) => { const fd = new FormData(); fd.append('token', token); b.forEach((x) => { fd.append('files[]', x.f, x.f.name); fd.append('paths[]', x.rel); }); return fd; };
+    let last = null;
+    for (let tries = 0; tries < 4; tries++) {
+      try { await post('/update/upload', make(batch), false); return; } catch (e) {
+        last = e;
+        if (!(e instanceof TypeError)) throw e; // refus du serveur : message clair, inutile de réessayer
+        await sleep(1500 * (tries + 1));
+      }
+    }
+    if (batch.length > 1) { const h = Math.ceil(batch.length / 2); await sendBatch(batch.slice(0, h)); await sendBatch(batch.slice(h)); return; }
+    throw netError(last, batch[0].rel);
+  }
   async function post(path, body, json = true) {
     const opt = { method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-Token': CSRF } };
     if (json) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(Object.assign({ _csrf: CSRF }, body)); } else { body.append('_csrf', CSRF); opt.body = body; }
@@ -50,24 +78,23 @@
     btn.disabled = true; input.disabled = true;
     $('#upProgressBox').classList.remove('d-none'); $('#upCheck').classList.add('d-none');
     try {
-      token = (await post('/update/start', { password: $('#upPassword').value })).token;
+      progress(0, files.length, T('Lecture des fichiers…'));
+      const bad = await unreadable(files);
+      if (bad.length) throw new Error(T('Fichiers illisibles par le navigateur (verrouillés ou bloqués par un antivirus)') + ' : ' + bad.slice(0, 5).join(', ') + (bad.length > 5 ? '…' : '') + '. ' + T('Décompressez à nouveau le ZIP, autorisez ce dossier dans l\'antivirus, puis réessayez.'));
+      try { token = (await post('/update/start', { password: $('#upPassword').value })).token; } catch (e) { throw netError(e); }
       let i = 0;
       while (i < files.length) {
-        const fd = new FormData();
-        fd.append('token', token);
-        let n = 0; let bytes = 0;
-        while (i < files.length && n < LIM.files && (n === 0 || bytes + files[i].f.size <= LIM.bytes)) {
-          fd.append('files[]', files[i].f, files[i].f.name); fd.append('paths[]', files[i].rel);
-          bytes += files[i].f.size; n++; i++;
+        const batch = [];
+        let bytes = 0;
+        while (i < files.length && batch.length < LIM.files && (batch.length === 0 || bytes + files[i].f.size <= LIM.bytes)) {
+          batch.push(files[i]); bytes += files[i].f.size; i++;
         }
-        let tries = 0;
-        for (;;) { // nouvel essai automatique en cas de coupure réseau
-          try { await post('/update/upload', fd, false); break; } catch (e) { if (++tries >= 3) throw e; await new Promise((res) => setTimeout(res, 1500)); }
-        }
+        await sendBatch(batch); // nouvel essai automatique en cas de coupure réseau
         progress(i, files.length, T('Envoi') + ' : ' + i + ' / ' + files.length);
       }
       progress(files.length, files.length, T('Vérification…'));
-      const c = await post('/update/check', { token });
+      let c;
+      try { c = await post('/update/check', { token }); } catch (e) { throw netError(e, T('vérification')); }
       showCheck(c);
     } catch (e) {
       $('#upStatus').innerHTML = '<span class="text-danger fw-semibold">' + esc(e.message) + '</span>';
@@ -92,7 +119,20 @@
       a.disabled = true;
       a.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + T('Sauvegarde et installation en cours… ne fermez pas cette page.');
       try {
-        await post('/update/apply', { token, accept: !c.verified });
+        try {
+          await post('/update/apply', { token, accept: !c.verified });
+        } catch (e) {
+          if (!(e instanceof TypeError)) throw e;
+          // Connexion coupée pendant l'installation : le serveur continue (installation complète
+          // garantie côté serveur). On attend qu'il réponde avec la nouvelle version.
+          a.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + T('Connexion interrompue : vérification de la version installée…');
+          let done = false;
+          for (let k = 0; k < 60 && !done; k++) {
+            await sleep(3000);
+            try { const h = await (await fetch(BASE + '/health', { cache: 'no-store' })).json(); done = h.version === c.version; } catch (x) { /* serveur occupé */ }
+          }
+          if (!done) throw netError(e, T('installation'));
+        }
         location.href = BASE + '/update';
       } catch (e) {
         a.disabled = false; a.textContent = T('Réessayer');

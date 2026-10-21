@@ -180,6 +180,9 @@ final class UpdateService
             throw new BusinessException('Intégrité non vérifiée : cochez la confirmation pour continuer.');
         }
         @set_time_limit(900);
+        // Connexion du navigateur coupée pendant l'installation : le serveur termine quand même
+        // (jamais de version à moitié copiée) ; la page vérifie ensuite la version installée.
+        @ignore_user_abort(true);
         $dir = self::stagingDir($token);
         $files = self::listFiles($dir);
         $lock = STORAGE_PATH . '/maintenance.lock';

@@ -2670,6 +2670,11 @@ test('MARWA VOICE AI 1.1 : voix Piper livrée dans le dossier (fragments vérifi
         $big += $f->getSize() > 1048576 ? 1 : 0;
     }
     eq(0, $big, 'aucun fichier du paquet au-delà de 1 Mo');
+    $clear = array_filter(iterator_to_array(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($P::bundleDir(), FilesystemIterator::SKIP_DOTS))), fn($f) => preg_match('/\.(exe|dll|onnx)$/i', $f->getFilename()));
+    eq(0, count($clear), 'aucun .exe / .dll / .onnx en clair (rien que l\'antivirus bloque pendant l\'envoi de la mise à jour)');
+    $up = (string) file_get_contents(PUBLIC_PATH . '/assets/js/update.js');
+    ok(str_contains($up, 'sendBatch') && str_contains($up, '/health') && str_contains($up, 'unreadable'), 'mise à jour : nouvel essai par lots découpés, fichiers illisibles signalés, reprise après coupure pendant l\'installation');
+    ok(str_contains((string) file_get_contents(BASE_PATH . '/app/Services/UpdateService.php'), 'ignore_user_abort(true)'), 'installation menée à son terme même si le navigateur est coupé');
     ok(is_file($P::bundleDir() . '/LICENCES.md') && is_file($P::bundleDir() . '/licences/espeak-ng-GPL-3.0.txt'), 'licences des composants livrées');
     $tmp = STORAGE_PATH . '/tmp/voix-paquet-' . getmypid();
     $r = $P::deployBundled($tmp, true);
