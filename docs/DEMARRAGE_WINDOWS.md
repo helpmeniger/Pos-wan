@@ -18,6 +18,9 @@ automatique à l'ouverture de session et l'accès depuis les smartphones (QR cod
 | `windows\desinstaller-demarrage-auto.bat` | Supprime cette tâche planifiée |
 | `windows\pos-marwa.ini.exemple` | Réglages facultatifs (adresse, dossier Wamp, type de fenêtre, attente) |
 | `windows\pos-marwa.ico` | Icône du raccourci |
+| `windows\installer-voix.bat` | MARWA VOICE AI : installe une fois la voix locale Piper (Internet pendant l'installation seulement) |
+| `windows\service-vocal.bat` | Service vocal Piper (lancé par `demarrer-pos-marwa.bat` quand Piper est installé) |
+| `windows\trouver-php.bat` | Utilitaire : trouve `php.exe` de WampServer pour les deux scripts précédents |
 
 Le dossier `windows\` est inaccessible depuis le navigateur (règle du `.htaccess` racine).
 
@@ -43,6 +46,11 @@ Le dossier `windows\` est inaccessible depuis le navigateur (règle du `.htacces
    - sinon, dans le navigateur par défaut.
 
    Un verrou de 60 secondes empêche l'ouverture de plusieurs fenêtres en cas de double-clic.
+
+   La fenêtre dédiée autorise le son sans clic préalable
+   (`--autoplay-policy=no-user-gesture-required`), pour les annonces de l'assistant vocal. Si
+   la voix Piper est installée (`storage\voix\piper\piper.exe`), le **service vocal** est
+   lancé dans une fenêtre réduite. S'il tourne déjà, le second s'arrête seul.
 7. En cas de problème, affiche un message clair : Wamp introuvable, délai dépassé, base
    arrêtée, etc. Le message apparaît dans une fenêtre en mode `--auto`. Tout est consigné
    dans `storage\logs\demarrage.log`.

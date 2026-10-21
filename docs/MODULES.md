@@ -123,6 +123,16 @@ que l'écran attend un article ; `ctx.deliver(code)` transmet un code comme s'il
 scanné. `PMScanner.addSource({ id, label, open })` ajoute une caméra (par exemple une caméra
 IP relayée par le serveur) au choix des caméras. Exemple complet : `addons/vision`.
 
+**Événements des écrans (2.5.0).** La caisse émet
+`document.dispatchEvent(new CustomEvent('pm:event', { detail: { event, data } }))`. Exemples
+d'événements : `pos.sale.saved` (total et monnaie renvoyés par le serveur),
+`pos.sale.refused`, `pos.sale.unknown` (coupure réseau, vente non confirmée),
+`pos.print.failed`, `pos.stock.insufficient`.
+
+Un module peut les écouter avec `document.addEventListener('pm:event', …)`. Exemple complet :
+l'assistant vocal `addons/marwa_voice`. Sans module à l'écoute, ces événements n'ont aucun
+effet.
+
 ### routes.php
 
 ```php

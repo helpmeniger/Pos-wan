@@ -118,8 +118,10 @@ if /I "!MODE!"=="app" (
     if not defined BR if exist %%P set "BR=%%~P"
   )
 )
+REM Service vocal (MARWA VOICE AI) si la voix Piper est installee ; il s'arrete seul s'il tourne deja
+if exist "%APPDIR%\storage\voix\piper\piper.exe" start "POS Marwa - service vocal" /min cmd /c ""%APPDIR%\windows\service-vocal.bat""
 if defined BR (
-  start "" "!BR!" --app=!URL! --start-maximized
+  start "" "!BR!" --app=!URL! --start-maximized --autoplay-policy=no-user-gesture-required
 ) else (
   start "" "!URL!"
 )

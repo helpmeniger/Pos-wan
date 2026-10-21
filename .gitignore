@@ -24,3 +24,6 @@ public/assets/addons/
 release.json
 windows/pos-marwa.ini
 storage/ecole/photos/*
+
+# Voix locale (Piper, voix téléchargées, phrases en cache, jeton du service)
+storage/voix/

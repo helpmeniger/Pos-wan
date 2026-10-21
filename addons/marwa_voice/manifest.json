@@ -1,0 +1,46 @@
+{
+    "code": "marwa_voice",
+    "name": "MARWA VOICE AI — assistant vocal",
+    "version": "1.0.0",
+    "requires": "2.5.0",
+    "author": "Mahamadou Hamidou (Mohamed) — POS Marwa",
+    "description": "POS Marwa parle : annonces vocales des ventes, des erreurs de caisse, de paiement et d'impression, des messages importants des pages. File d'annonces avec priorités, regroupement des répétitions et mode silencieux. Voix locale (Piper sur le serveur ou voix de Windows), sans Internet. Phase 1 : lecture vocale ; l'écoute des commandes vocales viendra dans les phases suivantes.",
+    "icon": "bi-megaphone",
+    "color": "#0b7285",
+    "permissions": {
+        "marwa_voice.use": "Entendre les annonces vocales et régler la voix de son poste",
+        "marwa_voice.manage": "Régler l'assistant vocal (événements, voix, silence) et consulter l'historique"
+    },
+    "roles": {
+        "owner": ["marwa_voice.use", "marwa_voice.manage"],
+        "store_manager": ["marwa_voice.use", "marwa_voice.manage"],
+        "cashier": ["marwa_voice.use"],
+        "stock_manager": ["marwa_voice.use"],
+        "buyer": ["marwa_voice.use"],
+        "accountant": ["marwa_voice.use"],
+        "pharmacist": ["marwa_voice.use"],
+        "waiter": ["marwa_voice.use"],
+        "cook": ["marwa_voice.use"],
+        "clinic_reception": ["marwa_voice.use"]
+    },
+    "menu": [
+        { "group": "Configuration", "label": "Assistant vocal", "icon": "bi-megaphone", "url": "/voix", "permission": "marwa_voice.use", "color": "#0b7285" }
+    ],
+    "assets": { "js": ["voix-core.js", "voix.js"], "css": ["voix.css"] },
+    "settings": {
+        "voix_actif": "1",
+        "voix_moteur": "auto",
+        "voix_hors_ligne": "1",
+        "voix_volume": "0.9",
+        "voix_debit": "1.0",
+        "voix_navigateur_voix": "",
+        "voix_piper_voix": "",
+        "voix_piper_port": "59125",
+        "voix_silence_debut": "",
+        "voix_silence_fin": "",
+        "voix_critique_en_silence": "1",
+        "voix_evenements": "{}",
+        "voix_journal_niveau": "2",
+        "voix_journal_jours": "90"
+    }
+}

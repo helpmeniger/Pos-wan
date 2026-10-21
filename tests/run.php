@@ -2553,6 +2553,113 @@ test('Module Reconnaissance 1.2 : article isolé de l\'arrière-plan, deux empre
     DB::run("DELETE FROM vision_log WHERE outcome IN ('annule','corrige')");
 });
 
+test('MARWA VOICE AI (phase 1) : installation, droits, réglages, historique contrôlé, voix Piper, caisse', function () use ($B) {
+    App\Core\Addons::install('marwa_voice', false);
+    ok(App\Core\Addons::isActive('marwa_voice'), 'module actif');
+    $hasPerm = fn(string $role, string $perm) => (bool) DB::value('SELECT 1 FROM role_permissions rp JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id WHERE r.code = ? AND p.code = ?', [$role, $perm]);
+    ok($hasPerm('cashier', 'marwa_voice.use') && !$hasPerm('cashier', 'marwa_voice.manage') && $hasPerm('store_manager', 'marwa_voice.manage') && !$hasPerm('auditor', 'marwa_voice.use'), 'droits : le caissier entend, le gérant règle, l\'auditeur n\'a pas accès');
+    // Cœur JavaScript : nombres en lettres, montants FCFA, file d'annonces
+    $node = trim((string) shell_exec('command -v node 2>/dev/null'));
+    if ($node !== '') {
+        exec(escapeshellarg($node) . ' ' . escapeshellarg(BASE_PATH . '/tests/js/voix.test.js') . ' 2>&1', $out, $code);
+        ok($code === 0 && (bool) preg_match('/(\d+) réussi\(s\), 0 échec/', implode("\n", $out), $m) && (int) $m[1] >= 60, 'cœur vocal : ' . implode(' | ', $out));
+    }
+    foreach (['voix-core.js', 'voix.js', 'voix.css', 'voix-reglages.js'] as $f) {
+        ok(is_file(PUBLIC_PATH . '/assets/addons/marwa_voice/' . $f), "$f publié");
+    }
+    // La caisse émet ses événements ; la politique de sécurité autorise le son généré (blob:)
+    $pos = (string) file_get_contents(PUBLIC_PATH . '/assets/js/pos.js');
+    foreach (['pos.sale.saved', 'pos.sale.refused', 'pos.sale.unknown', 'pos.print.failed', 'pos.stock.insufficient'] as $ev) {
+        ok(str_contains($pos, "'$ev'"), "caisse : événement $ev");
+    }
+    $h = (new Http())->req('GET', "$B/login")['headers'];
+    ok(str_contains($h, "media-src 'self' blob:") && !str_contains($h, 'unsafe-eval'), 'CSP : son local autorisé, rien d\'autre ouvert');
+
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $json = ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $a->token("$B/voix")];
+    foreach (['reglages', 'poste', 'diagnostic', 'historique'] as $t) {
+        eq(200, $a->req('GET', "$B/voix?tab=$t")['code'], "page /voix?tab=$t");
+    }
+    $cfg = json_decode($a->req('GET', "$B/voix/config", null, ['Accept: application/json'])['body'], true);
+    ok($cfg['ok'] && $cfg['active'] && $cfg['events']['pos.sale.saved']['on'] && !$cfg['events']['pos.product.added']['on'] && $cfg['manage'], 'configuration : ventes lues, ajout d\'article (répétitif) non lu par défaut');
+    eq('XOF', $cfg['currency']['code'], 'devise transmise pour lire les montants');
+
+    // Réglages : contrôles du serveur
+    $form = fn(array $d) => $a->req('POST', "$B/voix/reglages", http_build_query(['_csrf' => $a->token("$B/voix?tab=reglages")] + $d));
+    $form(['voix_actif' => 1, 'voix_moteur' => 'piper; rm -rf /']);
+    ok(str_contains($a->req('GET', "$B/voix?tab=reglages")['body'], 'Moteur de voix inconnu'), 'moteur inconnu refusé');
+    $form(['voix_actif' => 1, 'voix_moteur' => 'auto', 'voix_silence_debut' => '22:00', 'voix_silence_fin' => '']);
+    ok(str_contains($a->req('GET', "$B/voix?tab=reglages")['body'], 'plage de silence'), 'plage de silence incomplète refusée');
+    $form(['voix_actif' => 1, 'voix_moteur' => 'navigateur', 'voix_hors_ligne' => 1, 'voix_volume' => '5', 'voix_debit' => '1,2', 'voix_silence_debut' => '22:00', 'voix_silence_fin' => '06:30',
+        'voix_critique_en_silence' => 1, 'voix_journal_niveau' => 2, 'voix_journal_jours' => 90,
+        'ev_on' => ['pos_sale_saved' => 1, 'pos_print_failed' => 1], 'ev_level' => ['pos_sale_saved' => 1, 'pos_print_failed' => 4]]);
+    eq('navigateur', setting('voix_moteur'));
+    eq('1', setting('voix_volume'), 'volume borné à 100 %');
+    eq('1.2', setting('voix_debit'), 'débit avec virgule accepté');
+    eq('22:00-06:30', setting('voix_silence_debut') . '-' . setting('voix_silence_fin'));
+    $cfg = json_decode($a->req('GET', "$B/voix/config", null, ['Accept: application/json'])['body'], true);
+    ok(!$cfg['events']['page.error']['on'] && $cfg['events']['pos.print.failed']['level'] === 4, 'événements : activation et niveau enregistrés');
+    ok((bool) DB::value("SELECT 1 FROM audit_logs WHERE action = 'settings.marwa_voice'"), 'réglages tracés (audit)');
+
+    // Historique envoyé par les postes : contrôlé, filtré par niveau
+    $log = fn(array $items) => json_decode($a->req('POST', "$B/voix/journal", json_encode(['items' => $items]), $json)['body'], true);
+    DB::run('DELETE FROM marwa_voice_log');
+    $r = $log([['event' => 'pos.print.failed', 'level' => 3, 'status' => 'lu', 'text' => "Impression\x07 en échec", 'engine' => 'piper', 'poste' => 'Caisse 1'],
+        ['event' => 'pos.sale.saved', 'level' => 1, 'status' => 'lu', 'text' => 'Vente', 'engine' => 'piper'],
+        ['event' => 'pos.sale.saved', 'level' => 1, 'status' => 'erreur_voix', 'text' => str_repeat('x', 900), 'engine' => 'bidon']]);
+    ok($r['ok'] && $r['saved'] === 2, 'niveau 1 non conservé (réglage : avertissement et plus), sauf erreur de voix');
+    $row = DB::one("SELECT * FROM marwa_voice_log WHERE event = 'pos.print.failed'");
+    ok($row['text'] === 'Impression en échec' && $row['poste'] === 'Caisse 1' && (int) $row['user_id'] > 0, 'texte nettoyé, poste et utilisateur enregistrés');
+    ok(mb_strlen((string) DB::value("SELECT text FROM marwa_voice_log WHERE status = 'erreur_voix'")) === 400 && DB::value("SELECT engine FROM marwa_voice_log WHERE status = 'erreur_voix'") === null, 'texte tronqué, moteur inconnu ignoré');
+    ok(!$log([['event' => 'pos.inconnu', 'level' => 1, 'status' => 'lu']])['ok'], 'événement inconnu refusé');
+    ok(!$log([['event' => 'pos.sale.saved', 'level' => 9, 'status' => 'lu']])['ok'], 'niveau invalide refusé');
+    ok(!$log([['event' => 'pos.sale.saved', 'level' => 1, 'status' => 'piraté']])['ok'], 'résultat invalide refusé');
+    ok(!$log(array_fill(0, 51, ['event' => 'pos.sale.saved', 'level' => 3, 'status' => 'lu']))['ok'], 'plus de 50 lignes refusées');
+    eq(419, $a->req('POST', "$B/voix/journal", json_encode(['items' => []]), ['Content-Type: application/json', 'Accept: application/json'])['code'], 'sans jeton CSRF : refusé');
+    DB::insert('marwa_voice_log', ['event' => 'pos.sale.saved', 'level' => 3, 'status' => 'lu', 'created_at' => date('Y-m-d H:i:s', time() - 200 * 86400)]);
+    ok(Addons\MarwaVoice\VoiceService::purge() === 1, 'historique au-delà de la durée de conservation supprimé');
+
+    // Voix Piper : son WAV produit sur le serveur ; le texte n'est jamais interprété comme une commande
+    $tts = fn(string $t) => $a->req('POST', "$B/voix/tts", json_encode(['text' => $t]), $json);
+    if (Addons\MarwaVoice\PiperService::available()) {
+        $r = $tts('Vente enregistrée. Total : douze mille cinq cents francs CFA.');
+        ok($r['code'] === 200 && str_starts_with($r['body'], 'RIFF') && str_contains($r['headers'], 'audio/wav'), 'Piper : son WAV reçu (' . strlen($r['body']) . ' octets)');
+        $marker = STORAGE_PATH . '/tmp/voix-injection-' . getmypid();
+        $r = $tts('"; touch ' . $marker . '; $(touch ' . $marker . ') `touch ' . $marker . '`');
+        ok($r['code'] === 200 && !file_exists($marker), 'texte piégé lu comme du texte, aucune commande exécutée');
+        $again = $tts('Vente enregistrée. Total : douze mille cinq cents francs CFA.');
+        ok(str_contains($again['headers'], 'X-Voix-Via: cache'), 'phrase déjà générée : réutilisée depuis le cache');
+    } else {
+        $r = $tts('Bonjour.');
+        ok($r['code'] === 503 && str_contains($r['body'], 'Piper'), 'Piper absent : erreur claire, le poste utilise sa propre voix');
+    }
+    eq(503, $tts(str_repeat('a', 401))['code'], 'texte trop long refusé');
+    eq(503, $tts("\x01\x02 ")['code'], 'texte vide refusé');
+
+    // Caissier : entend et règle son poste, ne modifie pas les réglages ; auditeur : aucun accès
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    $page = $c->req('GET', "$B/voix?tab=reglages");
+    ok($page['code'] === 200 && str_contains($page['body'], 'voixPoste') && !str_contains($page['body'], '/voix/reglages'), 'caissier : réglages de son poste seulement');
+    eq(403, $c->req('POST', "$B/voix/reglages", http_build_query(['_csrf' => $c->token("$B/voix"), 'voix_actif' => 0]))['code'], 'caissier : réglages généraux refusés');
+    $cc = json_decode($c->req('GET', "$B/voix/config", null, ['Accept: application/json'])['body'], true);
+    ok($cc['ok'] && !$cc['manage'], 'caissier : configuration lue');
+    $d = new Http();
+    $d->login($B, 'auditeur', 'Mot-de-passe-2026');
+    eq(403, $d->req('GET', "$B/voix/config", null, ['Accept: application/json'])['code'], 'auditeur : pas d\'annonces');
+    eq(403, $d->req('POST', "$B/voix/tts", json_encode(['text' => 'x']), ['Content-Type: application/json', 'X-CSRF-Token: ' . $d->token("$B/account/password")])['code'], 'auditeur : pas de synthèse');
+
+    // Désactivation : pages masquées, données conservées
+    App\Core\Addons::setActive('marwa_voice', false);
+    eq(404, $a->req('GET', "$B/voix")['code'], 'module désactivé : page masquée');
+    ok((int) DB::value('SELECT COUNT(*) FROM marwa_voice_log') > 0, 'historique conservé');
+    App\Core\Addons::setActive('marwa_voice', true);
+    foreach (['voix_moteur' => 'auto', 'voix_volume' => '0.9', 'voix_debit' => '1.0', 'voix_silence_debut' => '', 'voix_silence_fin' => '', 'voix_evenements' => '{}'] as $k => $v) {
+        setting_set($k, $v);
+    }
+});
+
 test('Mise à jour du logiciel : modules actifs mis à jour automatiquement (jamais d\'erreur 500 sur leurs nouveaux écrans)', function () use ($B) {
     // Situation signalée : fichiers 2.2 copiés, module « vision » encore en 1.0.0 dans la base
     DB::update('addons', ['version' => '1.0.0'], 'code = ?', ['vision']);

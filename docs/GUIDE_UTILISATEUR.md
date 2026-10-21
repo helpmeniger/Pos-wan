@@ -230,6 +230,31 @@ quand tous les articles présentés devant la caméra ont été appris.
 Le module reconnaît **les articles qui lui ont été appris**. Pour les articles presque
 identiques, préférez le code-barres. Guide : `addons/vision/README.md`.
 
+### Assistant vocal (module MARWA VOICE AI)
+Module fourni (`addons/marwa_voice/`), à activer dans Modules complémentaires.
+
+- POS Marwa **annonce à voix haute** :
+  - les ventes (total et monnaie à rendre) ;
+  - les ventes refusées et leur motif ;
+  - les coupures de connexion pendant une validation ;
+  - les échecs d'impression ;
+  - le stock insuffisant ;
+  - les messages d'erreur des pages.
+- Les messages restent affichés à l'écran.
+- **Voix** : installez une fois la voix locale avec `windows\installer-voix.bat` (Internet
+  nécessaire pendant l'installation seulement). Sans elle, la voix française de Windows est
+  utilisée.
+- **À la caisse** : icône 🔊 dans l'en-tête pour couper ou réactiver la voix du poste, ↻ pour
+  répéter.
+- **Configuration → Assistant vocal** :
+  - événements lus et leur niveau ;
+  - volume et débit ;
+  - plage de silence ;
+  - réglages de chaque poste ;
+  - diagnostic et historique.
+
+Guide : `addons/marwa_voice/README.md`.
+
 ### Caméras et surveillance des articles (module Reconnaissance 1.1)
 1. **Configuration → Caméras :** ajoutez une webcam ou caméra USB, une carte d'acquisition
    ou une caméra IP (adresse de l'image ou du flux MJPEG). Utilisez « Tester » pour vérifier

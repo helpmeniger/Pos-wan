@@ -50,6 +50,8 @@
     $('#toasts').appendChild(el);
     setTimeout(() => el.remove(), type === 'danger' ? 6000 : 2800);
   }
+  // Événements de caisse pour les modules (ex. assistant vocal MARWA VOICE) ; sans module : sans effet
+  function emit(event, data) { try { document.dispatchEvent(new CustomEvent('pm:event', { detail: { event, data: data || {} } })); } catch (e) { /* ignoré */ } }
   function beep(ok = true) {
     try {
       const ctx = beep.ctx || (beep.ctx = new (window.AudioContext || window.webkitAudioContext)());
@@ -149,10 +151,12 @@
       selected = cart.lines.length - 1;
     }
     const line = cart.lines[selected];
-    if (line.track && line.qty * (line.factor || 1) > line.stock) toast(`Stock disponible insuffisant pour « ${p.name} » (${fmtQ(p.stock)}).`, 'warning');
+    const short = line.track && line.qty * (line.factor || 1) > line.stock;
+    if (short) { toast(`Stock disponible insuffisant pour « ${p.name} » (${fmtQ(p.stock)}).`, 'warning'); emit('pos.stock.insufficient', { name: p.name, stock: p.stock }); }
     setPendingQty(1);
     beep(true);
     render();
+    if (!short) emit('pos.product.added', { name: line.name, qty: q, total: totals().total });
   }
   async function scan(code) {
     code = code.trim();
@@ -162,6 +166,7 @@
     beep(false);
     if (scanMode === 'manual') { $('#productSearch').value = code; loadProducts(); }
     toast(d.error || 'Article introuvable.', 'danger');
+    emit('pos.product.notfound', {});
   }
   function setPendingQty(q) {
     pendingQty = q;
@@ -431,7 +436,7 @@
   });
   function openPay(opts = {}) {
     if (!cart.lines.length) { toast(__('Le panier est vide.'), 'warning'); return; }
-    if (CFG.requireSession && !CFG.sessionOpen) { toast(__('La caisse est fermée.'), 'danger'); return; }
+    if (CFG.requireSession && !CFG.sessionOpen) { toast(__('La caisse est fermée.'), 'danger'); emit('pos.register.closed'); return; }
     payments = [];
     supervisor = null;
     $('#payError').classList.add('d-none');
@@ -465,13 +470,13 @@
   function quickValidate() {
     if (busy) return;
     if (!cart.lines.length) { toast(__('Le panier est vide.'), 'warning'); return; }
-    if (CFG.requireSession && !CFG.sessionOpen) { toast(__('La caisse est fermée.'), 'danger'); return; }
+    if (CFG.requireSession && !CFG.sessionOpen) { toast(__('La caisse est fermée.'), 'danger'); emit('pos.register.closed'); return; }
     if (!CFG.methods.cash || cart.lines.some((l) => l.rx)) { openPay(); return; }
     const t = totals().total;
     const tendered = num($('#tenderedInput').value);
     if (tendered > 0 && tendered + 0.009 < t) {
       // Montant insuffisant : on passe par la fenêtre (paiement mixte ou crédit)
-      toast(__('Argent client insuffisant : complétez le paiement.'), 'warning');
+      toast(__('Argent client insuffisant : complétez le paiement.'), 'warning'); emit('pos.payment.insufficient');
       openPay(); return;
     }
     payments = [{ method: 'cash', amount: Math.round((tendered > 0 ? tendered : t) * 100) / 100, reference: null, provider: null }];
@@ -500,19 +505,22 @@
     $('#payConfirm').disabled = true;
     $$('.btn-validate').forEach((b) => { b.disabled = true; });
     let d;
-    try { d = await api('/pos/checkout', { method: 'POST', body }); } catch (e) { d = { ok: false, error: __('Connexion au serveur impossible. La vente n\'a pas été enregistrée ; réessayez (aucun doublon possible).') }; }
+    // Coupure réseau : la vente a pu être enregistrée ou non ; une nouvelle validation (même numéro
+    // client_uuid) ne crée jamais de doublon et indique « déjà enregistrée » si elle l'était.
+    try { d = await api('/pos/checkout', { method: 'POST', body }); } catch (e) { d = { ok: false, unknown: true, error: __('Connexion au serveur interrompue : la vente n\'est pas confirmée. Validez à nouveau (aucun doublon possible).') }; }
     busy = false;
     $('#payConfirm').disabled = false;
     $$('.btn-validate').forEach((b) => { b.disabled = false; });
     if (!d.ok) {
       if (d.status === 419) { save(); setTimeout(() => location.reload(), 1500); }
-      if (d.code === 'AUTH_REQUIRED') { $('#authReason').textContent = d.error + ' — ' + __('un responsable doit autoriser.'); $('#authUser').value = ''; $('#authSecret').value = ''; modal('authModal').show(); setTimeout(() => $('#authUser').focus(), 300); return; }
+      if (d.code === 'AUTH_REQUIRED') { emit('pos.auth.required'); $('#authReason').textContent = d.error + ' — ' + __('un responsable doit autoriser.'); $('#authUser').value = ''; $('#authSecret').value = ''; modal('authModal').show(); setTimeout(() => $('#authUser').focus(), 300); return; }
       if (d.code === 'PRESCRIPTION_REQUIRED') {
         if (quickMode) { openPay(); }
         $('#rxBox').classList.remove('d-none'); $('#rxPrescriber').focus();
         if (quickMode) { quickMode = false; payError(d.error); return; }
       }
       saleError(d.error || __('Erreur lors de l\'enregistrement.'));
+      emit(d.unknown ? 'pos.sale.unknown' : 'pos.sale.refused', { error: d.error || '' });
       return;
     }
     if (!quickMode) modal('payModal').hide();
@@ -536,6 +544,9 @@
     $('#doneInvoice').href = d.invoice_url;
     if ($('#optTicket').checked && CFG.autoPrint && !d.duplicate && !(d.printed_server > 0)) printInFrame(d.ticket_url);
     if (d.print_errors && d.print_errors.length) toast(__('Imprimante de caisse') + ' : ' + d.print_errors.join(' '), 'warning');
+    emit('pos.sale.saved', { total: d.total, change: d.change, duplicate: !!d.duplicate });
+    if (d.print_errors && d.print_errors.length) emit('pos.print.failed', { errors: d.print_errors });
+    else if (d.printed_server > 0) emit('pos.print.sent', {});
     if ($('#optA4').checked) window.open(d.invoice_url, '_blank', 'noopener');
     cart = newCart();
     selected = -1;
@@ -604,7 +615,7 @@
     if (label === null) return;
     const d = await api('/pos/hold', { method: 'POST', body: { _csrf: CFG.csrf, label, cart } });
     if (!d.ok) { toast(d.error, 'danger'); return; }
-    cart = newCart(); selected = -1; render(); refreshHeld(); toast(__('Vente mise en attente.'), 'success');
+    cart = newCart(); selected = -1; render(); refreshHeld(); toast(__('Vente mise en attente.'), 'success'); emit('pos.cart.held');
   }
 
   // ------------------------------------------------------------------ actions

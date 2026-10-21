@@ -2,6 +2,38 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.5.0] — 2026-10-21
+
+### Ajouté
+- **MARWA VOICE AI 1.0 — phase 1** (`addons/marwa_voice`) : POS Marwa parle, sans Internet.
+  - Annonces des ventes : total et monnaie, chiffres du serveur.
+  - Annonces des refus de vente (motif lu), des coupures réseau (« vente non confirmée »,
+    jamais « échouée » à tort), des échecs d'impression (« la vente est enregistrée, mais… »),
+    du stock insuffisant, des codes inconnus et des messages d'erreur des pages.
+  - File d'annonces : priorités, interruption par les alertes critiques, doublons ignorés,
+    regroupement, annonces périmées écartées.
+  - Réglages du responsable : événements, niveaux, voix, volume, débit, plage de silence.
+  - Réglages de chaque poste : voix coupée, modules à ne pas lire, nom du poste.
+  - Historique contrôlé par le serveur.
+  - Voix locale **Piper** (installateur `windows\installer-voix.bat`, fichiers vérifiés par
+    SHA-256) avec service persistant. Sinon, voix française de Windows.
+  - Aucun microphone dans cette phase.
+
+### Modifié
+- Caisse : émission d'événements pour les modules (`pm:event`), sans effet sans module.
+- Caisse : le message de coupure réseau ne dit plus « la vente n'a pas été enregistrée » (son
+  état n'était pas vérifié). Il indique « non confirmée » et invite à revalider, sans risque de
+  doublon.
+- Politique de sécurité : `media-src 'self' blob:` (sons générés localement).
+- `demarrer-pos-marwa.bat` : lance le service vocal si Piper est installé ; la fenêtre POS
+  Marwa autorise le son sans clic préalable.
+
+### Limites connues
+- Pas encore essayé sur un vrai PC Windows avec haut-parleurs ; les scripts `.bat` n'ont pas
+  été exécutés.
+- Aucune voix haoussa disponible (aucune voix Piper haoussa n'existe) : les annonces sont en
+  français.
+
 ## [2.4.0] — 2026-10-19
 
 ### Ajouté
