@@ -6,6 +6,8 @@
  *   php bin/voix.php test "Texte à lire"                   génère la phrase et indique le temps
  *   php bin/voix.php service                               service persistant (laisser tourner ; Ctrl+C pour arrêter)
  *   php bin/voix.php vider-cache                           retire les phrases déjà générées
+ *   php bin/voix.php deployer [--forcer]                   installe Piper et la voix livrés dans le dossier (sans Internet)
+ *   php bin/voix.php preparer-paquet <piper_windows.zip> <voice.tar.gz>   (auteur) prépare le paquet intégré
  *
  * Fichiers téléchargés vérifiés par leur empreinte SHA-256 (refusés s'ils ne correspondent pas).
  * Piper : licence MIT. Voix « siwis » : jeu de données SIWIS, licence CC BY 4.0 (attribution).
@@ -112,7 +114,7 @@ function service(): void
             proc_terminate($proc);
             proc_close($proc);
         }
-        $proc = proc_open([$bin, '--model', Piper::dir('voix/' . $voice), '--json-input', '--quiet'],
+        $proc = proc_open([$bin, '--model', Piper::dir('voix/' . $voice), '--json-input', '--sentence_silence', Piper::SENTENCE_SILENCE, '--quiet'],
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['file', Piper::dir('service.log'), 'a']], $pipes, dirname($bin));
         if (!is_resource($proc)) {
             throw new RuntimeException('Piper n\'a pas pu être lancé.');
@@ -166,6 +168,65 @@ function service(): void
     }
 }
 
+/**
+ * (Auteur) Paquet intégré : Piper pour Windows allégé (dictionnaires français et anglais seulement,
+ * sans le modèle arabe) + voix française, découpés en fragments ≤ 1 Mo (limites d'envoi de WampServer).
+ */
+function prepare_bundle(string $zip, string $voiceTgz): void
+{
+    foreach ([[$zip, PROGRAMS['Windows'][1]], [$voiceTgz, VOICES['siwis-medium'][1]]] as [$f, $sha]) {
+        if (!is_file($f) || !hash_equals($sha, hash_file('sha256', $f))) {
+            throw new RuntimeException('Fichier absent ou empreinte inattendue : ' . $f);
+        }
+    }
+    $tmp = sys_get_temp_dir() . '/paquet-voix-' . getmypid();
+    extract_archive($zip, "$tmp/win");
+    extract_archive($voiceTgz, "$tmp/voix");
+    $files = [];
+    $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator("$tmp/win/piper", FilesystemIterator::SKIP_DOTS));
+    foreach ($it as $f) {
+        $rel = 'piper/' . str_replace('\\', '/', substr($f->getPathname(), strlen("$tmp/win/piper/")));
+        if (str_starts_with($rel, 'piper/pkgconfig/') || str_starts_with($rel, 'piper/espeak-ng-data/voices/') || $rel === 'piper/libtashkeel_model.ort'
+            || (preg_match('#^piper/espeak-ng-data/([a-z_]+)_dict$#', $rel, $m) && !in_array($m[1], ['fr', 'en'], true))) {
+            continue;
+        }
+        $files[$rel] = $f->getPathname();
+    }
+    foreach (['fr-siwis-medium.onnx', 'fr-siwis-medium.onnx.json'] as $v) {
+        $files['voix/' . $v] = "$tmp/voix/$v";
+    }
+    ksort($files);
+    $dest = Piper::bundleDir();
+    foreach (['piper', 'voix'] as $d) {
+        if (is_dir("$dest/$d")) {
+            $rm = new RecursiveIteratorIterator(new RecursiveDirectoryIterator("$dest/$d", FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ($rm as $x) {
+                $x->isDir() ? rmdir($x->getPathname()) : unlink($x->getPathname());
+            }
+            rmdir("$dest/$d");
+        }
+    }
+    $index = [];
+    foreach ($files as $rel => $src) {
+        $size = filesize($src);
+        $parts = $size > 1000000 ? (int) ceil($size / 1000000) : 0;
+        @mkdir(dirname("$dest/$rel"), 0775, true);
+        if ($parts === 0) {
+            copy($src, "$dest/$rel");
+        } else {
+            $h = fopen($src, 'rb');
+            for ($i = 0; $i < $parts; $i++) {
+                file_put_contents(sprintf('%s/%s.part%03d', $dest, $rel, $i), fread($h, 1000000));
+            }
+            fclose($h);
+        }
+        $index[$rel] = ['size' => $size, 'sha256' => hash_file('sha256', $src), 'parts' => $parts];
+    }
+    file_put_contents("$dest/paquet.json", json_encode(['version' => 1, 'piper' => '2023.11.14-2 (Windows x64)', 'voix' => 'fr-siwis-medium',
+        'files' => $index], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+    out(count($index) . ' fichier(s), ' . round(array_sum(array_column($index, 'size')) / 1048576, 1) . ' Mo → ' . $dest);
+}
+
 $cmd = $argv[1] ?? 'etat';
 try {
     switch ($cmd) {
@@ -213,6 +274,20 @@ try {
             break;
         case 'service':
             service();
+            break;
+        case 'deployer':
+            $r = Piper::deployBundled(null, null, in_array('--forcer', $argv, true));
+            if (!Piper::bundle()) {
+                throw new RuntimeException('Aucun paquet vocal dans addons/marwa_voice/piper (utilisez « installer »).');
+            }
+            out(!$r['done'] ? 'Déploiement déjà en cours ailleurs, réessayez.' : ($r['deployed'] + $r['skipped'] === 0 ? 'La voix livrée est déjà en place (--forcer pour tout revérifier).'
+                : "Voix installée : {$r['deployed']} fichier(s) reconstitué(s) et vérifié(s), {$r['skipped']} déjà en place."));
+            if (PHP_OS_FAMILY !== 'Windows') {
+                out('Le programme Piper livré est pour Windows ; ici, installez le programme avec « php bin/voix.php installer ».');
+            }
+            break;
+        case 'preparer-paquet':
+            prepare_bundle((string) ($argv[2] ?? ''), (string) ($argv[3] ?? ''));
             break;
         case 'vider-cache':
             out(Piper::clearCache() . ' phrase(s) retirée(s).');

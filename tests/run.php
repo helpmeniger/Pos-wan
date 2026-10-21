@@ -2660,6 +2660,54 @@ test('MARWA VOICE AI (phase 1) : installation, droits, réglages, historique con
     }
 });
 
+test('MARWA VOICE AI 1.1 : voix Piper livrée dans le dossier (fragments vérifiés), cuisine et salle', function () use ($B) {
+    // Paquet intégré : fragments ≤ 1 Mo (limites d'envoi de WampServer), reconstitués à l'identique
+    $P = Addons\MarwaVoice\PiperService::class;
+    $bundle = $P::bundle();
+    ok($bundle && isset($bundle['files']['piper/piper.exe'], $bundle['files']['voix/fr-siwis-medium.onnx']), 'paquet : Piper pour Windows et voix française livrés');
+    $big = 0;
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($P::bundleDir(), FilesystemIterator::SKIP_DOTS)) as $f) {
+        $big += $f->getSize() > 1048576 ? 1 : 0;
+    }
+    eq(0, $big, 'aucun fichier du paquet au-delà de 1 Mo');
+    ok(is_file($P::bundleDir() . '/LICENCES.md') && is_file($P::bundleDir() . '/licences/espeak-ng-GPL-3.0.txt'), 'licences des composants livrées');
+    $tmp = STORAGE_PATH . '/tmp/voix-paquet-' . getmypid();
+    $r = $P::deployBundled($tmp, true);
+    ok($r['done'] && $r['deployed'] === count($bundle['files']), 'déploiement Windows simulé : ' . $r['deployed'] . ' fichier(s) reconstitué(s)');
+    $okHash = true;
+    foreach ($bundle['files'] as $rel => $f) {
+        $okHash = $okHash && hash_file('sha256', "$tmp/$rel") === $f['sha256'];
+    }
+    ok($okHash, 'chaque fichier reconstitué a l\'empreinte SHA-256 attendue');
+    eq(0, $P::deployBundled($tmp, true)['deployed'], 'deuxième passage : rien à refaire');
+    // Fragment abîmé : refusé, rien n'est remplacé par un fichier faux
+    $part = $P::bundleDir() . '/voix/fr-siwis-medium.onnx.part010';
+    $orig = (string) file_get_contents($part);
+    file_put_contents($part, substr($orig, 0, -1) . chr(ord(substr($orig, -1)) ^ 1));
+    try {
+        throws(fn() => $P::deployBundled($tmp, true, true), 'altéré');
+    } finally {
+        file_put_contents($part, $orig);
+    }
+    ok(hash_file('sha256', "$tmp/voix/fr-siwis-medium.onnx") === $bundle['files']['voix/fr-siwis-medium.onnx']['sha256'], 'voix en place intacte après le refus');
+    exec('rm -rf ' . escapeshellarg($tmp));
+
+    // Écran cuisine : scripts des modules chargés, bons « ajout » repérés, annonces au catalogue
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $k = $a->req('GET', "$B/kitchen?station=cuisine");
+    ok($k['code'] === 200 && str_contains($k['body'], 'addons/marwa_voice/voix.js'), 'écran cuisine : voix chargée');
+    $feed = json_decode($a->req('GET', "$B/kitchen/feed?station=cuisine", null, ['Accept: application/json'])['body'], true);
+    ok($feed['ok'] && (!$feed['tickets'] || array_key_exists('previous', $feed['tickets'][0])), 'bons : rang de l\'envoi (nouvelle commande / ajout)');
+    $cfg = json_decode($a->req('GET', "$B/voix/config", null, ['Accept: application/json'])['body'], true);
+    ok($cfg['events']['kitchen.ticket.new']['on'] && $cfg['events']['kitchen.ticket.cancel']['on'] && $cfg['events']['restaurant.table.ready']['on'], 'cuisine et salle : annonces actives par défaut');
+    eq(600, $cfg['events']['kitchen.ticket.new']['ttl'], 'bon de cuisine : jamais écarté avant 10 minutes');
+    $js = (string) file_get_contents(PUBLIC_PATH . '/assets/js/kitchen.js') . file_get_contents(PUBLIC_PATH . '/assets/js/restaurant-floor.js');
+    foreach (['kitchen.ticket.new', 'kitchen.ticket.cancel', 'kitchen.ticket.repeat', 'restaurant.table.ready'] as $ev) {
+        ok(str_contains($js, "'$ev'"), "événement $ev émis");
+    }
+});
+
 test('Mise à jour du logiciel : modules actifs mis à jour automatiquement (jamais d\'erreur 500 sur leurs nouveaux écrans)', function () use ($B) {
     // Situation signalée : fichiers 2.2 copiés, module « vision » encore en 1.0.0 dans la base
     DB::update('addons', ['version' => '1.0.0'], 'code = ?', ['vision']);

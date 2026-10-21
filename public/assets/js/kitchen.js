@@ -18,6 +18,13 @@
     if (!sound) return;
     try { const c = beep.c || (beep.c = new (window.AudioContext || window.webkitAudioContext)()); [0, 0.18].forEach((t) => { const o = c.createOscillator(); const g = c.createGain(); o.frequency.value = 880; g.gain.value = 0.15; o.connect(g); g.connect(c.destination); o.start(c.currentTime + t); o.stop(c.currentTime + t + 0.12); }); } catch (e) { /* audio */ }
   }
+  // Événements pour les modules (ex. annonce vocale des bons : MARWA VOICE) ; sans module : sans effet
+  function emit(event, data) { try { document.dispatchEvent(new CustomEvent('pm:event', { detail: { event, data } })); } catch (e) { /* ignoré */ } }
+  function voiceData(t, key) {
+    return { key, id: t.id, type: t.type, order_number: t.order_number, order_type: t.order_type, table: t.table_name || '', customer: t.customer_name || '',
+      waiter: t.waiter || '', previous: Number(t.previous) || 0,
+      items: t.items.filter((i) => t.type === 'cancel' || i.status !== 'cancelled').map((i) => ({ quantity: Number(i.quantity), name: i.name, note: i.note || '', reason: i.cancel_reason || '' })) };
+  }
   function age(t) { return t.age + Math.round((Date.now() - fetchedAt) / 1000); }
   function mmss(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
   function render() {
@@ -45,7 +52,7 @@
       else if (t.status === 'ready') actions = `<button class="b-back" data-id="${t.id}" data-s="preparing" title="Rappeler">↶</button><button class="b-serve" data-id="${t.id}" data-s="served">${__('Servi — retirer')}</button>`;
       else actions = `<button class="b-back w-100" data-id="${t.id}" data-s="ready" style="flex:1!important">${__('Rappeler le ticket')}</button>`;
       return `<article class="kt ${cls} ${late}"><div class="kt-head"><div><div class="kt-table">${t.type === 'cancel' ? '<i class="bi bi-x-octagon"></i> ' + __('ANNULATION') + '<br>' : ''}${where}</div>
-        <div class="kt-sub">${esc(t.number)} · ${esc(t.order_number)} · ${esc(t.waiter)} · ${t.covers} couv.${t.customer_name ? ' · ' + esc(t.customer_name) : ''}</div></div>
+        <div class="kt-sub">${window.PMVoice && PMVoice.state().ready ? `<button class="kt-read" data-read="${t.id}" title="${__('Relire à voix haute')}"><i class="bi bi-volume-up"></i></button> ` : ''}${esc(t.number)} · ${esc(t.order_number)} · ${esc(t.waiter)} · ${t.covers} couv.${t.customer_name ? ' · ' + esc(t.customer_name) : ''}</div></div>
         <span class="d-flex gap-1 align-items-start"><button class="kt-print" data-print="${t.id}" title="${__('Imprimer le bon')}"><i class="bi bi-printer"></i></button><span class="kt-time" data-t="${t.id}">${mmss(a)}</span></span></div><ul class="kt-items">${items}</ul><div class="kt-actions">${actions}</div></article>`;
     }).join('');
   }
@@ -57,7 +64,11 @@
       if (!d.ok) return;
       tickets = d.tickets; fetchedAt = Date.now();
       const fresh = tickets.filter((t) => t.status === 'pending' && !known.has(t.id));
-      if (fresh.length && !first) beep();
+      if (fresh.length && !first) {
+        beep();
+        // Lecture à voix haute de chaque nouveau bon, dans l'ordre d'arrivée (une seule fois par bon)
+        fresh.slice().sort((a, b) => a.id - b.id).forEach((t) => emit(t.type === 'cancel' ? 'kitchen.ticket.cancel' : 'kitchen.ticket.new', voiceData(t, 'kt-' + t.id)));
+      }
       first = false;
       tickets.forEach((t) => known.add(t.id));
       sessionStorage.setItem('kds-known-' + STATION, JSON.stringify([...known].slice(-300)));
@@ -72,9 +83,14 @@
   }
   document.addEventListener('click', async (e) => {
     const pr = e.target.closest('[data-print]'); if (pr) { printTicket(pr.dataset.print); return; }
+    const rd = e.target.closest('[data-read]');
+    if (rd) { const t = tickets.find((x) => x.id === Number(rd.dataset.read)); if (t) emit('kitchen.ticket.repeat', voiceData(t, 'rd-' + t.id + '-' + Date.now())); return; }
     const b = e.target.closest('button[data-s]'); if (!b) return;
     b.disabled = true;
-    await fetch(`${BASE}/kitchen/tickets/${b.dataset.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': CSRF }, body: JSON.stringify({ _csrf: CSRF, status: b.dataset.s }) });
+    const r = await fetch(`${BASE}/kitchen/tickets/${b.dataset.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': CSRF }, body: JSON.stringify({ _csrf: CSRF, status: b.dataset.s }) }).catch(() => null);
+    const ok = r && r.ok && (await r.json().catch(() => ({}))).ok !== false;
+    const t = tickets.find((x) => x.id === Number(b.dataset.id));
+    if (ok && t && b.dataset.s === 'ready') emit('kitchen.ticket.ready', voiceData(t, 'rdy-' + t.id)); // annoncé seulement si le serveur l'a enregistré
     load();
   });
   $('#showServed').addEventListener('change', render);

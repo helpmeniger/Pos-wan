@@ -1,4 +1,4 @@
-# État du projet — version 2.5.0 (POS Marwa)
+# État du projet — version 2.6.0 (POS Marwa)
 
 ## Terminé et vérifié
 
@@ -64,6 +64,7 @@
 | **v2.3** Pointage par reconnaissance faciale | ✅ fonctionnel, ⚠️ à valider sur place | Mesure hors ligne (8 personnes : 95 % reconnus, 0 % d'erreur de personne au seuil 0,50) + Chromium avec caméra simulée (2 personnes reconnues, 1 inconnu signalé, pas de double pointage). **Non testé avec de vraies caméras, de vrais élèves, ni sur un PC de l'établissement** ; pas de détection de photo présentée devant la caméra |
 | **v2.4** Reconnaissance 1.2 : fond appris, article détouré, ajout automatique en continu, annulation | ✅ fonctionnel, ⚠️ à valider sur place | 11 tests JS du détourage + test PHP (empreintes détourées, journal « annulé », paires confondues) + caisse simulée (12 articles : 0 ajout faux, 0 ajout sur comptoir vide) + Chromium de bout en bout (ajouts automatiques justes, « Annuler »). **Limite mesurée :** un article non appris semblable à un article appris peut être ajouté à tort. **Non testé avec une vraie webcam en magasin** |
 | **v2.5** MARWA VOICE AI phase 1 : annonces vocales (ventes, refus, coupure réseau, impression, stock, erreurs des pages), file à priorités, silence, voix Piper locale | ✅ fonctionnel, ⚠️ à valider sur place | 66 tests JS (nombres en lettres, file) + test PHP (droits, réglages, historique contrôlé, Piper réel, texte piégé) + Chromium sur la vraie caisse avec Piper (18/18 : vente, impression en échec, coupure réseau sans doublon, refus du serveur, silence, secours). **Non testé sur un PC Windows avec haut-parleurs ; scripts .bat non exécutés.** Phases 2 à 6 (commandes vocales, stock, cuisine, reconnaissance vocale) non réalisées |
+| **v2.6** Voix Piper livrée dans le dossier + écran cuisine parlant (commandes, ajouts, annulations, relecture) + plats prêts annoncés en salle | ✅ fonctionnel, ⚠️ à valider sur place | 76 tests JS + test PHP (paquet ≤ 1 Mo par fichier, 147 fichiers reconstitués avec SHA-256 exact, fragment abîmé refusé) + Chromium avec Piper réel (12/12 : commande lue une fois, relecture, ajout, annulation avec motif, « Table T2 : deux plats prêts »). **Piper Windows non exécuté sur un vrai PC Windows** |
 
 **Résultat de la suite de tests : 125 réussis, 0 échec** (`php tests/run.php`), plus 15 vérifications JavaScript du moteur de comptage (`node tests/js/track.test.js`).
 

@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="<?= e(bootstrap_css()) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/kitchen.css')) ?>">
+<?php $addonAssets = App\Core\Addons::globalAssets(); foreach ($addonAssets['css'] as $s): ?><link rel="stylesheet" href="<?= e(asset($s)) ?>"><?php endforeach; ?>
 </head>
 <body class="kds" data-station="<?= e($station) ?>">
 <header class="kds-head">
@@ -26,5 +27,6 @@
 <?= i18n_script() ?>
 <script src="<?= e(asset('js/money.js')) ?>"></script>
 <script src="<?= e(asset('js/kitchen.js')) ?>"></script>
+<?php foreach ($addonAssets['js'] as $s): ?><script src="<?= e(asset($s)) ?>"></script><?php endforeach; ?>
 </body>
 </html>

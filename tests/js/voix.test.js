@@ -22,7 +22,7 @@ eq(V.time('14:05'), 'quatorze heures cinq', 'heure');
 eq(V.normalize('Stock disponible insuffisant (3).'), 'Stock disponible insuffisant (trois).', 'chiffres dans une phrase');
 eq(V.normalize('Total 12 500 FCFA'), 'Total douze mille cinq cents francs CFA', 'séparateur de milliers et FCFA');
 eq(V.normalize('Total 12 500 F'), 'Total douze mille cinq cents F', 'espace fine insécable');
-eq(V.normalize('Vente V-2026-00012 du 3,5 kg'), 'Vente V-2026-00012 du trois virgule cinq kg', 'référence conservée');
+eq(V.normalize('Vente V-2026-00012 du 3,5 kg'), 'Vente V-2026-00012 du trois virgule cinq kilos', 'référence conservée, unité en entier');
 eq(V.normalize('Remise de 10%'), 'Remise de dix pour cent', 'pourcentage');
 eq(V.normalize('ouvert à 08:30'), 'ouvert à huit heures trente', 'heure dans une phrase');
 eq(V.normalize('a\u0007b'), 'a b', 'caractères de contrôle retirés');
@@ -67,6 +67,23 @@ eq(Q.interrupts({ level: 4 }, { level: 4 }), false, 'critique n\'interrompt pas 
 const big = V.Queue({ now: () => now, maxLen: 3 });
 [0, 3, 1, 2].forEach((l, i) => big.push({ event: 'e' + i, level: l, text: 't' + i }));
 eq(big.items.map((x) => x.level).sort(), [1, 2, 3], 'file pleine : le moins important écarté');
+
+// Restaurant : cuisine et salle (données du bon uniquement)
+const bon = { order_number: 'CMD2026-000024', table: '6', waiter: 'Awa', items: [{ quantity: 2, name: 'Poulet braisé', note: 'sans piment' }, { quantity: 3, name: 'Fanta 33 cl' }] };
+eq(V.phrase('kitchen.ticket.new', bon), 'Nouvelle commande numéro vingt-quatre, table six. deux Poulet braisé, remarque : sans piment. trois Fanta trente-trois centilitres. Serveur : Awa.', 'cuisine : nouvelle commande');
+eq(/^Ajout pour la commande numéro vingt-quatre/.test(V.phrase('kitchen.ticket.new', Object.assign({}, bon, { previous: 1 }))), true, 'cuisine : ajout à une commande déjà envoyée');
+eq(V.phrase('kitchen.ticket.cancel', Object.assign({}, bon, { items: [{ quantity: 1, name: 'Poulet braisé', reason: 'client parti' }] })), 'Attention, annulation. Commande numéro vingt-quatre, table six. Ne pas préparer : un Poulet braisé, motif : client parti.', 'cuisine : annulation avec motif');
+eq(V.phrase('kitchen.ticket.new', { order_number: 'CMD2026-000007', order_type: 'delivery', customer: 'Moussa', items: [{ quantity: 0.5, name: 'Viande (kg)' }] }), 'Nouvelle commande numéro sept, livraison, pour Moussa. un demi Viande (kilo).', 'cuisine : livraison, demi');
+eq(V.phrase('kitchen.ticket.new', { order_number: 'X', items: [] }), null, 'bon sans plat : rien n\'est lu');
+eq(/^Je répète\. Attention, annulation/.test(V.phrase('kitchen.ticket.repeat', Object.assign({ type: 'cancel' }, bon))), true, 'relecture d\'une annulation');
+eq(V.phrase('restaurant.table.ready', { table: 'Terrasse 2', n: 3 }), 'Table Terrasse deux : trois plats prêts à servir.', 'salle : plats prêts');
+eq(V.phrase('restaurant.table.ready', { order_number: 'CMD2026-000009', order_type: 'takeaway', customer: 'Awa', n: 1 }), 'Commande numéro neuf, à emporter, pour Awa : plat prêt à servir.', 'salle : à emporter');
+eq(V.normalize('Sucre 1 kg, Huile 5 L, Lait 1,5 L, 500 g'), 'Sucre un kilo, Huile cinq litres, Lait un virgule cinq litre, cinq cents grammes', 'unités lues en entier, accord');
+// File : une commande de cuisine (validité 10 min) n'est pas écartée par une longue file
+let now2 = 0; const QK = V.Queue({ now: () => now2 });
+QK.push({ event: 'kitchen.ticket.new', level: 1, text: 'bon 1', ttl: 600 }); QK.push({ event: 'pos.x', level: 1, text: 'info' });
+now2 = 120000;
+const nk = QK.next(); eq([nk && nk.text, QK.length], ['bon 1', 0], 'après 2 min : le bon de cuisine est encore lu, l\'annonce ordinaire est écartée');
 
 console.log(`MARWA VOICE (cœur) : ${ok} réussi(s), ${ko} échec(s)`);
 process.exit(ko ? 1 : 0);

@@ -177,7 +177,7 @@
     if (!force && p.off.includes(ev.module)) return;
     const text = C.phrase(event, data, cfg.currency);
     if (!text) return;
-    const item = { event, level: ev.level, text, key: data && data.key, group: data && data.group };
+    const item = { event, level: ev.level, text, key: data && data.key, group: data && data.group, ttl: ev.ttl || null };
     if (!force && quiet() && !(ev.level === 4 && cfg.quiet.critical)) { log(item, 'silence'); return; }
     const r = queue.push(item);
     if (!r.accepted) { log(item, r.reason); return; }
@@ -199,7 +199,7 @@
       widget.querySelector('[data-voix-mute]').addEventListener('click', () => { const m = !poste().muted; savePoste({ muted: m }); if (m) { queue.clear('silence'); if (stopCurrent) stopCurrent(); } });
       widget.querySelector('[data-voix-repeat]').addEventListener('click', () => api.repeat());
       // Caisse et prise de commande : rangé avec les icônes de l'en-tête (ne masque aucun bouton)
-      const dock = document.querySelector('.head-icons');
+      const dock = document.querySelector('.head-icons, .kds-head .ms-auto');
       if (dock) { widget.classList.add('docked'); dock.insertBefore(widget, dock.firstChild); } else document.body.appendChild(widget);
     }
     widget.hidden = p.hideWidget;

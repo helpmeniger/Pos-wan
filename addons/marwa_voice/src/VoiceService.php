@@ -17,11 +17,12 @@ final class VoiceService
 {
     public const LEVELS = ['Information', 'Notification', 'Avertissement', 'Erreur', 'Critique'];
     public const STATUSES = ['lu', 'doublon', 'groupe', 'silence', 'expire', 'interrompu', 'file_pleine', 'erreur_voix', 'desactive'];
-    public const MODULES = ['caisse' => 'Caisse', 'impression' => 'Impression', 'pages' => 'Pages de gestion', 'systeme' => 'Système'];
+    public const MODULES = ['caisse' => 'Caisse', 'cuisine' => 'Écran cuisine / bar', 'salle' => 'Salle (serveurs)', 'impression' => 'Impression', 'pages' => 'Pages de gestion', 'systeme' => 'Système'];
 
     /**
-     * Événements connus : code => [module, libellé, niveau par défaut, lu par défaut].
+     * Événements connus : code => [module, libellé, niveau par défaut, lu par défaut, validité en file (s, facultatif)].
      * Les annonces répétitives (article ajouté, ticket envoyé) sont désactivées par défaut.
+     * Cuisine : validité de 10 minutes, une commande n'est jamais écartée parce que d'autres sont lues avant.
      */
     public static function catalogue(): array
     {
@@ -37,6 +38,11 @@ final class VoiceService
             'pos.register.closed' => ['caisse', 'Caisse fermée', 2, true],
             'pos.product.added' => ['caisse', 'Article ajouté et total du panier (répétitif)', 0, false],
             'pos.cart.held' => ['caisse', 'Vente mise en attente', 0, false],
+            'kitchen.ticket.new' => ['cuisine', 'Nouvelle commande ou ajout : numéro, table (ou à emporter / livraison), plats, quantités, remarques, serveur', 1, true, 600],
+            'kitchen.ticket.cancel' => ['cuisine', 'Annulation de plats : table, plats, motif', 2, true, 600],
+            'kitchen.ticket.repeat' => ['cuisine', 'Relecture d\'un bon (bouton 🔊 du bon)', 2, true, 120],
+            'kitchen.ticket.ready' => ['cuisine', 'Bon marqué « Prêt » sur l\'écran cuisine', 0, false, 60],
+            'restaurant.table.ready' => ['salle', 'Plats prêts à servir (plan de salle des serveurs)', 1, true, 300],
             'pos.print.failed' => ['impression', 'Impression du ticket en échec (la vente reste enregistrée)', 3, true],
             'pos.print.sent' => ['impression', 'Ticket envoyé à l\'imprimante du serveur', 0, false],
             'page.error' => ['pages', 'Message d\'erreur affiché sur une page', 3, true],
@@ -51,9 +57,10 @@ final class VoiceService
         $saved = json_decode((string) setting('voix_evenements', '{}'), true);
         $saved = is_array($saved) ? $saved : [];
         $out = [];
-        foreach (self::catalogue() as $code => [$module, $label, $level, $on]) {
+        foreach (self::catalogue() as $code => $def) {
+            [$module, $label, $level, $on] = $def;
             $s = $saved[$code] ?? [];
-            $out[$code] = ['module' => $module, 'label' => $label,
+            $out[$code] = ['module' => $module, 'label' => $label, 'ttl' => $def[4] ?? null,
                 'level' => isset($s['level']) ? max(0, min(4, (int) $s['level'])) : $level,
                 'on' => isset($s['on']) ? (bool) $s['on'] : $on, 'default_level' => $level, 'default_on' => $on];
         }
@@ -76,7 +83,7 @@ final class VoiceService
                 'critical' => setting('voix_critique_en_silence', '1') === '1'],
             'logLevel' => (int) setting('voix_journal_niveau', '2'),
             'currency' => ['code' => (string) ($cur['code'] ?? 'XOF'), 'name' => (string) ($cur['name'] ?? ''), 'decimals' => (int) ($cur['decimals'] ?? 0)],
-            'events' => array_map(fn($e) => ['on' => $e['on'], 'level' => $e['level'], 'module' => $e['module']], self::events()),
+            'events' => array_map(fn($e) => ['on' => $e['on'], 'level' => $e['level'], 'module' => $e['module'], 'ttl' => $e['ttl']], self::events()),
             'manage' => can('marwa_voice.manage'),
         ];
     }

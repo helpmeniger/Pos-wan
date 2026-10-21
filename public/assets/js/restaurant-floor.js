@@ -23,8 +23,27 @@
       <div class="t-name" style="font-size:1.1rem"><i class="bi ${o.type === 'delivery' ? 'bi-scooter' : 'bi-bag'}"></i> ${esc(o.number)}</div>
       <div class="t-meta">${esc(o.name || '')} ${esc(o.phone || '')}<br><i class="bi bi-clock"></i> ${since(o.opened)}</div><div class="t-due">${fmt(o.due)}</div></button>`).join('') || '<p class="text-secondary small">Aucune.</p>';
   }
+  // Plats prêts : signalés aux modules (ex. annonce vocale aux serveurs) quand leur nombre augmente
+  const readyKey = (o) => 'o' + o;
+  function readyMap(d) {
+    const m = {};
+    d.tables.forEach((t) => { if (t.order) m[readyKey(t.order)] = { n: t.ready || 0, table: t.name }; });
+    d.others.forEach((o) => { m[readyKey(o.id)] = { n: o.ready || 0, order_number: o.number, order_type: o.type, customer: o.name || '' }; });
+    return m;
+  }
+  let lastReady = readyMap(data);
+  function announceReady(d) {
+    const now = readyMap(d);
+    Object.keys(now).forEach((k) => {
+      const before = lastReady[k] ? lastReady[k].n : 0;
+      if (now[k].n > before) {
+        try { document.dispatchEvent(new CustomEvent('pm:event', { detail: { event: 'restaurant.table.ready', data: Object.assign({ key: 'ready-' + k + '-' + now[k].n }, now[k]) } })); } catch (e) { /* ignoré */ }
+      }
+    });
+    lastReady = now;
+  }
   async function refresh() {
-    try { const r = await fetch(BASE + '/restaurant/floor', { headers: { Accept: 'application/json' } }); if (r.status === 401) { location.href = BASE + '/login'; return; } const d = await r.json(); if (d.ok) { data = d; render(); } } catch (e) { /* réseau */ }
+    try { const r = await fetch(BASE + '/restaurant/floor', { headers: { Accept: 'application/json' } }); if (r.status === 401) { location.href = BASE + '/login'; return; } const d = await r.json(); if (d.ok) { data = d; announceReady(d); render(); } } catch (e) { /* réseau */ }
   }
   $('#areaTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-area]'); if (b) { area = Number(b.dataset.area); localStorage.setItem('pw-area', area); render(); } });
   function openModal(type, table) {

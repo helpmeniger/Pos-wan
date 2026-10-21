@@ -2,6 +2,40 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.6.0] — 2026-10-21
+
+### Ajouté
+- **Voix Piper livrée dans le dossier POS Marwa** (`addons/marwa_voice/piper`, module vocal
+  1.1).
+  - Contenu : moteur Piper pour Windows et voix française « siwis », la meilleure qualité
+    française disponible pour Piper.
+  - Aucune installation et aucun Internet : mise en place automatique au premier usage.
+  - Chaque fichier est vérifié par SHA-256 ; fragments de 1 Mo au plus.
+  - Licences jointes.
+- **Écran cuisine qui parle** :
+  - chaque nouvelle commande est lue à voix haute (numéro, table ou à emporter / livraison,
+    plats, quantités, remarques, serveur) ;
+  - les ajouts sont signalés comme tels ;
+  - les annulations sont lues avec leurs plats et leur motif ;
+  - bouton 🔊 pour relire un bon ;
+  - un bon n'est lu qu'une fois et n'est jamais écarté de la file avant 10 minutes.
+- **Plan de salle** : les serveurs entendent « Table T3 : deux plats prêts à servir ».
+- Quantités et unités dites naturellement : « un demi », « trente-trois centilitres »,
+  « un kilo ».
+
+### Modifié
+- L'écran cuisine charge les scripts des modules, comme la caisse.
+- Le flux des bons indique si un bon est un ajout à une commande déjà envoyée.
+- Pause de 0,35 s entre les phrases pour mieux comprendre les listes de plats.
+- `installer-voix.bat` et le service vocal utilisent la voix livrée. Le téléchargement n'est
+  plus qu'un secours.
+
+### Limites connues
+- Le programme Piper Windows livré a été vérifié fichier par fichier, mais n'a pas encore été
+  exécuté sur un PC Windows.
+- Les commandes **vocales** du cuisinier (« Commande 24 prête ») demandent la reconnaissance
+  vocale, qui n'est pas encore réalisée.
+
 ## [2.5.0] — 2026-10-21
 
 ### Ajouté

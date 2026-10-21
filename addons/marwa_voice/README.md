@@ -1,4 +1,4 @@
-# MARWA VOICE AI — assistant vocal (module `marwa_voice`) — 1.0.0, phase 1
+# MARWA VOICE AI — assistant vocal (module `marwa_voice`) — 1.1.0
 
 POS Marwa **parle** : il annonce les ventes, les erreurs de caisse, de paiement et
 d'impression, ainsi que les messages d'erreur des pages de gestion.
@@ -32,6 +32,43 @@ Règles respectées :
   n'est pas déclarée échouée : elle est « non confirmée ». Une nouvelle validation ne peut pas
   créer de doublon (numéro unique du panier). Le serveur répond alors « déjà enregistrée ».
 - **Impression et vente sont séparées.** Un échec d'impression ne recrée jamais la vente.
+
+## Restaurant (1.1) : écran cuisine et plan de salle
+
+**Écran cuisine / bar** (`/kitchen`). Chaque nouveau bon est **lu à voix haute** dès son
+arrivée. Le son « bip » habituel est gardé.
+
+| Situation | Exemple de phrase |
+|---|---|
+| Nouvelle commande | « Nouvelle commande numéro vingt-quatre, table six. deux Poulet braisé, remarque : sans piment. trois Fanta trente-trois centilitres. Serveur : Awa. » |
+| Plats ajoutés à une commande déjà envoyée | « Ajout pour la commande numéro vingt-quatre, table six. un Riz gras. » |
+| À emporter / livraison | « Nouvelle commande numéro sept, livraison, pour Moussa. un demi Viande (kilo). » |
+| Annulation | « Attention, annulation. Commande numéro vingt-quatre, table six. Ne pas préparer : un Poulet braisé, motif : client parti. » |
+| Bouton 🔊 sur chaque bon | « Je répète. … » (relit le bon, à tout moment) |
+
+Règles de lecture en cuisine :
+- **Uniquement les données du bon** : numéro, table, plats, quantités, remarques, motif.
+  Aucune priorité n'est inventée et aucune remarque n'est modifiée.
+- **Une seule lecture par bon**, même si l'écran se rafraîchit toutes les 5 secondes.
+  - Les bons déjà affichés à l'ouverture de l'écran ne sont pas relus ; utilisez 🔊 pour
+    cela.
+- **Priorité** : une annulation (avertissement) passe avant une nouvelle commande
+  (notification).
+- **Durée de validité de 10 minutes** pour un bon : même avec beaucoup de commandes en même
+  temps, aucun bon n'est écarté de la file.
+- **Quantités et unités** dites naturellement : « un demi », « deux et demi »,
+  « trente-trois centilitres », « un kilo ».
+- **Bon marqué « Prêt »** : il peut aussi être annoncé en cuisine (désactivé par défaut). Il
+  n'est annoncé que si le serveur a bien enregistré le changement.
+
+**Plan de salle des serveurs** (`/restaurant`). Quand la cuisine marque des plats prêts, le
+poste du serveur annonce : « Table T3 : deux plats prêts à servir. », ou « Commande numéro
+neuf, à emporter, pour Awa : plat prêt à servir. ». Le plan se rafraîchit toutes les
+10 secondes.
+
+Réglages : Assistant vocal → Réglages, groupes « Écran cuisine / bar » et « Salle ». Sur un
+poste précis, « Ce poste » → « Ne pas lire sur ce poste ». Par exemple, ne pas lire la caisse
+sur l'écran cuisine.
 
 ## Utilisation
 
@@ -92,28 +129,35 @@ Le réglage « Automatique » utilise Piper s'il est installé, sinon la voix de
 échoue sur une phrase, la voix de Windows prend le relais. Sans aucune voix, rien n'est lu :
 les messages restent affichés et l'historique note « erreur_voix ».
 
-### Installer Piper (une seule fois, Internet nécessaire pendant l'installation)
+### Voix Piper livrée dans le dossier (1.1) — aucune installation, aucun Internet
 
-1. **Windows** : dans le dossier de POS Marwa, double-cliquez `windows\installer-voix.bat`.
-   - La voix légère pour les PC modestes s'installe avec `windows\installer-voix.bat siwis-low`.
-   - Commande équivalente : `php bin\voix.php installer`.
-2. Le programme télécharge depuis GitHub (projet officiel rhasspy/piper) :
-   - le moteur Piper pour Windows (22 Mo) ;
-   - la voix française « siwis-medium » (58 Mo à télécharger, 70 Mo une fois installée).
-3. **Chaque fichier est vérifié par son empreinte SHA-256** et refusé s'il ne correspond pas.
-4. Fichiers installés dans `storage/voix/` :
-   - `piper/` : le programme ;
-   - `voix/` : les voix ;
-   - `cache/` : les phrases déjà générées.
-5. Sans Internet sur le serveur :
-   - téléchargez les deux fichiers sur un autre ordinateur ;
-   - placez-les dans `storage/voix/telechargements/` ;
-   - relancez l'installateur : il les vérifie et les utilise.
-
-   Les adresses exactes sont dans `bin/voix.php`.
-6. Prérequis :
-   - l'extension PHP `proc_open` doit être autorisée (c'est le cas par défaut dans WampServer) ;
-   - le runtime Visual C++ installé avec WampServer.
+- **Contenu livré** : POS Marwa contient, dans `addons/marwa_voice/piper/`, le moteur
+  **Piper pour Windows** et la voix française **« siwis »**.
+  - C'est la meilleure qualité disponible en français pour Piper : il n'existe pas de voix
+    française de niveau « high » dans Piper ; les voix françaises existent en « low » et
+    « medium ».
+  - 147 fichiers, 77,5 Mo, découpés en fragments de 1 Mo au plus pour passer par la mise à
+    jour dans le navigateur (limites d'envoi de WampServer).
+- **Mise en place automatique** : au premier usage, les fichiers sont reconstitués dans
+  `storage/voix/`. Cela prend moins d'une seconde, une seule fois.
+  - **Chaque fichier est vérifié par son empreinte SHA-256** ; un fragment abîmé est refusé
+    (test automatique).
+  - Commande équivalente : `php bin\voix.php deployer`, ou double-clic sur
+    `windows\installer-voix.bat`, qui vérifie aussi par un essai.
+- **Allègement vérifié** : seuls les dictionnaires de prononciation français et anglais sont
+  livrés, et le modèle arabe est retiré. Le son produit a été comparé à celui de l'archive
+  complète : **identique octet pour octet** (synthèse sans aléa).
+- **Volume** : le son est normalisé (crête à 90 %). Mesure honnête : la voix siwis sort déjà à
+  pleine échelle, ce traitement ne change donc rien pour elle. Le volume réel dépend des
+  haut-parleurs, du volume Windows et du réglage « Volume » du poste.
+- **Diction** : une pause de 0,35 s sépare chaque phrase, pour que la liste des plats se suive
+  facilement en cuisine.
+- **Prérequis** : l'extension PHP `proc_open` (active par défaut dans WampServer) et le
+  runtime Visual C++ installé avec WampServer.
+- **Serveur Linux** : le programme livré est pour Windows. `php bin/voix.php installer`
+  télécharge la version Linux, vérifiée par SHA-256 ; la voix livrée est utilisée telle quelle.
+- **Voix plus légère** (PC très modeste) : `php bin\voix.php installer siwis-low` (Internet
+  nécessaire), puis choix de la voix dans Assistant vocal → Réglages.
 
 ### Service vocal (plus rapide)
 
@@ -201,8 +245,7 @@ dans `PHRASES` (voix-core.js), et l'écran émet
 |---|---|---|
 | Rien n'est lu, l'indicateur n'apparaît pas | module désactivé, assistant désactivé dans les Réglages, ou compte sans `marwa_voice.use` | Modules complémentaires ; Assistant vocal → Réglages ; Rôles & permissions |
 | L'indicateur affiche « Touchez l'écran pour activer la voix » | le navigateur bloque le son avant le premier clic | touchez l'écran ; ouvrez POS Marwa avec `demarrer-pos-marwa.bat` (option incluse) |
-| Diagnostic : « Programme absent » | Piper non installé | `windows\installer-voix.bat` |
-| Installation : « unable to get local issuer certificate » | PHP de WampServer sans certificats racine | téléchargez les fichiers avec le navigateur dans `storage/voix/telechargements/` puis relancez l'installateur |
+| Diagnostic : « Programme absent » | voix livrée pas encore mise en place, ou fragment manquant ou abîmé (copie incomplète du dossier) | `windows\installer-voix.bat` : le message indique le fichier en cause ; recopiez le dossier `addons\marwa_voice` |
 | Historique « erreur_voix » : « Aucune voix française installée sur ce poste » | Piper indisponible et pas de voix française dans Windows | installez Piper, ou Windows : Paramètres → Heure et langue → Voix → ajouter Français |
 | Première phrase lente (1 à 2 s) | service vocal arrêté | `windows\service-vocal.bat` (ou redémarrer avec `demarrer-pos-marwa.bat`) |
 | « Port 59125 indisponible » au lancement du service | le service tourne déjà | rien à faire |
@@ -222,13 +265,45 @@ dans `PHRASES` (voix-core.js), et l'écran émet
 
 ## Licences des composants
 
-- **Piper** (moteur de synthèse vocale) : © Michael Hansen / Rhasspy, **licence MIT**. Non
-  livré dans le ZIP : téléchargé par l'installateur.
+- **Piper** (moteur de synthèse vocale) : © Michael Hansen / Rhasspy, **licence MIT**. Livré
+  pour Windows dans `addons/marwa_voice/piper/`. Détail de tous les composants livrés et textes
+  des licences : `piper/LICENCES.md` et `piper/licences/`.
 - **Voix « siwis »** (française) : entraînée sur le jeu de données SIWIS (University of
   Edinburgh), **licence CC BY 4.0**. Attribution : « SIWIS French Speech Synthesis Database ».
-- **espeak-ng** (phonétisation, bibliothèque fournie avec Piper) : licence GPL v3. Comme
-  Piper, elle n'est pas livrée avec POS Marwa : elle est téléchargée depuis le projet officiel
-  par l'installateur.
+- **eSpeak NG** (phonétisation, bibliothèque livrée avec Piper) : **licence GPL v3**. Texte
+  complet et adresse du code source dans `piper/licences/`. Elle est livrée sans modification
+  et exécutée par le programme Piper, séparé de POS Marwa.
+- **ONNX Runtime** (Microsoft) : licence MIT.
+
+## Tests réalisés (1.1 : voix livrée, cuisine, salle)
+
+- **Tests JavaScript** : 76 vérifications. S'ajoutent à celles de la phase 1 :
+  - phrases de cuisine : nouvelle commande, ajout, annulation avec motif, livraison, demi ;
+  - plats prêts en salle ;
+  - unités et accords ;
+  - un bon de cuisine encore lu après 2 minutes de file.
+- **Test PHP** :
+  - paquet sans fichier de plus de 1 Mo ;
+  - déploiement Windows simulé : 147 fichiers reconstitués, chacun avec la bonne empreinte
+    SHA-256 ; un deuxième passage ne refait rien ;
+  - **fragment abîmé refusé**, voix en place intacte ;
+  - écran cuisine qui charge la voix ;
+  - bons repérés comme « ajout » ;
+  - annonces cuisine et salle actives, bon valable 10 minutes.
+- **Chromium avec la vraie voix Piper : 12/12.**
+  - Une commande est prise par l'adresse de la tablette du serveur sur une table libre :
+    2 Poulet braisé « sans piment », 3 Soda 33 cl.
+  - Envoi en cuisine : « Nouvelle commande numéro sept, table T2. deux Poulet braisé test,
+    remarque : sans piment. trois Soda trente-trois centilitres. Serveur : Admin Test. »
+  - Le bon n'est lu qu'**une seule fois** malgré les rafraîchissements.
+  - Le bouton 🔊 relit le bon.
+  - Ajout : « Ajout pour la commande numéro sept… ».
+  - Plat annulé par le serveur : « Attention, annulation… motif : client parti. »
+  - La cuisine marque le bon « Prêt » : le plan de salle annonce « Table T2 : deux plats prêts
+    à servir. ».
+  - Historique enregistré, aucune erreur JavaScript.
+- **Non testé** : sur un vrai PC Windows. Le programme Piper Windows livré a été vérifié
+  fichier par fichier, mais il n'a pas pu être exécuté ici.
 
 ## Tests réalisés (phase 1)
 
@@ -287,6 +362,6 @@ dans `PHRASES` (voix-core.js), et l'écran émet
 |---|---|---|
 | 2 — Caisse vocale | recherche d'article, prix, quantité, « ajoute deux sacs de riz » avec confirmation à l'écran | demande la reconnaissance vocale (phase 5) ; aucune commande vocale ne validera seule un paiement, un remboursement ou une suppression |
 | 3 — Stock et inventaire | alertes de seuil, ruptures, écarts d'inventaire lus, regroupés | le regroupement est prêt dans la file |
-| 4 — Cuisine | lecture des nouvelles commandes (table, plats, quantités, instructions), priorités, « Commande 24 prête » | l'écran cuisine ne charge pas encore les scripts des modules : une petite modification du noyau sera nécessaire |
+| 4 — Cuisine | ✅ annonces (1.1) faites : nouvelles commandes, ajouts, annulations, relecture, plats prêts en salle. Reste : commandes **vocales** du cuisinier (« Commande 24 prête ») | demande la reconnaissance vocale (phase 5) ; validation à l'écran toujours exigée |
 | 5 — Reconnaissance vocale locale | Whisper (whisper.cpp) sur le serveur, compréhension des intentions par règles d'abord | à mesurer sur le PC réel (Whisper « small » est lent sans carte graphique) ; **haoussa** : aucun modèle Piper haoussa n'existe ; Whisper reconnaît le haoussa avec une précision faible, à mesurer avant d'être proposé |
 | 6 — Déploiement | essais multi-postes, sans Internet, sur place | — |

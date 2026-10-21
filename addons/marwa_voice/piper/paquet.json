@@ -1,0 +1,742 @@
+{
+    "version": 1,
+    "piper": "2023.11.14-2 (Windows x64)",
+    "voix": "fr-siwis-medium",
+    "files": {
+        "piper/espeak-ng-data/en_dict": {
+            "size": 166944,
+            "sha256": "71bd330ba8a2e3e8076e631508208ef49449d6147c17b7bd2b4b1e1468292e35",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/fr_dict": {
+            "size": 63727,
+            "sha256": "e399ab924c4d10beef1fc310b30ea56e4ddfd8b4b64b8ed978e9c65394d49b2d",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/intonations": {
+            "size": 2040,
+            "sha256": "3f8af65fd3eda9759a10f021d61361c120871f463515229c925995c7f90918cc",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/aav/vi": {
+            "size": 111,
+            "sha256": "3199c980f9e23a88a2aa693cd631bf4fcb0f3408c4272bc01b7ac0ff8e79d778",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/aav/vi-VN-x-central": {
+            "size": 143,
+            "sha256": "b351f13c6ed0da37561df25f45579872ff9863920ad66b94e27327a2c611755b",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/aav/vi-VN-x-south": {
+            "size": 142,
+            "sha256": "c0a0a2c894cd57b0bbacf9ef4efb8d89bfaf9feb164830e1539f599e7cc4e021",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/art/eo": {
+            "size": 41,
+            "sha256": "0254b93c8af79d9666a7667ca8b33b21a5453012da4ea0acd79660a9695f89d4",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/art/ia": {
+            "size": 29,
+            "sha256": "8fb11718030f8b29146f773ca462b838a6c660f166933eb6f1498c361f2e958b",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/art/io": {
+            "size": 50,
+            "sha256": "8e8391c7f40b7f9d2307faff8018a40dd2b448df4bd581a2950ee8393a00cebf",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/art/jbo": {
+            "size": 69,
+            "sha256": "d9529de82dccbd95f83c1de401f4ea661609bde644546e9ef421241b7043c00e",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/art/lfn": {
+            "size": 135,
+            "sha256": "394874fd9022e37cdc307c3386e81f1c0c133a8e9c5fdff74888b519f2c6d648",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/art/piqd": {
+            "size": 56,
+            "sha256": "d1a559b714cd8dd0ea9e46c4574e06c4f451957fb17bf39b945a89b9586f8b97",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/art/py": {
+            "size": 140,
+            "sha256": "59e54b95e8571417f43db37a7fd7e351af4e22a8c250cfb66af394f8ed6c4e9c",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/art/qdb": {
+            "size": 57,
+            "sha256": "52b83fc4f294580ebabd71df641ab5beec6b308758a3458b497124737589a7d8",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/art/qya": {
+            "size": 173,
+            "sha256": "78ae3f4d70208a9f69e2c26a6a3b5db28d7e6a58740fae937f51dd7fc9faeb1b",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/art/sjn": {
+            "size": 175,
+            "sha256": "61d85974b6841dfbfcc8cb92ad0742696cb87a6a85d5a28fe99895e46ef9de6f",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/azc/nci": {
+            "size": 114,
+            "sha256": "7bf70cb18e969398f74428b91c694a4483eaebd6733ecc437eb8714bbf7fff76",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/bat/lt": {
+            "size": 28,
+            "sha256": "7691c7ca1e79fc9728c70a0d22830eb113a0124bf96807e2a1ace3c6bf0c2f89",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/bat/ltg": {
+            "size": 312,
+            "sha256": "be716cbbdcb5fe319eed88abd4a44c3329a06e1dc468c8363d3f43cca2683a11",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/bat/lv": {
+            "size": 229,
+            "sha256": "f08a801dacccace62f5b90166428e90e088818d92dd5f9333ebbe834b0f21c16",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/bnt/sw": {
+            "size": 41,
+            "sha256": "271dd28b3ec41adeea53f1146249ba6cab61572963ab2743041114d95784e368",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/bnt/tn": {
+            "size": 42,
+            "sha256": "2243a1fc208dfdc37e154e837c0e782afc325d4acfbacc22718b7f05583ace92",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/ccs/ka": {
+            "size": 124,
+            "sha256": "68788b99dba7b82cdf8fc9dd05134bd72cf21f0b4c07b13b67b6f036e6294cba",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/cel/cy": {
+            "size": 37,
+            "sha256": "67bc33b4a66041e6343dfb98e1950d1089eecb68731f346fcc4f47cd07e79970",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/cel/ga": {
+            "size": 66,
+            "sha256": "29c2cc5736ceb2bd9ef745694d4abf7ed363a33569dfbe745811d4703b7b6cce",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/cel/gd": {
+            "size": 51,
+            "sha256": "7da0ba464579c367089109826ec15c2584a17417cca4a2c66dae0318d33e3128",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/cus/om": {
+            "size": 39,
+            "sha256": "b7c563f1effd83c08f3d229fb5a13d074513b85165ce4359a674ef30ca71786b",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/dra/kn": {
+            "size": 55,
+            "sha256": "c988a5226fa27ee6768b45566ce999ced9a4b68f8e79232b323d5903f4bb2258",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/dra/ml": {
+            "size": 57,
+            "sha256": "aa7e1f1f239ba55a8a79ed1f3544e9a51b94efe53925de60d4ff737273660b5c",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/dra/ta": {
+            "size": 51,
+            "sha256": "5bc213eb163bbf069cbfe4f2e9f7e7db71a719d8c0a96e95401d94c992960ed7",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/dra/te": {
+            "size": 70,
+            "sha256": "176ca4a81feb2181393edff3e2d5c0253cb52239392c4b809c61501d60c69811",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/esx/kl": {
+            "size": 30,
+            "sha256": "d08cf6ff60b99e6c2ceda549bcbb1a57580915d6a4d50c7f0f5d75289d9fb45a",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/eu": {
+            "size": 54,
+            "sha256": "a16e4e4d9b910a6e25a2a55913c812badc4fc3cbece0b8d49a64af112782d5a5",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmq/da": {
+            "size": 43,
+            "sha256": "e8dd5e0d30ff0694a7ee839faa8ed35c015eb927a737aba1f120c00005692eaf",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmq/is": {
+            "size": 27,
+            "sha256": "16c077e6222acfc7702046fa3579bb5d6b57ece98646229e13be2233f9fdcbd7",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmq/nb": {
+            "size": 87,
+            "sha256": "d47966621312fb95570539f446982f6deb98fd46d9b71fec4a0005a6bace8f46",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmq/sv": {
+            "size": 25,
+            "sha256": "02727d3b25fc82409bd2cd1ebb444fdb2d5d3f3de7f76b95fc9ed9164c3e59c3",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmw/af": {
+            "size": 123,
+            "sha256": "fb8ccc05f5eae1754b5aa7e92cb919defdd0810b70eec19f7c77cf836e51db09",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmw/de": {
+            "size": 42,
+            "sha256": "f3cca92f94b70f8c25a29ee0a4c9ce4c7f1022241532e0647fa2b7f698bf104e",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmw/en": {
+            "size": 140,
+            "sha256": "4605d5330801de3641c6e366d15f129ea1f5ffbce8722642aba01ace07ab9c83",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmw/en-029": {
+            "size": 335,
+            "sha256": "faeb8cb201056775f733acbd908c66555fe57bf01cb063920f178f389cbf85d3",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmw/en-GB-scotland": {
+            "size": 295,
+            "sha256": "1ce4282c1f4385dbaf0035e799b2ab1ee9e9a3ab4829100594a3047727b52353",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmw/en-GB-x-gbclan": {
+            "size": 238,
+            "sha256": "2040e176f1f7f27bdce81c32d7e2b1662449d54d264afd3c0ed871b8e42b6e46",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmw/en-GB-x-gbcwmd": {
+            "size": 188,
+            "sha256": "927a5ab891c65b30b4426b151d1623a01024f6b773a38497ba1c90cd77a95747",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmw/en-GB-x-rp": {
+            "size": 249,
+            "sha256": "d0625af7f58561b1b8cf96fd7f93eee6553bcb3eadb9020ae0757bf96e5115e5",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmw/en-US": {
+            "size": 257,
+            "sha256": "41534c2a22df5dd4f1052ff9e1a33a3ea7bff5a26b5c02bdad5ba8ddb7524704",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmw/en-US-nyc": {
+            "size": 271,
+            "sha256": "e8ee9168376d1f7d9e7dcda7c4644c36c529a8bea816e6380895364db46ea2e3",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmw/lb": {
+            "size": 31,
+            "sha256": "071beb0e769afeba32177796fc0f1386bdc89a3234bed2bf720e76cbf73f5b99",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/gmw/nl": {
+            "size": 23,
+            "sha256": "56ae04fae28ae9371ed6db28193189e4ee962ba8236f0bcdeef6a06ea4dee374",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/grk/el": {
+            "size": 23,
+            "sha256": "0b529c998af07c72bf516b5750709464f6258c56c6916b8b8f0c843be9836fca",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/grk/grc": {
+            "size": 99,
+            "sha256": "319f950b1ad7b1f37efaa390540bf957bddac16d0557a6c3adaff27e0c64e12e",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/as": {
+            "size": 42,
+            "sha256": "3f58f5628f792b00a5ae6e8fe3bf8696f64af2838e5723799ddbab6027a0b378",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/bn": {
+            "size": 25,
+            "sha256": "bc3ce23384b9d0bb3bac06a09d90f690fae32a492dcbb030f0e56ba67b5d656c",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/bpy": {
+            "size": 39,
+            "sha256": "e528d1189b995b94966cef4cc182469cc54f7da8efc5860375c4ecf186ce6146",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/gu": {
+            "size": 42,
+            "sha256": "f938a755d270745188c2cf2aacba06642a96bb73ba2a0325384121b9d5ec5407",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/hi": {
+            "size": 23,
+            "sha256": "3c1c3f916f57f2d6d6cbf7923c0f39a36ac2140e2a69ddffce917d7b8bf3ccab",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/kok": {
+            "size": 26,
+            "sha256": "810ee23fbbe9c186a036bc12f4e5c0de674a132e2e099c9b3dece2a1c9cdb28a",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/mr": {
+            "size": 41,
+            "sha256": "29063ff3a5257d0d3d7c215dfd4c14deed39e1d48f15894202e6712459720efd",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/ne": {
+            "size": 37,
+            "sha256": "d53fda082ec174ef33ed3c3468fc973c43b4ef71aca8c1a28cb344668f4838dc",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/or": {
+            "size": 39,
+            "sha256": "9b52ede7d19659f884854de3dff12597a96f4d6ec7cb4146d2f8dad1453c742f",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/pa": {
+            "size": 25,
+            "sha256": "eed3cf477f81d13559dbb367256f9532b20dad1432c15b206c777217b8f570ca",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/sd": {
+            "size": 66,
+            "sha256": "65bfe0e37799029d42a370eb627cca5aa4108b967fba6c8141878d693c903619",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/si": {
+            "size": 55,
+            "sha256": "8f0993b35ba5b075c38ae76640971256e560abfbd721b608d16a48588932596d",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/inc/ur": {
+            "size": 94,
+            "sha256": "5b7af7474fac265c7bd7d269111994a09610f954690698f55a8613f3fa973318",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/ine/hy": {
+            "size": 61,
+            "sha256": "b6ad6129079c49ca915c3005ecb74a02bf5d69cbbc8ec3f8e0f6b949cb3a768f",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/ine/hyw": {
+            "size": 365,
+            "sha256": "26f8a863c74b3d19c9c42fcf16ae5151c12ac52ef8fab36cae1e5f0d4ad30e6a",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/ine/sq": {
+            "size": 103,
+            "sha256": "865fde9017b5af82acb844e5f9793998fed422a208ad8aaf9dedacad3bf27af1",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/ira/fa": {
+            "size": 90,
+            "sha256": "0dc7e93be4d1fbdf7ff52de2fe8bcdc23304e6d86e012b4ab8276d626b5d980c",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/ira/fa-Latn": {
+            "size": 269,
+            "sha256": "a04cf8efed8db1ac33b306f1f8c6f42733dace87c9fc9f34a2d227b3bb291e28",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/ira/ku": {
+            "size": 40,
+            "sha256": "57db3a210d73412a49e961dbed9b27077f5c7b967a19a0eb9f9363ea4b16cea5",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/iro/chr": {
+            "size": 569,
+            "sha256": "f0e2fb8549306c07f571d3e77c89b1d3e9022d448d58e5d424441e01ccce88be",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/itc/la": {
+            "size": 297,
+            "sha256": "b70d13a264352eba2d22a5d0ef21730849509d18f7277320b008a56decc6efc2",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/jpx/ja": {
+            "size": 52,
+            "sha256": "6fd980445bc52e0f593062929f5b62831448abaae2a92739beba49df27a79743",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/ko": {
+            "size": 51,
+            "sha256": "c2dfbf88d9aa2ac9bf2f30e92e260120e4f2c21123a02265014ae98d59d5774e",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/map/haw": {
+            "size": 42,
+            "sha256": "b19f22efb6714354d8d1360f449e05f0f84d50d6fa3c98fcfd619ea1b4ba8996",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/miz/mto": {
+            "size": 183,
+            "sha256": "e33aba5e8159730f62004b22518d627c796f7d039431e5d9217b498f10341976",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/myn/quc": {
+            "size": 210,
+            "sha256": "76a75b77c672c432b56b84d517310d6aa75c4b3f9de580e290199804366174ea",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/poz/id": {
+            "size": 134,
+            "sha256": "ce1fcddab3e756a7cdba3dd009ad24cd57e1fde29ce395698355da24e32a6075",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/poz/mi": {
+            "size": 367,
+            "sha256": "2146cf3868c79b853bb5e41ddbf611d51b4b0a14087199f16194313562b98987",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/poz/ms": {
+            "size": 430,
+            "sha256": "8a965182ee0c5a41357197c05cf047d21b96744775a57a344d831a961e30351b",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/qu": {
+            "size": 88,
+            "sha256": "3069e443ecf3421bcb3b35b864e1a89fa9465af072f86eedd46a415990aba6e6",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/an": {
+            "size": 27,
+            "sha256": "ff8aa97c55286cc90531cad5df3cd36165abba11502a84d53b0fcd923f965f23",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/ca": {
+            "size": 25,
+            "sha256": "787df034320467236292bb46f1f8781a2998a185f117d350c018b6cfcf360854",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/es": {
+            "size": 63,
+            "sha256": "966aa015ea5646d79f0ca4807cf5da7339aabd3782b55cfa5eb0d8c3fc8fc588",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/es-419": {
+            "size": 167,
+            "sha256": "ff0f84457ac40e3bcf61d6de58028312be74e0e6cbc3b742f31b3ce729c2aa0c",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/fr": {
+            "size": 79,
+            "sha256": "95f44834b48c075dad13eace54d2c98ff79b81aa0074dd67eebaf66c2909eef8",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/fr-BE": {
+            "size": 84,
+            "sha256": "72496a316e47b997f893500b8953dc01a10b86a2d4238e13c1260f50b47d792a",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/fr-CH": {
+            "size": 86,
+            "sha256": "b449b0fd99d9cd93261fe1c6b816448b99b4a10420bee3f301e669568ad0de55",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/ht": {
+            "size": 140,
+            "sha256": "389bdf3e984a2f93b7060baad82452dac65b83bf4482d3884525a176ae0e0524",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/it": {
+            "size": 109,
+            "sha256": "0d9069eb9a96db1c55c131b2bb7d1f5255c68fbddc2199ffd3295b52519a3256",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/pap": {
+            "size": 62,
+            "sha256": "41a5b5e91482a5498a66711c05873a634bbd418786b0ba037032df846344cfc1",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/pt": {
+            "size": 95,
+            "sha256": "a44060072f790e41912c57b7d52f7b6438c4383e0dabdb052f6fdb7aacc23493",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/pt-BR": {
+            "size": 109,
+            "sha256": "84dd4e34c970fadbe32211eadecfdfaab52432479c0911e43300da88a33398ba",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/roa/ro": {
+            "size": 26,
+            "sha256": "b12af10ffc3f89cb87767ca701c6fea0def8a712de63426a9c3d0bf2432467f8",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/sai/gn": {
+            "size": 47,
+            "sha256": "ff82d2d163d3e06adb580254d89012e689b2615c46579883562838ab401fb5d5",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/sem/am": {
+            "size": 41,
+            "sha256": "5970b16bf865528ee96a78c08498244bc8f54218fc2add499716b0e0c09969fb",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/sem/ar": {
+            "size": 50,
+            "sha256": "43f418f8140e5a7bd7096963da20ccba9247f6be1fcdb08cb53dd7967dd72eee",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/sem/he": {
+            "size": 40,
+            "sha256": "de9195e743b91fb7fbef7493bd5ddccad14c380a58d5aeb7c1d11d3419ef3b86",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/sem/mt": {
+            "size": 41,
+            "sha256": "d23f38fae3253b6fb42e3336760ab482e676893692455465448bc9fbc0ac3e83",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/sit/cmn": {
+            "size": 686,
+            "sha256": "a130a38e3b622735c2401cb37f6719f46995e84a133729185cef9a543ec0b072",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/sit/cmn-Latn-pinyin": {
+            "size": 161,
+            "sha256": "14c2fc097db280416b688c2bf97de2e5da532c279754020fde7bf6cd624cdd10",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/sit/hak": {
+            "size": 128,
+            "sha256": "c03c30b43e0b0abdfa689445baf9f442664a0373154a5d0ca75a33d30f46aeed",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/sit/my": {
+            "size": 56,
+            "sha256": "4b5ae2566cbf30aa59207020469e09832e66a7883818788f253996c534303dca",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/sit/yue": {
+            "size": 194,
+            "sha256": "83f3dac92af5b4aaecc119515698a6979524be236b28ea8f1024ec707d99ea5b",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/sit/yue-Latn-jyutping": {
+            "size": 213,
+            "sha256": "c56d45bb9a9cd97efb38edabe31c7dd3feb0518cc900aac6a891dcb6bd8eb428",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/tai/shn": {
+            "size": 92,
+            "sha256": "f16bf2de219d3ae9a6aec263ce9c684d9cd3e61258d04c7948db0757c67e2c96",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/tai/th": {
+            "size": 37,
+            "sha256": "6c8ac809868de659e06673f1fc2b56dbf4637ff9980da7a4726b846478b4cfe6",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/trk/az": {
+            "size": 45,
+            "sha256": "52b424332de4c443f3e9c5ce4de5aed6fbfd421269fc825756dfc6bcbd7e1ad8",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/trk/ba": {
+            "size": 25,
+            "sha256": "a0cc3a06293962093c66533f9c1cffbccf083a2eb666751f2778a02a5316d98c",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/trk/cv": {
+            "size": 40,
+            "sha256": "94baf6bacf581cc20337471c599f85ecbbe211f0b8476351ff19450c6541ea92",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/trk/kk": {
+            "size": 40,
+            "sha256": "2219f4d6de0fbb1dc9982157c6f3cc5f4c8abe5fcb605908a9d1054b9880cd51",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/trk/ky": {
+            "size": 43,
+            "sha256": "8239dfe8bdc6d4725880f5192b4eaf645f839e40cadfd145a4409c8387ac2d59",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/trk/nog": {
+            "size": 39,
+            "sha256": "e0e27fe61d406b6f4a4879fb8f81a14bc65997106666933991b818c7d79fabc1",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/trk/tk": {
+            "size": 25,
+            "sha256": "d78263398c135119909ad63a3ecb6ffe3aff08383212934dd03695222a9786d0",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/trk/tr": {
+            "size": 25,
+            "sha256": "490eb5a2f777a2f3396f3a824ed8021bd77a94be801214411461bde6689738c9",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/trk/tt": {
+            "size": 23,
+            "sha256": "8b9617a9b6c56f4a2fe2f59d9ce55426837196567962716f9330f70948f8f9b0",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/trk/ug": {
+            "size": 24,
+            "sha256": "65d0cdbc96efab4d9e3cd0095440752a31dc7f425edd3ba0a53c4dd33eac5d63",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/trk/uz": {
+            "size": 39,
+            "sha256": "04fd711dfda1e00d17dc8b1b250c24d70cc3c498b27e35d31065ac47441a6759",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/urj/et": {
+            "size": 237,
+            "sha256": "59c77747c4774e54a63ab74d2c6a95bc3c5b5b0a50d3781f187bd1fc3a613de5",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/urj/fi": {
+            "size": 237,
+            "sha256": "61f58ec3bba5b55a392aff7ecf8a84d024200aeaa404b5553fcfb47770936928",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/urj/hu": {
+            "size": 73,
+            "sha256": "c575421d2ae397065d35af0eb4f79dff4e85f3435ccf45da874f46b3fee1338b",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/urj/smj": {
+            "size": 45,
+            "sha256": "3d709dec77bb633af0d57b89668dbaaa72d9be8688118d6909f7d457bec12a50",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zle/be": {
+            "size": 52,
+            "sha256": "5beb002d15a36bf3d0d764ed0d483c75a1df6909eaa3b10fe5f6546700c9bfec",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zle/ru": {
+            "size": 57,
+            "sha256": "9f52d00a279aaeaa45a786b4fd3a98b34e95fedbf823f8cdb9fecc1339751d3a",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zle/ru-LV": {
+            "size": 280,
+            "sha256": "980e379667ccb94abe33b9c9c660c08800e3f31e36fe4a939551398ab98457ae",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zle/ru-cl": {
+            "size": 91,
+            "sha256": "200ea345b505ec9e7b8838490aeaf1822af41033429aeae4ea68159047f59f90",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zle/uk": {
+            "size": 97,
+            "sha256": "df3d1a9f77bac0531e72f87be398d9eb1e903bd6f839d4f04ffec5abb4e34634",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zls/bg": {
+            "size": 111,
+            "sha256": "9b91accccb0d53bb2a7bf21922846ba58c74bc082ba71ae32bf12cb0d092f853",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zls/bs": {
+            "size": 230,
+            "sha256": "0820e7c78b68fbdaf86d83c782cdde1901b642d1cdbeae4181c6f5f5e21e5e89",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zls/hr": {
+            "size": 262,
+            "sha256": "cef3ef0411c66f154e6c82f7decd95beffa8cbfbe953335658df9f125bdd6096",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zls/mk": {
+            "size": 28,
+            "sha256": "6dbc2cfb8999141bd0782cd463d4880468161088190c6b4c9412f43552dc39e2",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zls/sl": {
+            "size": 43,
+            "sha256": "e1c2bd1f75c0eeb86f64182472d5f597ce23e64ad7478c248c2f75b694655942",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zls/sr": {
+            "size": 250,
+            "sha256": "0e076528d3566f6e59b807e16e274dee505e88a6d477da188ab8ec442eae44f4",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zlw/cs": {
+            "size": 23,
+            "sha256": "1477cdba5ba3bce85db559accbbd8a24b86b3f6d9d9988bc587e89357c1c4431",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zlw/pl": {
+            "size": 38,
+            "sha256": "83c586a2b724b24b9f98d21ade5022112c465ac446ca09930286980ceae1c781",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/lang/zlw/sk": {
+            "size": 24,
+            "sha256": "f46ff673c7d58c1646096c174d58da34047d893d0d2993dbca260ce54abe77ef",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/phondata": {
+            "size": 550424,
+            "sha256": "4e0288957874029a8c3c9f41a8f517ad4bf18127046decbdd4b9d1d6807ce3a3",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/phondata-manifest": {
+            "size": 22808,
+            "sha256": "3187abb77531275530234293c7294e3b0743fda4392e03007c57ec22c03e7a2b",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/phonindex": {
+            "size": 39074,
+            "sha256": "3ca7b8fa3b42624e4b0f152707e7a39245fce569aa99ea47c055d9e622fcf0c4",
+            "parts": 0
+        },
+        "piper/espeak-ng-data/phontab": {
+            "size": 55796,
+            "sha256": "886f3fa402cb0ba73d483aa8ad000af47a6b7cc06293c75a97913fba68a530f6",
+            "parts": 0
+        },
+        "piper/espeak-ng.dll": {
+            "size": 380928,
+            "sha256": "9588480f8197df62fd8461a8431f8eaec6e8e7749c5ffcbe7fee656fe40a2189",
+            "parts": 0
+        },
+        "piper/onnxruntime.dll": {
+            "size": 9271704,
+            "sha256": "a630f67f4a82b6689e4178bf81d362d945522dd907b2a92cb43cebf72c83a06f",
+            "parts": 10
+        },
+        "piper/onnxruntime_providers_shared.dll": {
+            "size": 22424,
+            "sha256": "71705b9bd76baced583eb37fe5ec2101946b4de50f1e9bdb156109f7e8082980",
+            "parts": 0
+        },
+        "piper/piper.exe": {
+            "size": 509952,
+            "sha256": "96f3da3811151580073e40bb4dd20eb0fb8115f5f5f76e2fb54282b3edfa5c1f",
+            "parts": 0
+        },
+        "piper/piper_phonemize.dll": {
+            "size": 407040,
+            "sha256": "4b5f344b2f31204a8a94a0bf485f93e4971671e81188a0d67f326e113bfb0b2e",
+            "parts": 0
+        },
+        "voix/fr-siwis-medium.onnx": {
+            "size": 69795191,
+            "sha256": "013fdeb821c0858b96a6a184d29de17dc97236f8911975c7df3346ace9ace06f",
+            "parts": 70
+        },
+        "voix/fr-siwis-medium.onnx.json": {
+            "size": 5773,
+            "sha256": "a1797109c75be079ea47c7ca254a9f0dac95e68f5558b992a9e7af1dac7568ca",
+            "parts": 0
+        }
+    }
+}

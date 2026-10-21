@@ -17,3 +17,7 @@
 .pm-voix.docked .pm-voix-btn { width: auto; height: auto; padding: 0 .3rem; border-radius: 6px; font-size: 1.25rem; }
 .pm-voix.docked.muted { background: transparent; opacity: .6; }
 .pm-voix.docked.speaking [data-voix-mute] { color: #4dd4ac; }
+/* Écran cuisine : bouton « Relire à voix haute » sur chaque bon */
+.kt-read { background: #0b7285; border: 0; color: #fff; border-radius: .4rem; padding: 0 .4rem; margin-right: .25rem; }
+.kt-read:hover, .kt-read:focus-visible { background: #15aabf; outline: none; }
+.kds-head .pm-voix.docked .pm-voix-btn { color: #fff; }

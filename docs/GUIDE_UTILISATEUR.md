@@ -241,9 +241,13 @@ Module fourni (`addons/marwa_voice/`), à activer dans Modules complémentaires.
   - le stock insuffisant ;
   - les messages d'erreur des pages.
 - Les messages restent affichés à l'écran.
-- **Voix** : installez une fois la voix locale avec `windows\installer-voix.bat` (Internet
-  nécessaire pendant l'installation seulement). Sans elle, la voix française de Windows est
-  utilisée.
+- **Voix** : la voix locale Piper est livrée avec POS Marwa et se met en place toute seule. Il
+  n'y a rien à installer et aucun Internet n'est nécessaire. `windows\installer-voix.bat`
+  vérifie l'installation.
+- **Écran cuisine** : chaque commande envoyée est lue à voix haute (numéro, table, plats,
+  quantités, remarques). Les ajouts et les annulations, avec leur motif, sont aussi lus. Le
+  bouton 🔊 d'un bon le relit.
+- **Plan de salle** : le serveur entend « Table T3 : deux plats prêts à servir ».
 - **À la caisse** : icône 🔊 dans l'en-tête pour couper ou réactiver la voix du poste, ↻ pour
   répéter.
 - **Configuration → Assistant vocal** :

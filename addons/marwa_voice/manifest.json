@@ -1,10 +1,10 @@
 {
     "code": "marwa_voice",
     "name": "MARWA VOICE AI — assistant vocal",
-    "version": "1.0.0",
-    "requires": "2.5.0",
+    "version": "1.1.0",
+    "requires": "2.6.0",
     "author": "Mahamadou Hamidou (Mohamed) — POS Marwa",
-    "description": "POS Marwa parle : annonces vocales des ventes, des erreurs de caisse, de paiement et d'impression, des messages importants des pages. File d'annonces avec priorités, regroupement des répétitions et mode silencieux. Voix locale (Piper sur le serveur ou voix de Windows), sans Internet. Phase 1 : lecture vocale ; l'écoute des commandes vocales viendra dans les phases suivantes.",
+    "description": "POS Marwa parle : annonces vocales des ventes, des erreurs de caisse, de paiement et d'impression, des messages importants des pages. File d'annonces avec priorités, regroupement des répétitions et mode silencieux. Voix locale (Piper sur le serveur ou voix de Windows), sans Internet. Écran cuisine : chaque nouvelle commande est lue à voix haute (numéro, table, plats, quantités, remarques), les annulations avec leur motif ; les serveurs entendent « Table 3 : plats prêts ». Voix Piper livrée dans le dossier. L'écoute des commandes vocales viendra dans les phases suivantes.",
     "icon": "bi-megaphone",
     "color": "#0b7285",
     "permissions": {

@@ -75,7 +75,9 @@
   /** Quantité : entier en lettres, sinon décimal ; unité accordée. */
   function quantity(q, unit) {
     q = Number(q) || 0;
-    const s = Number.isInteger(q) ? words(q) : decimal(q);
+    // demis : « un demi », « deux et demi » (plus naturel en cuisine que « zéro virgule cinq »)
+    const half = Math.abs(q % 1) === 0.5;
+    const s = Number.isInteger(q) ? words(q) : half ? (Math.trunc(q) === 0 ? 'un demi' : words(Math.trunc(q)) + ' et demi') : decimal(q);
     if (!unit) return s;
     return s + ' ' + (Math.abs(q) >= 2 && !/[sx]$/.test(unit) ? unit + 's' : unit);
   }
@@ -95,13 +97,16 @@
     s = s.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, ' ');
     s = s.replace(/\bFCFA\b|\bF CFA\b/g, 'francs CFA');
     s = s.replace(/\bN°\s*/g, 'numéro ');
+    // nombres isolés (pas à l'intérieur d'une référence comme V-2026-00012 ou ABC123), avec leur unité éventuelle lue en entier
+    const UNITS = { cl: 'centilitre', ml: 'millilitre', kg: 'kilo', g: 'gramme', L: 'litre', l: 'litre' };
     s = s.replace(/(\d{1,2})[:h](\d{2})\b/g, (m0, h, mi) => (Number(h) < 24 && Number(mi) < 60 ? time(h + ':' + mi) : m0));
-    // nombres isolés (pas à l'intérieur d'une référence comme V-2026-00012 ou ABC123)
-    s = s.replace(/(^|[\s(«"'])(-?\d{1,3}(?:[   ]\d{3})+|-?\d+)(?:,(\d+))?(?=$|[\s.,;:!?)»"'%])/g, (m0, pre, int, dec) => {
+    s = s.replace(/(^|[\s(«"'])(-?\d{1,3}(?:[   ]\d{3})+|-?\d+)(?:,(\d+))?(?:\s?(cl|ml|kg|g|L|l)(?![A-Za-zÀ-ÿ]))?(?=$|[\s.,;:!?)»"'%])/g, (m0, pre, int, dec, unit) => {
       const n = Number(int.replace(/[   ]/g, ''));
       if (!Number.isFinite(n) || Math.abs(n) > 999999999999) return m0;
-      return pre + (dec ? decimal(Number(n + '.' + dec), dec.length) : words(n));
+      const v = dec ? Number(n + '.' + dec) : n;
+      return pre + (dec ? decimal(v, dec.length) : words(n)) + (unit ? ' ' + UNITS[unit] + (Math.abs(v) >= 2 ? 's' : '') : '');
     });
+    s = s.replace(/\b(kg|cl|ml)\b/g, (u) => UNITS[u]);
     s = s.replace(/%/g, ' pour cent');
     return s.replace(/\s+/g, ' ').trim();
   }
@@ -176,7 +181,7 @@
       next() {
         const now = o.now();
         for (let i = items.length - 1; i >= 0; i--) {
-          if (now - items[i].t > TTL[items[i].level] * 1000) drop(items.splice(i, 1)[0], 'expire');
+          if (now - items[i].t > (items[i].ttl || TTL[items[i].level]) * 1000) drop(items.splice(i, 1)[0], 'expire');
         }
         if (!items.length) return null;
         let b = 0;
@@ -190,6 +195,35 @@
       takeDropped() { return dropped.splice(0); },
       get length() { return items.length; },
     };
+  }
+
+  // ------------------------------------------------------------------ restaurant
+  /** « commande numéro six » à partir de CMD2026-000006 (seul le numéro d'ordre est lu). */
+  function orderNo(n) {
+    const m = /(\d+)\D*$/.exec(String(n || ''));
+    return m ? 'commande numéro ' + words(Number(m[1])) : 'commande';
+  }
+  /** Lieu : « table Terrasse 2 », « à emporter, pour Awa », « livraison, pour Moussa ». */
+  function place(d) {
+    if (d.table) return 'table ' + normalize(d.table);
+    const who = d.customer ? ', pour ' + normalize(d.customer) : '';
+    return (d.order_type === 'delivery' ? 'livraison' : 'à emporter') + who;
+  }
+  /** Plats : « deux Poulet braisé, remarque : sans piment. un Jus d'orange » */
+  function dishes(items, withReason) {
+    return (items || []).filter((i) => i && i.name).map((i) => {
+      let t = quantity(Number(i.quantity ?? i.q ?? 1)) + ' ' + normalize(i.name);
+      if (i.note) t += ', remarque : ' + normalize(i.note);
+      if (withReason && i.reason) t += ', motif : ' + normalize(i.reason);
+      return t;
+    }).join('. ');
+  }
+  function kitchenOrder(d) {
+    const head = (Number(d.previous) > 0 ? 'Ajout pour la ' : 'Nouvelle ') + orderNo(d.order_number) + ', ' + place(d) + '.';
+    return head + ' ' + dishes(d.items) + '.' + (d.waiter ? ' Serveur : ' + normalize(d.waiter) + '.' : '');
+  }
+  function kitchenCancel(d) {
+    return 'Attention, annulation. ' + orderNo(d.order_number).replace(/^c/, 'C') + ', ' + place(d) + '. Ne pas préparer : ' + dishes(d.items, true) + '.';
   }
 
   // ------------------------------------------------------------------ textes des annonces
@@ -218,6 +252,12 @@
     'page.error': (d) => normalize(d.message),
     'page.warning': (d) => normalize(d.message),
     'voix.test': (d) => normalize(d.text || 'Test de la voix de POS Marwa.'),
+    'kitchen.ticket.new': (d) => ((d.items || []).length ? kitchenOrder(d) : null),
+    'kitchen.ticket.cancel': (d) => ((d.items || []).length ? kitchenCancel(d) : null),
+    'kitchen.ticket.repeat': (d) => ((d.items || []).length ? 'Je répète. ' + (d.type === 'cancel' ? kitchenCancel(d) : kitchenOrder(d)) : null),
+    'kitchen.ticket.ready': (d) => orderNo(d.order_number).replace(/^c/, 'C') + ', ' + place(d) + ', prête à servir.',
+    'restaurant.table.ready': (d) => (d.table ? 'Table ' + normalize(d.table) : orderNo(d.order_number).replace(/^c/, 'C') + ', ' + place(d)) + ' : '
+      + (Number(d.n) > 1 ? quantity(Number(d.n)) + ' plats prêts' : 'plat prêt') + ' à servir.',
   };
   function phrase(event, data, cur) {
     const f = PHRASES[event];
@@ -226,7 +266,7 @@
     return s ? s.replace(/\s+/g, ' ').trim() : null;
   }
 
-  const api = { words, decimal, amount, quantity, time, normalize, inQuiet, Queue, LEVELS, TTL, PHRASES, phrase };
+  const api = { words, decimal, amount, quantity, time, normalize, inQuiet, Queue, LEVELS, TTL, PHRASES, phrase, orderNo, place, dishes };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.PMVoiceCore = api;
 })(typeof window !== 'undefined' ? window : this);

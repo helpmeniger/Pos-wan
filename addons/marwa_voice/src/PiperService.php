@@ -19,6 +19,8 @@ use App\Core\BusinessException;
 final class PiperService
 {
     public const MAX_TEXT = 400;
+    /** Pause entre deux phrases (s) : listes de plats plus faciles à suivre en cuisine. */
+    public const SENTENCE_SILENCE = '0.35';
     public const CACHE_MAX_FILES = 2000;
     public const CACHE_MAX_BYTES = 300 * 1048576;
 
@@ -27,8 +29,116 @@ final class PiperService
         return BASE_PATH . '/storage/voix' . ($sub !== '' ? '/' . $sub : '');
     }
 
+    /** Paquet intégré au module (addons/marwa_voice/piper) : Piper pour Windows + voix française, en fragments ≤ 1 Mo. */
+    public static function bundleDir(): string
+    {
+        return dirname(__DIR__) . '/piper';
+    }
+
+    public static function bundle(): ?array
+    {
+        $f = self::bundleDir() . '/paquet.json';
+        $d = is_file($f) ? json_decode((string) file_get_contents($f), true) : null;
+        return is_array($d) && isset($d['files']) && is_array($d['files']) ? $d : null;
+    }
+
+    /**
+     * Reconstitue les fichiers du paquet dans storage/voix (programme Piper : Windows uniquement ;
+     * voix : tous systèmes). Chaque fichier est vérifié par son SHA-256 avant d'être utilisé.
+     * Ne fait rien si c'est déjà fait (repère storage/voix/.paquet-<version>).
+     * @return array{deployed:int, skipped:int, done:bool}
+     */
+    public static function deployBundled(?string $base = null, ?bool $windows = null, bool $force = false): array
+    {
+        $b = self::bundle();
+        $out = ['deployed' => 0, 'skipped' => 0, 'done' => false];
+        if (!$b) {
+            return $out;
+        }
+        $base ??= self::dir();
+        $windows ??= PHP_OS_FAMILY === 'Windows';
+        $marker = $base . '/.paquet-' . substr(hash('sha256', json_encode($b['files'])), 0, 16) . ($windows ? '-win' : '');
+        if (!$force && is_file($marker)) {
+            return ['done' => true] + $out;
+        }
+        if (!is_dir($base) && !@mkdir($base, 0775, true) && !is_dir($base)) {
+            throw new BusinessException('Dossier ' . $base . ' impossible à créer.');
+        }
+        $lock = fopen($base . '/paquet.lock', 'c');
+        if ($lock === false || !flock($lock, LOCK_EX | LOCK_NB)) {
+            return $out; // déploiement déjà en cours (autre requête)
+        }
+        try {
+            foreach ($b['files'] as $rel => $f) {
+                if (!preg_match('#^(piper|voix)/[A-Za-z0-9_./-]+$#', $rel) || str_contains($rel, '..')) {
+                    throw new BusinessException('Paquet vocal invalide : ' . $rel);
+                }
+                if (str_starts_with($rel, 'piper/') && !$windows) {
+                    continue;
+                }
+                $target = $base . '/' . $rel;
+                if (!$force && is_file($target) && filesize($target) === (int) $f['size'] && hash_file('sha256', $target) === $f['sha256']) {
+                    $out['skipped']++;
+                    continue;
+                }
+                if (!is_dir(dirname($target))) {
+                    mkdir(dirname($target), 0775, true);
+                }
+                $tmp = $target . '.tmp';
+                $w = fopen($tmp, 'wb');
+                $parts = (int) $f['parts'];
+                for ($i = 0; $i < max(1, $parts); $i++) {
+                    $src = self::bundleDir() . '/' . $rel . ($parts > 0 ? sprintf('.part%03d', $i) : '');
+                    $r = @fopen($src, 'rb');
+                    if (!$r) {
+                        fclose($w);
+                        @unlink($tmp);
+                        throw new BusinessException('Fragment manquant dans le paquet vocal : ' . basename($src) . ' (recopiez le dossier addons/marwa_voice).');
+                    }
+                    stream_copy_to_stream($r, $w);
+                    fclose($r);
+                }
+                fclose($w);
+                if (hash_file('sha256', $tmp) !== $f['sha256']) {
+                    @unlink($tmp);
+                    throw new BusinessException('Fichier vocal altéré (empreinte SHA-256 différente) : ' . $rel . '. Recopiez le dossier addons/marwa_voice.');
+                }
+                if (!@rename($tmp, $target)) {
+                    @unlink($tmp);
+                    throw new BusinessException('Impossible de remplacer ' . $rel . ' (fichier utilisé ?) : fermez la fenêtre « POS Marwa - service vocal » puis réessayez.');
+                }
+                if (str_ends_with($rel, '.exe') || $rel === 'piper/piper') {
+                    @chmod($target, 0755);
+                }
+                $out['deployed']++;
+            }
+            file_put_contents($marker, date('c'));
+            $out['done'] = true;
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+        return $out;
+    }
+
+    /** Déploiement automatique au premier usage (silencieux : une erreur sera visible dans le Diagnostic). */
+    private static function autoDeploy(): void
+    {
+        static $tried = false;
+        if ($tried) {
+            return;
+        }
+        $tried = true;
+        try {
+            self::deployBundled();
+        } catch (\Throwable $e) {
+            error_log('MARWA VOICE : ' . $e->getMessage());
+        }
+    }
+
     public static function binary(): ?string
     {
+        self::autoDeploy();
         foreach (['piper/piper.exe', 'piper/piper'] as $f) {
             $p = self::dir($f);
             if (is_file($p) && (PHP_OS_FAMILY === 'Windows' ? str_ends_with($p, '.exe') : is_executable($p))) {
@@ -41,6 +151,7 @@ final class PiperService
     /** Voix installées : fichier .onnx accompagné de sa configuration .onnx.json. */
     public static function voices(): array
     {
+        self::autoDeploy();
         $out = [];
         foreach (glob(self::dir('voix') . '/*.onnx') ?: [] as $f) {
             if (!is_file($f . '.json')) {
@@ -118,7 +229,7 @@ final class PiperService
         if (!is_dir($cache) && !@mkdir($cache, 0775, true) && !is_dir($cache)) {
             throw new BusinessException('Dossier storage/voix/cache impossible à créer.');
         }
-        $key = hash('sha256', $voice . "\n" . $text);
+        $key = hash('sha256', $voice . "\n" . self::SENTENCE_SILENCE . "\n" . $text);
         $path = "$cache/$key.wav";
         $t0 = hrtime(true);
         if (is_file($path) && filesize($path) > 44) {
@@ -134,6 +245,7 @@ final class PiperService
             @unlink($tmp);
             throw new BusinessException('Piper n\'a pas produit de son pour cette phrase.');
         }
+        self::normalizeVolume($tmp);
         rename($tmp, $path);
         if (random_int(1, 40) === 1) {
             self::trimCache();
@@ -167,7 +279,7 @@ final class PiperService
             throw new BusinessException('Synthèse vocale occupée.');
         }
         try {
-            $cmd = [$bin, '--model', self::dir('voix/' . $voice), '--output_file', $out, '--quiet'];
+            $cmd = [$bin, '--model', self::dir('voix/' . $voice), '--output_file', $out, '--sentence_silence', self::SENTENCE_SILENCE, '--quiet'];
             $proc = proc_open($cmd, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, dirname($bin));
             if (!is_resource($proc)) {
                 throw new BusinessException('Piper n\'a pas pu être lancé.');
@@ -198,6 +310,37 @@ final class PiperService
             flock($lock, LOCK_UN);
             fclose($lock);
         }
+    }
+
+    /**
+     * Volume normalisé : le son est amplifié jusqu'à un niveau crête de 90 % (sans saturation),
+     * pour des annonces bien audibles en cuisine ou en boutique. WAV PCM 16 bits uniquement.
+     */
+    public static function normalizeVolume(string $file, float $target = 0.9, float $maxGain = 4.0): float
+    {
+        $data = (string) file_get_contents($file);
+        $pos = strpos($data, 'data');
+        if (strlen($data) < 48 || substr($data, 0, 4) !== 'RIFF' || $pos === false || unpack('v', substr($data, 34, 2))[1] !== 16) {
+            return 1.0;
+        }
+        $start = $pos + 8;
+        $samples = unpack('s*', substr($data, $start));
+        $peak = 1;
+        foreach ($samples as $v) {
+            $a = $v < 0 ? -$v : $v;
+            if ($a > $peak) {
+                $peak = $a;
+            }
+        }
+        $gain = min($maxGain, $target * 32767 / $peak);
+        if ($gain <= 1.02) {
+            return 1.0;
+        }
+        foreach ($samples as $k => $v) {
+            $samples[$k] = max(-32768, min(32767, (int) round($v * $gain)));
+        }
+        file_put_contents($file, substr($data, 0, $start) . pack('s*', ...$samples));
+        return round($gain, 2);
     }
 
     /** Cache limité (nombre de phrases et taille) : les moins récemment utilisées sont retirées, puis regénérées au besoin. */

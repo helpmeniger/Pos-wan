@@ -501,7 +501,8 @@ final class RestaurantService
     public static function kitchenFeed(string $station): array
     {
         $tickets = DB::all("SELECT kt.*, o.number AS order_number, o.type AS order_type, o.covers, o.customer_name, t.name AS table_name, u.full_name AS waiter,
-                TIMESTAMPDIFF(SECOND, kt.created_at, NOW()) AS age
+                TIMESTAMPDIFF(SECOND, kt.created_at, NOW()) AS age,
+                (SELECT COUNT(*) FROM kitchen_tickets p WHERE p.order_id = kt.order_id AND p.station = kt.station AND p.type = 'order' AND p.id < kt.id) AS previous
                 FROM kitchen_tickets kt JOIN restaurant_orders o ON o.id = kt.order_id LEFT JOIN restaurant_tables t ON t.id = o.table_id JOIN users u ON u.id = kt.user_id
                 WHERE kt.station = ? AND (kt.status IN ('pending','preparing','ready') OR (kt.status = 'served' AND kt.served_at > NOW() - INTERVAL 15 MINUTE))
                 ORDER BY kt.status = 'served', kt.id LIMIT 80", [$station]);

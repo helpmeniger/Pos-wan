@@ -135,9 +135,9 @@ $val = fn($k, $d = '') => (string) setting($k, $d);
       <tr><th>proc_open (PHP)</th><td><?= $piper['proc_open'] ? '✔' : '<span class="text-danger">désactivé : Piper inutilisable</span>' ?></td></tr>
     </table>
     <?php if (!$piper['binary'] || !$piper['voices']): ?>
-      <div class="alert alert-info py-2">Installer Piper (une seule fois, avec Internet), dans le dossier de POS Marwa :<br>
-        <code>php bin/voix.php installer</code> (voix « siwis-medium ») ou <code>php bin/voix.php installer siwis-low</code> (PC modestes).<br>
-        Sous Windows : double-cliquez <code>windows\installer-voix.bat</code>. Sans Piper, la voix française de Windows est utilisée.</div>
+      <div class="alert alert-info py-2">La voix Piper est livrée dans le dossier de POS Marwa (<code>addons/marwa_voice/piper</code>) et se met en place toute seule sous Windows.
+        Si ce message reste affiché : double-cliquez <code>windows\installer-voix.bat</code> (ou <code>php bin/voix.php deployer</code>) : il indique le fichier manquant ou abîmé.
+        Serveur Linux : <code>php bin/voix.php installer</code>. Sans Piper, la voix française de Windows est utilisée.</div>
     <?php endif; ?>
     <div class="d-flex gap-2 flex-wrap">
       <button type="button" class="btn btn-outline-primary btn-sm" data-piper-test <?= $piper['binary'] && $piper['voices'] ? '' : 'disabled' ?>><i class="bi bi-volume-up"></i> Tester Piper</button>
