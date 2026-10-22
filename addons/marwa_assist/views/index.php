@@ -217,7 +217,7 @@ $old = fn(string $k, string $v) => App\Core\Session::old($k, $v); // saisie cons
     <ol class="ps-3 mb-0">
       <li>Démarrer : double-cliquez <code>windows\assist-serveur.bat</code> (ou <code>php bin/assist.php serveur</code> sur un VPS Linux). La fenêtre doit rester ouverte.</li>
       <li>Ouvrir vers ce poste, sur la box ou le pare-feu : <b>TCP 21115, 21116, 21117</b> et <b>UDP 21116</b>. Rien d'autre (POS Marwa reste fermé à Internet).</li>
-      <li>Dans chaque boutique (Réglages) : votre <b>adresse IP publique</b> et la <b>clé</b> ci-dessus. Aucun nom de domaine n'est nécessaire.</li>
+      <li>Dans chaque boutique (Réglages) : votre <b>adresse IP publique</b> (ou l'adresse de ce poste sur le réseau local, ex. 192.168.1.10, jamais 127.0.0.1) et la <b>clé</b> ci-dessus. Aucun nom de domaine n'est nécessaire.</li>
     </ol>
   </div></div></div>
   <div class="col-lg-7"><div class="card"><div class="card-header"><i class="bi bi-shop"></i> Boutiques suivies</div><div class="card-body small">

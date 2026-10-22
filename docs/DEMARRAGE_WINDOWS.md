@@ -157,3 +157,17 @@ Sur le téléphone, ouvrez la page `/m` puis choisissez « Ajouter à l'écran d
 Marwa s'ouvre alors en plein écran avec son icône.
 
 Aucune donnée n'est stockée hors ligne : le serveur reste nécessaire pour vendre.
+
+## 9. Serveur d'assistance à distance (High Tech Niger uniquement)
+`windows\assist-serveur.bat` démarre le serveur du module MARWA REMOTE ASSIST (RustDesk
+Server : présence et relais), sur le PC ou le serveur HTN joignable depuis Internet. Il :
+1. demande les droits administrateur ;
+2. ouvre le pare-feu Windows (TCP 21115-21117, UDP 21116) ;
+3. reconstitue les programmes livrés (empreinte SHA-256 vérifiée) ;
+4. affiche la **clé publique** à mettre dans chaque boutique.
+
+La fenêtre doit rester ouverte. Redirigez aussi ces ports depuis la box vers ce PC. Les PC des
+boutiques n'ont pas besoin de ce script : ils utilisent le kit « Kit du poste » téléchargé dans
+POS Marwa. Détails : `addons/marwa_assist/README.md`.
+
+*Non exécuté sur un vrai Windows à ce jour : à vérifier lors de la mise en service.*

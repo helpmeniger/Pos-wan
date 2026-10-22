@@ -230,6 +230,37 @@ quand tous les articles présentés devant la caméra ont été appris.
 Le module reconnaît **les articles qui lui ont été appris**. Pour les articles presque
 identiques, préférez le code-barres. Guide : `addons/vision/README.md`.
 
+### Assistance à distance (module MARWA REMOTE ASSIST)
+Module fourni (`addons/marwa_assist/`), à activer dans Modules complémentaires. Menu
+**Configuration → Assistance à distance**.
+
+1. **Assistance à distance** :
+   - décrivez le problème ;
+   - donnez à High Tech Niger le **code boutique** et l'**identifiant du poste** affichés
+     (bouton WhatsApp).
+2. **Partager mon écran** : acceptez la connexion dans la fenêtre RustDesk qui s'ouvre. Le
+   technicien **voit** l'écran ; vous gardez la souris et le clavier. La caisse continue de
+   vendre normalement.
+3. **Autoriser le contrôle à distance** :
+   - un gérant ou le propriétaire saisit son identifiant et son mot de passe ou PIN ;
+   - choisissez la durée ;
+   - cochez **Clavier** dans la fenêtre RustDesk ;
+   - à la fin du délai, le technicien revient en observation.
+4. **Terminer** : sur la page ou dans le bandeau. Ou cliquez **Disconnect** dans la fenêtre
+   RustDesk : la coupure est immédiate.
+
+Un bandeau reste affiché sur toutes les pages pendant l'assistance : bleu en observation, rouge
+avec compte à rebours en contrôle.
+
+Les responsables trouvent aussi :
+- **Postes équipés** : kits d'installation des PC et du technicien ;
+- **Diagnostic** : état technique à envoyer, sans donnée de vente ;
+- **Historique** ;
+- **Réglages** : adresse et clé du serveur HTN, durée maximale du contrôle.
+
+N'ouvrez à l'écran que ce qui est utile : l'écran partagé peut montrer des données de clients
+(loi n° 2017-28). Installation et sécurité : `addons/marwa_assist/README.md`.
+
 ### Assistant vocal (module MARWA VOICE AI)
 Module fourni (`addons/marwa_voice/`), à activer dans Modules complémentaires.
 

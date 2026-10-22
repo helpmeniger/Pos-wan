@@ -102,7 +102,7 @@ faire valider par un professionnel : voir SECURITE.md.)*
 
 **Modules complémentaires** — comme dans Odoo : déposer un module dans le dossier
 `addons/` puis l'installer en un clic (Gestion → Modules complémentaires). Modules
-fournis : **Clinique** (patients, consultations, ordonnances reliées à la pharmacie, hospitalisation, écran de supervision des malades), **Pressing** (gestion complète d'un pressing), **Reconnaissance des articles par photo** (fond appris, article détouré, ajout automatique en caisse — [guide](addons/vision/README.md)), **MARWA VOICE AI** (annonces vocales locales, sans Internet — [guide](addons/marwa_voice/README.md)) et « Livraisons » ; guide de création : [docs/MODULES.md](docs/MODULES.md).
+fournis : **Clinique** (patients, consultations, ordonnances reliées à la pharmacie, hospitalisation, écran de supervision des malades), **Pressing** (gestion complète d'un pressing), **Reconnaissance des articles par photo** (fond appris, article détouré, ajout automatique en caisse — [guide](addons/vision/README.md)), **MARWA VOICE AI** (annonces vocales locales, sans Internet — [guide](addons/marwa_voice/README.md)), **MARWA REMOTE ASSIST** (assistance à distance par High Tech Niger sans arrêter la caisse, consentement et contrôle autorisé — [guide](addons/marwa_assist/README.md)) et « Livraisons » ; guide de création : [docs/MODULES.md](docs/MODULES.md).
 
 **Administration** — utilisateurs, 11 rôles prédéfinis et **52 permissions** modifiables,
 connexion par mot de passe, **PIN** ou badge RFID, journal d'audit, paramètres de

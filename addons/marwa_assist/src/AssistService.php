@@ -123,7 +123,13 @@ final class AssistService
         if (!in_array($i['status'], ['demandee', 'observation', 'controle'], true)) {
             throw new BusinessException('Cette intervention n\'est plus en cours.');
         }
-        $by = Auth::verifySupervisor(trim($username), $secret, 'assist.control');
+        try {
+            $by = Auth::verifySupervisor(trim($username), $secret, 'assist.control');
+        } catch (BusinessException $e) {
+            // Tentative refusée visible dans l'historique de l'intervention (sans le mot de passe)
+            self::event($id, 'controle_refuse', ['identifiant' => mb_substr(trim($username), 0, 60)]);
+            throw $e;
+        }
         $minutes = max(1, min(self::settings()['minutes'], $minutes ?: self::settings()['minutes']));
         $until = date('Y-m-d H:i:s', time() + 60 * $minutes);
         DB::update('assist_interventions', ['status' => 'controle', 'control_by' => $by, 'control_until' => $until, 'started_at' => $i['started_at'] ?? date('Y-m-d H:i:s')], 'id = ?', [$id]);
@@ -274,6 +280,11 @@ final class AssistService
         $host = trim((string) ($in['assist_serveur_adresse'] ?? ''));
         if ($host !== '' && !preg_match('/^[A-Za-z0-9.-]{3,100}$/', $host)) {
             throw new BusinessException('Adresse du serveur invalide : adresse IP (ex. 41.203.10.20) ou nom, sans « http:// » ni port.');
+        }
+        // 127.x / localhost : les autres PC ne joindraient pas le serveur, et le relais hbbr réserve
+        // les connexions locales à ses commandes d'administration (aucune session relayée possible).
+        if ($host !== '' && (strcasecmp($host, 'localhost') === 0 || str_starts_with($host, '127.') || $host === '0.0.0.0')) {
+            throw new BusinessException('Adresse du serveur : mettez l\'adresse IP du PC serveur sur le réseau ou sur Internet (ex. 192.168.1.10 ou 41.203.10.20), pas « ' . $host . ' ».');
         }
         $key = trim((string) ($in['assist_serveur_cle'] ?? ''));
         if ($key !== '' && !preg_match('#^[A-Za-z0-9+/]{43}=$#', $key)) {

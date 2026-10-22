@@ -2,6 +2,44 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.7.0] — 2026-10-22
+
+### Ajouté
+- **MARWA REMOTE ASSIST** (`addons/marwa_assist`, module 1.0.0) : assistance à distance de
+  n'importe quel PC de la boutique, sans arrêter la caisse.
+  - **Client et serveur dans le module** : RustDesk 1.5.0 (client Windows) et RustDesk Server
+    OSS 1.1.16 (`hbbs` + `hbbr`, Windows et Linux).
+    - Logiciels libres AGPL-3.0, non modifiés.
+    - Livrés en fragments de 1 Mo vérifiés par SHA-256.
+  - **Boutons** :
+    - Assistance à distance ;
+    - Partager mon écran : observation seule ;
+    - Autoriser le contrôle à distance : identifiants d'un responsable, durée limitée,
+      retour automatique en observation ;
+    - Terminer.
+  - **Bandeau permanent** sur toutes les pages : « écran observé », ou « contrôle à distance »
+    avec compte à rebours.
+  - **Kits à télécharger** :
+    - poste de boutique : installation, réglage sur le serveur HTN, consentement par clic,
+      clavier coupé, fenêtre jamais masquée, identifiant transmis par jeton secret ;
+    - technicien : sans installation.
+  - **Onglets** : postes équipés, historique détaillé, diagnostic technique sans donnée
+    commerciale, réglages.
+  - **Serveur HTN** : `windows\assist-serveur.bat` (pare-feu, démarrage) ou
+    `php bin/assist.php serveur` ; onglet « Serveur HTN et boutiques » (état, clé, annuaire).
+  - Accès sans surveillance désactivé par défaut (double confirmation).
+- Tests : bloc PHP complet (129/129 pour la suite) et essai réel avec deux clients RustDesk
+  et le serveur du paquet. Détail dans `addons/marwa_assist/README.md`.
+
+### Corrigé
+- Installation d'un module au nom long : le libellé des permissions est tronqué à la taille de
+  la colonne (l'installation échouait).
+
+### Limites connues
+- Scripts Windows (`.bat`) et coupure automatique du clavier sur le poste serveur non testés sur
+  un vrai Windows.
+- Pas encore d'essai entre deux réseaux Internet réels.
+
 ## [2.6.1] — 2026-10-21
 
 ### Corrigé

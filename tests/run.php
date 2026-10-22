@@ -3182,6 +3182,155 @@ test('Module Établissement (HTTP) : tous les formulaires enregistrent réelleme
     setting_set('ecole_visage_actif', '0');
 });
 
+test('MARWA REMOTE ASSIST : droits, réglages, observation / contrôle autorisé, kits, jetons, paquet RustDesk', function () use ($B) {
+    App\Core\Addons::install('marwa_assist', false);
+    ok(App\Core\Addons::isActive('marwa_assist'), 'module actif');
+    $hasPerm = fn(string $role, string $perm) => (bool) DB::value('SELECT 1 FROM role_permissions rp JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id WHERE r.code = ? AND p.code = ?', [$role, $perm]);
+    ok($hasPerm('cashier', 'assist.request') && !$hasPerm('cashier', 'assist.control') && !$hasPerm('cashier', 'assist.manage'), 'caissier : demande l\'assistance, n\'autorise pas le contrôle');
+    ok($hasPerm('store_manager', 'assist.control') && $hasPerm('store_manager', 'assist.manage'), 'gérant : autorise le contrôle et gère les postes');
+    $AS = Addons\MarwaAssist\AssistService::class;
+    $S = function () use ($AS): array { setting('__reset'); return $AS::settings(); }; // réglages relus (écrits par le serveur HTTP)
+
+    // Paquet : RustDesk officiel en fragments ≤ 1 Mo, aucun programme en clair, empreintes vérifiées
+    $B_ = Addons\MarwaAssist\Bundle::class;
+    $m = $B_::manifest();
+    foreach (['client/rustdesk.exe', 'serveur/windows/hbbs.exe', 'serveur/windows/hbbr.exe', 'serveur/linux/hbbs', 'serveur/linux/hbbr'] as $f) {
+        ok(isset($m['files'][$f]), "paquet : $f");
+    }
+    $files = iterator_to_array(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($B_::dir(), FilesystemIterator::SKIP_DOTS)));
+    eq(0, count(array_filter($files, fn($f) => $f->getSize() > 1048576)), 'aucun fragment au-delà de 1 Mo');
+    eq(0, count(array_filter($files, fn($f) => preg_match('/\.(exe|dll)$/i', $f->getFilename()))), 'aucun .exe / .dll en clair');
+    ok(is_file($B_::dir() . '/LICENCES.md') && is_file($B_::dir() . '/licences/rustdesk-AGPL-3.0.txt'), 'licence AGPL-3.0 et sources indiquées');
+    $tmp = STORAGE_PATH . '/tmp/assist-paquet-' . getmypid();
+    $r = $B_::deploy('serveur/linux/', $tmp, true);
+    ok($r['done'] && $r['deployed'] === 2 && hash_file('sha256', "$tmp/serveur/linux/hbbr") === $m['files']['serveur/linux/hbbr']['sha256'], 'serveur Linux reconstitué à l\'identique');
+    $part = $B_::dir() . '/serveur/linux/hbbr.part000';
+    $orig = (string) file_get_contents($part);
+    file_put_contents($part, chr(ord($orig[0]) ^ 1) . substr($orig, 1));
+    try {
+        throws(fn() => $B_::deploy('serveur/linux/', $tmp, true), 'altéré');
+    } finally {
+        file_put_contents($part, $orig);
+    }
+    ok(hash_file('sha256', "$tmp/serveur/linux/hbbr") === $m['files']['serveur/linux/hbbr']['sha256'], 'fragment altéré refusé, programme en place intact');
+    exec('rm -rf ' . escapeshellarg($tmp));
+
+    // Réglages (gérant) : adresse, clé, accès sans surveillance désactivé par défaut
+    $g = new Http();
+    $g->login($B, 'gerant', 'Mot-de-passe-2026');
+    $form = fn(array $d) => $g->req('POST', "$B/assist/reglages", http_build_query(['_csrf' => $g->token("$B/assist?tab=reglages")] + $d));
+    $key = base64_encode(random_bytes(32));
+    eq(false, $S()['unattended'], 'accès sans surveillance désactivé par défaut');
+    foreach (['http://1.2.3.4:21116' => 'invalide', '127.0.0.1' => 'pas « 127.0.0.1 »', 'localhost' => 'pas « localhost »'] as $host => $msg) {
+        $form(['assist_serveur_adresse' => $host, 'assist_serveur_cle' => $key]);
+        ok(str_contains(html_entity_decode($g->req('GET', "$B/assist?tab=reglages")['body']), $msg), "adresse « $host » refusée");
+    }
+    $form(['assist_serveur_adresse' => '192.0.2.10', 'assist_serveur_cle' => 'pas-une-cle']);
+    ok(str_contains(html_entity_decode($g->req('GET', "$B/assist?tab=reglages")['body']), 'Clé publique invalide'), 'clé mal copiée refusée');
+    $form(['assist_serveur_adresse' => '192.0.2.10', 'assist_serveur_cle' => $key, 'assist_sans_surveillance' => 1, 'confirmation' => 'oui']);
+    ok(!$S()['unattended'], 'sans surveillance refusé sans la phrase de confirmation');
+    $form(['assist_serveur_adresse' => '192.0.2.10', 'assist_serveur_cle' => $key, 'assist_controle_minutes' => 15, 'assist_kit_jours' => 7]);
+    eq(['192.0.2.10', $key, false], [$S()['host'], $S()['key'], $S()['unattended']], 'réglages enregistrés');
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(403, $c->req('POST', "$B/assist/reglages", http_build_query(['_csrf' => $c->token("$B/assist"), 'assist_serveur_adresse' => '6.6.6.6']))['code'], 'caissier : réglages interdits');
+    eq('192.0.2.10', $S()['host']);
+
+    // Kit du poste : jeton secret, script réglé (consentement par clic, clavier coupé, fenêtre jamais masquée)
+    DB::run('UPDATE assist_interventions SET status = \'terminee\' WHERE status IN (\'demandee\',\'observation\',\'controle\')');
+    actingAs('gerant');
+    $k = $AS::createKit('boutique', 'Caisse test', 'http://192.0.2.20/pos');
+    $z = new ZipArchive();
+    ok($z->open($k['path']) === true, 'kit : archive ZIP');
+    $bat = (string) $z->getFromName('installer-assistance.bat');
+    ok(hash('sha256', (string) $z->getFromName('rustdesk.exe')) === $m['files']['client/rustdesk.exe']['sha256'], 'kit : RustDesk officiel non modifié');
+    ok($z->locateName('LICENCE-RustDesk-AGPL-3.0.txt') !== false && $z->locateName('LISEZMOI.txt') !== false, 'kit : licence et notice');
+    $z->close();
+    @unlink($k['path']);
+    foreach (['approve-mode click', 'verification-method use-temporary-password', 'enable-keyboard N', 'enable-file-transfer N', 'allow-hide-cm N', "key $key", 'relay-server 192.0.2.10'] as $opt) {
+        ok(str_contains($bat, '--option ' . $opt), "script : $opt");
+    }
+    ok(!str_contains($bat, '--password') && str_contains($bat, "\r\n") && mb_check_encoding($bat, 'ASCII'), 'script : aucun mot de passe permanent, ASCII, fins de ligne Windows');
+    ok((bool) preg_match('#/assist/enregistrer\?jeton=([a-f0-9]{48})#', $bat, $tm), 'script : transmet l\'identifiant avec un jeton');
+    $tok = $tm[1];
+    eq(hash('sha256', $tok), DB::value('SELECT token_hash FROM assist_postes WHERE id = ?', [$k['poste']]), 'jeton conservé haché seulement');
+    $reg = fn(string $t, string $id) => (new Http())->req('GET', "$B/assist/enregistrer?jeton=$t&id=" . rawurlencode($id) . "&poste=PC-TEST");
+    eq(403, $reg(str_repeat('a', 48), '123456789')['code'], 'faux jeton refusé');
+    eq(403, $reg($tok, 'abc')['code'], 'identifiant non numérique refusé');
+    $ok = $reg($tok, '123 456 789');
+    ok($ok['code'] === 200 && str_contains($ok['body'], 'Caisse test'), 'poste enregistré par le script (sans session)');
+    eq('123456789', DB::value('SELECT rustdesk_id FROM assist_postes WHERE id = ?', [$k['poste']]));
+    DB::update('assist_postes', ['token_expires' => date('Y-m-d H:i:s', time() - 60)], 'id = ?', [$k['poste']]);
+    eq(403, $reg($tok, '123456789')['code'], 'kit expiré refusé');
+    $AS::revokePoste($k['poste']);
+    ok(DB::value('SELECT token_hash FROM assist_postes WHERE id = ?', [$k['poste']]) === null, 'poste retiré : jeton effacé');
+    $kt = $AS::createKit('technicien', 'Tech test', 'http://192.0.2.20');
+    $z->open($kt['path']);
+    $tb = (string) $z->getFromName('demarrer-technicien.bat');
+    $z->close();
+    @unlink($kt['path']);
+    ok(str_contains($tb, "echo key = '$key'") && str_contains($tb, 'RustDesk2.toml.avant-marwa'), 'kit technicien : réglé sur le serveur HTN, ancienne configuration sauvegardée');
+
+    // Intervention : demande, partage en observation, contrôle autorisé par un responsable, fin
+    $post = fn(Http $h, string $u, array $d = []) => $h->req('POST', $B . $u, http_build_query(['_csrf' => $h->token("$B/assist")] + $d));
+    $post($c, '/assist/demande', ['reason' => 'x']);
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM assist_interventions WHERE status IN ('demandee','observation','controle')"), 'motif trop court refusé');
+    $post($c, '/assist/demande', ['reason' => 'Le tiroir-caisse ne s\'ouvre plus']);
+    $id = (int) DB::value("SELECT id FROM assist_interventions WHERE status = 'demandee' ORDER BY id DESC LIMIT 1");
+    ok($id > 0, 'demande enregistrée');
+    $post($c, '/assist/demande', ['reason' => 'Deuxième demande']);
+    eq(1, (int) DB::value("SELECT COUNT(*) FROM assist_interventions WHERE status IN ('demandee','observation','controle')"), 'une seule assistance à la fois par poste');
+    $post($c, "/assist/$id/partager");
+    eq('observation', DB::value('SELECT status FROM assist_interventions WHERE id = ?', [$id]), 'écran partagé en observation');
+    $st = json_decode($c->req('GET', "$B/assist/etat", null, ['Accept: application/json'])['body'], true);
+    ok($st['ok'] && $st['active'][0]['status'] === 'observation' && $st['active'][0]['seconds_left'] === null, 'bandeau : état « observé »');
+    $post($c, "/assist/$id/controle", ['username' => 'gerant', 'secret' => 'mauvais', 'minutes' => 10]);
+    $post($c, "/assist/$id/controle", ['username' => 'caissier', 'secret' => 'Mot-de-passe-2026', 'minutes' => 10]);
+    eq('observation', DB::value('SELECT status FROM assist_interventions WHERE id = ?', [$id]), 'contrôle refusé : mauvais code, puis caissier sans droit');
+    eq(2, (int) DB::value("SELECT COUNT(*) FROM assist_events WHERE intervention_id = ? AND action = 'controle_refuse'", [$id]), 'tentatives refusées inscrites dans l\'historique');
+    ok(!str_contains((string) DB::value("SELECT GROUP_CONCAT(details) FROM assist_events WHERE intervention_id = ?", [$id]), 'mauvais'), 'aucun mot de passe dans l\'historique');
+    $post($c, "/assist/$id/controle", ['username' => 'gerant', 'secret' => '4826', 'minutes' => 60]);
+    $row = DB::one('SELECT status, control_by, control_until FROM assist_interventions WHERE id = ?', [$id]);
+    ok($row['status'] === 'controle' && (int) $row['control_by'] === (int) DB::value("SELECT id FROM users WHERE username = 'gerant'"), 'contrôle autorisé par le gérant (PIN)');
+    ok(strtotime($row['control_until']) - time() <= 15 * 60 + 5, 'durée bornée aux réglages (15 min)');
+    $st = json_decode($c->req('GET', "$B/assist/etat", null, ['Accept: application/json'])['body'], true);
+    ok($st['active'][0]['status'] === 'controle' && $st['active'][0]['seconds_left'] > 800, 'bandeau : compte à rebours du contrôle');
+    DB::update('assist_interventions', ['control_until' => date('Y-m-d H:i:s', time() - 5)], 'id = ?', [$id]);
+    $AS::expire();
+    eq('observation', DB::value('SELECT status FROM assist_interventions WHERE id = ?', [$id]), 'fin du délai : retour automatique en observation');
+    $j = json_decode($c->req('POST', "$B/assist/$id/terminer.json", '{}', ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $c->token("$B/assist")])['body'], true);
+    ok($j['ok'] && DB::value('SELECT status FROM assist_interventions WHERE id = ?', [$id]) === 'terminee', 'terminée depuis le bandeau');
+    $post($c, "/assist/$id/terminer");
+    eq(1, (int) DB::value("SELECT COUNT(*) FROM assist_events WHERE intervention_id = ? AND action = 'fin'", [$id]), 'fin idempotente (double clic)');
+    eq([], json_decode($c->req('GET', "$B/assist/etat", null, ['Accept: application/json'])['body'], true)['active'], 'bandeau retiré');
+    // Demande oubliée : expirée après 8 h
+    $old = DB::insert('assist_interventions', ['status' => 'demandee', 'reason' => 'Ancienne', 'ip' => '10.9.9.9', 'created_at' => date('Y-m-d H:i:s', time() - 9 * 3600)]);
+    $AS::expire();
+    eq('expiree', DB::value('SELECT status FROM assist_interventions WHERE id = ?', [$old]), 'demande de plus de 8 h expirée');
+    // La caisse ne dépend pas du module : une vente passe pendant une assistance active
+    $post($c, '/assist/demande', ['reason' => 'Vente pendant le partage']);
+    $id2 = (int) DB::value("SELECT id FROM assist_interventions WHERE status = 'demandee' ORDER BY id DESC LIMIT 1");
+    $post($c, "/assist/$id2/partager");
+    actingAs('caissier');
+    $pid = (int) DB::value("SELECT id FROM products WHERE name LIKE 'Eau min%'");
+    $before = stock($pid);
+    $sale = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $pid, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 1000000]]]);
+    ok($sale['sale_id'] > 0 && !$sale['duplicate'] && abs(stock($pid) - ($before - 1)) < 0.001, 'vente enregistrée pendant l\'assistance (stock à jour)');
+    $AS::end($id2, 'Test', '');
+
+    // Pages, accès, diagnostic sans donnée sensible
+    foreach (['assistance', 'postes', 'diagnostic', 'historique', 'reglages'] as $t) {
+        eq(200, $g->req('GET', "$B/assist?tab=$t")['code'], "page /assist?tab=$t");
+    }
+    ok(!str_contains($c->req('GET', "$B/assist")['body'], 'tab=reglages'), 'caissier : onglets de gestion masqués');
+    eq(403, $post($c, '/assist/kit', ['kind' => 'boutique', 'label' => 'X'])['code'], 'caissier : pas de kit');
+    $anon = (new Http())->req('GET', "$B/assist/etat", null, ['Accept: application/json']);
+    ok(in_array($anon['code'], [401, 302], true), 'état non lisible sans connexion');
+    $d = Addons\MarwaAssist\Diagnostic::text(Addons\MarwaAssist\Diagnostic::run());
+    ok(str_contains($d, 'serveur d\'assistance HTN') && !preg_match('/Mot-de-passe|password_hash|' . preg_quote($key, '/') . '/', $d), 'diagnostic : état technique seulement');
+    ok(is_file(PUBLIC_PATH . '/assets/addons/marwa_assist/assist.js') && str_contains((string) file_get_contents(PUBLIC_PATH . '/assets/addons/marwa_assist/assist.js'), '/assist/etat'), 'bandeau publié sur toutes les pages');
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });
