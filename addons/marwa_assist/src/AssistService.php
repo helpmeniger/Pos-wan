@@ -207,26 +207,40 @@ final class AssistService
         if (mb_strlen($label) < 2) {
             throw new BusinessException('Nommez le poste (ex. Caisse 1).');
         }
+        // Fichiers du kit vérifiés avant de créer le poste (rien à défaire si le module est incomplet)
+        $exe = Bundle::file('client/rustdesk.exe');
+        $lic = Bundle::dir() . '/licences/rustdesk-AGPL-3.0.txt';
+        if (!is_file($lic)) {
+            throw new BusinessException('Kit impossible à préparer : fichiers du module incomplets (recopiez le dossier addons/marwa_assist).');
+        }
         $token = bin2hex(random_bytes(24));
         $posteId = DB::insert('assist_postes', ['label' => mb_substr($label, 0, 60), 'kind' => $kind, 'token_hash' => hash('sha256', $token),
             'token_expires' => date('Y-m-d H:i:s', time() + 86400 * $s['kit_days']), 'created_by' => Auth::id()]);
-        $exe = Bundle::file('client/rustdesk.exe');
         $dir = BASE_PATH . '/storage/tmp';
         if (!is_dir($dir)) {
             mkdir($dir, 0775, true);
         }
         $zipPath = $dir . '/kit-assistance-' . $posteId . '-' . bin2hex(random_bytes(4)) . '.zip';
-        $z = new \ZipArchive();
-        if ($z->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
-            throw new BusinessException('Kit impossible à préparer (ZIP).');
+        try {
+            $z = new \ZipArchive();
+            if ($z->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+                throw new BusinessException('Kit impossible à préparer (ZIP).');
+            }
+            $z->addFile($exe, 'rustdesk.exe');
+            $z->setCompressionName('rustdesk.exe', \ZipArchive::CM_STORE);
+            $z->addFromString($kind === 'boutique' ? 'installer-assistance.bat' : 'demarrer-technicien.bat',
+                Kit::script($kind, $s['host'], $s['key'], rtrim($baseUrl, '/'), $token, $s['unattended']));
+            $z->addFromString('LISEZMOI.txt', Kit::readme($kind, $label, $s['host']));
+            $z->addFile($lic, 'LICENCE-RustDesk-AGPL-3.0.txt');
+            if (!$z->close()) {
+                throw new BusinessException('Kit impossible à préparer (écriture du ZIP).');
+            }
+        } catch (\Throwable $e) {
+            // Aucun fichier ni jeton valable laissé derrière un kit raté
+            @unlink($zipPath);
+            DB::update('assist_postes', ['revoked_at' => date('Y-m-d H:i:s'), 'token_hash' => null], 'id = ?', [$posteId]);
+            throw $e instanceof BusinessException ? $e : new BusinessException('Kit impossible à préparer : ' . $e->getMessage());
         }
-        $z->addFile($exe, 'rustdesk.exe');
-        $z->setCompressionName('rustdesk.exe', \ZipArchive::CM_STORE);
-        $z->addFromString($kind === 'boutique' ? 'installer-assistance.bat' : 'demarrer-technicien.bat',
-            Kit::script($kind, $s['host'], $s['key'], rtrim($baseUrl, '/'), $token, $s['unattended']));
-        $z->addFromString('LISEZMOI.txt', Kit::readme($kind, $label, $s['host']));
-        $z->addFile(Bundle::dir() . '/licences/rustdesk-AGPL-3.0.txt', 'LICENCE-RustDesk-AGPL-3.0.txt');
-        $z->close();
         self::event(null, 'kit', ['type' => $kind, 'poste' => $label, 'poste_id' => $posteId]);
         return ['path' => $zipPath, 'name' => 'assistance-' . ($kind === 'boutique' ? 'poste' : 'technicien') . '-' . preg_replace('/[^A-Za-z0-9_-]/', '-', $label) . '.zip', 'poste' => $posteId];
     }

@@ -3264,6 +3264,17 @@ test('MARWA REMOTE ASSIST : droits, réglages, observation / contrôle autorisé
     eq(403, $reg($tok, '123456789')['code'], 'kit expiré refusé');
     $AS::revokePoste($k['poste']);
     ok(DB::value('SELECT token_hash FROM assist_postes WHERE id = ?', [$k['poste']]) === null, 'poste retiré : jeton effacé');
+    // Kit raté (fichier du module manquant) : aucun ZIP oublié, poste créé aussitôt retiré
+    $lic = Addons\MarwaAssist\Bundle::dir() . '/licences/rustdesk-AGPL-3.0.txt';
+    rename($lic, "$lic.bak");
+    $zips = count(glob(STORAGE_PATH . '/tmp/kit-assistance-*.zip') ?: []);
+    try {
+        throws(fn() => $AS::createKit('boutique', 'Kit rate', 'http://192.0.2.20'), 'incomplets');
+    } finally {
+        rename("$lic.bak", $lic);
+    }
+    eq($zips, count(glob(STORAGE_PATH . '/tmp/kit-assistance-*.zip') ?: []), 'kit raté : aucun fichier laissé');
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM assist_postes WHERE label = 'Kit rate'"), 'kit raté : aucun poste créé');
     $kt = $AS::createKit('technicien', 'Tech test', 'http://192.0.2.20');
     $z->open($kt['path']);
     $tb = (string) $z->getFromName('demarrer-technicien.bat');
