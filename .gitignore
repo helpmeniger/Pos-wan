@@ -27,3 +27,6 @@ storage/ecole/photos/*
 
 # Voix locale (Piper, voix téléchargées, phrases en cache, jeton du service)
 storage/voix/
+
+# Assistance à distance : programmes reconstitués, clés et données du serveur relais
+storage/assist/

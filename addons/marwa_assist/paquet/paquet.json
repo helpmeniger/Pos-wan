@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "client": "RustDesk 1.5.0 (Windows x64)",
+    "serveur": "RustDesk Server 1.1.16 (Windows x64) / Linux amd64",
+    "files": {
+        "client/rustdesk.exe": {
+            "size": 25887600,
+            "sha256": "8555777215510d83d2d61c9dc984e4fcc838bd7e79f9d18a42585431f5e8bb47",
+            "parts": 26
+        },
+        "serveur/windows/hbbs.exe": {
+            "size": 7094784,
+            "sha256": "9995f1a23f8a2d066acb6b8fb35c40a6058ed4a96c32cae17c90b5723c8d6273",
+            "parts": 8
+        },
+        "serveur/windows/hbbr.exe": {
+            "size": 2905088,
+            "sha256": "1f842f09c9a9f085809eec9b1b2014a24ed89c04786005efd980673786aacda2",
+            "parts": 3
+        },
+        "serveur/linux/hbbs": {
+            "size": 9678448,
+            "sha256": "374c821722b04f6d7ef063c78bc5b4db7109b8b9613508822d803e31fdc5b625",
+            "parts": 10
+        },
+        "serveur/linux/hbbr": {
+            "size": 3372192,
+            "sha256": "3ad04953242db5a9a78d45d41d13b9c6ecff651881e3a7f594f8b36a321e2457",
+            "parts": 4
+        }
+    }
+}

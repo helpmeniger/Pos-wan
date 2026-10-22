@@ -1,0 +1,40 @@
+{
+    "code": "marwa_assist",
+    "name": "MARWA REMOTE ASSIST",
+    "version": "1.0.0",
+    "requires": "2.7.0",
+    "author": "Mahamadou Hamidou (Mohamed) — High Tech Niger",
+    "description": "Assistance à distance de n'importe quel poste de la boutique par High Tech Niger, sans nom de domaine et sans arrêter la caisse : demande d'assistance, partage d'écran en observation (le caissier continue de vendre), contrôle clavier et souris seulement après autorisation d'un responsable et pour une durée limitée, bandeau permanent pendant l'assistance, historique, diagnostic. Moteur RustDesk (client et serveur de relais livrés dans le module, licence AGPL-3.0, non modifiés).",
+    "icon": "bi-headset",
+    "color": "#2b6cb0",
+    "permissions": {
+        "assist.request": "Demander une assistance à distance et partager son écran (observation)",
+        "assist.control": "Autoriser le contrôle clavier et souris par le technicien (responsable)",
+        "assist.manage": "Équiper les postes (kits), régler l'assistance, voir le diagnostic et l'historique, serveur HTN"
+    },
+    "roles": {
+        "owner": ["assist.request", "assist.control", "assist.manage"],
+        "store_manager": ["assist.request", "assist.control", "assist.manage"],
+        "cashier": ["assist.request"],
+        "stock_manager": ["assist.request"],
+        "buyer": ["assist.request"],
+        "accountant": ["assist.request"],
+        "pharmacist": ["assist.request"],
+        "waiter": ["assist.request"],
+        "cook": ["assist.request"],
+        "clinic_reception": ["assist.request"]
+    },
+    "menu": [
+        { "group": "Configuration", "label": "Assistance à distance", "icon": "bi-headset", "url": "/assist", "permission": "assist.request", "color": "#2b6cb0" }
+    ],
+    "assets": { "js": ["assist.js"], "css": ["assist.css"] },
+    "settings": {
+        "assist_role": "boutique",
+        "assist_serveur_adresse": "",
+        "assist_serveur_cle": "",
+        "assist_controle_minutes": "15",
+        "assist_tel_htn": "",
+        "assist_kit_jours": "7",
+        "assist_sans_surveillance": "0"
+    }
+}

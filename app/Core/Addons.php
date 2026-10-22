@@ -440,7 +440,7 @@ final class Addons
     {
         $perms = (array) ($m['permissions'] ?? []);
         foreach ($perms as $p => $label) {
-            DB::run('INSERT INTO permissions (code, module, label) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE module = VALUES(module), label = VALUES(label)', [$p, 'Module : ' . $m['name'], (string) $label]);
+            DB::run('INSERT INTO permissions (code, module, label) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE module = VALUES(module), label = VALUES(label)', [$p, mb_substr('Module : ' . $m['name'], 0, 50), mb_substr((string) $label, 0, 150)]);
         }
         // Nouveaux rôles proposés par le module (créés une seule fois, modifiables ensuite dans
         // Rôles & permissions ; jamais écrasés lors d'une mise à jour)
