@@ -28,6 +28,7 @@ final class AssistController extends Controller
         $data = ['title' => 'Assistance à distance', 'tab' => $tab, 'tabs' => $tabs, 'manage' => $manage, 's' => $s,
             'code' => LicenceService::installId(), 'poste' => AssistService::currentPoste(), 'mine' => AssistService::active(Request::ip()),
             'all' => $manage ? AssistService::active() : [], 'postes' => $manage ? AssistService::postes() : [],
+            'curPoste' => ($m = AssistService::active(Request::ip())[0] ?? null) && $m['poste_id'] ? \App\Core\DB::one('SELECT * FROM assist_postes WHERE id = ?', [$m['poste_id']]) : null,
             'scripts' => ['addons/marwa_assist/assist-page.js']];
         if ($tab === 'diagnostic') {
             $data['diag'] = Diagnostic::run();
@@ -64,14 +65,21 @@ final class AssistController extends Controller
     public function share(int $id): void
     {
         $this->attempt(fn() => AssistService::share($id), '/assist');
-        flash('success', 'Partage en observation : le technicien voit l\'écran, vous gardez la souris et le clavier. Acceptez la connexion dans la fenêtre RustDesk.');
+        $auto = AssistService::agentOnline(($i = AssistService::find($id)) && $i['poste_id'] ? \App\Core\DB::one('SELECT * FROM assist_postes WHERE id = ?', [$i['poste_id']]) : null);
+        flash('success', $auto
+            ? 'Partage en observation : donnez l\'identifiant et le code d\'accès au technicien, il se connecte sans que vous ayez à cliquer. Vous gardez la souris et le clavier.'
+            : 'Partage en observation : le technicien voit l\'écran, vous gardez la souris et le clavier. Acceptez la connexion dans la fenêtre RustDesk.');
         redirect('/assist');
     }
 
     public function control(int $id): void
     {
         $until = $this->attempt(fn() => AssistService::authorizeControl($id, (string) Request::input('username', ''), (string) Request::input('secret', ''), Request::int('minutes')), '/assist');
-        flash('warning', 'Contrôle autorisé jusqu\'à ' . date('H:i', strtotime($until)) . '. Cochez « Clavier » dans la fenêtre RustDesk pour que le technicien puisse agir. Retour automatique en observation ensuite.');
+        $i = AssistService::find($id);
+        $auto = AssistService::agentOnline($i['poste_id'] ? \App\Core\DB::one('SELECT * FROM assist_postes WHERE id = ?', [$i['poste_id']]) : null);
+        flash('warning', 'Contrôle autorisé jusqu\'à ' . date('H:i', strtotime($until)) . '. ' . ($auto
+            ? 'Clavier et souris activés automatiquement : le technicien clique « Reconnecter » dans RustDesk. À l\'heure dite, la session est coupée et revient en observation.'
+            : 'Cochez « Clavier » dans la fenêtre RustDesk pour que le technicien puisse agir. Retour automatique en observation ensuite.'));
         redirect('/assist');
     }
 
@@ -123,6 +131,18 @@ final class AssistController extends Controller
             echo 'Refuse : ' . $e->getMessage();
         }
         exit;
+    }
+
+    /** Agent du poste (sans session, jeton du kit) : état à appliquer à RustDesk, en JSON. */
+    public function agent(): void
+    {
+        header('Cache-Control: no-store');
+        try {
+            $st = AssistService::agentState((string) Request::query('jeton', ''), (string) Request::query('version', ''), (string) Request::query('applique', ''));
+            json_response(['ok' => true] + $st);
+        } catch (BusinessException $e) {
+            json_response(['ok' => false, 'error' => $e->getMessage(), 'state' => 'aucune'], 403);
+        }
     }
 
     public function posteId(int $id): void

@@ -13,8 +13,9 @@ $old = fn(string $k, string $v) => App\Core\Session::old($k, $v); // saisie cons
 ?>
 <div class="alert alert-light border small mb-3">
   <i class="bi bi-headset text-primary"></i> <b>MARWA REMOTE ASSIST</b> — High Tech Niger peut voir l'écran de ce poste pour vous aider,
-  <b>sans arrêter la caisse</b>. Chaque connexion doit être <b>acceptée sur ce poste</b> ; le technicien <b>observe seulement</b>
-  tant qu'un responsable n'a pas autorisé le contrôle (durée limitée). Une fenêtre RustDesk et un bandeau rouge restent affichés pendant toute l'assistance.
+  <b>sans arrêter la caisse</b>. Personne ne peut se connecter tant que vous n'avez pas cliqué <b>Partager mon écran</b> ; le technicien <b>observe seulement</b>
+  tant qu'un responsable n'a pas autorisé le contrôle (durée limitée). Une fenêtre RustDesk et un bandeau restent affichés pendant toute l'assistance ;
+  sur un poste équipé de l'agent, tout se règle automatiquement (code d'accès, clavier, coupure à la fin).
 </div>
 
 <ul class="nav nav-tabs mb-3">
@@ -96,13 +97,31 @@ $old = fn(string $k, string $v) => App\Core\Session::old($k, $v); // saisie cons
             <div class="col-sm-2"><button class="btn btn-secondary btn-sm w-100">Terminer</button></div>
           </div>
         </form>
+        <?php $auto = AssistService::agentOnline($curPoste); ?>
+        <?php if ($auto && $cur['access_code'] && in_array($cur['status'], ['observation', 'controle'], true)): ?>
+          <div class="border border-primary rounded p-2 mt-2 d-flex flex-wrap align-items-center gap-3" data-assist-code>
+            <div><div class="small text-secondary">Identifiant</div><div class="fs-4 fw-bold font-monospace"><?= e(trim(chunk_split((string) $curPoste['rustdesk_id'], 3, ' '))) ?></div></div>
+            <div><div class="small text-secondary">Code d'accès (cette assistance seulement)</div><div class="fs-4 fw-bold font-monospace text-primary" data-copy><?= e($cur['access_code']) ?></div></div>
+            <?php if ($digits !== ''): ?><a class="btn btn-success btn-sm ms-auto" target="_blank" rel="noopener" href="<?= e($wa('Assistance POS Marwa — boutique ' . $code . ' — poste ' . $curPoste['label'] . ' — identifiant ' . $curPoste['rustdesk_id'] . ' — code d\'accès ' . $cur['access_code'])) ?>"><i class="bi bi-whatsapp"></i> Envoyer au technicien</a><?php endif; ?>
+          </div>
+        <?php endif; ?>
         <hr>
+        <?php if ($auto): ?>
+        <ol class="small mb-0">
+          <li><i class="bi bi-robot text-success"></i> <b>Agent actif sur ce poste</b> : rien à régler dans RustDesk.</li>
+          <li>Après <b>Partager mon écran</b>, envoyez l'<b>identifiant</b> et le <b>code d'accès</b> au technicien : il se connecte sans clic de votre part. Continuez vos ventes.</li>
+          <li>Besoin de la souris ? Un responsable clique <b>Autoriser le contrôle</b> : le clavier s'active tout seul quand le technicien clique « Reconnecter ».</li>
+          <li><b>Terminer l'assistance</b> coupe la session immédiatement et le code ne sert plus. Fin du délai de contrôle : retour automatique en observation.</li>
+        </ol>
+        <?php else: ?>
         <ol class="small mb-0">
           <li>Donnez le <b>code boutique</b> et l'<b>identifiant</b> au technicien (téléphone ou WhatsApp).</li>
           <li>Quand la fenêtre RustDesk demande d'<b>accepter</b> la connexion, cliquez <b>Accepter</b>. Continuez vos ventes normalement.</li>
           <li>Le technicien a besoin de la souris ? Un responsable clique <b>Autoriser le contrôle</b>, puis cochez <b>Clavier</b> dans la fenêtre RustDesk.</li>
           <li>Fini : <b>Terminer l'assistance</b> ici et <b>Déconnecter</b> dans la fenêtre RustDesk.</li>
+          <?php if ($curPoste): ?><li class="text-warning-emphasis">Agent automatique absent sur ce poste : refaites son kit (Postes équipés) pour ne plus avoir à cliquer.</li><?php endif; ?>
         </ol>
+        <?php endif; ?>
       </div></div>
     <?php endif; ?>
     <?php $others = array_filter($all, fn($i) => !$cur || (int) $i['id'] !== (int) $cur['id']); if ($others): ?>
@@ -137,7 +156,8 @@ $old = fn(string $k, string $v) => App\Core\Session::old($k, $v); // saisie cons
         <td><?= e($p['label']) ?><div class="text-secondary"><?= $p['kind'] === 'technicien' ? 'technicien' : 'boutique' ?></div></td>
         <td class="font-monospace"><?= e($p['rustdesk_id'] ?? '—') ?></td>
         <td><?= e(($p['hostname'] ?? '') . ' ' . ($p['ip'] ?? '')) ?></td>
-        <td><?php if ($p['revoked_at']): ?>retiré<?php elseif ($p['rustdesk_id']): ?><span class="text-success">prêt</span><?php elseif (strtotime((string) $p['token_expires']) < time()): ?><span class="text-warning">kit expiré</span><?php else: ?>kit en attente<?php endif; ?></td>
+        <td><?php if ($p['revoked_at']): ?>retiré<?php elseif ($p['rustdesk_id']): ?><span class="text-success">prêt</span><?php elseif (strtotime((string) $p['token_expires']) < time()): ?><span class="text-warning">kit expiré</span><?php else: ?>kit en attente<?php endif; ?>
+          <?php if (!$p['revoked_at'] && $p['kind'] === 'boutique'): ?><div><?php if (AssistService::agentOnline($p)): ?><span class="badge bg-success"><i class="bi bi-robot"></i> agent en ligne</span><?php elseif ($p['agent_seen']): ?><span class="badge bg-warning text-dark" title="<?= e(fdate($p['agent_seen'])) ?>">agent hors ligne</span><?php else: ?><span class="badge bg-secondary" title="Kit d'une version antérieure : refaire le kit pour l'agent automatique">sans agent</span><?php endif; ?></div><?php endif; ?></td>
         <td class="text-end"><?php if (!$p['revoked_at']): ?>
           <?php if ($p['kind'] === 'boutique'): ?>
           <form method="post" action="<?= e(url('/assist/postes/' . (int) $p['id'] . '/id')) ?>" class="d-inline-flex gap-1 mb-1"><?= csrf_field() ?>

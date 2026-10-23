@@ -17,4 +17,13 @@ return [
         'country' => 'Niamey, République du Niger',
         'phones' => ['+227 92 08 12 82', '+227 87 22 52 02'],
     ],
+    /*
+     * Serveur d'assistance à distance de High Tech Niger (module MARWA REMOTE ASSIST) : adresse IP
+     * publique fixe et clé publique affichées par « php bin/assist.php cle ». Renseignées ici (ou dans
+     * .env : ASSIST_HOST, ASSIST_KEY) avant de distribuer POS Marwa, chaque boutique est réglée d'office.
+     */
+    'assist' => [
+        'host' => (string) Env::get('ASSIST_HOST', ''),
+        'key' => (string) Env::get('ASSIST_KEY', ''),
+    ],
 ];

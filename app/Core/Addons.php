@@ -205,6 +205,13 @@ final class Addons
     public static function autoUpgrade(): array
     {
         $todo = array_values(array_filter(array_keys(self::active()), [self::class, 'pendingUpgrade']));
+        // Modules fournis marqués « auto_install » et jamais installés : installés et activés d'office
+        // (un module désactivé par l'utilisateur garde sa ligne en base : il n'est jamais réactivé).
+        foreach (self::discover() as $code => $m) {
+            if (!empty($m['auto_install']) && !$m['errors'] && !isset(self::installed()[$code])) {
+                $todo[] = $code;
+            }
+        }
         if (!$todo || (int) DB::value("SELECT GET_LOCK('poswan_addon_upgrade', 30)") !== 1) {
             return [];
         }
@@ -214,7 +221,8 @@ final class Addons
             $backup = true;
             foreach ($todo as $code) {
                 $flag = STORAGE_PATH . '/cache/addon_upgrade_failed_' . $code;
-                if (!self::pendingUpgrade($code) || (is_file($flag) && filemtime($flag) > time() - 600)) {
+                $isNew = !isset(self::installed()[$code]);
+                if ((!$isNew && !self::pendingUpgrade($code)) || (is_file($flag) && filemtime($flag) > time() - 600)) {
                     continue;
                 }
                 try {
@@ -222,7 +230,7 @@ final class Addons
                     $backup = false; // une seule sauvegarde pour tous les modules
                     @unlink($flag);
                     $done[] = $code;
-                    Logger::info('Module mis à jour automatiquement', ['module' => $code, 'version' => self::discover()[$code]['version'] ?? '']);
+                    Logger::info($isNew ? 'Module installé automatiquement' : 'Module mis à jour automatiquement', ['module' => $code, 'version' => self::discover()[$code]['version'] ?? '']);
                 } catch (\Throwable $e) {
                     Logger::error('Mise à jour automatique du module « ' . $code . ' » impossible : ' . $e->getMessage());
                     @file_put_contents($flag, $e->getMessage());

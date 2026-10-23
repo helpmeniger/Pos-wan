@@ -18,3 +18,5 @@ $router->post('/assist/boutiques/{id}', [A::class, 'boutique'], 'assist.manage')
 $router->post('/assist/boutiques/{id}/archiver', [A::class, 'archiveBoutique'], 'assist.manage');
 // Appelée par le script du kit d'installation (pas de session) : protégée par un jeton secret
 $router->get('/assist/enregistrer', [A::class, 'register'], null, true);
+// Agent automatique du poste (tâche planifiée Windows) : état à appliquer, protégé par le jeton du kit
+$router->get('/assist/agent', [A::class, 'agent'], null, true);

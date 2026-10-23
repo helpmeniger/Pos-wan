@@ -1,8 +1,9 @@
 {
     "code": "marwa_assist",
     "name": "MARWA REMOTE ASSIST",
-    "version": "1.0.0",
-    "requires": "2.7.0",
+    "version": "1.1.0",
+    "requires": "2.8.0",
+    "auto_install": true,
     "author": "Mahamadou Hamidou (Mohamed) — High Tech Niger",
     "description": "Assistance à distance de n'importe quel poste de la boutique par High Tech Niger, sans nom de domaine et sans arrêter la caisse : demande d'assistance, partage d'écran en observation (le caissier continue de vendre), contrôle clavier et souris seulement après autorisation d'un responsable et pour une durée limitée, bandeau permanent pendant l'assistance, historique, diagnostic. Moteur RustDesk (client et serveur de relais livrés dans le module, licence AGPL-3.0, non modifiés).",
     "icon": "bi-headset",

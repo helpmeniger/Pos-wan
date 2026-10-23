@@ -3340,6 +3340,45 @@ test('MARWA REMOTE ASSIST : droits, réglages, observation / contrôle autorisé
     $d = Addons\MarwaAssist\Diagnostic::text(Addons\MarwaAssist\Diagnostic::run());
     ok(str_contains($d, 'serveur d\'assistance HTN') && !preg_match('/Mot-de-passe|password_hash|' . preg_quote($key, '/') . '/', $d), 'diagnostic : état technique seulement');
     ok(is_file(PUBLIC_PATH . '/assets/addons/marwa_assist/assist.js') && str_contains((string) file_get_contents(PUBLIC_PATH . '/assets/addons/marwa_assist/assist.js'), '/assist/etat'), 'bandeau publié sur toutes les pages');
+
+    // Agent automatique du poste (1.1) : code d'accès, clavier, coupure — sans réglage manuel
+    actingAs('gerant');
+    $ka = $AS::createKit('boutique', 'Caisse agent', $B);
+    $z = new ZipArchive();
+    $z->open($ka['path']);
+    $ps = (string) $z->getFromName('agent-assistance.ps1');
+    $kbat = (string) $z->getFromName('installer-assistance.bat');
+    $z->close();
+    @unlink($ka['path']);
+    ok(preg_match("#\\\$Jeton = '([a-f0-9]{48})'#", $ps, $jm) === 1 && str_contains($ps, "\$Base = '$B'") && str_contains($ps, 'Restart-Service') && mb_check_encoding($ps, 'ASCII'), 'kit : agent PowerShell (adresse, jeton, coupure des sessions), texte ASCII');
+    ok(str_contains($kbat, 'schtasks /create /tn "POS Marwa assistance" /sc onstart /ru SYSTEM') && str_contains($kbat, 'icacls'), 'kit : agent installé en tâche planifiée SYSTEM, dossier protégé');
+    $jt = $jm[1];
+    $agent = fn(string $q = '') => (new Http())->req('GET', "$B/assist/agent?jeton=$jt" . $q, null, ['Accept: application/json']);
+    ok($agent()['code'] === 200 && json_decode($agent()['body'], true)['state'] === 'aucune', 'agent servi dès l\'installation du kit (jeton valide)');
+    (new Http())->req('GET', "$B/assist/enregistrer?jeton=$jt&id=987654321&poste=PC-AGENT");
+    DB::update('assist_postes', ['token_expires' => date('Y-m-d H:i:s', time() - 60)], 'id = ?', [$ka['poste']]);
+    $st = json_decode($agent('&version=1.1')['body'], true);
+    ok($st['ok'] && $st['state'] === 'aucune' && $st['code'] === '' && !$st['keyboard'], 'agent : aucune assistance → aucun code, clavier coupé (kit expiré mais poste enregistré : toujours servi)');
+    ok(DB::value('SELECT agent_seen FROM assist_postes WHERE id = ?', [$ka['poste']]) !== null && $AS::agentOnline(DB::one('SELECT * FROM assist_postes WHERE id = ?', [$ka['poste']])), 'agent vu « en ligne »');
+    $post($c, '/assist/demande', ['reason' => 'Test agent']);
+    $ia = (int) DB::value("SELECT id FROM assist_interventions WHERE status = 'demandee' ORDER BY id DESC LIMIT 1");
+    eq((int) $ka['poste'], (int) DB::value('SELECT poste_id FROM assist_interventions WHERE id = ?', [$ia]), 'intervention rattachée au poste (adresse du PC)');
+    eq('aucune', json_decode($agent()['body'], true)['state'], 'demandée mais pas encore partagée : aucun accès');
+    $post($c, "/assist/$ia/partager");
+    $codeA = (string) DB::value('SELECT access_code FROM assist_interventions WHERE id = ?', [$ia]);
+    ok(preg_match('/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/', $codeA) === 1, 'code d\'accès de la session : ' . $codeA);
+    ok(str_contains($c->req('GET', "$B/assist")['body'], $codeA), 'code affiché au caissier');
+    $st = json_decode($agent()['body'], true);
+    ok($st['state'] === 'observation' && $st['code'] === $codeA && !$st['keyboard'], 'agent : observation avec le code, clavier coupé');
+    $post($c, "/assist/$ia/controle", ['username' => 'gerant', 'secret' => '4826', 'minutes' => 5]);
+    ok(json_decode($agent('&applique=controle%7Cclavier%7C' . $ia)['body'], true)['keyboard'] === true, 'agent : contrôle autorisé → clavier');
+    ok((bool) DB::value("SELECT 1 FROM assist_events WHERE intervention_id = ? AND action = 'agent_applique'", [$ia]), 'application par l\'agent inscrite dans l\'historique');
+    $post($c, "/assist/$ia/terminer");
+    $st = json_decode($agent()['body'], true);
+    ok($st['state'] === 'aucune' && $st['code'] === '' && DB::value('SELECT access_code FROM assist_interventions WHERE id = ?', [$ia]) === null, 'fin : code effacé, l\'agent revient à « aucune »');
+    $AS::revokePoste($ka['poste']);
+    eq(403, $agent()['code'], 'poste retiré : agent refusé');
+    eq(403, (new Http())->req('GET', "$B/assist/agent?jeton=" . str_repeat('0', 48))['code'], 'faux jeton : agent refusé');
 });
 
 /** Jeu de données DICOM (Explicit VR Little Endian) pour les tests d'imagerie. */
@@ -3616,6 +3655,18 @@ test('Banques et coffres : comptes, versements de clôture, dépôts, retraits, 
     $g->req('POST', "$B/banques/operations", http_build_query(['_csrf' => $tok, 'type' => 'depot', 'account_id' => $bank, 'amount' => '12 500', 'person' => 'Gérant']));
     eq(62500.0, $bal($bank), 'gérant : dépôt par le formulaire');
     eq(403, $g->req('POST', "$B/banques/operations/$r1/annuler", http_build_query(['_csrf' => $tok, 'reason' => 'test']))['code'], 'gérant : annulation réservée au propriétaire');
+    // Installation automatique des modules fournis « auto_install », sans jamais réactiver un module désactivé
+    App\Core\Addons::setActive('banques', false);
+    App\Core\Addons::reset();
+    App\Core\Addons::autoUpgrade();
+    App\Core\Addons::reset();
+    ok(!App\Core\Addons::isActive('banques'), 'module désactivé par l\'utilisateur : jamais réactivé automatiquement');
+    App\Core\Addons::setActive('banques', true);
+    DB::run("DELETE FROM addons WHERE code = 'marwa_assist'");
+    App\Core\Addons::reset();
+    App\Core\Addons::autoUpgrade();
+    App\Core\Addons::reset();
+    ok(App\Core\Addons::isActive('marwa_assist'), 'module fourni « auto_install » jamais installé : installé et activé d\'office');
 });
 
 test('Pressing : écran des dépôts en cours (atelier) et affichage clients sans données personnelles', function () use ($B) {

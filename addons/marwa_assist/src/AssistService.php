@@ -28,8 +28,9 @@ final class AssistService
         $phones = (array) config('licence.author.phones');
         return [
             'role' => setting('assist_role', 'boutique') === 'serveur' ? 'serveur' : 'boutique',
-            'host' => (string) setting('assist_serveur_adresse', ''),
-            'key' => (string) setting('assist_serveur_cle', ''),
+            // Réglage de la boutique, sinon serveur HTN fourni avec le logiciel (config/licence.php)
+            'host' => (string) (setting('assist_serveur_adresse', '') ?: config('licence.assist.host', '')),
+            'key' => (string) (setting('assist_serveur_cle', '') ?: config('licence.assist.key', '')),
             'minutes' => max(5, min(60, (int) setting('assist_controle_minutes', '15'))),
             'phone' => (string) (setting('assist_tel_htn', '') ?: ($phones[0] ?? '')),
             'kit_days' => max(1, min(30, (int) setting('assist_kit_jours', '7'))),
@@ -54,7 +55,7 @@ final class AssistService
             }
         }
         foreach (DB::all("SELECT id FROM assist_interventions WHERE status IN ('demandee','observation') AND created_at < NOW() - INTERVAL " . self::REQUEST_HOURS . " HOUR") as $r) {
-            if (DB::update('assist_interventions', ['status' => 'expiree', 'ended_at' => date('Y-m-d H:i:s')], "id = ? AND status IN ('demandee','observation')", [$r['id']])) {
+            if (DB::update('assist_interventions', ['status' => 'expiree', 'access_code' => null, 'ended_at' => date('Y-m-d H:i:s')], "id = ? AND status IN ('demandee','observation')", [$r['id']])) {
                 self::event((int) $r['id'], 'expiree');
             }
         }
@@ -109,7 +110,10 @@ final class AssistService
         if (!in_array($i['status'], ['demandee', 'controle'], true)) {
             throw new BusinessException('Cette intervention n\'est plus en cours.');
         }
-        DB::update('assist_interventions', ['status' => 'observation', 'control_until' => null, 'started_at' => $i['started_at'] ?? date('Y-m-d H:i:s')], 'id = ?', [$id]);
+        // Code d'accès de la session : l'agent du poste le donne à RustDesk ; le technicien se connecte
+        // sans attendre de clic (le partage dans POS Marwa vaut accord du caissier)
+        DB::update('assist_interventions', ['status' => 'observation', 'control_until' => null, 'started_at' => $i['started_at'] ?? date('Y-m-d H:i:s'),
+            'access_code' => $i['access_code'] ?: self::newCode()], 'id = ?', [$id]);
         self::event($id, $i['status'] === 'controle' ? 'controle_retire' : 'observation');
         if ($i['status'] === 'controle') {
             self::localKeyboard(false);
@@ -144,7 +148,7 @@ final class AssistService
         if (!in_array($i['status'], self::ACTIVE, true)) {
             return; // déjà terminée : rien à faire (double clic, deux onglets)
         }
-        DB::update('assist_interventions', ['status' => 'terminee', 'control_until' => null, 'ended_at' => date('Y-m-d H:i:s'), 'ended_by' => Auth::id(),
+        DB::update('assist_interventions', ['status' => 'terminee', 'control_until' => null, 'access_code' => null, 'ended_at' => date('Y-m-d H:i:s'), 'ended_by' => Auth::id(),
             'technician' => mb_substr(trim($technician), 0, 60) ?: null, 'summary' => mb_substr(trim($summary), 0, 500) ?: null], 'id = ?', [$id]);
         self::event($id, 'fin', array_filter(['technicien' => $technician, 'resume' => mb_substr($summary, 0, 200)]));
         if ($i['status'] === 'controle') {
@@ -230,7 +234,10 @@ final class AssistService
             $z->setCompressionName('rustdesk.exe', \ZipArchive::CM_STORE);
             $z->addFromString($kind === 'boutique' ? 'installer-assistance.bat' : 'demarrer-technicien.bat',
                 Kit::script($kind, $s['host'], $s['key'], rtrim($baseUrl, '/'), $token, $s['unattended']));
-            $z->addFromString('LISEZMOI.txt', Kit::readme($kind, $label, $s['host']));
+            if ($kind === 'boutique') {
+            $z->addFromString('agent-assistance.ps1', Kit::agent(rtrim($baseUrl, '/'), $token));
+        }
+        $z->addFromString('LISEZMOI.txt', Kit::readme($kind, $label, $s['host']));
             $z->addFile($lic, 'LICENCE-RustDesk-AGPL-3.0.txt');
             if (!$z->close()) {
                 throw new BusinessException('Kit impossible à préparer (écriture du ZIP).');
@@ -243,6 +250,61 @@ final class AssistService
         }
         self::event(null, 'kit', ['type' => $kind, 'poste' => $label, 'poste_id' => $posteId]);
         return ['path' => $zipPath, 'name' => 'assistance-' . ($kind === 'boutique' ? 'poste' : 'technicien') . '-' . preg_replace('/[^A-Za-z0-9_-]/', '-', $label) . '.zip', 'poste' => $posteId];
+    }
+
+    /** Code d'accès lisible (sans 0/O, 1/I/L) : 4 + 4 caractères. */
+    public static function newCode(): string
+    {
+        $alpha = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        $c = '';
+        for ($i = 0; $i < 8; $i++) {
+            $c .= $alpha[random_int(0, strlen($alpha) - 1)];
+        }
+        return substr($c, 0, 4) . '-' . substr($c, 4);
+    }
+
+    /** Poste d'un jeton d'agent : enregistré (le délai du kit ne compte plus) et non retiré. */
+    private static function posteByToken(string $token): array
+    {
+        if (!preg_match('/^[a-f0-9]{48}$/', $token)) {
+            throw new BusinessException('Jeton invalide.');
+        }
+        $p = DB::one('SELECT * FROM assist_postes WHERE token_hash = ? AND revoked_at IS NULL', [hash('sha256', $token)]);
+        if (!$p || (!$p['registered_at'] && strtotime((string) $p['token_expires']) < time())) {
+            throw new BusinessException('Poste retiré de l\'assistance ou kit expiré.');
+        }
+        return $p;
+    }
+
+    /**
+     * État que l'agent du poste doit appliquer à RustDesk (interrogé toutes les 3 secondes) :
+     * - « aucune » : connexion seulement après un clic du caissier, clavier coupé, code inconnu ;
+     * - « observation » : connexion avec le code de la session, clavier coupé ;
+     * - « controle » : idem, clavier et souris autorisés (après accord d'un responsable).
+     */
+    public static function agentState(string $token, string $version = '', string $applied = ''): array
+    {
+        $p = self::posteByToken($token);
+        self::expire();
+        $i = DB::one("SELECT * FROM assist_interventions WHERE poste_id = ? AND status IN ('observation','controle') ORDER BY id DESC LIMIT 1", [$p['id']]);
+        $state = $i ? $i['status'] : 'aucune';
+        // L'adresse du poste suit l'agent (DHCP) : le bandeau et « ce poste » restent justes
+        $data = ['agent_seen' => date('Y-m-d H:i:s'), 'ip' => Request::ip(), 'agent_version' => mb_substr(preg_replace('/[^0-9A-Za-z.\-]/', '', $version), 0, 20) ?: null];
+        if ($applied !== '' && $applied !== $p['agent_state']) {
+            $data['agent_state'] = mb_substr($applied, 0, 120);
+            if ($i) {
+                self::event((int) $i['id'], 'agent_applique', ['poste' => $p['label'], 'etat' => explode('|', $applied)[0]]);
+            }
+        }
+        DB::update('assist_postes', $data, 'id = ?', [$p['id']]);
+        return ['state' => $state, 'code' => $i ? (string) $i['access_code'] : '', 'keyboard' => $state === 'controle',
+            'unattended' => self::settings()['unattended'], 'intervention' => $i ? (int) $i['id'] : null];
+    }
+
+    /** L'agent du poste a-t-il répondu dans la dernière minute ? */
+    public static function agentOnline(?array $poste): bool
+    {
+        return $poste && $poste['agent_seen'] && strtotime((string) $poste['agent_seen']) > time() - 60;
     }
 
     /** Appelé par le script du kit après l'installation : identifiant RustDesk du poste. */

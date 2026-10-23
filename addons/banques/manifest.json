@@ -3,6 +3,7 @@
     "name": "Banques et coffres",
     "version": "1.0.0",
     "requires": "2.8.0",
+    "auto_install": true,
     "author": "POS Marwa",
     "description": "Argent sorti de la caisse : versement des clôtures de caisse à la banque, au coffre ou au propriétaire, dépôts, retraits et virements entre comptes, relevé et historique de chaque opération, annulation tracée (jamais d'effacement).",
     "icon": "bi-bank",
