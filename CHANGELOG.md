@@ -2,6 +2,63 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.8.0] — 2026-10-23
+
+### Ajouté
+- **Clinique 1.2 : imagerie médicale** (`addons/clinique`)
+  - **Réception directe des images des appareils** : récepteur DICOM écrit en PHP (test de connexion,
+    stockage), qui joue le rôle de PACS pour les radios CR/DR, échographes, scanners, etc. Il démarre
+    automatiquement avec POS Marwa après `windows\imagerie-serveur.bat` (une fois).
+  - **Autres arrivées** : dossier d'arrivée partagé, import depuis le navigateur (CD/DVD, clé USB,
+    photo) en morceaux de 1 Mo.
+  - **Classement automatique** par n° de demande ou n° de dossier, sinon « à rattacher » ; jamais par
+    le nom seul. Demandes d'examen imprimables. Images en double ignorées. Appareils détectés.
+  - **Visionneuse et analyse des clichés** :
+    - contraste / luminosité sur les valeurs d'origine (HU), fenêtres prédéfinies ;
+    - loupe, rotation, miroir, inversion, ciné ;
+    - distance calibrée en mm, angle, zone (surface, moyenne, écart-type, min, max) ;
+    - flèches et textes enregistrés.
+  - **Compte rendu** : modèles, validation, réouverture tracée, impression avec images.
+  - Aucune interprétation automatique.
+- **Banques et coffres** (nouveau module `addons/banques`)
+  - Comptes : banque, coffre, argent gardé par le propriétaire, mobile money.
+  - **Versement des clôtures de caisse**, plafonné au montant compté.
+  - Dépôts, retraits (motif), virements, frais, intérêts, ajustements.
+  - Annulation tracée qui rétablit le solde, jamais d'effacement.
+  - Relevé avec solde ligne par ligne, historique filtrable, exports CSV/PDF, reçus imprimables.
+  - Bouton « Verser à la banque / au coffre » sur la page de la caisse.
+- **Pressing 1.2 : écran des dépôts en cours**, en plein écran comme la cuisine ou la supervision
+  clinique :
+  - colonnes déposés / en traitement / prêts ;
+  - retards, express, dépôts du jour, reste à encaisser ;
+  - avancement en un clic ;
+  - affichage pour les clients : numéro et prénom des dépôts prêts, sans téléphone ni montant.
+- **MARWA REMOTE ASSIST 1.1 : assistance automatique**
+  - Un **agent** installé par le kit sur chaque poste applique tout seul l'état décidé dans POS Marwa.
+  - « Partager mon écran » crée un **code d'accès** : le technicien se connecte sans clic du caissier.
+  - Contrôle autorisé → clavier activé à la reconnexion.
+  - Fin du délai ou fin de l'assistance → session coupée.
+  - Poste retiré ou POS Marwa injoignable 2 minutes → plus aucun accès.
+- **Modules installés d'office** (`auto_install` : assistance, banques) ; un module désactivé n'est
+  jamais réactivé.
+- Serveur d'assistance HTN par défaut configurable une fois pour toutes (`config/licence.php` ou
+  `.env`).
+
+### Tests
+- Suite PHP : 132/132 (blocs imagerie avec protocole DICOM réel, banques, écran pressing, agent
+  d'assistance, installation automatique).
+- Navigateur :
+  - imagerie 22/22, avec envoi réel par les outils dcmtk ;
+  - banques ;
+  - écran pressing ;
+  - agent d'assistance 11/11, exécuté par PowerShell 7 avec RustDesk simulé.
+
+### Limites connues
+- **Non testés** :
+  - un vrai appareil d'imagerie ;
+  - le récepteur d'images et l'agent d'assistance sous un vrai Windows.
+- JPEG Lossless / JPEG-LS / JPEG 2000 : fichiers conservés mais non affichés par la visionneuse.
+
 ## [2.7.0] — 2026-10-22
 
 ### Ajouté

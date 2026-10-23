@@ -171,3 +171,13 @@ boutiques n'ont pas besoin de ce script : ils utilisent le kit « Kit du poste �
 POS Marwa. Détails : `addons/marwa_assist/README.md`.
 
 *Non exécuté sur un vrai Windows à ce jour : à vérifier lors de la mise en service.*
+
+## 10. Récepteur d'images de la clinique (imagerie DICOM)
+Double-cliquez une fois `windows\imagerie-serveur.bat` sur le PC qui héberge POS Marwa. Il :
+1. demande les droits administrateur ;
+2. ouvre le port 11112 dans le pare-feu, pour le **réseau privé uniquement** ;
+3. crée le dossier d'arrivée `storage\imagerie\arrivee` ;
+4. démarre le récepteur.
+
+Ensuite, `demarrer-pos-marwa.bat` le relance automatiquement, fenêtre réduite (`service-imagerie.bat`).
+Réglages des appareils : `addons/clinique/README.md`. *Non exécuté sur un vrai Windows à ce jour.*

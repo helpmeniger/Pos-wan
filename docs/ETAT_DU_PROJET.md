@@ -1,4 +1,4 @@
-# État du projet — version 2.7.0 (POS Marwa)
+# État du projet — version 2.8.0 (POS Marwa)
 
 ## Terminé et vérifié
 
@@ -67,7 +67,11 @@
 | **v2.6** Voix Piper livrée dans le dossier + écran cuisine parlant (commandes, ajouts, annulations, relecture) + plats prêts annoncés en salle | ✅ fonctionnel, ⚠️ à valider sur place | 76 tests JS + test PHP (paquet ≤ 1 Mo par fichier, 147 fichiers reconstitués avec SHA-256 exact, fragment abîmé refusé) + Chromium avec Piper réel (12/12 : commande lue une fois, relecture, ajout, annulation avec motif, « Table T2 : deux plats prêts »). **Piper Windows non exécuté sur un vrai PC Windows** |
 
 | **v2.7** MARWA REMOTE ASSIST : assistance à distance (RustDesk livré : client + serveur HTN), observation / contrôle autorisé par un responsable, bandeau, kits, historique, diagnostic | ✅ fonctionnel, ⚠️ à valider sur place | Test PHP complet (droits, paquet, réglages, kits, jetons, cycle, expiration, vente pendant l'assistance) + essai réel avec deux clients RustDesk Linux et le serveur du paquet. Vérifié : consentement par clic, observation sans clavier, contrôle autorisé puis retiré, clé refusée, relais forcé, arrêt du serveur sans effet sur la caisse. **Scripts Windows et coupure automatique du clavier non exécutés sur Windows ; pas d'essai entre deux réseaux Internet réels** |
-**Résultat de la suite de tests : 129 réussis, 0 échec** (`php tests/run.php`), plus 15 vérifications JavaScript du moteur de comptage (`node tests/js/track.test.js`).
+| **v2.8** Clinique : imagerie médicale (récepteur DICOM, dossier d'arrivée, import, classement automatique, visionneuse avec mesures calibrées, compte rendu) | ✅ fonctionnel, ⚠️ à valider sur place | Envoi réel par dcmtk (echoscu / storescu, 10 formats, pixels identiques), Chromium 22/22 (distance 45,0 mm pour 45 mm, HU), tests PHP avec protocole DICOM. **Aucun vrai appareil d'imagerie ; récepteur non lancé sous Windows ; JPEG Lossless / JPEG 2000 non affichés** |
+| **v2.8** Banques et coffres : comptes, versements des clôtures, dépôts, retraits, virements, annulations, relevés, reçus | ✅ | Tests PHP (soldes, plafonds, annulations, droits) + Chromium |
+| **v2.8** Pressing : écran des dépôts en cours + affichage clients | ✅ | Tests PHP + Chromium (avancement, aucune donnée personnelle côté clients) |
+| **v2.8** Assistance automatique (agent sur chaque poste) | ✅ fonctionnel, ⚠️ à valider sur place | Agent exécuté par PowerShell 7 contre POS Marwa, RustDesk simulé (11/11 + coupure de sécurité). **Non exécuté sur un vrai Windows** |
+**Résultat de la suite de tests : 132 réussis, 0 échec** (`php tests/run.php`), plus 15 vérifications JavaScript du moteur de comptage (`node tests/js/track.test.js`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 
@@ -97,8 +101,13 @@
 | Établissement : formalité biométrique auprès de la HAPDP | À la charge de l'établissement | — |
 | Assistance à distance : blocage du clavier | Repose sur RustDesk (case « Clavier » dans sa fenêtre) ; POS Marwa ne peut pas empêcher le caissier de la cocher ; coupure automatique seulement sur le PC serveur Windows (non testée) | — |
 | Assistance à distance : serveur HTN | Exige une adresse IP publique fixe et 4 ports ouverts ; impossible derrière CGNAT (4G) | VPS à IP fixe |
+| Imagerie : interprétation automatique des clichés | Non implémentée (outil de lecture et de mesure seulement) ; POS Marwa n'est pas un dispositif médical certifié | — |
+| Imagerie : liste de travail DICOM (Modality Worklist), JPEG Lossless / JPEG 2000 | Le n° de demande se saisit dans l'appareil ; ces formats sont conservés mais non affichés | Worklist C-FIND, décodeurs |
+| Banques : liaison directe avec les banques | Opérations saisies à la main | — |
 
 ## Prochaines tâches proposées
+0. Imagerie : faire un « Echo » puis un examen test depuis chaque appareil de la clinique (radio, échographe) vers POS Marwa sous Windows.
+0. Assistance : équiper un PC Windows avec le nouveau kit et vérifier l'agent (code, contrôle, coupure).
 0. Assistance à distance : installer le serveur HTN sur un VPS à IP fixe, équiper un PC Windows de la boutique avec le kit, faire une session d'essai depuis un autre réseau (observation, contrôle autorisé, fin) et vérifier l'historique.
 0. Établissement : essayer le pointage avec les caméras réelles de l'établissement (éclairage, hauteur, vitesse du PC) sur quelques volontaires consentants avant de l'étendre.
 0. Essayer sur le poste Windows le lanceur, le raccourci et le démarrage automatique ; essayer le scan caméra sur les téléphones de l'établissement (en HTTPS) et l'imprimante d'étiquettes.

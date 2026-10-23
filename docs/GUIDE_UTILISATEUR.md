@@ -241,6 +241,8 @@ Module fourni (`addons/marwa_assist/`), à activer dans Modules complémentaires
 2. **Partager mon écran** : acceptez la connexion dans la fenêtre RustDesk qui s'ouvre. Le
    technicien **voit** l'écran ; vous gardez la souris et le clavier. La caisse continue de
    vendre normalement.
+   Sur un poste équipé de l'agent (kit 1.1), rien à cliquer dans RustDesk : envoyez l'identifiant et le
+   **code d'accès** affichés au technicien.
 3. **Autoriser le contrôle à distance** :
    - un gérant ou le propriétaire saisit son identifiant et son mot de passe ou PIN ;
    - choisissez la durée ;
@@ -260,6 +262,37 @@ Les responsables trouvent aussi :
 
 N'ouvrez à l'écran que ce qui est utile : l'écran partagé peut montrer des données de clients
 (loi n° 2017-28). Installation et sécurité : `addons/marwa_assist/README.md`.
+
+### Banques et coffres
+Menu **Caisse → Banques et coffres**.
+1. Créez vos comptes : banque, coffre, argent gardé par le propriétaire, mobile money, avec leur solde actuel.
+2. Après chaque clôture de caisse : **Clôtures à verser**, puis choisissez le compte, le montant, le n° de
+   bordereau et **Verser**. Vous pouvez répartir entre plusieurs comptes. Imprimez le reçu.
+3. **Dépôt**, **Retrait** (motif obligatoire), **Virement** entre comptes, **Frais / intérêts**.
+4. Cliquez un compte pour voir son **relevé** (solde ligne par ligne, export CSV/PDF).
+5. Une erreur ? Le propriétaire **annule** l'opération avec un motif. Elle reste visible, barrée, et le
+   solde est rétabli.
+
+### Pressing : écran des dépôts en cours
+**Pressing → Écran des dépôts en cours** (ou le bouton dans « Suivi des vêtements ») :
+- colonnes Déposés / En traitement / Prêts, retards en rouge, express et dépôts du jour signalés ;
+- un clic sur « En traitement » ou « Prêt » fait avancer le dépôt ;
+- actualisation toutes les 15 secondes, plein écran ;
+- le lien **Affichage pour les clients** ouvre un écran à placer côté comptoir : numéro et prénom des
+  dépôts prêts, sans téléphone ni montant.
+
+### Imagerie médicale (clinique)
+**Clinique → Imagerie médicale**, et la carte « Imagerie » du dossier patient et de la consultation.
+- Le médecin clique **Demander un examen**. Le bon imprimé porte le n° de demande et le n° de dossier,
+  que le manipulateur saisit dans l'appareil : les images arrivent toutes seules dans le bon dossier.
+- Un examen « à rattacher » se relie au patient après vérification de son identité.
+- Visionneuse :
+  - glisser = contraste ; molette = loupe ; double-clic = ajuster ;
+  - outils règle (mm), angle, zone, flèche, texte ;
+  - flèches du clavier = image suivante.
+- Compte rendu : choisissez un modèle, complétez, **Enregistrer** puis **Valider** ; **Compte rendu**
+  imprime le document avec les images.
+- Réglage des appareils : `addons/clinique/README.md`.
 
 ### Assistant vocal (module MARWA VOICE AI)
 Module fourni (`addons/marwa_voice/`), à activer dans Modules complémentaires.

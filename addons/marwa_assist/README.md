@@ -82,6 +82,49 @@ sûr. Une connexion derrière CGNAT (fréquente en 4G) ne peut pas héberger le 
 « Retirer » un poste efface son jeton. Désinstallez aussi RustDesk du PC s'il ne doit plus être
 assisté.
 
+## 2 bis. Assistance automatique (version 1.1, POS Marwa 2.8)
+
+Le kit du poste installe aussi un **agent** : un petit script PowerShell (`agent-assistance.ps1`), lancé
+au démarrage de Windows par la tâche planifiée « POS Marwa assistance » (compte SYSTEM). Son dossier
+`C:\ProgramData\POSMarwa` n'est lisible que par SYSTEM et les administrateurs.
+
+Toutes les 3 secondes, l'agent demande à POS Marwa l'état de l'assistance de ce poste et l'applique à
+RustDesk. Plus rien n'est à régler à la main :
+
+| Dans POS Marwa | Ce que fait l'agent sur le poste |
+|---|---|
+| Aucune assistance | Connexion seulement après un clic du caissier ; clavier coupé ; mot de passe aléatoire inconnu |
+| **Partager mon écran** | Un **code d'accès** est créé pour cette assistance, affiché au caissier et envoyé par WhatsApp. Le technicien se connecte avec l'identifiant et ce code, **sans clic du caissier** : cliquer « Partager » vaut accord. La fenêtre RustDesk reste visible. |
+| **Contrôle autorisé** par un responsable | Clavier et souris activés : le technicien clique « Reconnecter » dans RustDesk |
+| Fin du délai de contrôle | Clavier coupé, session coupée (redémarrage du service RustDesk) ; le technicien revient en observation |
+| **Terminer** | Code invalidé, session coupée immédiatement, retour au clic obligatoire |
+| Poste retiré, ou POS Marwa injoignable pendant 2 minutes | Plus aucun accès par code (sécurité) |
+
+Autres automatismes :
+- le module est installé et activé d'office avec POS Marwa ; un module désactivé n'est jamais réactivé ;
+- l'adresse et la clé du serveur HTN peuvent être renseignées une fois pour toutes dans
+  `config/licence.php` (`assist.host`, `assist.key`) ou dans `.env` (`ASSIST_HOST`, `ASSIST_KEY`)
+  avant de distribuer POS Marwa : chaque boutique est alors réglée sans saisie ;
+- l'adresse IP du poste est mise à jour par l'agent.
+
+L'onglet « Postes équipés » indique pour chaque poste : **agent en ligne**, **hors ligne** ou **sans agent**.
+Les postes équipés avec un kit de la version 1.0 n'ont pas d'agent : refaites leur kit. Sans agent,
+l'ancien fonctionnement reste possible (acceptation par clic, case « Clavier »).
+
+Un changement de réglage RustDesk ne s'applique qu'aux **nouvelles** connexions. C'est pourquoi le
+contrôle demande une reconnexion du technicien, et pourquoi la coupure passe par le redémarrage du
+service. Ce comportement a été vérifié dans le code source de RustDesk 1.5.0.
+
+**Tests** :
+- le script de l'agent a été exécuté par PowerShell 7 (Linux) contre le vrai POS Marwa, avec un faux
+  `rustdesk.exe` qui note les commandes : 11/11 étapes conformes (code, clavier, coupures, poste
+  retiré) ;
+- la coupure de sécurité après 2 minutes sans réponse a été vérifiée ;
+- la syntaxe a été validée par l'analyseur PowerShell.
+
+**Non testé** : l'agent sur un vrai Windows avec RustDesk installé (PowerShell 5.1, tâche planifiée,
+`--option`, `--password`, redémarrage du service).
+
 ## 3. Utilisation (bouton **Assistance à distance**)
 
 1. **Assistance à distance** : le caissier décrit le problème. Il donne au technicien le **code

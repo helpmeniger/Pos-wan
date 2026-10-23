@@ -36,9 +36,9 @@ $recu = (int) ($_GET['recu'] ?? 0);
       <?php if (!$accounts): ?><div class="card"><div class="card-body text-secondary"><?= e(t('Aucun compte. Créez d\'abord vos comptes : banque, coffre, argent gardé par le propriétaire…')) ?><?= can('banques.manage') ? ' <a href="' . e(url('/banques', ['op' => 'compte'])) . '">' . e(t('Nouveau compte')) . '</a>' : '' ?></div></div><?php endif; ?>
     </div>
     <div class="card"><div class="card-header d-flex"><span><i class="bi bi-list-ul"></i> <?= e(t('Dernières opérations')) ?></span><a class="ms-auto small" href="<?= e(url('/banques/historique')) ?>"><?= e(t('Tout voir')) ?></a></div>
-      <div class="table-responsive"><table class="table table-sm align-middle mb-0 small"><thead><tr><th><?= e(t('Date')) ?></th><th>N°</th><th><?= e(t('Compte')) ?></th><th><?= e(t('Opération')) ?></th><th><?= e(t('Mode')) ?></th><th><?= e(t('Libellé')) ?></th><th class="num"><?= e(t('Entrée')) ?></th><th class="num"><?= e(t('Sortie')) ?></th></tr></thead><tbody>
-      <?php foreach ($recent as $r) { $showAccount = true; require __DIR__ . '/_op_row.php'; } ?>
-      <?php if (!$recent): ?><tr><td colspan="8" class="text-center text-secondary py-3"><?= e(t('Aucune opération.')) ?></td></tr><?php endif; ?>
+      <div class="table-responsive"><table class="table table-sm align-middle mb-0 small"><thead><tr><th><?= e(t('Date')) ?></th><th>N°</th><th><?= e(t('Compte')) ?></th><th><?= e(t('Opération')) ?></th><th><?= e(t('Libellé')) ?></th><th class="num"><?= e(t('Montant')) ?></th></tr></thead><tbody>
+      <?php foreach ($recent as $r) { $showAccount = true; $compact = true; require __DIR__ . '/_op_row.php'; } ?>
+      <?php if (!$recent): ?><tr><td colspan="6" class="text-center text-secondary py-3"><?= e(t('Aucune opération.')) ?></td></tr><?php endif; ?>
       </tbody></table></div></div>
   </div>
 
