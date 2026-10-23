@@ -6,6 +6,7 @@
 </div>
 <div class="d-flex flex-wrap gap-1 mb-2 align-items-center">
   <?php foreach (['open' => 'En cours', 'late' => 'En retard', 'soon' => 'Bientôt dus', 'ready' => 'Prêts', 'unpaid' => 'Non soldés', 'delivered' => 'Retirés', 'all' => 'Tous'] as $k => $l): ?><a class="btn btn-sm <?= $f === $k ? 'btn-dark' : 'btn-outline-secondary' ?>" href="<?= e(url('/pressing/suivi', array_filter(['f' => $k, 'q' => $q]))) ?>"><?= e($l) ?></a><?php endforeach; ?>
+  <a class="btn btn-sm btn-primary" href="<?= e(url('/pressing/ecran')) ?>"><i class="bi bi-display"></i> Écran des dépôts</a>
   <form class="d-flex gap-1 ms-auto" method="get"><input type="hidden" name="f" value="<?= e($f) ?>"><input name="q" value="<?= e($q) ?>" class="form-control form-control-sm" placeholder="N° de dépôt, client, téléphone"><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button></form>
   <?php if (can('reports.export')): ?><a class="btn btn-sm btn-outline-success" href="<?= e(query_with(['export' => 'csv'])) ?>"><i class="bi bi-filetype-csv"></i></a><a class="btn btn-sm btn-outline-danger" href="<?= e(query_with(['export' => 'pdf'])) ?>"><i class="bi bi-filetype-pdf"></i></a><?php endif; ?>
 </div>

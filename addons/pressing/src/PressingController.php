@@ -252,4 +252,27 @@ final class PressingController extends Controller
             'articles' => DB::all("SELECT i.article_name, SUM(i.quantity) AS qty, SUM(i.line_total) AS total FROM pressing_items i JOIN pressing_orders o ON o.id = i.order_id WHERE o.status <> 'cancelled' AND o.created_at BETWEEN ? AND ? GROUP BY i.article_name ORDER BY qty DESC LIMIT 15", $range),
         ]);
     }
+
+    /** Écran des dépôts en cours (plein écran, actualisé automatiquement), comme la cuisine ou la supervision clinique. */
+    public function ecran(): void
+    {
+        view('pressing::ecran', ['u' => $this->user(), 'refresh' => 15, 'public' => (bool) Request::query('public'),
+            'canProcess' => can('pressing.process')], null);
+    }
+
+    public function ecranFeed(): void
+    {
+        header('Cache-Control: no-store');
+        json_response(['ok' => true] + PressingService::board((bool) Request::query('public')));
+    }
+
+    /** Avancement depuis l'écran (reçu → en traitement → prêt). */
+    public function ecranStatus(int $id): void
+    {
+        $this->order($id);
+        $this->jsonAttempt(function () use ($id) {
+            PressingService::setStatus($id, (string) Request::input('status', ''));
+            return [];
+        });
+    }
 }

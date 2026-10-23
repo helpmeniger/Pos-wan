@@ -1,0 +1,7 @@
+<?php /** Champs communs d'une opération : montant, date, mode, référence, personne, libellé. */ use Addons\Banques\BankService as BS; $tab = $tab ?? ''; ?>
+<div class="col-6"><label class="form-label required"><?= e(t('Montant')) ?></label><input name="amount" class="form-control text-end fw-bold" inputmode="decimal" required value="<?= e(App\Core\Session::old('amount', '')) ?>"></div>
+<div class="col-6"><label class="form-label"><?= e(t('Date')) ?></label><input type="date" name="op_date" class="form-control" value="<?= e(date('Y-m-d')) ?>" max="<?= e(date('Y-m-d')) ?>"></div>
+<div class="col-6"><label class="form-label"><?= e(t('Mode')) ?></label><select name="method" class="form-select"><?php foreach (BS::METHODS as $k => $l): ?><option value="<?= e($k) ?>"><?= e(t($l)) ?></option><?php endforeach; ?></select></div>
+<div class="col-6"><label class="form-label"><?= e(t('N° de bordereau / chèque')) ?></label><input name="reference" class="form-control" maxlength="80"></div>
+<div class="col-12"><label class="form-label"><?= e(t($personLabel ?? 'Personne')) ?></label><input name="person" class="form-control" maxlength="120"></div>
+<div class="col-12"><label class="form-label <?= $tab === 'retrait' ? 'required' : '' ?>"><?= e(t($tab === 'retrait' ? 'Motif du retrait' : 'Libellé')) ?></label><input name="description" class="form-control" maxlength="255" <?= $tab === 'retrait' ? 'required' : '' ?>></div>

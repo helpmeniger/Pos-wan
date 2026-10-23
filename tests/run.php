@@ -3342,6 +3342,118 @@ test('MARWA REMOTE ASSIST : droits, réglages, observation / contrôle autorisé
     ok(is_file(PUBLIC_PATH . '/assets/addons/marwa_assist/assist.js') && str_contains((string) file_get_contents(PUBLIC_PATH . '/assets/addons/marwa_assist/assist.js'), '/assist/etat'), 'bandeau publié sur toutes les pages');
 });
 
+test('Banques et coffres : comptes, versements de clôture, dépôts, retraits, virements, annulations, relevé', function () use ($B) {
+    App\Core\Addons::install('banques', false);
+    ok(App\Core\Addons::isActive('banques'), 'module actif');
+    $hasPerm = fn(string $role, string $perm) => (bool) DB::value('SELECT 1 FROM role_permissions rp JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id WHERE r.code = ? AND p.code = ?', [$role, $perm]);
+    ok($hasPerm('owner', 'banques.manage') && $hasPerm('store_manager', 'banques.operate') && !$hasPerm('store_manager', 'banques.manage') && !$hasPerm('cashier', 'banques.view'), 'droits : propriétaire gère, gérant opère, caissier n\'a pas accès');
+    $BS = Addons\Banques\BankService::class;
+    actingAs('admin');
+    $bank = $BS::saveAccount(['name' => 'BIA Niger courant', 'kind' => 'banque', 'bank_name' => 'BIA Niger', 'account_number' => '0012345', 'opening_balance' => '50 000']);
+    $safe = $BS::saveAccount(['name' => 'Coffre du magasin', 'kind' => 'coffre']);
+    $owner = $BS::saveAccount(['name' => 'Gardé par le propriétaire', 'kind' => 'proprietaire']);
+    $bal = fn(int $id) => (float) DB::value('SELECT balance FROM bank_accounts WHERE id = ?', [$id]);
+    eq(50000.0, $bal($bank), 'solde de départ enregistré comme opération');
+    eq(1, (int) DB::value("SELECT COUNT(*) FROM bank_transactions WHERE account_id = ? AND type = 'ajustement'", [$bank]));
+    throws(fn() => $BS::saveAccount(['name' => 'BIA Niger courant', 'kind' => 'banque']), 'déjà');
+    throws(fn() => $BS::saveAccount(['name' => 'X', 'kind' => 'banque']), 'Nom du compte');
+
+    // Clôture de caisse : seul l'argent compté peut être versé, jamais deux fois
+    $reg = DB::insert('cash_registers', ['store_id' => 1, 'warehouse_id' => 1, 'name' => 'Caisse test banques']);
+    $open = DB::insert('cash_sessions', ['register_id' => $reg, 'user_id' => 1, 'opening_amount' => 0, 'status' => 'open']);
+    throws(fn() => $BS::depositSession($open, ['account_id' => $bank, 'amount' => 1000]), 'Clôturez');
+    DB::update('cash_sessions', ['status' => 'closed', 'expected_amount' => 152000, 'counted_amount' => 150000, 'difference' => -2000, 'closed_at' => date('Y-m-d H:i:s'), 'closed_by' => 1], 'id = ?', [$open]);
+    throws(fn() => $BS::depositSession($open, ['account_id' => $bank, 'amount' => 150001]), 'supérieur');
+    $v1 = $BS::depositSession($open, ['account_id' => $bank, 'amount' => '100 000', 'method' => 'especes', 'reference' => 'BRD-778', 'person' => 'Moussa']);
+    $v2 = $BS::depositSession($open, ['account_id' => $safe, 'amount' => 50000, 'transfer_id' => 999, 'counter_account_id' => $owner]);
+    eq([150000.0, 50000.0], [$bal($bank), $bal($safe)], 'versements : banque et coffre crédités');
+    ok(DB::value('SELECT transfer_id FROM bank_transactions WHERE id = ?', [$v2]) === null && DB::value('SELECT counter_account_id FROM bank_transactions WHERE id = ?', [$v2]) === null, 'champs internes envoyés par un formulaire ignorés');
+    throws(fn() => $BS::depositSession($open, ['account_id' => $bank, 'amount' => 1]), 'supérieur');
+    ok(!in_array($open, array_column($BS::sessions(true), 'id')), 'clôture entièrement versée : plus dans « à verser »');
+    eq('BRD-778', DB::value('SELECT reference FROM bank_transactions WHERE id = ?', [$v1]), 'n° de bordereau conservé');
+
+    // Dépôts, retraits, virements
+    throws(fn() => $BS::operation('retrait', ['account_id' => $safe, 'amount' => 1000]), 'motif');
+    throws(fn() => $BS::operation('retrait', ['account_id' => $safe, 'amount' => 60000, 'description' => 'Achat']), 'Solde insuffisant');
+    throws(fn() => $BS::operation('depot', ['account_id' => $bank, 'amount' => '-5']), 'supérieur à zéro');
+    throws(fn() => $BS::operation('depot', ['account_id' => $bank, 'amount' => 5, 'op_date' => date('Y-m-d', strtotime('+2 days'))]), 'date future');
+    $r1 = $BS::operation('retrait', ['account_id' => $safe, 'amount' => 20000, 'description' => 'Paiement fournisseur', 'person' => 'Ali']);
+    $BS::operation('depot', ['account_id' => $owner, 'amount' => 75000, 'person' => 'Propriétaire']);
+    $tr = $BS::transfer(['from_account_id' => $safe, 'to_account_id' => $bank, 'amount' => 25000, 'reference' => 'BRD-779']);
+    throws(fn() => $BS::transfer(['from_account_id' => $bank, 'to_account_id' => $bank, 'amount' => 1]), 'différents');
+    eq([175000.0, 5000.0, 75000.0], [$bal($bank), $bal($safe), $bal($owner)], 'retrait et virement coffre → banque');
+    eq(2, (int) DB::value('SELECT COUNT(*) FROM bank_transactions WHERE transfer_id = ?', [$tr]), 'virement : deux lignes liées, même numéro');
+    eq(1, (int) DB::value('SELECT COUNT(DISTINCT number) FROM bank_transactions WHERE transfer_id = ?', [$tr]));
+
+    // Annulations : jamais d'effacement, solde rétabli, refus si l'argent est déjà sorti
+    throws(fn() => $BS::cancel($tr, ''), 'motif');
+    $BS::cancel($tr, 'Erreur de compte');
+    eq([150000.0, 30000.0], [$bal($bank), $bal($safe)], 'virement annulé : les deux comptes rétablis');
+    throws(fn() => $BS::cancel($tr, 'encore'), 'déjà annulée');
+    $BS::operation('retrait', ['account_id' => $safe, 'amount' => 30000, 'description' => 'Sortie totale']);
+    throws(fn() => $BS::cancel($v2, 'Erreur'), 'négatif');
+    $BS::cancel($v1, 'Bordereau refusé par la banque');
+    eq(50000.0, $bal($bank), 'versement annulé : banque débitée');
+    ok(in_array($open, array_column($BS::sessions(true), 'id')), 'clôture de nouveau « à verser » après annulation');
+    eq(100000.0, (float) array_values(array_filter($BS::sessions(true), fn($s) => (int) $s['id'] === $open))[0]['remaining']);
+    eq(1, (int) DB::value('SELECT COUNT(*) FROM bank_transactions WHERE id = ? AND cancelled_at IS NOT NULL', [$v1]), 'opération annulée conservée dans l\'historique');
+    $BS::adjust(['account_id' => $owner, 'new_balance' => '74 500', 'description' => 'Comptage du 30/09']);
+    eq(74500.0, $bal($owner), 'ajustement de solde');
+    throws(fn() => $BS::adjust(['account_id' => $owner, 'new_balance' => 74500, 'description' => 'Rien']), 'déjà');
+
+    // Relevé : solde courant ligne par ligne, totaux, cohérence générale
+    $st = $BS::statement($bank, date('Y-m-01'), date('Y-m-d'));
+    eq(50000.0, $st['closing'], 'relevé : solde de fin = solde du compte');
+    eq(round($st['opening'] + $st['in'] - $st['out'], 2), $st['closing'], 'relevé : début + entrées − sorties = fin');
+    eq([], $BS::check(), 'cohérence : chaque solde = somme des opérations non annulées');
+    throws(fn() => $BS::saveAccount(['name' => 'Gardé par le propriétaire', 'kind' => 'proprietaire', 'active' => 0], $owner), 'encore un solde');
+
+    // Écrans et accès
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    foreach (['/banques', '/banques/versements', '/banques/historique', "/banques/comptes/$bank", "/banques/operations/$v1", '/banques?op=virement', '/banques?op=compte', "/banques?edit=$bank"] as $u) {
+        eq(200, $a->req('GET', $B . $u)['code'], "page $u");
+    }
+    ok(str_contains($a->req('GET', "$B/banques/operations/$v1")['body'], 'ANNULÉE'), 'reçu d\'une opération annulée marqué « ANNULÉE »');
+    $csv = $a->req('GET', "$B/banques/comptes/$bank?export=csv");
+    ok($csv['code'] === 200 && str_contains($csv['body'], 'BRD-778'), 'relevé exporté (CSV)');
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(403, $c->req('GET', "$B/banques")['code'], 'caissier : accès refusé');
+    $g = new Http();
+    $g->login($B, 'gerant', 'Mot-de-passe-2026');
+    $tok = $g->token("$B/banques");
+    $g->req('POST', "$B/banques/operations", http_build_query(['_csrf' => $tok, 'type' => 'depot', 'account_id' => $bank, 'amount' => '12 500', 'person' => 'Gérant']));
+    eq(62500.0, $bal($bank), 'gérant : dépôt par le formulaire');
+    eq(403, $g->req('POST', "$B/banques/operations/$r1/annuler", http_build_query(['_csrf' => $tok, 'reason' => 'test']))['code'], 'gérant : annulation réservée au propriétaire');
+});
+
+test('Pressing : écran des dépôts en cours (atelier) et affichage clients sans données personnelles', function () use ($B) {
+    $PS = Addons\Pressing\PressingService::class;
+    actingAs('admin');
+    $art = (int) DB::value('SELECT id FROM pressing_articles ORDER BY id LIMIT 1');
+    $o = $PS::create(['customer_name' => 'Halima Souley', 'phone' => '+227 90 77 66 55', 'lines' => [['article_id' => $art, 'service' => 'lavage', 'quantity' => 2]]]);
+    $id = (int) ($o['id'] ?? DB::value('SELECT MAX(id) FROM pressing_orders'));
+    $b = $PS::board();
+    $ids = array_column($b['columns']['received'], 'id');
+    ok(in_array($id, $ids, true), 'dépôt visible dans « Déposés »');
+    ok($b['totals']['open'] >= 1 && isset($b['totals']['late'], $b['totals']['due']), 'compteurs');
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    eq(200, $a->req('GET', "$B/pressing/ecran")['code'], 'écran des dépôts');
+    $j = json_decode($a->req('POST', "$B/pressing/ecran/$id/statut", json_encode(['status' => 'processing']), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $a->token("$B/pressing")])['body'], true);
+    ok($j['ok'] && DB::value('SELECT status FROM pressing_orders WHERE id = ?', [$id]) === 'processing', 'avancement depuis l\'écran');
+    $j = json_decode($a->req('POST', "$B/pressing/ecran/$id/statut", json_encode(['status' => 'delivered']), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $a->token("$B/pressing")])['body'], true);
+    ok(!$j['ok'], 'retrait impossible depuis l\'écran (paiement au comptoir)');
+    $PS::setStatus($id, 'ready');
+    $pub = $a->req('GET', "$B/pressing/ecran/feed?public=1", null, ['Accept: application/json'])['body'];
+    ok(str_contains($pub, 'Halima') && !str_contains($pub, '90 77') && !str_contains($pub, 'Souley') && !str_contains($pub, 'rest'), 'affichage clients : numéro et prénom seulement');
+    $c = new Http();
+    $c->login($B, 'auditeur', 'Mot-de-passe-2026');
+    $r = $c->req('POST', "$B/pressing/ecran/$id/statut", json_encode(['status' => 'processing']), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $c->token("$B/pressing")]);
+    eq(403, $r['code'], 'auditeur : lecture seule');
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

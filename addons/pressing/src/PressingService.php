@@ -381,4 +381,44 @@ final class PressingService
         }
         return DB::insert('pressing_articles', ['name' => mb_substr($name, 0, 100), 'category' => mb_substr(trim($category) ?: 'Vêtements', 0, 50), 'sort_order' => (int) DB::value('SELECT COALESCE(MAX(sort_order),0)+1 FROM pressing_articles')]);
     }
+
+    /**
+     * Tableau des dépôts en cours pour l'écran de l'atelier : colonnes déposés / en traitement / prêts.
+     * $public : affichage côté clients (numéro et prénom seulement, aucun téléphone ni montant).
+     */
+    public static function board(bool $public = false): array
+    {
+        $rows = DB::all("SELECT o.id, o.number, o.customer_name, o.phone, o.status, o.express, o.due_date, o.pieces, o.total, o.paid, o.created_at, o.ready_at, o.note,
+                (SELECT GROUP_CONCAT(CONCAT(i.quantity, ' ', i.article_name) ORDER BY i.line_no SEPARATOR ', ') FROM pressing_items i WHERE i.order_id = o.id) AS clothes
+                FROM pressing_orders o WHERE o.status IN ('received','processing','ready','partial')
+                ORDER BY o.express DESC, o.due_date, o.id LIMIT 600");
+        $today = date('Y-m-d');
+        $cols = ['received' => [], 'processing' => [], 'ready' => []];
+        $t = ['open' => 0, 'late' => 0, 'today' => 0, 'ready' => 0, 'express' => 0, 'pieces' => 0, 'due' => 0.0];
+        foreach ($rows as $o) {
+            $late = self::lateDays($o);
+            $col = $o['status'] === 'partial' ? 'ready' : $o['status'];
+            $rest = max(0, round((float) $o['total'] - (float) $o['paid'], 2));
+            $t['open']++;
+            $t['late'] += $late > 0 ? 1 : 0;
+            $t['today'] += $o['due_date'] === $today && $col !== 'ready' ? 1 : 0;
+            $t['ready'] += $col === 'ready' ? 1 : 0;
+            $t['express'] += (int) $o['express'];
+            $t['pieces'] += (int) $o['pieces'];
+            $t['due'] += $rest;
+            $first = trim(explode(' ', trim((string) $o['customer_name']))[0] ?? '');
+            $cols[$col][] = $public ? ['number' => $o['number'], 'name' => $first, 'status' => $o['status'], 'express' => (bool) $o['express']] : [
+                'id' => (int) $o['id'], 'number' => $o['number'], 'name' => $o['customer_name'], 'phone' => $o['phone'], 'status' => $o['status'],
+                'express' => (bool) $o['express'], 'due' => $o['due_date'], 'late' => $late, 'pieces' => (int) $o['pieces'],
+                'clothes' => mb_substr((string) $o['clothes'], 0, 160), 'rest' => $rest, 'note' => (string) $o['note'],
+                'since' => $o['ready_at'] ?: $o['created_at'], 'due_today' => $o['due_date'] === $today,
+            ];
+        }
+        if ($public) {
+            // Côté clients : seulement les dépôts prêts, sans aucune donnée personnelle hormis le prénom
+            return ['now' => date('H:i'), 'ready' => $cols['ready'], 'totals' => ['ready' => $t['ready']]];
+        }
+        $t['due'] = round($t['due'], 2);
+        return ['now' => date('H:i'), 'columns' => $cols, 'totals' => $t, 'labels' => self::SHORT];
+    }
 }

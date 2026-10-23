@@ -1,0 +1,16 @@
+/* Module Banques et coffres */
+.bq-accounts { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: .6rem; }
+.bq-acc { border-left: 5px solid #0b5394; transition: transform .1s; }
+.bq-acc:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.bq-acc.kind-coffre { border-left-color: #6d4c41; } .bq-acc.kind-proprietaire { border-left-color: #8e24aa; }
+.bq-acc.kind-mobile { border-left-color: #ef6c00; } .bq-acc.kind-autre { border-left-color: #607d8b; }
+.bq-acc i.bi { color: #0b5394; } .bq-acc.kind-coffre i.bi { color: #6d4c41; } .bq-acc.kind-proprietaire i.bi { color: #8e24aa; } .bq-acc.kind-mobile i.bi { color: #ef6c00; }
+.bq-total { background: linear-gradient(135deg, rgba(11,83,148,.10), rgba(11,83,148,.02)); }
+.bq-receipt { max-width: 148mm; margin: 0 auto; font-size: 13px; }
+.bq-receipt table { width: 100%; border-collapse: collapse; }
+.bq-receipt td { padding: 4px 6px; border-bottom: 1px solid #ddd; vertical-align: top; }
+.bq-receipt td:first-child { color: #555; width: 38%; }
+.bq-receipt .amount { font-size: 22px; font-weight: 700; text-align: center; margin: 10px 0; padding: 8px; border: 2px solid #000; }
+.bq-receipt .sign { display: flex; justify-content: space-between; margin-top: 40px; gap: 20px; }
+.bq-receipt .sign div { flex: 1; border-top: 1px solid #000; padding-top: 4px; text-align: center; font-size: 12px; }
+.bq-receipt .cancelled { color: #c00; border: 2px solid #c00; text-align: center; font-weight: 700; padding: 4px; margin: 6px 0; }

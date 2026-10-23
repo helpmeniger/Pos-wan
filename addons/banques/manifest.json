@@ -1,0 +1,27 @@
+{
+    "code": "banques",
+    "name": "Banques et coffres",
+    "version": "1.0.0",
+    "requires": "2.8.0",
+    "author": "POS Marwa",
+    "description": "Argent sorti de la caisse : versement des clôtures de caisse à la banque, au coffre ou au propriétaire, dépôts, retraits et virements entre comptes, relevé et historique de chaque opération, annulation tracée (jamais d'effacement).",
+    "icon": "bi-bank",
+    "color": "#0b5394",
+    "permissions": {
+        "banques.view": "Banques : voir les comptes, soldes et relevés",
+        "banques.operate": "Banques : verser les clôtures de caisse, déposer, retirer, virer",
+        "banques.manage": "Banques : créer et modifier les comptes, annuler une opération, ajuster un solde"
+    },
+    "roles": {
+        "owner": ["banques.view", "banques.operate", "banques.manage"],
+        "store_manager": ["banques.view", "banques.operate"],
+        "auditor": ["banques.view"]
+    },
+    "menu": [
+        { "group": "Caisse", "label": "Banques et coffres", "icon": "bi-bank", "url": "/banques", "permission": "banques.view", "color": "#0b5394" },
+        { "group": "Caisse", "label": "Clôtures à verser", "icon": "bi-box-arrow-in-down", "url": "/banques/versements", "permission": "banques.operate", "color": "#1b7f3b" }
+    ],
+    "settings": {
+        "banques_decouvert": "0"
+    }
+}
