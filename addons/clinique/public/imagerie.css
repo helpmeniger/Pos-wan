@@ -1,0 +1,32 @@
+/* Clinique — imagerie médicale */
+.img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .6rem; }
+.img-card { overflow: hidden; }
+.img-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+.img-thumb { position: relative; background: #000; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; color: #777; }
+.img-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.img-thumb .mod { position: absolute; top: 6px; left: 6px; }
+.img-thumb .st { position: absolute; bottom: 6px; left: 6px; }
+.img-progress:empty { display: none; }
+.img-layout { display: grid; grid-template-columns: 110px minmax(0, 1fr) 360px; gap: .6rem; height: calc(100vh - 200px); min-height: 520px; }
+.img-strip { overflow-y: auto; background: #111; border-radius: 8px; padding: 4px; display: flex; flex-direction: column; gap: 4px; }
+.img-strip-item { border: 2px solid transparent; background: #000; border-radius: 6px; padding: 0; color: #ccc; font-size: .72rem; }
+.img-strip-item img { width: 100%; aspect-ratio: 1 / 1; object-fit: contain; display: block; }
+.img-strip-item.active { border-color: #4fc3f7; }
+.img-viewer { display: flex; flex-direction: column; background: #000; border-radius: 8px; overflow: hidden; min-width: 0; }
+.img-viewer:fullscreen { border-radius: 0; }
+.img-toolbar { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; background: #1b1f24; align-items: center; }
+.img-toolbar .btn-dark.active { background: #0d6efd; border-color: #0d6efd; }
+.img-frames { display: flex; align-items: center; gap: 6px; color: #ddd; font-size: .8rem; }
+.img-frames input[type=range] { width: 140px; }
+.img-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; }
+.img-stage canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+.img-stage[data-tool="wl"] canvas { cursor: ns-resize; }
+.img-stage[data-tool="pan"] canvas { cursor: grab; }
+.img-stage[data-tool="zoom"] canvas { cursor: zoom-in; }
+.img-ov { position: absolute; color: #ffeb3b; font: 12px/1.3 monospace; text-shadow: 0 0 3px #000, 0 0 3px #000; pointer-events: none; white-space: pre; }
+.img-ov.tl { top: 6px; left: 8px; } .img-ov.tr { top: 6px; right: 8px; text-align: right; } .img-ov.bl { bottom: 6px; left: 8px; } .img-ov.br { bottom: 6px; right: 8px; text-align: right; }
+.img-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #ddd; background: rgba(0,0,0,.6); }
+.img-side { overflow-y: auto; }
+.img-print-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 8px 0; }
+.img-print-grid img { width: 100%; background: #000; }
+@media (max-width: 1100px) { .img-layout { grid-template-columns: 1fr; height: auto; } .img-strip { flex-direction: row; overflow-x: auto; } .img-strip-item { width: 90px; flex: 0 0 auto; } .img-viewer { height: 70vh; } }

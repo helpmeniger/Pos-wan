@@ -123,6 +123,8 @@ set "VOIX=0"
 if exist "%APPDIR%\storage\voix\piper\piper.exe" set "VOIX=1"
 if exist "%APPDIR%\addons\marwa_voice\piper\paquet.json" set "VOIX=1"
 if "!VOIX!"=="1" start "POS Marwa - service vocal" /min cmd /c ""%APPDIR%\windows\service-vocal.bat""
+REM Recepteur d'images de la clinique (DICOM) si active une fois par windows\imagerie-serveur.bat
+if exist "%APPDIR%\storage\imagerie\demarrage-auto" start "POS Marwa - recepteur d'images" /min cmd /c ""%APPDIR%\windows\service-imagerie.bat""
 if defined BR (
   start "" "!BR!" --app=!URL! --start-maximized --autoplay-policy=no-user-gesture-required
 ) else (

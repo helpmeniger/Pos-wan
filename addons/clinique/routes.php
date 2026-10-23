@@ -69,3 +69,26 @@ $router->get('/clinique/pharmacie', [P::class, 'index'], 'clinique.pharmacy');
 $router->get('/clinique/pharmacie/{id}', [P::class, 'show'], 'clinique.pharmacy');
 $router->post('/clinique/pharmacie/{id}', [P::class, 'dispense'], 'clinique.pharmacy');
 $router->post('/clinique/pharmacie/{id}/cancel', [P::class, 'cancel'], 'clinique.view');
+
+// Imagerie médicale : examens reçus des appareils (réseau DICOM, dossier d'arrivée) ou importés, visionneuse, compte rendu
+use Addons\Clinique\ImagingController as I;
+
+$router->get('/clinique/imagerie', [I::class, 'index'], 'clinique.medical');
+$router->post('/clinique/imagerie/reglages', [I::class, 'settings'], 'clinique.imaging');
+$router->post('/clinique/imagerie/appareils', [I::class, 'deviceSave'], 'clinique.imaging');
+$router->post('/clinique/imagerie/appareils/{id}', [I::class, 'deviceSave'], 'clinique.imaging');
+$router->post('/clinique/imagerie/import', [I::class, 'importChunk'], 'clinique.medical');
+$router->post('/clinique/imagerie/demandes', [I::class, 'requestStore'], 'clinique.doctor');
+$router->post('/clinique/imagerie/demandes/{id}/annuler', [I::class, 'requestCancel'], 'clinique.doctor');
+$router->get('/clinique/imagerie/demandes/{id}/imprimer', [I::class, 'requestPrint'], 'clinique.view');
+$router->get('/clinique/imagerie/examens/{id}', [I::class, 'show'], 'clinique.medical');
+$router->post('/clinique/imagerie/examens/{id}/rattacher', [I::class, 'attach'], 'clinique.imaging');
+$router->post('/clinique/imagerie/examens/{id}/compte-rendu', [I::class, 'report'], 'clinique.imaging_report');
+$router->post('/clinique/imagerie/examens/{id}/rouvrir', [I::class, 'reopen'], 'clinique.imaging_report');
+$router->get('/clinique/imagerie/examens/{id}/imprimer', [I::class, 'printReport'], 'clinique.medical');
+$router->get('/clinique/imagerie/images/{id}/miniature', [I::class, 'thumbnail'], 'clinique.medical');
+$router->get('/clinique/imagerie/images/{id}/infos', [I::class, 'infos'], 'clinique.medical');
+$router->get('/clinique/imagerie/images/{id}/pixels', [I::class, 'pixels'], 'clinique.medical');
+$router->get('/clinique/imagerie/images/{id}/fichier', [I::class, 'download'], 'clinique.medical');
+$router->post('/clinique/imagerie/images/{id}/annotations', [I::class, 'annotationStore'], 'clinique.medical');
+$router->post('/clinique/imagerie/annotations/{id}/supprimer', [I::class, 'annotationDelete'], 'clinique.medical');

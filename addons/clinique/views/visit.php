@@ -56,6 +56,7 @@ $lastAlerts = CS::alerts($vitals[0] ?? null);
   </div>
 
   <div class="col-xl-4">
+    <?= App\Core\View::partial('clinique::_imaging', ['p' => $p, 'visitId' => (int) $v['id'], 'imgStudies' => $imgStudies, 'imgRequests' => $imgRequests]) ?>
     <div class="card mb-3"><div class="card-header"><i class="bi bi-receipt"></i> Facturation</div><div class="card-body">
       <?php if ($bill): ?>
         <div>Facture <b><?= e($bill['number']) ?></b> : <?= money($bill['subtotal']) ?><?= (float) $bill['coverage_amount'] > 0 ? '<br><span class="small text-secondary">Part patient ' . money($bill['patient_amount']) . '</span>' : '' ?></div>

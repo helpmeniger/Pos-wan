@@ -119,6 +119,8 @@ final class ClinicController extends Controller
                 'vitals' => DB::all('SELECT vt.*, u.full_name FROM clinic_vitals vt JOIN users u ON u.id = vt.user_id WHERE vt.patient_id = ? ORDER BY vt.taken_at DESC LIMIT 15', [$id]),
                 'stays' => DB::all('SELECT s.*, b.name AS bed FROM clinic_stays s JOIN clinic_beds b ON b.id = s.bed_id WHERE s.patient_id = ? ORDER BY s.id DESC', [$id]),
                 'prescriptions' => DB::all('SELECT pr.*, u.full_name AS prescriber FROM clinic_prescriptions pr JOIN users u ON u.id = pr.prescriber_id WHERE pr.patient_id = ? ORDER BY pr.id DESC', [$id]),
+                'imgStudies' => ImagingService::list(['patient_id' => $id], 30), 'imgRequests' => ImagingService::pendingRequests($id),
+                'scripts' => ['addons/clinique/imagerie-import.js'],
             ];
         }
         view('clinique::patient_show', $data);
@@ -178,7 +180,8 @@ final class ClinicController extends Controller
             'previous' => DB::all("SELECT id, number, created_at, diagnosis FROM clinic_visits WHERE patient_id = ? AND id <> ? AND status = 'done' ORDER BY id DESC LIMIT 5", [$p['id'], $id]),
             'acts' => DB::all('SELECT * FROM clinic_acts WHERE active = 1 ORDER BY category, name'),
             'bill' => $v['bill_id'] ? DB::one('SELECT * FROM clinic_bills WHERE id = ?', [$v['bill_id']]) : null,
-            'drugs' => self::drugs(), 'beds' => self::freeBeds(), 'scripts' => self::ASSETS,
+            'drugs' => self::drugs(), 'beds' => self::freeBeds(), 'scripts' => array_merge(self::ASSETS, ['addons/clinique/imagerie-import.js']),
+            'imgStudies' => ImagingService::list(['patient_id' => (int) $p['id']], 12), 'imgRequests' => ImagingService::pendingRequests((int) $p['id']),
         ]);
     }
 

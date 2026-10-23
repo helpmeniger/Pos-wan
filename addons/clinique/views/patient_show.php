@@ -61,6 +61,8 @@ $billColors = ['open' => 'warning text-dark', 'paid' => 'success', 'cancelled' =
       <?php if (!$visits): ?><tr><td colspan="5" class="text-secondary text-center py-3">Aucune consultation.</td></tr><?php endif; ?>
     </tbody></table></div></div>
 
+    <?= App\Core\View::partial('clinique::_imaging', ['p' => $p, 'visitId' => null, 'imgStudies' => $imgStudies, 'imgRequests' => $imgRequests]) ?>
+
     <div class="card mb-3"><div class="card-header"><i class="bi bi-heart-pulse"></i> Dernières constantes</div><?= App\Core\View::partial('clinique::_vitals_table', ['vitals' => $vitals]) ?></div>
 
     <div class="row g-3">

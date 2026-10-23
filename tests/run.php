@@ -1037,7 +1037,7 @@ test('Module Pressing : traitement, retrait avec solde, monnaie, annulation remb
 $CL = [];
 test('Module Clinique : installation, rôles créés, dossier patient, file d\'attente, constantes', function () use (&$CL) {
     actingAs('admin');
-    eq(['0001_clinique'], App\Core\Addons::install('clinique', false), 'installation');
+    eq(['0001_clinique', '0002_imagerie'], App\Core\Addons::install('clinique', false), 'installation');
     foreach (['medecin' => 'clinic_doctor', 'infirmier' => 'clinic_nurse', 'accueil' => 'clinic_reception'] as $u => $r) {
         $rid = (int) DB::value('SELECT id FROM roles WHERE code = ?', [$r]);
         ok($rid > 0, "rôle $r créé");
@@ -3340,6 +3340,196 @@ test('MARWA REMOTE ASSIST : droits, réglages, observation / contrôle autorisé
     $d = Addons\MarwaAssist\Diagnostic::text(Addons\MarwaAssist\Diagnostic::run());
     ok(str_contains($d, 'serveur d\'assistance HTN') && !preg_match('/Mot-de-passe|password_hash|' . preg_quote($key, '/') . '/', $d), 'diagnostic : état technique seulement');
     ok(is_file(PUBLIC_PATH . '/assets/addons/marwa_assist/assist.js') && str_contains((string) file_get_contents(PUBLIC_PATH . '/assets/addons/marwa_assist/assist.js'), '/assist/etat'), 'bandeau publié sur toutes les pages');
+});
+
+/** Jeu de données DICOM (Explicit VR Little Endian) pour les tests d'imagerie. */
+function dicom_dataset(array $o): string
+{
+    $el = function (int $g, int $e, string $vr, string $v): string {
+        if (strlen($v) % 2) {
+            $v .= $vr === 'UI' ? "\0" : ' ';
+        }
+        if (in_array($vr, ['OB', 'OW', 'SQ', 'UN', 'UT'], true)) {
+            return pack('vv', $g, $e) . $vr . "\0\0" . pack('V', strlen($v)) . $v;
+        }
+        return pack('vv', $g, $e) . $vr . pack('v', strlen($v)) . $v;
+    };
+    $w = $o['w'] ?? 64;
+    $h = $o['h'] ?? 48;
+    $px = '';
+    for ($y = 0; $y < $h; $y++) {
+        for ($x = 0; $x < $w; $x++) {
+            $px .= pack('v', ($y >= 20 && $y < 28 && $x >= 10 && $x < 50) ? 3000 : 1000);
+        }
+    }
+    return $el(0x0008, 0x0005, 'CS', 'ISO_IR 100') . $el(0x0008, 0x0016, 'UI', '1.2.840.10008.5.1.4.1.1.1') . $el(0x0008, 0x0018, 'UI', $o['sop'])
+        . $el(0x0008, 0x0020, 'DA', '20261020') . $el(0x0008, 0x0030, 'TM', '093000') . $el(0x0008, 0x0050, 'SH', $o['acc'] ?? '') . $el(0x0008, 0x0060, 'CS', 'CR')
+        . $el(0x0008, 0x1030, 'LO', 'Thorax') . $el(0x0010, 0x0010, 'PN', $o['name'] ?? "DIALLO^A\xEFcha") . $el(0x0010, 0x0020, 'LO', $o['pid'] ?? '')
+        . $el(0x0010, 0x0030, 'DA', '19850101') . $el(0x0010, 0x0040, 'CS', 'F')
+        // Séquence de longueur indéfinie (à ignorer sans perdre le fil de la lecture)
+        . pack('vv', 0x0008, 0x1140) . 'SQ' . "\0\0" . pack('V', 0xFFFFFFFF) . pack('vvV', 0xFFFE, 0xE000, 0xFFFFFFFF) . $el(0x0008, 0x1150, 'UI', '1.2.3') . pack('vvV', 0xFFFE, 0xE00D, 0) . pack('vvV', 0xFFFE, 0xE0DD, 0)
+        . $el(0x0020, 0x000D, 'UI', $o['study']) . $el(0x0020, 0x000E, 'UI', $o['study'] . '.1') . $el(0x0020, 0x0013, 'IS', '1')
+        . $el(0x0028, 0x0002, 'US', pack('v', 1)) . $el(0x0028, 0x0004, 'CS', 'MONOCHROME2') . $el(0x0028, 0x0010, 'US', pack('v', $h)) . $el(0x0028, 0x0011, 'US', pack('v', $w))
+        . $el(0x0028, 0x0030, 'DS', '0.2\\0.2') . $el(0x0028, 0x0100, 'US', pack('v', 16)) . $el(0x0028, 0x0101, 'US', pack('v', 12)) . $el(0x0028, 0x0102, 'US', pack('v', 11))
+        . $el(0x0028, 0x0103, 'US', pack('v', 0)) . $el(0x0028, 0x1050, 'DS', '2000') . $el(0x0028, 0x1051, 'DS', '4000')
+        . pack('vv', 0x7FE0, 0x0010) . 'OW' . "\0\0" . pack('V', strlen($px)) . $px;
+}
+
+/** Fichier DICOM Part 10 à partir d'un jeu de données. */
+function dicom_file(array $o): string
+{
+    $f = STORAGE_PATH . '/tmp/test-' . bin2hex(random_bytes(4)) . '.dcm';
+    file_put_contents($f, str_repeat("\0", 128) . 'DICM' . Addons\Clinique\DicomServer::fileMeta('1.2.840.10008.5.1.4.1.1.1', $o['sop'], '1.2.840.10008.1.2.1') . dicom_dataset($o));
+    return $f;
+}
+
+test('Clinique — imagerie : fichiers DICOM, récepteur réseau, classement, rattachement, compte rendu, visionneuse', function () use ($B) {
+    $IS = Addons\Clinique\ImagingService::class;
+    $D = Addons\Clinique\Dicom::class;
+    actingAs('admin');
+    $pat = DB::one('SELECT * FROM clinic_patients ORDER BY id LIMIT 1');
+    $study1 = '1.2.826.0.1.3680043.10.1395.' . random_int(1000, 99999);
+    $f = dicom_file(['sop' => $study1 . '.1.1', 'study' => $study1, 'pid' => $pat['number']]);
+    $info = $D::info($D::parse($f));
+    ok($info['rows'] === 48 && $info['cols'] === 64 && $info['bits_allocated'] === 16 && $info['renderable'], 'lecture : dimensions, 16 bits, affichable');
+    eq('0.2\\0.2', $info['pixel_spacing'], 'calibrage (mm par pixel)');
+    eq('DIALLO Aïcha', $info['patient_name'], 'nom du patient (Latin-1 converti, ^ remplacé)');
+    eq($pat['number'], $info['patient_id']);
+    eq('2026-10-20 09:30:00', $info['study_date']);
+    ok(str_starts_with($D::png($f, 32), "\x89PNG"), 'aperçu PNG');
+    // RLE : un segment PackBits « répéter 4 fois 0x07 » puis « 2 littéraux »
+    $rle = pack('V16', 1, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) . chr(253) . chr(7) . chr(1) . chr(9) . chr(10);
+    eq(str_repeat(chr(7), 4) . chr(9) . chr(10), $D::rleDecode($rle, ['rows' => 2, 'cols' => 3, 'bits_allocated' => 8, 'samples' => 1]), 'décompression RLE');
+    ok(preg_match('/^2\.25\.\d{20,}$/', $D::uid()) === 1, 'identifiant DICOM généré (2.25.…)');
+
+    // Classement : par n° de dossier, doublon, par n° de demande, « à rattacher »
+    $r1 = $IS::ingest($f, ['source' => 'reseau']);
+    ok(!$r1['duplicate'] && $r1['matched'], 'image classée dans le dossier du patient (Patient ID = n° de dossier)');
+    eq((int) $pat['id'], (int) DB::value('SELECT patient_id FROM clinic_imaging_studies WHERE id = ?', [$r1['study_id']]));
+    ok($IS::ingest($f)['duplicate'], 'même image reçue deux fois : un seul exemplaire');
+    actingAs('medecin');
+    $req = $IS::createRequest(['patient_id' => $pat['id'], 'modality' => 'CR', 'exam' => 'Radiographie du thorax', 'priority' => 'urgent']);
+    $num = DB::value('SELECT number FROM clinic_imaging_requests WHERE id = ?', [$req]);
+    ok(preg_match('/^IMG\d{4}-\d{6}$/', (string) $num) === 1, 'demande d\'examen numérotée ' . $num);
+    $study2 = $study1 . '.2';
+    $r2 = $IS::ingest(dicom_file(['sop' => $study2 . '.1', 'study' => $study2, 'acc' => $num, 'pid' => 'AUTRE-ID']));
+    eq([(int) $pat['id'], 'realise'], [(int) DB::value('SELECT patient_id FROM clinic_imaging_studies WHERE id = ?', [$r2['study_id']]), DB::value('SELECT status FROM clinic_imaging_requests WHERE id = ?', [$req])], 'n° de demande reconnu : bon patient, demande réalisée');
+    $study3 = $study1 . '.3';
+    $r3 = $IS::ingest(dicom_file(['sop' => $study3 . '.1', 'study' => $study3, 'pid' => 'X-99', 'name' => 'Inconnu^Test']));
+    ok(!$r3['matched'] && DB::value('SELECT status FROM clinic_imaging_studies WHERE id = ?', [$r3['study_id']]) === 'a_rattacher', 'patient inconnu : examen « à rattacher » (jamais rattaché par le nom)');
+    throws(fn() => $IS::saveReport($r3['study_id'], ['findings' => 'x', 'conclusion' => 'y'], true), 'Rattachez');
+    $IS::attach($r3['study_id'], (int) $pat['id']);
+    eq('a_lire', DB::value('SELECT status FROM clinic_imaging_studies WHERE id = ?', [$r3['study_id']]), 'rattachement manuel');
+    $png = STORAGE_PATH . '/tmp/test-photo.png';
+    $gd = imagecreatetruecolor(40, 30);
+    imagepng($gd, $png);
+    $r4 = $IS::ingest($png, ['patient_id' => $pat['id'], 'description' => 'Photo du cliché']);
+    eq('png', DB::value('SELECT format FROM clinic_imaging_images WHERE id = ?', [$r4['image_id']]), 'photo PNG importée dans le dossier');
+    file_put_contents(STORAGE_PATH . '/tmp/test.txt', 'texte');
+    throws(fn() => $IS::ingest(STORAGE_PATH . '/tmp/test.txt'), 'Format non reconnu');
+    // Compte rendu
+    throws(fn() => $IS::saveReport($r1['study_id'], ['findings' => '', 'conclusion' => ''], true), 'obligatoires');
+    $IS::saveReport($r1['study_id'], ['technique' => 'Face', 'findings' => 'Pas d\'anomalie.', 'conclusion' => 'Normal.'], true);
+    eq('valide', DB::value('SELECT status FROM clinic_imaging_studies WHERE id = ?', [$r1['study_id']]), 'compte rendu validé');
+    throws(fn() => $IS::saveReport($r1['study_id'], ['findings' => 'a', 'conclusion' => 'b'], false), 'déjà validé');
+    $IS::reopen($r1['study_id'], 'Correction de latéralité');
+    eq('lu', DB::value('SELECT status FROM clinic_imaging_studies WHERE id = ?', [$r1['study_id']]), 'compte rendu rouvert (motif tracé)');
+    // Annotations
+    throws(fn() => $IS::addAnnotation($r1['image_id'], ['kind' => 'distance', 'points' => [[1, 2]]]), 'Points');
+    throws(fn() => $IS::addAnnotation($r1['image_id'], ['kind' => 'script', 'points' => [[1, 2]]]), 'inconnu');
+    $IS::addAnnotation($r1['image_id'], ['kind' => 'distance', 'points' => [[10, 24], [50, 24]], 'value' => '8.0 mm']);
+    eq('8.0 mm', $IS::annotations($r1['image_id'])[0]['data']['value'], 'mesure enregistrée');
+
+    // Récepteur réseau DICOM : un émetteur (comme un appareil) envoie l'image en C-STORE
+    $port = 21900 + random_int(0, 80);
+    $rx = STORAGE_PATH . '/tmp/rx-' . getmypid();
+    @mkdir($rx);
+    $script = 'require ' . var_export(BASE_PATH . '/app/bootstrap.php', true) . ';$l=stream_socket_server("tcp://127.0.0.1:' . $port . '");'
+        . '$s=new Addons\Clinique\DicomServer("POSMARWA",function($f,$c){rename($f,' . var_export($rx, true) . '."/recu.dcm");file_put_contents(' . var_export($rx, true) . '."/ae.txt",$c["ae"]);},function($m){});'
+        . 'for($i=0;$i<2;$i++){$c=stream_socket_accept($l,20,$p);if($c)$s->handle($c,$p);}';
+    $srv = proc_open([PHP_BINARY, '-r', $script], [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $pp, BASE_PATH, getenv());
+    usleep(800000);
+    $item = fn(int $t, string $d) => chr($t) . "\0" . pack('n', strlen($d)) . $d;
+    $pdu = fn(int $t, string $d) => chr($t) . "\0" . pack('N', strlen($d)) . $d;
+    $read = function ($c) {
+        $h = fread($c, 6);
+        $len = unpack('N', substr($h, 2, 4))[1];
+        $d = '';
+        while (strlen($d) < $len && !feof($c)) {
+            $d .= fread($c, $len - strlen($d));
+        }
+        return [ord($h[0]), $d];
+    };
+    $assoc = function (string $called) use ($port, $item, $pdu) {
+        $c = stream_socket_client('tcp://127.0.0.1:' . $port, $en, $es, 5);
+        stream_set_timeout($c, 10);
+        $pc = $item(0x20, chr(1) . "\0\0\0" . $item(0x30, '1.2.840.10008.5.1.4.1.1.1') . $item(0x40, "1.2.840.10008.1.2.1\0") . $item(0x40, '1.2.840.10008.1.2'));
+        fwrite($c, $pdu(0x01, pack('n', 1) . "\0\0" . str_pad($called, 16) . str_pad('RADIO-TEST', 16) . str_repeat("\0", 32) . $item(0x10, '1.2.840.10008.3.1.1.1') . $pc . $item(0x50, $item(0x51, pack('N', 16384)))));
+        return $c;
+    };
+    $c = $assoc('MAUVAIS');
+    eq(0x03, $read($c)[0], 'AE appelé inconnu : association refusée');
+    fclose($c);
+    $c = $assoc('POSMARWA');
+    [$t, $ac] = $read($c);
+    eq(0x02, $t, 'association acceptée');
+    $sop = $study1 . '.9.1';
+    $ds = dicom_dataset(['sop' => $sop, 'study' => $study1 . '.9', 'pid' => $pat['number']]);
+    $cel = fn(int $e, string $v) => pack('vvV', 0, $e, strlen($v)) . $v;
+    $body = $cel(0x0002, "1.2.840.10008.5.1.4.1.1.1\0") . $cel(0x0100, pack('v', 1)) . $cel(0x0110, pack('v', 7)) . $cel(0x0700, pack('v', 0)) . $cel(0x0800, pack('v', 0)) . $cel(0x1000, strlen($sop) % 2 ? $sop . "\0" : $sop);
+    $cmd = $cel(0x0000, pack('V', strlen($body))) . $body;
+    fwrite($c, $pdu(0x04, pack('N', strlen($cmd) + 2) . chr(1) . chr(3) . $cmd));
+    foreach (str_split($ds, 8000) as $i => $frag) { // jeu de données en plusieurs fragments
+        $last = $i === intdiv(strlen($ds) - 1, 8000);
+        fwrite($c, $pdu(0x04, pack('N', strlen($frag) + 2) . chr(1) . chr($last ? 2 : 0) . $frag));
+    }
+    [$t, $rsp] = $read($c);
+    $status = unpack('v', substr($rsp, strpos($rsp, pack('vvV', 0, 0x0900, 2)) + 8, 2))[1];
+    eq([0x04, 0], [$t, $status], 'C-STORE : réponse « succès »');
+    fwrite($c, $pdu(0x05, "\0\0\0\0"));
+    eq(0x06, $read($c)[0], 'libération de l\'association');
+    fclose($c);
+    proc_close($srv);
+    ok(is_file("$rx/recu.dcm") && file_get_contents("$rx/ae.txt") === 'RADIO-TEST', 'fichier reçu, appareil identifié');
+    $back = $D::info($D::parse("$rx/recu.dcm"));
+    eq([$sop, 64, 48], [$back['sop_uid'], $back['cols'], $back['rows']], 'fichier reçu lisible (Part 10 écrit par le récepteur)');
+    ok(str_ends_with(file_get_contents("$rx/recu.dcm"), substr($ds, -200)), 'pixels reçus intacts');
+    exec('rm -rf ' . escapeshellarg($rx));
+
+    // Écrans, pixels, envoi en morceaux, droits
+    $a = new Http();
+    $a->login($B, 'medecin', 'Mot-de-passe-2026');
+    foreach (['/clinique/imagerie', '/clinique/imagerie?onglet=demandes', '/clinique/imagerie/examens/' . $r1['study_id'], '/clinique/imagerie/demandes/' . $req . '/imprimer', '/clinique/imagerie/examens/' . $r1['study_id'] . '/imprimer', '/clinique/patients/' . $pat['id']] as $u) {
+        eq(200, $a->req('GET', $B . $u)['code'], "page $u");
+    }
+    $inf = json_decode($a->req('GET', "$B/clinique/imagerie/images/{$r1['image_id']}/infos", null, ['Accept: application/json'])['body'], true);
+    ok($inf['ok'] && $inf['mode'] === 'raw' && $inf['spacing']['col'] == 0.2 && $inf['bits'] === 16, 'infos de la visionneuse');
+    $px = $a->req('GET', "$B/clinique/imagerie/images/{$r1['image_id']}/pixels");
+    eq(64 * 48 * 2, strlen($px['body']), 'pixels bruts envoyés à la visionneuse');
+    ok(str_starts_with($a->req('GET', "$B/clinique/imagerie/images/{$r1['image_id']}/miniature")['body'], "\x89PNG"), 'miniature');
+    $tok = $a->token("$B/clinique/imagerie");
+    $file = dicom_file(['sop' => $study1 . '.7.1', 'study' => $study1 . '.7', 'pid' => $pat['number']]);
+    $bytes = file_get_contents($file);
+    $half = intdiv(strlen($bytes), 2);
+    $up = bin2hex(random_bytes(10));
+    $send = function (int $i, string $part) use ($a, $B, $tok, $up) {
+        $tmp = tempnam(sys_get_temp_dir(), 'ch');
+        file_put_contents($tmp, $part);
+        $r = $a->req('POST', "$B/clinique/imagerie/import", ['_csrf' => $tok, 'upload' => $up, 'index' => $i, 'total' => 2, 'chunk' => new CURLFile($tmp)], ['Accept: application/json']);
+        @unlink($tmp);
+        return json_decode($r['body'], true);
+    };
+    ok($send(1, substr($bytes, $half))['done'] === false, 'envoi en morceaux : 1er morceau reçu (ordre quelconque)');
+    $fin = $send(0, substr($bytes, 0, $half));
+    ok($fin['done'] && !$fin['duplicate'] && $fin['matched'], 'fichier reconstitué et classé');
+    $c2 = new Http();
+    $c2->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(403, $c2->req('GET', "$B/clinique/imagerie")['code'], 'caissier : pas d\'accès à l\'imagerie');
+    eq(403, $c2->req('GET', "$B/clinique/imagerie/images/{$r1['image_id']}/pixels")['code'], 'caissier : pas d\'accès aux images');
+    $n = new Http();
+    $n->login($B, 'infirmier', 'Mot-de-passe-2026');
+    eq(403, $n->req('POST', "$B/clinique/imagerie/examens/{$r1['study_id']}/compte-rendu", http_build_query(['_csrf' => $n->token("$B/clinique/imagerie"), 'findings' => 'x', 'conclusion' => 'y']))['code'], 'infirmier : pas de compte rendu');
+    ok(!is_dir(STORAGE_PATH . '/imagerie/envois/' . $up), 'morceaux temporaires supprimés');
 });
 
 test('Banques et coffres : comptes, versements de clôture, dépôts, retraits, virements, annulations, relevé', function () use ($B) {
