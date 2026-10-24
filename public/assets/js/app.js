@@ -23,6 +23,46 @@
   // Menu latéral sur mobile
   $$('[data-toggle-sidebar]').forEach((b) => b.addEventListener('click', () => $('#sidebar').classList.toggle('open')));
 
+  // Menu latéral par catégories : un clic ouvre une catégorie et referme les autres (moins de défilement).
+  // La catégorie de la page affichée est ouverte d'office ; la dernière catégorie ouverte est mémorisée.
+  const nav = $('[data-side-nav]');
+  if (nav) {
+    const cats = $$('.side-cat', nav);
+    const store = { get: () => { try { return localStorage.getItem('menu-cat') || ''; } catch (e) { return ''; } }, set: (v) => { try { localStorage.setItem('menu-cat', v); } catch (e) { /* stockage indisponible */ } } };
+    const openCat = (cat, on) => { cat.classList.toggle('open', on); $('.side-cat-btn', cat).setAttribute('aria-expanded', on ? 'true' : 'false'); };
+    if (!nav.dataset.active) {
+      const last = cats.find((c) => c.dataset.cat === store.get());
+      if (last) openCat(last, true);
+    }
+    cats.forEach((cat) => $('.side-cat-btn', cat).addEventListener('click', () => {
+      const on = !cat.classList.contains('open');
+      cats.forEach((c) => openCat(c, c === cat && on));
+      store.set(on ? cat.dataset.cat : '');
+      if (on) cat.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }));
+    const active = $('.side-link.active', nav);
+    if (active) active.scrollIntoView({ block: 'center' });
+    // Recherche : affiche les entrées correspondantes de toutes les catégories
+    const search = $('[data-side-search]');
+    const norm = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    if (search) search.addEventListener('input', () => {
+      const q = norm(search.value.trim());
+      let any = false;
+      cats.forEach((cat) => {
+        let hits = 0;
+        $$('.side-link', cat).forEach((l) => { const ok = !q || norm(l.textContent + ' ' + cat.dataset.cat).includes(q); l.hidden = !ok; hits += ok ? 1 : 0; });
+        cat.hidden = q !== '' && hits === 0;
+        if (q) openCat(cat, hits > 0); else openCat(cat, cat.dataset.cat === (nav.dataset.active || store.get()));
+        any = any || hits > 0;
+      });
+      $('[data-side-empty]').hidden = any || !q;
+    });
+    if (search) search.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { const first = $$('.side-link', nav).find((l) => !l.hidden && !l.closest('.side-cat').hidden); if (first) location.href = first.href; }
+      if (e.key === 'Escape') { search.value = ''; search.dispatchEvent(new Event('input')); }
+    });
+  }
+
   // Confirmation des actions sensibles : <form data-confirm="Texte" [data-reason="1"]>
   const modalEl = $('#confirmModal');
   let pendingForm = null;

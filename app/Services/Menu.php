@@ -56,21 +56,41 @@ final class Menu
                 ['Registre des ordonnances', 'bi-file-medical', '/reports/prescriptions', 'reports.view', '#00838f', 'pharmacy'],
             ],
             'Configuration' => [
+                ['Paramètres entreprise', 'bi-gear', '/settings', 'settings.manage', '#566573'],
+                ['Boutiques, entrepôts, caisses', 'bi-shop', '/stores', 'stores.manage', '#28b463'],
                 ['Utilisateurs', 'bi-person-badge', '/users', 'users.manage', '#5dade2'],
                 ['Rôles & permissions', 'bi-shield-lock', '/roles', 'roles.manage', '#8e44ad'],
-                ['Paramètres entreprise', 'bi-gear', '/settings', 'settings.manage', '#566573'],
                 ['Imprimantes', 'bi-printer', '/printers', 'settings.manage', '#2c3e50'],
-                ['Modules complémentaires', 'bi-puzzle', '/addons', 'addons.manage', '#6c3483'],
-                ['Mise à jour du logiciel', 'bi-cloud-arrow-up', '/update', 'system.update', '#1f618d'],
                 ['Accès mobile (QR code)', 'bi-qr-code', '/mobile', 'settings.manage', '#117a65'],
                 ['Appareils connectés', 'bi-phone', '/devices', 'users.manage', '#7d3c98'],
-                ['Licence et activation', 'bi-key-fill', '/licence', 'licence.manage', '#b7950b'],
-                ['Boutiques, entrepôts, caisses', 'bi-shop', '/stores', 'stores.manage', '#28b463'],
-                ['Sauvegardes', 'bi-hdd-stack', '/backups', 'backup.manage', '#b03a2e'],
-                ['Journal d\'audit', 'bi-journal-check', '/audit', 'audit.view', '#34495e'],
                 ['Mon mot de passe / PIN', 'bi-key', '/account/password', null, '#f1c40f'],
             ],
+            'Système & maintenance' => [
+                ['Modules complémentaires', 'bi-puzzle', '/addons', 'addons.manage', '#6c3483'],
+                ['Mise à jour du logiciel', 'bi-cloud-arrow-up', '/update', 'system.update', '#1f618d'],
+                ['Sauvegardes', 'bi-hdd-stack', '/backups', 'backup.manage', '#b03a2e'],
+                ['Licence et activation', 'bi-key-fill', '/licence', 'licence.manage', '#b7950b'],
+                ['Journal d\'audit', 'bi-journal-check', '/audit', 'audit.view', '#34495e'],
+            ],
         ];
+    }
+
+    /**
+     * Ordre et icône des catégories du menu latéral. Les groupes des modules s'y rangent par leur nom ;
+     * un groupe inconnu se place avant « Configuration », dans l'ordre d'installation.
+     */
+    public const CATEGORIES = [
+        'Établissement' => 'bi-mortarboard', 'Gestion des ventes' => 'bi-cart3', 'Restaurant' => 'bi-cup-hot', 'Clinique' => 'bi-hospital',
+        'Pressing' => 'bi-basket2', 'Gestion des articles' => 'bi-box-seam', 'Achats & fournisseurs' => 'bi-truck',
+        'Trésorerie & banques' => 'bi-bank', 'Comptabilité' => 'bi-journal-bookmark', 'Finances & rapports' => 'bi-graph-up',
+        'Configuration' => 'bi-gear', 'Système & maintenance' => 'bi-tools',
+    ];
+    /** Anciens noms de groupes utilisés par des modules : rangés dans la catégorie actuelle. */
+    private const ALIASES = ['Caisse' => 'Trésorerie & banques', 'Finances' => 'Finances & rapports'];
+
+    public static function icon(string $group): string
+    {
+        return self::CATEGORIES[$group] ?? ['Caisse' => 'bi-cart3', 'Finances' => 'bi-graph-up'][$group] ?? 'bi-folder2';
     }
 
     /** Menu filtré selon les permissions et fonctionnalités actives (modules complémentaires inclus). */
@@ -79,8 +99,17 @@ final class Menu
         $out = [];
         $groups = self::groups();
         foreach (\App\Core\Addons::menu() as $g => $items) {
+            $g = self::ALIASES[$g] ?? $g;
             $groups[$g] = array_merge($groups[$g] ?? [], $items);
         }
+        // Rangement : catégories connues dans leur ordre, groupes de modules inconnus avant la configuration
+        $known = array_keys(self::CATEGORIES);
+        $cfg = array_search('Configuration', $known, true);
+        uksort($groups, function ($a, $b) use ($known, $cfg) {
+            $ia = array_search($a, $known, true);
+            $ib = array_search($b, $known, true);
+            return ($ia === false ? $cfg - 0.5 : $ia) <=> ($ib === false ? $cfg - 0.5 : $ib);
+        });
         foreach ($groups as $g => $items) {
             $f = array_values(array_filter($items, fn($i) => ($i[3] === null || can($i[3])) && (!isset($i[5]) || feature($i[5])) && !BusinessMode::hides($i[2])));
             if ($f) {

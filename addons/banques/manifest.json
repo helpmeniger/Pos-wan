@@ -19,8 +19,8 @@
         "auditor": ["banques.view"]
     },
     "menu": [
-        { "group": "Caisse", "label": "Banques et coffres", "icon": "bi-bank", "url": "/banques", "permission": "banques.view", "color": "#0b5394" },
-        { "group": "Caisse", "label": "Clôtures à verser", "icon": "bi-box-arrow-in-down", "url": "/banques/versements", "permission": "banques.operate", "color": "#1b7f3b" }
+        { "group": "Trésorerie & banques", "label": "Banques et coffres", "icon": "bi-bank", "url": "/banques", "permission": "banques.view", "color": "#0b5394" },
+        { "group": "Trésorerie & banques", "label": "Clôtures à verser", "icon": "bi-box-arrow-in-down", "url": "/banques/versements", "permission": "banques.operate", "color": "#1b7f3b" }
     ],
     "settings": {
         "banques_decouvert": "0"

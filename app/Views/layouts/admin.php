@@ -39,15 +39,40 @@ $notes = $u ? Notifications::get() : [];
     <?php if (can($posPerm)): ?>
     <a href="<?= e(url($posUrl)) ?>" class="btn btn-pos-launch"><i class="bi <?= $posUrl === '/pos' ? 'bi-cart3' : 'bi-cash-coin' ?>"></i> Ouvrir la caisse</a>
     <?php endif; ?>
-    <nav class="side-nav">
-      <?php foreach (Menu::visible() as $group => $items): ?>
-        <div class="side-group"><?= e($group) ?></div>
-        <?php foreach ($items as $it): if ($it[2] === '/pos') continue; ?>
-          <a href="<?= e(url($it[2])) ?>" class="side-link <?= ($current === $it[2] || ($it[2] !== '/' && str_starts_with($current, $it[2] . '/'))) ? 'active' : '' ?>">
-            <i class="bi <?= e($it[1]) ?>"></i><span><?= e($it[0]) ?></span>
-          </a>
-        <?php endforeach; ?>
+    <?php
+      // Catégories repliables : seule celle de la page affichée est ouverte (les autres en un clic)
+      $menuGroups = [];
+      $activeCat = null;
+      foreach (Menu::visible() as $group => $items) {
+          $items = array_values(array_filter($items, fn($it) => $it[2] !== '/pos'));
+          if (!$items) {
+              continue;
+          }
+          foreach ($items as $it) {
+              if ($current === $it[2] || ($it[2] !== '/' && str_starts_with($current, $it[2] . '/'))) {
+                  $activeCat = $activeCat ?? $group;
+              }
+          }
+          $menuGroups[$group] = $items;
+      }
+    ?>
+    <div class="side-search"><i class="bi bi-search"></i><input type="search" placeholder="Rechercher dans le menu…" aria-label="Rechercher dans le menu" data-side-search autocomplete="off"></div>
+    <nav class="side-nav" data-side-nav data-active="<?= e((string) $activeCat) ?>">
+      <?php foreach ($menuGroups as $group => $items): $open = $group === $activeCat; $cid = 'cat-' . substr(md5($group), 0, 8); ?>
+        <div class="side-cat <?= $open ? 'open' : '' ?>" data-cat="<?= e($group) ?>">
+          <button type="button" class="side-cat-btn" aria-expanded="<?= $open ? 'true' : 'false' ?>" aria-controls="<?= e($cid) ?>">
+            <i class="bi <?= e(Menu::icon($group)) ?>"></i><span class="side-cat-label"><?= e($group) ?></span><span class="side-cat-count"><?= count($items) ?></span><i class="bi bi-chevron-down side-cat-chev"></i>
+          </button>
+          <div class="side-items" id="<?= e($cid) ?>">
+            <?php foreach ($items as $it): ?>
+              <a href="<?= e(url($it[2])) ?>" class="side-link <?= ($current === $it[2] || ($it[2] !== '/' && str_starts_with($current, $it[2] . '/'))) ? 'active' : '' ?>">
+                <i class="bi <?= e($it[1]) ?>"></i><span><?= e($it[0]) ?></span>
+              </a>
+            <?php endforeach; ?>
+          </div>
+        </div>
       <?php endforeach; ?>
+      <div class="side-empty" data-side-empty hidden>Aucun résultat</div>
     </nav>
     <a class="side-about" href="<?= e(url('/about')) ?>" title="À propos, contrat de licence, assistance">
       <i class="bi bi-info-circle"></i>

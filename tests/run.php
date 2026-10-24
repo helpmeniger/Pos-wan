@@ -2977,7 +2977,11 @@ test('Mode Établissement : caisse de l\'établissement, aucun menu commercial, 
     ok(str_contains($a->req('GET', "$B/dashboard")['headers'], '/ecole'), 'tableau de bord : celui de l\'établissement');
     $home = $a->req('GET', "$B/ecole")['body'];
     ok(str_contains($home, 'Établissement') && !str_contains($home, 'Gestion des articles') && !str_contains($home, 'Achats &amp; fournisseurs') && !str_contains($home, '>Ventes<'), 'menu sans termes commerciaux');
-    ok(strpos($home, 'side-group">Établissement') < strpos($home, 'side-group">Configuration'), 'groupe Établissement en tête');
+    $pe = strpos($home, 'data-cat="Établissement"');
+    $pc = strpos($home, 'data-cat="Configuration"');
+    ok($pe !== false && $pc !== false && $pe < $pc, 'groupe Établissement en tête');
+    ok((bool) preg_match('#side-cat open" data-cat="Établissement"#', $home), 'catégorie de la page courante ouverte');
+    ok(!preg_match('#side-cat open" data-cat="Configuration"#', $home), 'autres catégories repliées');
     ok((bool) preg_match('#/ecole/caisse" class="btn btn-pos-launch"#', $home), 'bouton « Ouvrir la caisse » → caisse de l\'établissement');
     $c = (int) DB::value("SELECT id FROM ecole_classes WHERE nom = 'CM2 A'");
     $per = (int) DB::value('SELECT id FROM ecole_periodes ORDER BY id LIMIT 1');
