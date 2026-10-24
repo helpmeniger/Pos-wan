@@ -263,6 +263,25 @@ Les responsables trouvent aussi :
 N'ouvrez à l'écran que ce qui est utile : l'écran partagé peut montrer des données de clients
 (loi n° 2017-28). Installation et sécurité : `addons/marwa_assist/README.md`.
 
+### Hôtel
+À installer une fois : **Système & maintenance → Modules complémentaires → Hôtel → Installer**.
+Ensuite, si l'établissement est d'abord un hôtel : **Paramètres → Mode de fonctionnement → Hôtel**.
+Guide complet : `addons/hotel/README.md`.
+1. **Chambres et tarifs** (Hôtel → Chambres, tarifs et réglages) : adaptez les types de chambres (prix, prix
+   week-end, capacité), les numéros de chambres et les prestations (petit-déjeuner, blanchisserie…).
+2. **Plan des chambres** : l'écran de la réception, à garder ouvert (bouton plein écran). Chaque chambre a une
+   couleur : vert libre, orange à nettoyer, bleu occupée, turquoise arrivée attendue, violet départ du jour,
+   rouge départ dépassé, gris hors service. Touchez une chambre pour agir.
+3. **Réserver** : Nouvelle réservation → dates → type de chambre (le nombre de chambres libres s'affiche) →
+   chambre (ou plus tard) → client → acompte éventuel.
+4. **Arrivée** : ouvrez la réservation (tableau de bord, plan ou planning) → complétez la pièce d'identité →
+   « Enregistrer l'arrivée ». Client sans réservation : bouton **Client sans réservation**.
+5. **Pendant le séjour** : « Ajouter une prestation » porte une consommation au folio ; « Encaisser » reçoit un
+   paiement ; « Changer de chambre / prolonger ».
+6. **Chaque matin : Audit de nuit** (tableau de bord) : les nuitées de la nuit passée sont portées aux folios.
+7. **Départ** : « Enregistrer le départ » encaisse le solde, imprime la facture et passe la chambre à nettoyer.
+8. **Ménage** : la gouvernante ouvre « Ménage des chambres » sur son téléphone : Commencer → Terminé.
+
 ### Comptabilité générale
 À installer une fois : **Système & maintenance → Modules complémentaires → Comptabilité générale → Installer**.
 Tout se trouve ensuite dans la catégorie **Comptabilité** du menu, et dans les onglets en haut de chaque page comptable.

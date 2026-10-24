@@ -1,0 +1,56 @@
+{
+    "code": "hotel",
+    "name": "Hôtel",
+    "version": "1.0.0",
+    "requires": "2.10.0",
+    "author": "POS Marwa",
+    "description": "Gestion complète d'un hôtel : plan des chambres en temps réel (écran plein écran), réservations avec acompte, planning, arrivée avec fiche de police, folio (nuitées, taxe de séjour, prestations, remises), changement de chambre, prolongation, départ avec facture, ménage et maintenance, clients et historique, audit de nuit, rapports (taux d'occupation, prix moyen, RevPAR).",
+    "icon": "bi-building",
+    "color": "#0f766e",
+    "permissions": {
+        "hotel.view": "Hôtel : voir le plan des chambres, les réservations et les séjours",
+        "hotel.reception": "Hôtel : réservations, arrivées, départs, prestations et encaissements",
+        "hotel.housekeeping": "Hôtel : ménage des chambres (à nettoyer, en cours, propre)",
+        "hotel.manage": "Hôtel : chambres, tarifs, remises, tarifs négociés, remboursements, rapports"
+    },
+    "roles": {
+        "owner": ["hotel.view", "hotel.reception", "hotel.housekeeping", "hotel.manage"],
+        "store_manager": ["hotel.view", "hotel.reception", "hotel.housekeeping", "hotel.manage"],
+        "cashier": ["hotel.view", "hotel.reception"],
+        "auditor": ["hotel.view"]
+    },
+    "new_roles": {
+        "receptionniste": {
+            "name": "Réceptionniste (hôtel)",
+            "description": "Réservations, arrivées, départs, prestations et encaissements de l'hôtel ; suivi du ménage",
+            "permissions": ["hotel.view", "hotel.reception", "hotel.housekeeping", "cash.open_close"]
+        },
+        "gouvernante": {
+            "name": "Ménage (hôtel)",
+            "description": "Gouvernante et femmes de chambre : état du ménage des chambres",
+            "permissions": ["hotel.view", "hotel.housekeeping"]
+        }
+    },
+    "menu": [
+        { "group": "Hôtel", "label": "Tableau de bord hôtel", "icon": "bi-speedometer2", "url": "/hotel", "permission": "hotel.view", "color": "#0f766e" },
+        { "group": "Hôtel", "label": "Plan des chambres (écran)", "icon": "bi-grid-3x3-gap", "url": "/hotel/plan", "permission": "hotel.view", "color": "#0e7490" },
+        { "group": "Hôtel", "label": "Nouvelle réservation", "icon": "bi-calendar-plus", "url": "/hotel/reservations/nouvelle", "permission": "hotel.reception", "color": "#2563eb" },
+        { "group": "Hôtel", "label": "Réservations et séjours", "icon": "bi-journal-text", "url": "/hotel/reservations", "permission": "hotel.view", "color": "#4f46e5" },
+        { "group": "Hôtel", "label": "Planning des chambres", "icon": "bi-calendar-week", "url": "/hotel/planning", "permission": "hotel.view", "color": "#7c3aed" },
+        { "group": "Hôtel", "label": "Ménage des chambres", "icon": "bi-stars", "url": "/hotel/menage", "permission": "hotel.housekeeping", "color": "#d97706" },
+        { "group": "Hôtel", "label": "Clients de l'hôtel", "icon": "bi-person-vcard", "url": "/hotel/clients", "permission": "hotel.view", "color": "#0891b2" },
+        { "group": "Hôtel", "label": "Registre des voyageurs", "icon": "bi-shield-check", "url": "/hotel/registre", "permission": "hotel.manage", "color": "#475569" },
+        { "group": "Hôtel", "label": "Rapport hôtel", "icon": "bi-graph-up-arrow", "url": "/hotel/rapport", "permission": "hotel.manage", "color": "#dc2626" },
+        { "group": "Hôtel", "label": "Chambres, tarifs et réglages", "icon": "bi-sliders", "url": "/hotel/configuration", "permission": "hotel.manage", "color": "#64748b" }
+    ],
+    "settings": {
+        "hotel_heure_arrivee": "14:00",
+        "hotel_heure_depart": "12:00",
+        "hotel_taxe_sejour": "0",
+        "hotel_depart_tardif_pourcent": "50",
+        "hotel_piece_obligatoire": "1",
+        "hotel_exiger_propre": "1",
+        "hotel_dernier_audit": "",
+        "hotel_conditions": "Les chambres sont disponibles à partir de 14 h et doivent être libérées avant 12 h le jour du départ. Toute nuit commencée est due. Merci de votre séjour."
+    }
+}

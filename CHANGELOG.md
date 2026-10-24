@@ -2,6 +2,60 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.10.0] — 2026-10-24
+
+### Ajouté
+- **Hôtel** (nouveau module `addons/hotel`, à installer depuis Modules complémentaires).
+  Guide : `addons/hotel/README.md`.
+  - **Plan des chambres** (écran plein écran, actualisé toutes les 20 s, thème clair ou sombre) :
+    - une tuile par chambre, rangée par étage, colorée selon l'état : libre, à nettoyer, occupée,
+      arrivée attendue, départ du jour, départ dépassé, hors service ;
+    - filtres, recherche, compteurs (occupation, arrivées, départs, ménage) ;
+    - panneau d'actions par chambre : installer un client, réserver, arrivée, séjour, prestation,
+      départ, ménage.
+  - **Réservations** :
+    - disponibilités et devis en direct, tarif week-end ;
+    - choix de la chambre ou attribution à l'arrivée ;
+    - recherche d'un client déjà venu, acompte en caisse, réservation confirmée.
+  - **Client sans réservation** : installation immédiate.
+  - **Arrivée** : pièce d'identité exigée, chambre propre exigée (le responsable peut passer outre),
+    arrivée anticipée ou tardive.
+  - **Folio** :
+    - nuitées portées nuit par nuit (audit de nuit, changement de chambre, départ) ;
+    - taxe de séjour ;
+    - prestations du catalogue ou libres, remises (droit requis) ;
+    - annulation de ligne avec motif.
+  - **Pendant le séjour** : changement de chambre (tarif conservé ou non), prolongation, encaissements.
+  - **Départ** :
+    - une nuit au moins facturée, départ tardif facultatif ;
+    - solde exigé (sauf responsable avec motif → « Soldes à recouvrer ») ;
+    - facture numérotée (FH…), chambre à nettoyer.
+  - **Annulation et non-présentation** : acompte remboursé en espèces ou conservé.
+  - **Planning** des chambres sur 7 à 31 jours : clic sur une case libre pour réserver.
+  - **Ménage** : écran pour téléphone (commencer, terminé, inspectée), historique par chambre.
+  - **Maintenance** : chambre hors service jusqu'à une date, remise en service automatique.
+  - **Clients** : fiche, VIP, client refusé, historique, dépenses.
+  - **Documents** :
+    - fiche de police imprimable ;
+    - registre des voyageurs (CSV / PDF) ;
+    - facture A4 ou note provisoire.
+  - **Rapport** : occupation nuit par nuit, CA hébergement et prestations, ADR, RevPAR, par type,
+    par origine, par mode de paiement (CSV / PDF).
+  - **Rôles proposés** : « Réceptionniste (hôtel) », « Ménage (hôtel) ».
+- **Mode de fonctionnement « Hôtel »** :
+  - les menus des autres activités (clinique, pressing) sont masqués ;
+  - la caisse reste disponible (bar, restaurant) ;
+  - la réception et le ménage arrivent directement sur leur écran.
+- **Alertes** de la barre supérieure : départs dépassés, arrivées dépassées, chambres à nettoyer.
+
+### Modifié
+- Les paiements de l'hôtel passent par la caisse ouverte (mouvements « hotel » et
+  « hotel_refund ») :
+  - ils figurent dans l'état de caisse ;
+  - ils sont repris par le module Comptabilité comme prestations encaissées.
+- Test de la sauvegarde avant clôture comptable rendu indépendant des sauvegardes déjà présentes (la
+  rotation pouvait supprimer un fichier et fausser le comptage).
+
 ## [2.9.0] — 2026-10-24
 
 ### Ajouté

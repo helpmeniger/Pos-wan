@@ -37,6 +37,13 @@ final class DashboardController extends Controller
                 redirect('/pressing');
             }
         }
+        if ($mode === 'hotel' && !can('dashboard.view')) {
+            foreach (['hotel.reception' => '/hotel', 'hotel.housekeeping' => '/hotel/menage', 'hotel.view' => '/hotel'] as $perm => $to) {
+                if (can($perm)) {
+                    redirect($to);
+                }
+            }
+        }
         if (can('dashboard.view')) {
             redirect('/dashboard');
         }

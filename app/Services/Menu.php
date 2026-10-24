@@ -80,7 +80,7 @@ final class Menu
      * un groupe inconnu se place avant « Configuration », dans l'ordre d'installation.
      */
     public const CATEGORIES = [
-        'Établissement' => 'bi-mortarboard', 'Gestion des ventes' => 'bi-cart3', 'Restaurant' => 'bi-cup-hot', 'Clinique' => 'bi-hospital',
+        'Établissement' => 'bi-mortarboard', 'Gestion des ventes' => 'bi-cart3', 'Restaurant' => 'bi-cup-hot', 'Hôtel' => 'bi-building', 'Clinique' => 'bi-hospital',
         'Pressing' => 'bi-basket2', 'Gestion des articles' => 'bi-box-seam', 'Achats & fournisseurs' => 'bi-truck',
         'Trésorerie & banques' => 'bi-bank', 'Comptabilité' => 'bi-journal-bookmark', 'Finances & rapports' => 'bi-graph-up',
         'Configuration' => 'bi-gear', 'Système & maintenance' => 'bi-tools',

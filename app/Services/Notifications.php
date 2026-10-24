@@ -38,6 +38,20 @@ final class Notifications
                 $items[] = ['bi-hourglass-split text-warning', "$soon dépôt(s) pressing à livrer bientôt", '/pressing/suivi?f=soon'];
             }
         }
+        if (\App\Core\Addons::isActive('hotel') && can('hotel.view')) {
+            $over = (int) DB::value("SELECT COUNT(*) FROM hotel_stays WHERE status = 'en_cours' AND departure < CURDATE()");
+            $late = (int) DB::value("SELECT COUNT(*) FROM hotel_stays WHERE status IN ('reservee','confirmee') AND arrival < CURDATE()");
+            $dirty = can('hotel.housekeeping') ? (int) DB::value("SELECT COUNT(*) FROM hotel_rooms WHERE active = 1 AND out_of_order = 0 AND housekeeping IN ('sale','nettoyage')") : 0;
+            if ($over > 0) {
+                $items[] = ['bi-door-open text-danger', "$over client(s) d'hôtel au-delà de la date de départ", '/hotel/reservations?f=departs'];
+            }
+            if ($late > 0) {
+                $items[] = ['bi-hourglass-split text-warning', "$late réservation(s) d'hôtel dont l'arrivée est dépassée", '/hotel/reservations?f=arrivees'];
+            }
+            if ($dirty > 0) {
+                $items[] = ['bi-stars text-warning', "$dirty chambre(s) à nettoyer", '/hotel/menage'];
+            }
+        }
         if (can('customers.view')) {
             $late = (int) DB::value("SELECT COUNT(DISTINCT customer_id) FROM customer_transactions ct JOIN customers c ON c.id = ct.customer_id WHERE ct.type = 'credit_sale' AND ct.due_date < CURDATE() AND c.balance > 0");
             if ($late > 0) {

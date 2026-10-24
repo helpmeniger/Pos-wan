@@ -3903,9 +3903,10 @@ test('Comptabilité générale : mise en place SYSCOHADA, écritures de la caiss
     $before = $R::balance($ex, "$y-01-01", "$y-12-31", '', '', true);
     $resultat = $R::resultat($ex, "$y-12-31", true)['valeurs']['XI'];
     $bk = fn() => glob(App\Services\BackupService::dir() . '/*avant_cloture_compta*.sql.gz') ?: [];
-    $nbBackups = count($bk());
+    $backupsBefore = $bk();
     $cl = $C::cloturer($ex);
-    eq($nbBackups + 1, count($bk()), 'sauvegarde complète avant la clôture');
+    // Une nouvelle sauvegarde est apparue (la rotation peut avoir supprimé la plus ancienne)
+    ok((bool) array_diff($bk(), $backupsBefore), 'sauvegarde complète avant la clôture');
     eq(round($resultat, 2), round($cl['resultat'], 2), 'résultat de clôture = résultat net');
     eq('cloture', DB::value('SELECT statut FROM cpt_exercices WHERE id = ?', [$ex]), 'exercice clôturé');
     $next = (int) $cl['next']['id'];
@@ -3930,6 +3931,215 @@ test('Comptabilité générale : mise en place SYSCOHADA, écritures de la caiss
     throws(fn() => $C::cloturer($ex), 'déjà clôturé');
     eq(200, $a->req('GET', "$B/compta/etats/bilan?exercice=$next")['code'], 'bilan N+1 avec colonne N-1');
     eq(0.0, $R::bilan($next, ($y + 1) . '-12-31', true)['ecart'], 'bilan d\'ouverture N+1 équilibré');
+});
+
+test('Module Hôtel : réservation, acompte en caisse, arrivée, folio, audit de nuit, départ, annulations, ménage', function () {
+    $HS = Addons\Hotel\HotelService::class;
+    actingAs('admin');
+    eq(['0001_hotel'], App\Core\Addons::install('hotel', false), 'installation');
+    eq([], App\Core\Addons::install('hotel', false), 'réinstallation idempotente');
+    eq(12, (int) DB::value('SELECT COUNT(*) FROM hotel_rooms'), 'chambres de départ');
+    $room = fn(string $n) => (int) DB::value('SELECT id FROM hotel_rooms WHERE number = ?', [$n]);
+    $today = date('Y-m-d');
+    $d = fn(int $n) => date('Y-m-d', strtotime("$n day"));
+    // Tarif week-end : nuits du vendredi et du samedi
+    DB::update('hotel_room_types', ['weekend_price' => 30000], 'id = 2');
+    $fri = date('Y-m-d', strtotime('next friday'));
+    $q = $HS::quote(2, $fri, date('Y-m-d', strtotime($fri . ' +3 day')));
+    eq([3, 85000.0], [$q['nights'], $q['total']], 'devis : vendredi et samedi au tarif week-end, dimanche au tarif normal');
+    DB::update('hotel_room_types', ['weekend_price' => null], 'id = 2');
+
+    actingAs('caissier');
+    ok(Auth::can('hotel.reception') && !Auth::can('hotel.manage'), 'caissier : réception sans gestion');
+    $session = (int) S\CashService::currentSession(Auth::user())['id'];
+    $cash0 = S\CashService::expectedCash($session);
+    throws(fn() => $HS::createStay(['guest' => ['last_name' => 'Issa', 'phone' => '+227 96 11 22 33'], 'room_id' => $room('103'), 'arrival' => $d(1), 'departure' => $d(4), 'rate' => '20000']), 'réservée au responsable');
+    throws(fn() => $HS::createStay(['guest' => ['last_name' => 'Issa'], 'type_id' => 2, 'arrival' => $d(3), 'departure' => $d(3)]), 'postérieure');
+    throws(fn() => $HS::createStay(['guest' => ['last_name' => 'Issa'], 'type_id' => 2, 'arrival' => $d(-2), 'departure' => $d(1)]), 'passée');
+    throws(fn() => $HS::createStay(['guest' => ['last_name' => ''], 'type_id' => 2, 'arrival' => $d(1), 'departure' => $d(2)]), 'nom du client');
+    $r = $HS::createStay(['guest' => ['last_name' => 'Issa', 'first_name' => 'Moussa', 'phone' => '+227 96 11 22 33'], 'room_id' => $room('103'), 'arrival' => $d(1), 'departure' => $d(4),
+        'adults' => 2, 'source' => 'whatsapp', 'deposit' => ['method' => 'cash', 'amount' => '10 000']]);
+    $s = DB::one('SELECT * FROM hotel_stays WHERE id = ?', [$r['id']]);
+    eq(['reservee', 25000.0, 10000.0, 2], [$s['status'], (float) $s['rate'], (float) $s['total_paid'], (int) $s['type_id']], 'réservation avec acompte');
+    ok(str_starts_with($r['number'], 'RES' . date('Y')), 'numéro de réservation');
+    eq($cash0 + 10000, S\CashService::expectedCash($session), 'acompte en espèces dans la caisse');
+    eq('hotel', DB::value("SELECT type FROM cash_movements WHERE ref_type = 'hotel_stay' AND ref_id = ? ORDER BY id DESC LIMIT 1", [$r['id']]), 'mouvement de caisse « hotel »');
+    throws(fn() => $HS::createStay(['guest' => ['last_name' => 'Garba'], 'room_id' => $room('103'), 'arrival' => $d(2), 'departure' => $d(6)]), 'déjà prise');
+    ok(!in_array($room('103'), array_map('intval', array_column($HS::availableRooms($d(2), $d(3)), 'id')), true), 'chambre réservée absente des disponibilités');
+    ok(in_array($room('103'), array_map('intval', array_column($HS::availableRooms($d(4), $d(6)), 'id')), true), 'libre à partir du jour de départ');
+    $g2 = (int) DB::value('SELECT guest_id FROM hotel_stays WHERE id = ?', [$r['id']]);
+    $r2 = $HS::createStay(['guest' => ['last_name' => 'issa', 'phone' => '96 11 22 33'], 'type_id' => 3, 'arrival' => $d(10), 'departure' => $d(12)]);
+    eq($g2, (int) DB::value('SELECT guest_id FROM hotel_stays WHERE id = ?', [$r2['id']]), 'client reconnu (même nom et téléphone) : pas de doublon');
+    $HS::updateReservation($r2['id'], ['arrival' => $d(11), 'departure' => $d(13), 'room_id' => $room('106')]);
+    eq([$d(11), $room('106')], [DB::value('SELECT arrival FROM hotel_stays WHERE id = ?', [$r2['id']]), (int) DB::value('SELECT room_id FROM hotel_stays WHERE id = ?', [$r2['id']])], 'réservation modifiée');
+    $HS::confirm($r2['id']);
+    eq('confirmee', DB::value('SELECT status FROM hotel_stays WHERE id = ?', [$r2['id']]));
+
+    // Arrivée anticipée : pièce d'identité exigée, chambre propre exigée
+    throws(fn() => $HS::checkIn($r['id']), 'Pièce d\'identité');
+    $HS::saveGuest(['last_name' => 'Issa', 'first_name' => 'Moussa', 'phone' => '+227 96 11 22 33', 'id_type' => 'cni', 'id_number' => 'NE-123456', 'nationality' => 'Nigérienne'], $g2);
+    $HS::setHousekeeping($room('103'), 'sale', 'test');
+    throws(fn() => $HS::checkIn($r['id']), 'pas encore propre');
+    $HS::setHousekeeping($room('103'), 'propre');
+    $HS::checkIn($r['id']);
+    $s = DB::one('SELECT * FROM hotel_stays WHERE id = ?', [$r['id']]);
+    eq(['en_cours', $today, $today], [$s['status'], $s['arrival'], $s['charged_until']], 'arrivée anticipée : séjour démarré aujourd\'hui');
+    throws(fn() => $HS::checkIn($r['id']), 'impossible');
+
+    // Client sans réservation
+    throws(fn() => $HS::createStay(['walk_in' => true, 'guest' => ['last_name' => 'Abdou', 'id_type' => 'passeport', 'id_number' => 'P998877'], 'room_id' => $room('201'), 'departure' => $d(2), 'adults' => 3]), 'Capacité');
+    $w = $HS::createStay(['walk_in' => true, 'guest' => ['last_name' => 'Abdou', 'first_name' => 'Rabi', 'id_type' => 'passeport', 'id_number' => 'P998877'], 'room_id' => $room('201'), 'departure' => $d(2), 'adults' => 2]);
+    eq('en_cours', DB::value('SELECT status FROM hotel_stays WHERE id = ?', [$w['id']]), 'arrivée directe');
+    $bf = (int) DB::value("SELECT id FROM hotel_extras WHERE name = 'Petit-déjeuner'");
+    $HS::addCharge($w['id'], ['extra_id' => $bf, 'quantity' => 2]);
+    throws(fn() => $HS::addCharge($w['id'], ['extra_id' => $bf, 'unit_price' => '100']), 'responsable');
+    throws(fn() => $HS::addCharge($w['id'], ['kind' => 'nuitee', 'label' => 'x', 'unit_price' => '1']), 'automatiquement');
+    $HS::addCharge($w['id'], ['kind' => 'remise', 'label' => 'Geste commercial', 'unit_price' => '1000']);
+    eq(5000.0, (float) DB::value('SELECT total_charges FROM hotel_stays WHERE id = ?', [$w['id']]), 'folio : 2 petits-déjeuners − remise');
+    throws(fn() => $HS::addCharge($r2['id'], ['extra_id' => $bf]), 'séjour en cours');
+
+    // Deux nuits écoulées : l'audit de nuit les porte au folio (avec la taxe de séjour), une seule fois
+    setting_set('hotel_taxe_sejour', '500');
+    DB::update('hotel_stays', ['arrival' => $d(-2), 'charged_until' => $d(-2), 'departure' => $d(1)], 'id = ?', [$w['id']]);
+    $a = $HS::nightAudit();
+    ok($a['nights'] >= 2, 'audit de nuit');
+    eq(2, (int) DB::value("SELECT COUNT(*) FROM hotel_charges WHERE stay_id = ? AND kind = 'nuitee'", [$w['id']]), 'deux nuitées');
+    eq(2000.0, (float) DB::value("SELECT SUM(amount) FROM hotel_charges WHERE stay_id = ? AND kind = 'taxe'", [$w['id']]), 'taxe de séjour : 2 nuits × 2 adultes × 500');
+    eq(0, $HS::nightAudit()['nights'], 'audit relancé : rien en double');
+    $st = DB::one('SELECT * FROM hotel_stays WHERE id = ?', [$w['id']]);
+    eq(5000.0 + 2 * 25000 + 2000, (float) $st['total_charges'], 'folio après audit');
+    $b = $HS::balance($st);
+    eq([1, 26000.0], [$b['pending']['nights'], $b['pending']['amount']], 'nuitée restante estimée (avec taxe)');
+    $board = $HS::board();
+    $tile = array_values(array_filter($board['rooms'], fn($x) => $x['number'] === '201'))[0];
+    eq(['occupee', 3], [$tile['state'], $tile['stay']['night_no']], 'plan : chambre occupée, 3e nuit');
+    eq((int) DB::value("SELECT COUNT(*) FROM hotel_stays WHERE status = 'en_cours'"), $board['totals']['occupied'], 'plan : chambres occupées = séjours en cours');
+
+    // Changement de chambre : tarif conservé, ancienne chambre à nettoyer
+    $HS::changeRoom($w['id'], $room('202'), true, 'climatisation');
+    eq([$room('202'), 'sale'], [(int) DB::value('SELECT room_id FROM hotel_stays WHERE id = ?', [$w['id']]), DB::value('SELECT housekeeping FROM hotel_rooms WHERE id = ?', [$room('201')])], 'changement de chambre');
+    throws(fn() => $HS::changeRoom($w['id'], $room('103'), true), 'déjà prise');
+    $HS::changeDeparture($w['id'], $d(3));
+    eq($d(3), DB::value('SELECT departure FROM hotel_stays WHERE id = ?', [$w['id']]), 'prolongation');
+
+    // Départ : solde exigé, facture numérotée, chambre à nettoyer
+    $due = (float) DB::value('SELECT total_charges - total_paid FROM hotel_stays WHERE id = ?', [$w['id']]);
+    throws(fn() => $HS::checkOut($w['id']), 'Reste à payer');
+    throws(fn() => $HS::checkOut($w['id'], ['method' => 'mobile_money', 'amount' => (string) ($due + 5000)]), 'électronique');
+    $cashBefore = S\CashService::expectedCash($session);
+    $change = $HS::checkOut($w['id'], ['method' => 'cash', 'amount' => (string) ($due + 3000)]);
+    eq(3000.0, $change, 'monnaie rendue');
+    $st = DB::one('SELECT * FROM hotel_stays WHERE id = ?', [$w['id']]);
+    eq(['terminee', $today, 0.0], [$st['status'], $st['departure'], round((float) $st['total_charges'] - (float) $st['total_paid'], 2)], 'départ soldé, date de départ = aujourd\'hui');
+    ok(str_starts_with((string) $st['invoice_number'], 'FH' . date('Y')), 'facture numérotée');
+    eq('sale', DB::value('SELECT housekeeping FROM hotel_rooms WHERE id = ?', [$room('202')]), 'chambre libérée à nettoyer');
+    eq($cashBefore + $due, S\CashService::expectedCash($session), 'solde encaissé en caisse');
+    throws(fn() => $HS::pay($w['id'], ['method' => 'cash', 'amount' => '100']), 'entièrement payé');
+
+    // Départ le jour même de l'arrivée : une nuit facturée ; départ avec solde réservé au responsable
+    $x = $HS::createStay(['walk_in' => true, 'guest_id' => $g2, 'room_id' => $room('104'), 'departure' => $d(1)]);
+    throws(fn() => $HS::checkOut($x['id'], [], false, 'Entreprise paiera'), 'Reste à payer');
+    actingAs('admin');
+    $HS::checkOut($x['id'], [], true, 'Facture envoyée à l\'employeur');
+    eq([1, 12500.0], [(int) DB::value("SELECT COUNT(*) FROM hotel_charges WHERE stay_id = ? AND kind = 'nuitee'", [$x['id']]), (float) DB::value("SELECT SUM(amount) FROM hotel_charges WHERE stay_id = ? AND kind = 'depart_tardif'", [$x['id']])], 'une nuit au moins + départ tardif 50 %');
+    ok($HS::stats($today)['receivable'] >= 25000 + 500 + 12500, 'solde à recouvrer');
+    actingAs('caissier');
+    $HS::settle($x['id'], ['method' => 'cash', 'amount' => '38000']);
+    eq(0.0, round((float) DB::value('SELECT total_charges - total_paid FROM hotel_stays WHERE id = ?', [$x['id']]), 2), 'solde réglé après le départ');
+
+    // Annulations : acompte remboursé ou conservé ; non-présentation
+    $c1 = $HS::createStay(['guest_id' => $g2, 'type_id' => 1, 'arrival' => $d(5), 'departure' => $d(6), 'deposit' => ['method' => 'cash', 'amount' => '5000']]);
+    $HS::cancel($c1['id'], 'Changement de programme', false);
+    eq(['annulee', 0.0], [DB::value('SELECT status FROM hotel_stays WHERE id = ?', [$c1['id']]), (float) DB::value('SELECT total_paid FROM hotel_stays WHERE id = ?', [$c1['id']])], 'acompte remboursé');
+    eq(-5000.0, (float) DB::value("SELECT amount FROM cash_movements WHERE type = 'hotel_refund' AND ref_id = ? ORDER BY id DESC LIMIT 1", [$c1['id']]), 'remboursement sorti de la caisse');
+    $c2 = $HS::createStay(['guest_id' => $g2, 'type_id' => 1, 'arrival' => $d(5), 'departure' => $d(6), 'deposit' => ['method' => 'cash', 'amount' => '5000']]);
+    throws(fn() => $HS::cancel($c2['id'], 'x', true, true), 'Non présenté');
+    $HS::cancel($c2['id'], 'Hors délai', true);
+    eq([5000.0, 5000.0], [(float) DB::value('SELECT total_charges FROM hotel_stays WHERE id = ?', [$c2['id']]), (float) DB::value('SELECT total_paid FROM hotel_stays WHERE id = ?', [$c2['id']])], 'acompte conservé en frais d\'annulation');
+    throws(fn() => $HS::cancel($r['id'], 'x', false), 'avant l\'arrivée');
+    throws(fn() => $HS::cancel($r2['id'], '', false), 'motif');
+
+    // Maintenance : chambre occupée refusée ; chambre hors service exclue des disponibilités
+    throws(fn() => $HS::setOutOfOrder($room('103'), true, 'Peinture'), 'occupée');
+    $HS::setOutOfOrder($room('105'), true, 'Climatisation en panne', $d(3));
+    ok(!in_array($room('105'), array_map('intval', array_column($HS::availableRooms($today, $d(1)), 'id')), true), 'hors service : non proposée');
+    throws(fn() => $HS::createStay(['guest_id' => $g2, 'room_id' => $room('105'), 'arrival' => $d(1), 'departure' => $d(2)]), 'hors service');
+    eq('hors_service', array_values(array_filter($HS::board()['rooms'], fn($x) => $x['number'] === '105'))[0]['state'], 'plan : hors service');
+    $HS::setOutOfOrder($room('105'), false);
+    eq(0, (int) DB::value('SELECT out_of_order FROM hotel_rooms WHERE id = ?', [$room('105')]), 'remise en service');
+    $lg = DB::one("SELECT from_state, to_state FROM hotel_room_log WHERE room_id = ? AND event = 'menage' ORDER BY id DESC LIMIT 1", [$room('103')]);
+    eq(['sale', 'propre'], [$lg['from_state'], $lg['to_state']], 'historique du ménage');
+
+    // Rapport et registre des voyageurs
+    $rep = $HS::report($d(-3), $today);
+    ok($rep['totals']['occupied'] >= 2 && $rep['totals']['room'] >= 50000 && $rep['totals']['adr'] > 0, 'rapport : nuitées, CA, prix moyen');
+    $reg = $HS::policeRegister($today, $today);
+    ok(in_array('NE-123456', array_column($reg, 'id_number'), true), 'registre des voyageurs : pièce d\'identité');
+    actingAs('auditeur');
+    ok(Auth::can('hotel.view') && !Auth::can('hotel.reception'), 'auditeur : lecture seule');
+    actingAs('admin');
+});
+
+test('Module Hôtel (HTTP) : écrans, plan des chambres, formulaires, droits, mode Hôtel', function () use ($B) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $sid = (int) DB::value("SELECT id FROM hotel_stays WHERE status = 'en_cours' ORDER BY id LIMIT 1");
+    $done = (int) DB::value("SELECT id FROM hotel_stays WHERE status = 'terminee' ORDER BY id LIMIT 1");
+    $gid = (int) DB::value('SELECT guest_id FROM hotel_stays WHERE id = ?', [$sid]);
+    $rid = (int) DB::value("SELECT id FROM hotel_rooms WHERE number = '101'");
+    foreach (['/hotel', '/hotel/plan', '/hotel/planning', '/hotel/planning?n=31', '/hotel/reservations', '/hotel/reservations?f=tous&q=Issa', '/hotel/reservations?f=soldes', '/hotel/reservations/nouvelle', '/hotel/reservations/nouvelle?walkin=1&room=' . $rid,
+        "/hotel/sejours/$sid", "/hotel/sejours/$done", "/hotel/sejours/$sid/facture", "/hotel/sejours/$done/facture", "/hotel/sejours/$sid/fiche", '/hotel/menage', '/hotel/clients', "/hotel/clients/$gid", "/hotel/chambres/$rid",
+        '/hotel/rapport', '/hotel/registre', '/hotel/configuration', '/hotel/configuration?tab=chambres', '/hotel/configuration?tab=prestations', '/hotel/configuration?tab=reglages'] as $u) {
+        $r = $a->req('GET', $B . $u);
+        eq(200, $r['code'], "GET $u");
+        ok(!str_contains($r['body'], 'Fatal') && !str_contains($r['body'], 'Warning:') && !str_contains($r['body'], 'Notice:'), "aucune erreur PHP sur $u");
+    }
+    ok(str_contains($a->req('GET', "$B/hotel")['body'], 'data-cat="Hôtel"'), 'menu : catégorie « Hôtel »');
+    $feed = json_decode($a->req('GET', "$B/hotel/plan/feed", null, ['Accept: application/json'])['body'], true);
+    ok($feed['ok'] && count($feed['rooms']) === 12 && isset($feed['totals']['occupancy']), 'plan : flux JSON');
+    $av = json_decode($a->req('GET', "$B/hotel/disponibilites?arrival=" . date('Y-m-d', strtotime('+20 day')) . '&departure=' . date('Y-m-d', strtotime('+22 day')), null, ['Accept: application/json'])['body'], true);
+    ok($av['ok'] && $av['nights'] === 2 && count($av['types']) === 4 && count($av['rooms']) >= 10, 'disponibilités et devis');
+    $gs = json_decode($a->req('GET', "$B/hotel/clients/recherche?q=issa", null, ['Accept: application/json'])['body'], true);
+    ok($gs['ok'] && $gs['guests'][0]['last_name'] === 'ISSA', 'recherche du client');
+    ok(str_contains($a->req('GET', "$B/hotel/rapport?export=csv")['body'], 'Chambres occupées'), 'export CSV du rapport');
+    // Réservation par le formulaire
+    $t = $a->token("$B/hotel/reservations/nouvelle");
+    $arr = date('Y-m-d', strtotime('+30 day'));
+    $r = $a->req('POST', "$B/hotel/reservations", http_build_query(['_csrf' => $t, 'walk_in' => '0', 'guest_id' => '0', 'g_form' => '1', 'g_last_name' => 'Souley', 'g_first_name' => 'Aïcha', 'g_phone' => '+227 90 00 11 22',
+        'type_id' => 4, 'room_id' => (int) DB::value("SELECT id FROM hotel_rooms WHERE number = '205'"), 'arrival' => $arr, 'departure' => date('Y-m-d', strtotime('+32 day')), 'adults' => 2, 'children' => 1,
+        'source' => 'telephone', 'rate' => '', 'pay_method' => 'cash', 'pay_amount' => '', 'pay_reference' => '']));
+    eq(302, $r['code'], 'réservation enregistrée');
+    $new = DB::one("SELECT s.*, g.last_name FROM hotel_stays s JOIN hotel_guests g ON g.id = s.guest_id WHERE g.last_name = 'SOULEY'");
+    ok($new && $new['arrival'] === $arr && (float) $new['rate'] === 60000.0 && (int) $new['children'] === 1, 'réservation créée depuis le formulaire');
+    ok(str_contains($r['headers'], '/hotel/sejours/' . $new['id']), 'redirection vers le séjour');
+    // Ménage depuis le plan (JSON) ; mise hors service réservée au responsable
+    $hdr = ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $a->token("$B/hotel/menage")];
+    $j = json_decode($a->req('POST', "$B/hotel/chambres/$rid/menage", json_encode(['state' => 'nettoyage']), $hdr)['body'], true);
+    ok($j['ok'] && DB::value('SELECT housekeeping FROM hotel_rooms WHERE id = ?', [$rid]) === 'nettoyage', 'ménage depuis le plan');
+    $j = json_decode($a->req('POST', "$B/hotel/chambres/$rid/menage", json_encode(['state' => 'xyz']), $hdr)['body'], true);
+    ok(!$j['ok'], 'état de ménage inconnu refusé');
+    $c = new Http();
+    $c->login($B, 'auditeur', 'Mot-de-passe-2026');
+    eq(200, $c->req('GET', "$B/hotel/plan")['code'], 'auditeur : plan visible');
+    eq(403, $c->req('POST', "$B/hotel/chambres/$rid/menage", json_encode(['state' => 'propre']), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $c->token("$B/hotel")])['code'], 'auditeur : pas de ménage');
+    eq(403, $c->req('GET', "$B/hotel/registre")['code'], 'auditeur : registre des voyageurs refusé');
+    // Configuration : nouveau type, nouvelle chambre, réglages
+    $t = $a->token("$B/hotel/configuration");
+    $a->req('POST', "$B/hotel/configuration/types", http_build_query(['_csrf' => $t, 'id' => 0, 'name' => 'Familiale', 'code' => 'FAM', 'capacity' => 5, 'base_price' => '45 000', 'weekend_price' => '', 'color' => '#ff8800', 'active' => '1']));
+    $fam = (int) DB::value("SELECT id FROM hotel_room_types WHERE name = 'Familiale'");
+    ok($fam > 0 && (float) DB::value('SELECT base_price FROM hotel_room_types WHERE id = ?', [$fam]) === 45000.0, 'type de chambre ajouté');
+    $a->req('POST', "$B/hotel/configuration/chambres", http_build_query(['_csrf' => $t, 'id' => 0, 'number' => '301', 'floor' => '3e étage', 'type_id' => $fam, 'beds' => '2 lits doubles', 'active' => '1']));
+    eq(13, (int) DB::value('SELECT COUNT(*) FROM hotel_rooms'), 'chambre ajoutée');
+    $a->req('POST', "$B/hotel/configuration/parametres", http_build_query(['_csrf' => $t, 'hotel_heure_arrivee' => '13:00', 'hotel_heure_depart' => '11:00', 'hotel_taxe_sejour' => '0', 'hotel_depart_tardif_pourcent' => '30', 'hotel_piece_obligatoire' => '1', 'hotel_exiger_propre' => '1', 'hotel_conditions' => 'Merci']));
+    eq(['11:00', '30'], [DB::value("SELECT svalue FROM settings WHERE skey = 'hotel_heure_depart'"), DB::value("SELECT svalue FROM settings WHERE skey = 'hotel_depart_tardif_pourcent'")], 'réglages enregistrés');
+    // Mode Hôtel : menus des autres activités masqués, données conservées
+    $before = S\BusinessMode::current();
+    S\BusinessMode::set('hotel');
+    ok(S\BusinessMode::hides('/pressing') && S\BusinessMode::hides('/clinique') && !S\BusinessMode::hides('/hotel/plan') && !S\BusinessMode::hides('/pos'), 'mode Hôtel : menus adaptés, caisse conservée (bar, restaurant)');
+    S\BusinessMode::set('pressing');
+    ok(S\BusinessMode::hides('/hotel/plan'), 'mode Pressing : menus de l\'hôtel masqués');
+    S\BusinessMode::set($before);
+    ok(!S\BusinessMode::hides('/hotel') || !in_array($before, ['commerce', 'restaurant'], true), 'commerce et restaurant : menus de l\'hôtel visibles (hôtel avec bar ou restaurant)');
 });
 
 test('Installateur désactivé après installation', function () use ($B) {

@@ -1,0 +1,45 @@
+/* Module Hôtel : écrans de gestion (tableau de bord, réservation, séjour, planning, ménage) */
+.ht-tile { border-left: 4px solid var(--c); transition: transform .1s; }
+.ht-tile:hover { transform: translateY(-1px); }
+.ht-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: middle; }
+.ht-mini { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+.ht-mini-room { position: relative; display: flex; flex-direction: column; padding: 5px 7px; border-radius: 8px; background: var(--c); color: #fff; text-decoration: none; line-height: 1.15; min-height: 46px; }
+.ht-mini-room b { font-size: 1.05rem; }
+.ht-mini-room span { font-size: .7rem; opacity: .9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ht-mini-room i { position: absolute; top: 6px; right: 6px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .85); }
+.ht-mini-room:hover { color: #fff; filter: brightness(1.1); }
+.ht-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.ht-type, .ht-room { border: 2px solid var(--bs-border-color); background: var(--bs-body-bg); border-radius: 10px; padding: 7px 10px; text-align: left; display: flex; flex-direction: column; color: var(--bs-body-color); }
+.ht-type b { font-size: .95rem; } .ht-type span { font-weight: 700; color: #0f766e; } .ht-type small, .ht-room small, .ht-room span { color: var(--bs-secondary-color); font-size: .75rem; }
+.ht-type.on, .ht-room.on { border-color: #0f766e; background: rgba(15, 118, 110, .08); box-shadow: 0 0 0 2px rgba(15, 118, 110, .25); }
+.ht-type.full { opacity: .55; }
+.ht-rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
+.ht-room b { font-size: 1.2rem; }
+.ht-room.dirty small { color: #d97706; }
+.ht-guest-results { z-index: 30; max-height: 320px; overflow-y: auto; }
+.ht-quote { background: rgba(15, 118, 110, .07); border: 1px dashed rgba(15, 118, 110, .5); border-radius: 10px; padding: 10px 12px; font-size: 1.05rem; }
+@media (min-width: 1200px) { .ht-sticky { position: sticky; top: 70px; } }
+.ht-roomno { background: #0f766e; color: #fff; border-radius: 12px; padding: 8px 14px; text-align: center; min-width: 6.5rem; display: flex; flex-direction: column; }
+.ht-roomno b { font-size: 2rem; line-height: 1.05; } .ht-roomno small { font-size: .72rem; opacity: .85; }
+.ht-chip { background: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color); border-radius: 20px; padding: 2px 10px; font-size: .82rem; }
+.ht-balance { display: flex; flex-direction: column; } .ht-balance b { font-size: 1.6rem; line-height: 1.1; } .ht-balance small { color: var(--bs-secondary-color); }
+.ht-log { max-height: 340px; overflow-y: auto; }
+.ht-flash { animation: htflash 1.6s ease 2; }
+@keyframes htflash { 50% { box-shadow: 0 0 0 5px rgba(15, 118, 110, .45); } }
+.ht-plan-wrap { overflow-x: auto; }
+.ht-plan { border-collapse: separate; border-spacing: 0; width: 100%; min-width: calc(110px + var(--days) * 52px); font-size: .8rem; table-layout: fixed; }
+.ht-plan th, .ht-plan td { border-right: 1px solid var(--bs-border-color); border-bottom: 1px solid var(--bs-border-color); height: 38px; padding: 2px; text-align: center; }
+.ht-plan thead th { position: sticky; top: 0; background: var(--bs-body-bg); font-weight: 600; z-index: 2; line-height: 1.1; }
+.ht-plan .rm { position: sticky; left: 0; background: var(--bs-body-bg); text-align: left; padding-left: 8px; width: 110px; z-index: 3; }
+.ht-plan .we { background: var(--bs-tertiary-bg); }
+.ht-plan .today { background: rgba(15, 118, 110, .12); }
+.ht-plan .ooo { background: repeating-linear-gradient(135deg, transparent, transparent 5px, rgba(100, 116, 139, .35) 5px, rgba(100, 116, 139, .35) 10px); }
+.ht-bar { display: block; color: #fff; border-radius: 6px; padding: 6px 6px; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; text-align: left; }
+.ht-bar:hover { color: #fff; filter: brightness(1.1); }
+.ht-free { display: block; color: transparent; text-decoration: none; height: 100%; line-height: 30px; border-radius: 6px; }
+.ht-free:hover { color: #0f766e; background: rgba(15, 118, 110, .1); font-weight: 700; }
+.ht-hk-no { font-size: 1.7rem; font-weight: 900; min-width: 4rem; text-align: center; }
+.ht-bars { display: flex; align-items: flex-end; gap: 2px; height: 180px; }
+.ht-barcol { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; min-width: 6px; }
+.ht-barcol span { width: 100%; background: #0f766e; border-radius: 3px 3px 0 0; }
+.ht-barcol small { font-size: .62rem; color: var(--bs-secondary-color); }

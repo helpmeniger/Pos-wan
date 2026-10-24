@@ -1,0 +1,74 @@
+/* Module Hôtel : plan des chambres en temps réel (écran de réception, plein écran, tablette) */
+body.hp { --bg: #0b1220; --panel: #121a2b; --card: #18223a; --line: #263252; --tx: #e8edf7; --mut: #93a0bd;
+  --libre: #16a34a; --sale: #d97706; --nettoyage: #f59e0b; --occupee: #2563eb; --arrivee: #0891b2; --depart: #7c3aed; --retard: #dc2626; --hs: #64748b;
+  background: var(--bg); color: var(--tx); min-height: 100vh; display: flex; flex-direction: column; font-size: 15px; }
+body.hp.light { --bg: #eef2f7; --panel: #ffffff; --card: #ffffff; --line: #d9e0ea; --tx: #0f172a; --mut: #5b6b84; }
+.hp-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 16px; background: var(--panel); border-bottom: 3px solid #0f766e; position: sticky; top: 0; z-index: 20; }
+.hp-title { font-size: 1.35rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.hp-title i { color: #2dd4bf; }
+.hp-title small { font-size: .8rem; font-weight: 500; color: var(--mut); margin-left: 6px; }
+.hp-kpis { display: flex; flex-wrap: wrap; gap: 6px; }
+.hp-kpis .k { background: var(--card); border: 1px solid var(--line); border-radius: 9px; padding: 3px 10px; font-size: .82rem; color: var(--mut); }
+.hp-kpis .k b { font-size: 1.15rem; color: var(--tx); margin-right: 2px; font-variant-numeric: tabular-nums; }
+.hp-kpis .occ b { color: #2dd4bf; } .hp-kpis .free b { color: var(--libre); } .hp-kpis .arr b { color: var(--arrivee); } .hp-kpis .dep b { color: var(--depart); }
+.hp-kpis .dirty b { color: var(--sale); } .hp-kpis .ooo b { color: var(--hs); }
+.hp-clock { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+body.hp.light .btn-outline-light { color: #0f172a; border-color: #94a3b8; }
+.hp-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 16px; }
+.hp-tools .form-select, .hp-tools .form-control { background-color: var(--card); color: var(--tx); border-color: var(--line); width: auto; }
+.hp-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.hp-filters button { border: 1px solid var(--line); background: var(--card); color: var(--tx); border-radius: 20px; padding: 4px 12px; font-size: .85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.hp-filters button.on { background: #0f766e; border-color: #0f766e; color: #fff; }
+.hp-filters span { opacity: .75; font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 11px; height: 11px; border-radius: 3px; vertical-align: middle; }
+.dot.libre { background: var(--libre); } .dot.sale { background: var(--sale); } .dot.occupee { background: var(--occupee); } .dot.arrivee { background: var(--arrivee); }
+.dot.depart { background: var(--depart); } .dot.retard { background: var(--retard); } .dot.hors_service { background: repeating-linear-gradient(45deg, var(--hs), var(--hs) 3px, #334155 3px, #334155 6px); }
+.hp-status { display: none; background: #8b1a1a; color: #fff; text-align: center; padding: 6px; font-weight: 600; }
+.hp-status.on { display: block; }
+.hp-board { flex: 1; padding: 4px 16px 16px; }
+.hp-floor { margin-bottom: 14px; }
+.hp-floor h2 { font-size: 1rem; font-weight: 800; color: var(--mut); text-transform: uppercase; letter-spacing: 1px; margin: 8px 2px; display: flex; gap: 10px; align-items: center; }
+.hp-floor h2 span { font-weight: 600; text-transform: none; letter-spacing: 0; font-size: .85rem; }
+.hp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.room { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 9px 11px 10px; cursor: pointer; text-align: left; color: var(--tx);
+  border-top: 6px solid var(--libre); min-height: 128px; display: flex; flex-direction: column; gap: 3px; transition: transform .12s, box-shadow .12s; width: 100%; }
+.room:hover, .room:focus-visible { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0, 0, 0, .35); outline: none; }
+.room .top { display: flex; align-items: center; gap: 6px; }
+.room .no { font-size: 1.55rem; font-weight: 900; line-height: 1; letter-spacing: -.5px; }
+.room .ty { font-size: .72rem; font-weight: 700; padding: 1px 6px; border-radius: 5px; color: #fff; }
+.room .hk { margin-left: auto; font-size: 1.1rem; }
+.room .st { font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; }
+.room .who { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room .meta { font-size: .78rem; color: var(--mut); display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+.room .due { color: #fca5a5; font-weight: 700; }
+body.hp.light .room .due { color: #b91c1c; }
+.room .vip { color: #fbbf24; }
+.room.libre { border-top-color: var(--libre); } .room.libre .st { color: var(--libre); }
+.room.libre.dirty { border-top-color: var(--sale); } .room.libre.dirty .st { color: var(--sale); }
+.room.occupee { border-top-color: var(--occupee); background: linear-gradient(180deg, rgba(37, 99, 235, .16), var(--card) 60%); } .room.occupee .st { color: #60a5fa; }
+.room.arrivee { border-top-color: var(--arrivee); box-shadow: inset 0 0 0 2px rgba(8, 145, 178, .55); } .room.arrivee .st { color: #22d3ee; }
+.room.depart { border-top-color: var(--depart); background: linear-gradient(180deg, rgba(124, 58, 237, .18), var(--card) 60%); } .room.depart .st { color: #a78bfa; }
+.room.depart_retard { border-top-color: var(--retard); background: linear-gradient(180deg, rgba(220, 38, 38, .2), var(--card) 60%); } .room.depart_retard .st { color: #f87171; }
+.room.hors_service { border-top-color: var(--hs); background: repeating-linear-gradient(135deg, var(--card), var(--card) 10px, rgba(100, 116, 139, .18) 10px, rgba(100, 116, 139, .18) 20px); } .room.hors_service .st { color: var(--mut); }
+body.hp.light .room.occupee .st { color: #1d4ed8; } body.hp.light .room.arrivee .st { color: #0e7490; } body.hp.light .room.depart .st { color: #6d28d9; }
+.hp-empty { text-align: center; color: var(--mut); padding: 50px; font-size: 1.1rem; }
+.hp-foot { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 16px; font-size: .78rem; color: var(--mut); background: var(--panel); border-top: 1px solid var(--line); }
+.hp-foot .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.hp-foot .legend .dot { margin-right: -6px; }
+/* Panneau latéral de la chambre */
+.hp-veil { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 40; }
+.hp-veil.on { opacity: 1; pointer-events: auto; }
+.hp-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); background: var(--panel); border-left: 1px solid var(--line); z-index: 50; transform: translateX(105%); transition: transform .18s; overflow-y: auto; }
+.hp-drawer.on { transform: none; }
+.hp-drawer-in { padding: 16px; }
+.hp-drawer h3 { font-size: 2rem; font-weight: 900; margin: 0; }
+.hp-drawer .sub { color: var(--mut); font-size: .88rem; }
+.hp-drawer .box { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-top: 12px; }
+.hp-drawer .box h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .6px; color: var(--mut); margin: 0 0 6px; font-weight: 800; }
+.hp-drawer .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.hp-drawer .acts .btn { font-weight: 700; }
+.hp-drawer .hkbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.hp-drawer .hkbtns button { border: 1px solid var(--line); background: var(--card); color: var(--tx); border-radius: 9px; padding: 8px; font-weight: 700; font-size: .85rem; }
+.hp-drawer .hkbtns button.cur { background: #0f766e; border-color: #0f766e; color: #fff; }
+.hp-drawer .close { position: absolute; top: 10px; right: 12px; background: none; border: 0; color: var(--tx); font-size: 1.6rem; }
+@media (max-width: 700px) { .hp-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } .hp-kpis { order: 3; width: 100%; } .hp-tools .d-flex { width: 100%; } }

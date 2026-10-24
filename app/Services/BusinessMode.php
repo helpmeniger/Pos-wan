@@ -23,6 +23,7 @@ final class BusinessMode
         'clinique' => ['Clinique', 'Caisse des prestations médicales (consultations, soins, analyses) liée aux dossiers patients.', ['clinique']],
         'clinique_pharmacie' => ['Clinique + Pharmacie', 'Prestations médicales et vente de médicaments, opérations séparées et reliées par les ordonnances.', ['clinique']],
         'pressing' => ['Pressing', 'Caisse des dépôts de vêtements, retraits et paiements, sans vente commerciale.', ['pressing']],
+        'hotel' => ['Hôtel', 'Réception, plan des chambres, réservations, séjours et facturation ; la caisse reste disponible pour le bar et le restaurant.', ['hotel']],
         'ecole' => ['Établissement scolaire / université', 'Caisse des inscriptions et frais de scolarité, élèves, enseignants, notes, bulletins, présences ; aucun menu commercial.', ['ecole']],
     ];
 
@@ -34,15 +35,16 @@ final class BusinessMode
     private const HIDDEN = [
         'commerce' => ['/clinique', '/pressing'],
         'restaurant' => ['/clinique', '/pressing'],
-        'pharmacie' => ['/clinique', '/pressing', '/restaurant', '/kitchen'],
-        'clinique' => ['/pressing', '/restaurant', '/kitchen', '/quotes'],
-        'clinique_pharmacie' => ['/pressing', '/restaurant', '/kitchen'],
-        'pressing' => ['/clinique', '/restaurant', '/kitchen', '/quotes', '/reports/prescriptions'],
+        'pharmacie' => ['/clinique', '/pressing', '/restaurant', '/kitchen', '/hotel'],
+        'clinique' => ['/pressing', '/restaurant', '/kitchen', '/quotes', '/hotel'],
+        'clinique_pharmacie' => ['/pressing', '/restaurant', '/kitchen', '/hotel'],
+        'pressing' => ['/clinique', '/restaurant', '/kitchen', '/quotes', '/reports/prescriptions', '/hotel'],
+        'hotel' => ['/clinique', '/pressing', '/reports/prescriptions'],
         // Établissement : aucun terme commercial (ventes, articles, stock, achats, clients) ; la caisse
         // de l'établissement remplace la caisse ; dépenses, sessions de caisse et caméras restent.
         'ecole' => ['/pos', '/sales', '/returns', '/quotes', '/verify', '/customers', '/restaurant', '/kitchen', '/products', '/categories', '/stock', '/inventories',
             '/suppliers', '/purchases', '/receptions', '/supplier-returns', '/dashboard', '/reports/sales', '/reports/profit', '/reports/vat', '/reports/stock', '/reports/debts',
-            '/reports/prescriptions', '/clinique', '/pressing', '/livraisons', '=/vision', '/vision/surveillance', '/vision/rapport'],
+            '/reports/prescriptions', '/clinique', '/pressing', '/hotel', '/livraisons', '=/vision', '/vision/surveillance', '/vision/rapport'],
     ];
 
     public static function current(): string
