@@ -67,8 +67,9 @@ final class RelayServer
         for ($i = 0; $i < 50 && !self::publicKey(); $i++) {
             usleep(100000);
         }
-        $log('Clé publique à donner aux boutiques : ' . (self::publicKey() ?? '?'));
-        $log('Ports à ouvrir vers ce poste : TCP 21115, 21116, 21117 et UDP 21116.');
+        foreach (self::guide() as $line) {
+            $log($line);
+        }
         while (true) {
             sleep(5);
             foreach (['hbbr' => $hbbr, 'hbbs' => $hbbs] as $name => $bin) {
@@ -80,5 +81,40 @@ final class RelayServer
                 }
             }
         }
+    }
+
+    /** Marche à suivre affichée au démarrage du serveur (adresses de ce PC, clé, ports, réglages des boutiques). */
+    public static function guide(): array
+    {
+        $key = self::publicKey() ?? '(pas encore créée : attendez quelques secondes puis tapez « php bin/assist.php cle »)';
+        $ips = \App\Services\NetworkService::localIps();
+        $lan = $ips ? implode(' ou ', $ips) : '(voir « ipconfig », ligne « Adresse IPv4 »)';
+        return [
+            '==================================================================',
+            ' SERVEUR D\'ASSISTANCE HTN DÉMARRÉ — laissez cette fenêtre ouverte',
+            '==================================================================',
+            ' CLÉ PUBLIQUE (à copier) : ' . $key,
+            ' Adresse de ce PC sur le réseau local : ' . $lan,
+            '',
+            ' ÉTAPE 1 — Box Internet de ce PC : rediriger vers ' . ($ips[0] ?? 'ce PC') . ' les ports',
+            '           TCP 21115, 21116, 21117 et UDP 21116 (rien d\'autre).',
+            '           (Sur un VPS : ouvrir ces ports dans son pare-feu.)',
+            ' ÉTAPE 2 — Noter l\'adresse IP PUBLIQUE de ce PC : ouvrez https://api.ipify.org',
+            '           dans un navigateur de ce PC. Elle doit être FIXE (VPS ou abonnement',
+            '           avec IP fixe) ; une connexion 4G (CGNAT) ne convient pas.',
+            ' ÉTAPE 3 — Dans chaque boutique : POS Marwa → Configuration → Assistance à',
+            '           distance → Réglages : « Adresse du serveur » = IP publique de l\'étape 2,',
+            '           « Clé publique » = la clé ci-dessus. Enregistrer.',
+            '           (Ou une seule fois pour toutes les boutiques : config/licence.php,',
+            '           assist.host et assist.key, avant de distribuer POS Marwa.)',
+            ' ÉTAPE 4 — Dans la boutique, onglet « Postes équipés » : « Kit du poste » sur',
+            '           chaque PC à assister, puis installer-assistance.bat (administrateur).',
+            ' ÉTAPE 5 — Sur votre PC de technicien : « Kit technicien », puis',
+            '           demarrer-technicien.bat. Saisir l\'identifiant et le code d\'accès',
+            '           affichés par la boutique après « Partager mon écran ».',
+            ' Vérifier : POS Marwa de la boutique → Assistance à distance → Diagnostic',
+            '           doit afficher « Connexion au serveur d\'assistance HTN : joignable ».',
+            '==================================================================',
+        ];
     }
 }

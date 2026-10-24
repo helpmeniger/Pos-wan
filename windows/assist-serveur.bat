@@ -7,6 +7,7 @@ REM  Ouvre le pare-feu Windows pour TCP 21115-21117 et UDP 21116, puis demarre.
 REM  La fenetre doit rester ouverte (fermer = arreter le serveur).
 REM ==========================================================================
 setlocal EnableExtensions
+chcp 65001 >nul
 title POS Marwa - serveur d'assistance
 net session >nul 2>&1
 if errorlevel 1 (

@@ -4,6 +4,7 @@
  *   php bin/assist.php serveur            lance le serveur HTN (hbbs + hbbr, clé imposée) ; Ctrl+C pour arrêter
  *   php bin/assist.php etat               état du serveur local et du paquet
  *   php bin/assist.php cle                affiche la clé publique à donner aux boutiques
+ *   php bin/assist.php guide              réaffiche la marche à suivre pas à pas
  *   php bin/assist.php deployer           reconstitue les programmes livrés (vérifiés SHA-256)
  *   php bin/assist.php preparer-paquet <rustdesk.exe> <serveur-windows.zip> <serveur-linux.zip>   (auteur)
  *
@@ -86,6 +87,11 @@ try {
             out('Serveur HTN   : ' . ($s['running'] ? 'actif (ports ' . implode(', ', array_keys(array_filter($s['ports']))) . ')' : 'arrêté sur ce poste'));
             out('Clé publique  : ' . ($s['key'] ?? '— (créée au premier démarrage du serveur)'));
             break;
+        case 'guide':
+            foreach (RelayServer::guide() as $l) {
+                out($l);
+            }
+            break;
         case 'cle':
             $k = RelayServer::publicKey();
             out($k ?? 'Aucune clé : démarrez d\'abord le serveur (php bin/assist.php serveur).');
@@ -98,7 +104,7 @@ try {
             prepare_bundle((string) ($argv[2] ?? ''), (string) ($argv[3] ?? ''), (string) ($argv[4] ?? ''));
             break;
         default:
-            fwrite(STDERR, "Commandes : serveur | etat | cle | deployer | preparer-paquet\n");
+            fwrite(STDERR, "Commandes : serveur | guide | etat | cle | deployer | preparer-paquet\n");
             exit(1);
     }
 } catch (Throwable $e) {
