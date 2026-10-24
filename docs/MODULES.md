@@ -109,6 +109,12 @@ addons/
 | `new_roles` | non | Rôles créés à l'installation s'ils n'existent pas : `{"code": {"name", "description", "permissions": [...]}}` (POS Marwa ≥ 1.5.0 ; ex. module Clinique) |
 | `roles` | non | Droits accordés à l'installation aux rôles système (`owner`, `store_manager`, `cashier`, `stock_manager`, `buyer`, `accountant`, `pharmacist`, `waiter`, `cook`, `auditor`). L'administrateur général reçoit toujours tout |
 | `menu` | non | Entrées ajoutées au menu (groupe existant ou nouveau groupe) |
+
+Catégories du menu, dans cet ordre : Établissement, Gestion des ventes, Restaurant, Clinique, Pressing,
+Gestion des articles, Achats & fournisseurs, Trésorerie & banques, Comptabilité, Finances & rapports,
+Configuration, Système & maintenance. Un `group` égal à l'une d'elles y range les entrées du module ;
+un groupe nouveau devient une catégorie placée avant « Configuration ». Les anciens noms « Caisse » et
+« Finances » sont rattachés à « Trésorerie & banques » et « Finances & rapports ».
 | `settings` | non | Paramètres créés à l'installation (jamais écrasés), lus avec `setting('clé')` |
 | `icon`, `color`, `author`, `description` | non | Affichage dans la page Modules |
 

@@ -1,4 +1,4 @@
-# État du projet — version 2.8.0 (POS Marwa)
+# État du projet — version 2.9.0 (POS Marwa)
 
 ## Terminé et vérifié
 
@@ -67,11 +67,13 @@
 | **v2.6** Voix Piper livrée dans le dossier + écran cuisine parlant (commandes, ajouts, annulations, relecture) + plats prêts annoncés en salle | ✅ fonctionnel, ⚠️ à valider sur place | 76 tests JS + test PHP (paquet ≤ 1 Mo par fichier, 147 fichiers reconstitués avec SHA-256 exact, fragment abîmé refusé) + Chromium avec Piper réel (12/12 : commande lue une fois, relecture, ajout, annulation avec motif, « Table T2 : deux plats prêts »). **Piper Windows non exécuté sur un vrai PC Windows** |
 
 | **v2.7** MARWA REMOTE ASSIST : assistance à distance (RustDesk livré : client + serveur HTN), observation / contrôle autorisé par un responsable, bandeau, kits, historique, diagnostic | ✅ fonctionnel, ⚠️ à valider sur place | Test PHP complet (droits, paquet, réglages, kits, jetons, cycle, expiration, vente pendant l'assistance) + essai réel avec deux clients RustDesk Linux et le serveur du paquet. Vérifié : consentement par clic, observation sans clavier, contrôle autorisé puis retiré, clé refusée, relais forcé, arrêt du serveur sans effet sur la caisse. **Scripts Windows et coupure automatique du clavier non exécutés sur Windows ; pas d'essai entre deux réseaux Internet réels** |
+| **v2.9** Comptabilité générale : plans SYSCOHADA révisé / PCG, exercices, journaux, tiers, saisie (brouillard, validation, extourne), lettrage, journal, grand livre, balance, bilan et compte de résultat SYSCOHADA, verrouillage, clôture et à-nouveaux, écritures proposées depuis la caisse | ✅ | Tests PHP de bout en bout (invariants caisse ↔ comptabilité, bilan équilibré, à-nouveaux = soldes de clôture) + Chromium 28/28. **États non relus par un expert-comptable** |
+| **v2.9** Menu latéral par catégories repliables, recherche dans le menu, catégories ordonnées | ✅ | Chromium 11/11 |
 | **v2.8** Clinique : imagerie médicale (récepteur DICOM, dossier d'arrivée, import, classement automatique, visionneuse avec mesures calibrées, compte rendu) | ✅ fonctionnel, ⚠️ à valider sur place | Envoi réel par dcmtk (echoscu / storescu, 10 formats, pixels identiques), Chromium 22/22 (distance 45,0 mm pour 45 mm, HU), tests PHP avec protocole DICOM. **Aucun vrai appareil d'imagerie ; récepteur non lancé sous Windows ; JPEG Lossless / JPEG 2000 non affichés** |
 | **v2.8** Banques et coffres : comptes, versements des clôtures, dépôts, retraits, virements, annulations, relevés, reçus | ✅ | Tests PHP (soldes, plafonds, annulations, droits) + Chromium |
 | **v2.8** Pressing : écran des dépôts en cours + affichage clients | ✅ | Tests PHP + Chromium (avancement, aucune donnée personnelle côté clients) |
 | **v2.8** Assistance automatique (agent sur chaque poste) | ✅ fonctionnel, ⚠️ à valider sur place | Agent exécuté par PowerShell 7 contre POS Marwa, RustDesk simulé (11/11 + coupure de sécurité). **Non exécuté sur un vrai Windows** |
-**Résultat de la suite de tests : 132 réussis, 0 échec** (`php tests/run.php`), plus 15 vérifications JavaScript du moteur de comptage (`node tests/js/track.test.js`).
+**Résultat de la suite de tests : 133 réussis, 0 échec** (`php tests/run.php`), plus 15 vérifications JavaScript du moteur de comptage (`node tests/js/track.test.js`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 
@@ -104,8 +106,11 @@
 | Imagerie : interprétation automatique des clichés | Non implémentée (outil de lecture et de mesure seulement) ; POS Marwa n'est pas un dispositif médical certifié | — |
 | Imagerie : liste de travail DICOM (Modality Worklist), JPEG Lossless / JPEG 2000 | Le n° de demande se saisit dans l'appareil ; ces formats sont conservés mais non affichés | Worklist C-FIND, décodeurs |
 | Banques : liaison directe avec les banques | Opérations saisies à la main | — |
+| Comptabilité : analytique, immobilisations et amortissements, rapprochement bancaire par relevé, déclaration de TVA, liasse fiscale (DSF) | Non implémenté ; bilan et compte de résultat sont des états de gestion | Modules complémentaires ; validation par un expert-comptable |
+| Comptabilité : origine des dépôts / retraits du module Banques | Passés par le compte 585 (virements de fonds), à reclasser | Choix de la contrepartie à la saisie de l'opération |
 
 ## Prochaines tâches proposées
+0. Comptabilité : faire relire le plan de comptes de liaison, le bilan et le compte de résultat par le comptable de l'entreprise sur un mois réel.
 0. Imagerie : faire un « Echo » puis un examen test depuis chaque appareil de la clinique (radio, échographe) vers POS Marwa sous Windows.
 0. Assistance : équiper un PC Windows avec le nouveau kit et vérifier l'agent (code, contrôle, coupure).
 0. Assistance à distance : installer le serveur HTN sur un VPS à IP fixe, équiper un PC Windows de la boutique avec le kit, faire une session d'essai depuis un autre réseau (observation, contrôle autorisé, fin) et vérifier l'historique.

@@ -2,6 +2,85 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.9.0] — 2026-10-24
+
+### Ajouté
+- **Comptabilité générale** (nouveau module `addons/comptabilite`, à installer depuis Modules
+  complémentaires — il n'est pas activé d'office). Guide : `addons/comptabilite/README.md`.
+  - **Mise en place en une page** : plan comptable, premier exercice, date de reprise de la caisse.
+  - **Plans proposés** :
+    - SYSCOHADA révisé complet (675 comptes, classes 1 à 9) ;
+    - SYSCOHADA simplifié commerce / PME (250 comptes) ;
+    - PCG français abrégé ;
+    - plan vide.
+  - **Plan comptable** : ajout, modification, désactivation de comptes ; import CSV « numéro;libellé » ;
+    ajout des comptes manquants d'un plan proposé (rien n'est écrasé).
+  - **Exercices** : création, verrouillage de période (clôture mensuelle), clôture.
+  - **Journaux** : AC, VT, CA, BQ, MM, OD, AN créés, modifiables, compte de contrepartie.
+  - **Tiers** : clients, fournisseurs, salariés sur comptes collectifs ; ceux de la caisse sont créés
+    automatiquement.
+  - **Saisie au clavier** :
+    - grille avec équilibre en direct et lignes ajoutées automatiquement ;
+    - « Entrée » passe au champ suivant ;
+    - bouton « Équilibrer » (sur la contrepartie du journal pour la banque et la caisse) ;
+    - duplication d'une écriture.
+  - **Brouillard puis validation** : numéro définitif chronologique par journal et par exercice ;
+    une écriture validée ne se modifie plus, elle s'**extourne**.
+  - **Consultation et lettrage** des comptes (codes A, B…, délettrage).
+  - **États** — écran, impression A4, CSV, PDF :
+    - journal, journal centralisateur, grand livre, balance générale (6 colonnes, par compte,
+      groupe ou classe), balance des tiers ;
+    - **bilan et compte de résultat SYSCOHADA révisé** avec la colonne N-1.
+  - **Clôture** :
+    - sauvegarde complète d'abord ;
+    - exercice suivant créé au besoin ;
+    - à-nouveaux détaillés pour les comptes lettrables ;
+    - résultat en 131 / 139 ;
+    - rien n'est effacé.
+  - **Écritures proposées depuis la caisse** — une par source et par journée terminée, jamais en
+    double :
+    - ventes, annulations et retours ;
+    - règlements des clients et des fournisseurs ;
+    - réceptions d'achats ;
+    - recettes clinique, pressing et établissement ;
+    - dépenses ;
+    - banques et coffres.
+  - Droits `compta.view`, `compta.saisie`, `compta.valider`, `compta.admin` ; nouveau rôle
+    **Comptable** ; chaque action est inscrite au journal d'audit.
+
+### Modifié
+- **Menu de gauche par catégories repliables** :
+  - seule la catégorie de la page affichée est ouverte ; un clic sur une autre catégorie l'ouvre et
+    replie les autres ;
+  - nombre d'entrées affiché sur chaque catégorie ;
+  - **recherche** dans le menu, sans tenir compte des accents ; « Entrée » ouvre le premier
+    résultat ;
+  - dernière catégorie choisie mémorisée.
+- **Catégories rangées dans un ordre fixe** : activité, articles, achats, trésorerie & banques,
+  comptabilité, finances & rapports, configuration, système & maintenance. Les modules installés
+  rejoignent leur catégorie.
+- Nouvelle catégorie **Système & maintenance** : modules, mise à jour, sauvegardes, licence,
+  journal d'audit. La catégorie « Configuration » ne garde que les réglages.
+
+### Tests
+- Suite PHP : 133/133, dont un bloc comptable de bout en bout. Il vérifie que :
+  - les soldes clients et fournisseurs en comptabilité égalent ceux de la caisse ;
+  - les ventes HT + TVA égalent les ventes moins les annulations et les retours ;
+  - le bilan est équilibré ;
+  - le résultat net est identique dans le bilan et le compte de résultat ;
+  - les soldes d'ouverture N+1 égalent les soldes de clôture N.
+- Navigateur (Chromium) :
+  - menu 11/11 ;
+  - comptabilité 28/28 : installation par la page des modules, mise en place, génération, saisie au
+    clavier, « Équilibrer », lettrage, états, impression, mobile.
+
+### Limites connues
+- Pas de comptabilité analytique, d'immobilisations et amortissements automatiques, de
+  rapprochement bancaire par import de relevé ni de déclaration de TVA automatique.
+- Les états sont des états de gestion : la liasse fiscale (DSF) reste l'affaire du comptable.
+- Les dépôts, retraits et virements du module Banques passent par le compte 585 (virements de
+  fonds) : ils sont à reclasser selon leur origine réelle.
+
 ## [2.8.0] — 2026-10-23
 
 ### Ajouté

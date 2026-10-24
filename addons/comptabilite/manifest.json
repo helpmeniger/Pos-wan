@@ -1,0 +1,63 @@
+{
+    "code": "comptabilite",
+    "name": "Comptabilité générale",
+    "version": "1.0.0",
+    "requires": "2.9.0",
+    "author": "POS Marwa",
+    "description": "Comptabilité générale en partie double : exercices, plans comptables proposés (SYSCOHADA révisé complet ou simplifié, PCG français abrégé) ou importés, journaux, comptes de tiers, saisie des écritures (brouillard puis validation), extourne, lettrage, journal, grand livre, balance, bilan et compte de résultat SYSCOHADA, clôture avec à-nouveaux, écritures proposées depuis la caisse, les achats, les dépenses et les banques.",
+    "icon": "bi-journal-bookmark",
+    "color": "#6f42c1",
+    "permissions": {
+        "compta.view": "Comptabilité : consulter les écritures, comptes et états",
+        "compta.saisie": "Comptabilité : saisir et modifier les écritures au brouillard",
+        "compta.valider": "Comptabilité : valider, extourner, lettrer, générer les écritures de la caisse",
+        "compta.admin": "Comptabilité : plan comptable, journaux, exercices, clôture, paramètres"
+    },
+    "roles": {
+        "owner": ["compta.view", "compta.saisie", "compta.valider", "compta.admin"],
+        "auditor": ["compta.view"]
+    },
+    "new_roles": {
+        "comptable": {
+            "name": "Comptable",
+            "description": "Tenue de la comptabilité générale (saisie, validation, lettrage, états, clôture)",
+            "permissions": ["compta.view", "compta.saisie", "compta.valider", "compta.admin", "reports.export"]
+        }
+    },
+    "menu": [
+        { "group": "Comptabilité", "label": "Tableau de bord comptable", "icon": "bi-speedometer2", "url": "/compta", "permission": "compta.view", "color": "#6f42c1" },
+        { "group": "Comptabilité", "label": "Saisie des écritures", "icon": "bi-pencil-square", "url": "/compta/saisie", "permission": "compta.saisie", "color": "#6f42c1" },
+        { "group": "Comptabilité", "label": "Écritures et brouillard", "icon": "bi-list-columns-reverse", "url": "/compta/ecritures", "permission": "compta.view", "color": "#6f42c1" },
+        { "group": "Comptabilité", "label": "Consultation et lettrage", "icon": "bi-check2-square", "url": "/compta/lettrage", "permission": "compta.view", "color": "#6f42c1" },
+        { "group": "Comptabilité", "label": "États comptables", "icon": "bi-file-earmark-bar-graph", "url": "/compta/etats", "permission": "compta.view", "color": "#6f42c1" },
+        { "group": "Comptabilité", "label": "Écritures de la caisse", "icon": "bi-magic", "url": "/compta/generation", "permission": "compta.valider", "color": "#6f42c1" },
+        { "group": "Comptabilité", "label": "Plan comptable", "icon": "bi-diagram-3", "url": "/compta/comptes", "permission": "compta.view", "color": "#6f42c1" },
+        { "group": "Comptabilité", "label": "Tiers (clients, fournisseurs)", "icon": "bi-people", "url": "/compta/tiers", "permission": "compta.view", "color": "#6f42c1" },
+        { "group": "Comptabilité", "label": "Journaux", "icon": "bi-journals", "url": "/compta/journaux", "permission": "compta.admin", "color": "#6f42c1" },
+        { "group": "Comptabilité", "label": "Exercices et clôture", "icon": "bi-calendar-range", "url": "/compta/exercices", "permission": "compta.admin", "color": "#6f42c1" },
+        { "group": "Comptabilité", "label": "Paramètres comptables", "icon": "bi-sliders", "url": "/compta/parametres", "permission": "compta.admin", "color": "#6f42c1" }
+    ],
+    "settings": {
+        "compta_referentiel": "",
+        "compta_validation_directe": "0",
+        "compta_generation_depuis": "",
+        "compta_cpt_caisse": "5711",
+        "compta_cpt_banque": "521",
+        "compta_cpt_mobile": "552",
+        "compta_cpt_cheques": "513",
+        "compta_cpt_clients": "4111",
+        "compta_cpt_fournisseurs": "4011",
+        "compta_cpt_ventes": "7011",
+        "compta_cpt_services": "7061",
+        "compta_cpt_tva_collectee": "4431",
+        "compta_cpt_achats": "6011",
+        "compta_cpt_frais_achats": "6015",
+        "compta_cpt_charges_diverses": "6588",
+        "compta_cpt_produits_divers": "7588",
+        "compta_cpt_salaires": "6611",
+        "compta_cpt_frais_bancaires": "6318",
+        "compta_cpt_interets": "771",
+        "compta_cpt_coffre": "5712",
+        "compta_cpt_virements_internes": "585"
+    }
+}

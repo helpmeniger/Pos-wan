@@ -1,0 +1,33 @@
+/* Module Comptabilité */
+.cpt-tabs { display: flex; gap: .25rem; overflow-x: auto; padding-bottom: .35rem; margin-bottom: .75rem; border-bottom: 1px solid var(--bs-border-color); scrollbar-width: thin; }
+.cpt-tabs a { flex: 0 0 auto; padding: .35rem .7rem; border-radius: .5rem; font-size: .875rem; text-decoration: none; color: var(--bs-body-color); white-space: nowrap; }
+.cpt-tabs a:hover { background: var(--bs-tertiary-bg); }
+.cpt-tabs a.active { background: #6f42c1; color: #fff; }
+.cpt-table td, .cpt-table th { padding: .25rem .45rem; vertical-align: middle; }
+.cpt-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cpt-table tr.cpt-sub td { background: var(--bs-tertiary-bg); font-weight: 600; }
+.cpt-table tr.cpt-total td { border-top: 2px solid var(--bs-body-color); font-weight: 700; }
+.cpt-table tr.cpt-head td { background: rgba(111, 66, 193, .08); font-weight: 600; }
+.cpt-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.cpt-grid input.form-control { padding: .25rem .4rem; font-size: .9rem; }
+.cpt-grid td { padding: .15rem .2rem; }
+.cpt-grid .c-compte { width: 15rem; } .cpt-grid .c-tiers { width: 13rem; } .cpt-grid .c-mt { width: 9rem; } .cpt-grid .c-ech { width: 9.5rem; }
+.cpt-grid .num input { text-align: right; }
+.cpt-grid tr.is-error input { border-color: var(--bs-danger); }
+.cpt-balance { position: sticky; bottom: 0; z-index: 3; background: var(--bs-body-bg); border-top: 1px solid var(--bs-border-color); }
+.cpt-balance .ok { color: var(--bs-success); } .cpt-balance .ko { color: var(--bs-danger); }
+.cpt-kpi .card-body { padding: .65rem .8rem; }
+.cpt-kpi .v { font-size: 1.25rem; font-weight: 700; }
+.cpt-state td.ref { width: 3rem; color: var(--bs-secondary-color); font-family: ui-monospace, Consolas, monospace; }
+.cpt-state tr.tot td { font-weight: 700; background: var(--bs-tertiary-bg); }
+.cpt-state tr.big td { font-weight: 800; border-top: 2px solid var(--bs-body-color); }
+.cpt-lettre { font-family: ui-monospace, Consolas, monospace; font-weight: 700; color: #6f42c1; }
+.cpt-sel-bar { position: sticky; bottom: 0; background: var(--bs-body-bg); border-top: 1px solid var(--bs-border-color); padding: .5rem; z-index: 3; }
+/* Impression des états (mise en page A4) */
+.sheet .cpt-table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+.sheet .cpt-table th { background: #3d2470; color: #fff; padding: 4px; text-align: left; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.sheet .cpt-table td { border-bottom: 1px solid #ddd; padding: 3px 4px; }
+.sheet .cpt-table tr.cpt-sub td, .sheet .cpt-table tr.cpt-head td, .sheet .cpt-state tr.tot td { background: #eee; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.sheet .num { text-align: right; }
+.sheet .cpt-title { display: flex; justify-content: space-between; border-bottom: 3px solid #6f42c1; margin-bottom: 8px; padding-bottom: 6px; }
+@media print { .sheet { width: auto; min-height: 0; box-shadow: none; margin: 0; padding: 0; } }

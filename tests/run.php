@@ -3699,6 +3699,239 @@ test('Pressing : écran des dépôts en cours (atelier) et affichage clients san
     eq(403, $r['code'], 'auditeur : lecture seule');
 });
 
+test('Comptabilité générale : mise en place SYSCOHADA, écritures de la caisse, saisie, validation, extourne, lettrage, états, clôture', function () use ($B) {
+    $C = Addons\Comptabilite\Compta::class;
+    $R = Addons\Comptabilite\Reports::class;
+    $I = Addons\Comptabilite\Integration::class;
+    ok(!App\Core\Addons::isActive('comptabilite'), 'module non installé d\'office (activé par l\'utilisateur)');
+    App\Core\Addons::install('comptabilite', false);
+    App\Core\Addons::reset();
+    ok(App\Core\Addons::isActive('comptabilite'), 'module actif après installation');
+    $hasPerm = fn(string $role, string $perm) => (bool) DB::value('SELECT 1 FROM role_permissions rp JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id WHERE r.code = ? AND p.code = ?', [$role, $perm]);
+    ok($hasPerm('comptable', 'compta.admin') && $hasPerm('owner', 'compta.valider') && $hasPerm('auditor', 'compta.view') && !$hasPerm('auditor', 'compta.saisie') && !$hasPerm('cashier', 'compta.view'), 'droits : rôle Comptable créé, auditeur en lecture, caissier sans accès');
+    actingAs('admin');
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    ok(str_contains($a->req('GET', "$B/compta")['body'], 'Mise en place de la comptabilité'), 'première ouverture : assistant de mise en place');
+    ok(str_contains($a->req('GET', "$B/compta/saisie")['headers'], '/compta'), 'saisie impossible avant la mise en place');
+    ok(str_contains($a->req('GET', "$B/compta")['body'], 'data-cat="Comptabilité"'), 'menu : catégorie « Comptabilité » ajoutée');
+
+    // L'activité du jour (créée par les tests précédents) devient celle d'hier : seules les journées terminées sont reprises
+    foreach (['sales' => ['created_at', 'cancelled_at'], 'sale_returns' => ['created_at'], 'customer_transactions' => ['created_at'], 'supplier_transactions' => ['created_at'],
+              'cash_movements' => ['created_at'], 'bank_transactions' => ['op_date', 'cancelled_at']] as $t => $cols) {
+        foreach ($cols as $col) {
+            DB::run("UPDATE `$t` SET `$col` = `$col` - INTERVAL 1 DAY WHERE `$col` IS NOT NULL");
+        }
+    }
+    DB::run('UPDATE expenses SET expense_date = expense_date - INTERVAL 1 DAY');
+    $y = date('Y', strtotime('-1 day'));
+    $yday = date('Y-m-d', strtotime('-1 day'));
+    throws(fn() => $C::setup('inconnu', []), 'plan');
+    throws(fn() => $C::setup('syscohada', ['code' => $y, 'date_debut' => "$y-12-31", 'date_fin' => "$y-01-01"]), 'date de fin');
+    $ex = $C::setup('syscohada', ['code' => $y, 'date_debut' => "$y-01-01", 'date_fin' => "$y-12-31", 'generation_depuis' => "$y-01-01"]);
+    ok((int) DB::value('SELECT COUNT(*) FROM cpt_comptes') > 600 && DB::value("SELECT libelle FROM cpt_comptes WHERE numero = '4431'") === 'TVA facturée sur ventes', 'plan SYSCOHADA révisé chargé');
+    eq(['AC', 'AN', 'BQ', 'CA', 'MM', 'OD', 'VT'], array_column(DB::all('SELECT code FROM cpt_journaux ORDER BY code'), 'code'), 'journaux par défaut');
+    eq('client', DB::value("SELECT tiers_type FROM cpt_comptes WHERE numero = '4111'"), '4111 : compte collectif clients');
+    throws(fn() => $C::setup('syscohada', ['code' => 'X', 'date_debut' => "$y-01-01", 'date_fin' => "$y-12-31"]), 'déjà');
+    throws(fn() => $C::saveExercice(['code' => 'CHEV', 'date_debut' => "$y-06-01", 'date_fin' => ($y + 1) . '-05-31']), 'chevauchent');
+
+    // ------------------------------------------------------------- écritures de la caisse
+    $st = $I::status();
+    foreach (['ventes', 'reglements', 'achats', 'recettes', 'depenses', 'banques'] as $src) {
+        ok(in_array($yday, $st['sources'][$src]['pending'], true), "source « $src » : la journée d'hier est à passer");
+    }
+    ok(!in_array(date('Y-m-d'), $st['sources']['ventes']['pending'], true), 'la journée en cours n\'est jamais reprise');
+    $r = $I::run(array_keys($I::SOURCES), false);
+    eq([], $r['errors'], 'génération sans erreur');
+    eq(array_sum(array_map(fn($x) => count($x['pending']), $st['sources'])), $r['created'], 'une écriture par source et par journée d\'activité');
+    eq(0, $I::run(array_keys($I::SOURCES), false)['created'], 'seconde génération : rien en double');
+    eq($r['created'], (int) DB::value("SELECT COUNT(*) FROM cpt_ecritures WHERE statut = 'brouillard' AND origine LIKE 'pos\\_%'"), 'écritures au brouillard pour contrôle');
+    [$okN, $errs] = $C::validateMany(array_column(DB::all('SELECT id FROM cpt_ecritures'), 'id'));
+    eq([$r['created'], []], [$okN, $errs], 'validation de toutes les écritures');
+    $solde = fn(string $num, ?int $tiers = null) => round((float) DB::value('SELECT COALESCE(SUM(l.debit - l.credit), 0) FROM cpt_lignes l JOIN cpt_comptes c ON c.id = l.compte_id WHERE c.numero = ?' . ($tiers ? ' AND l.tiers_id = ' . $tiers : ''), [$num]), 2);
+    // Ventes : produits HT + TVA = ventes − annulations − retours de la journée
+    $per = ["$y-01-01", "$yday 23:59:59"];
+    $exp = (float) DB::value('SELECT COALESCE(SUM(total), 0) FROM sales WHERE created_at BETWEEN ? AND ?', $per) - (float) DB::value('SELECT COALESCE(SUM(total), 0) FROM sales WHERE cancelled_at BETWEEN ? AND ?', $per)
+        - (float) DB::value('SELECT COALESCE(SUM(total), 0) FROM sale_returns WHERE created_at BETWEEN ? AND ?', $per);
+    eq(round($exp, 2), -($solde('7011') + $solde('4431')), 'ventes HT + TVA facturée = ventes − annulations − retours');
+    ok($solde('4431') < 0, 'TVA facturée au crédit');
+    // Chaque client et chaque fournisseur : même solde en comptabilité que dans la caisse
+    foreach (DB::all('SELECT id, balance FROM customers WHERE id IN (SELECT customer_id FROM customer_transactions)') as $cu) {
+        $tid = (int) DB::value("SELECT id FROM cpt_tiers WHERE source = 'customer' AND source_id = ?", [$cu['id']]);
+        eq(round((float) $cu['balance'], 2), $solde('4111', $tid), 'client ' . $cu['id'] . ' : solde comptable = solde de la caisse');
+    }
+    foreach (DB::all('SELECT supplier_id, SUM(amount) AS bal FROM supplier_transactions GROUP BY supplier_id') as $su) {
+        $tid = (int) DB::value("SELECT id FROM cpt_tiers WHERE source = 'supplier' AND source_id = ?", [$su['supplier_id']]);
+        eq(-round((float) $su['bal'], 2), $solde('4011', $tid), 'fournisseur ' . $su['supplier_id'] . ' : dette comptable = dette de la caisse');
+    }
+    $soldeBq = fn(string $num) => round((float) DB::value("SELECT COALESCE(SUM(l.debit - l.credit), 0) FROM cpt_lignes l JOIN cpt_comptes c ON c.id = l.compte_id JOIN cpt_ecritures e ON e.id = l.ecriture_id WHERE c.numero = ? AND e.origine = 'pos_banques'", [$num]), 2);
+    eq(round((float) DB::value("SELECT COALESCE(SUM(balance), 0) FROM bank_accounts WHERE kind = 'banque'"), 2), $soldeBq('521'), 'opérations du module Banques : banque 521 = soldes des comptes bancaires');
+    eq(round((float) DB::value("SELECT COALESCE(SUM(balance), 0) FROM bank_accounts WHERE kind IN ('coffre', 'proprietaire')"), 2), $soldeBq('5712'), 'coffre 5712 = coffres et fonds gardés par le propriétaire');
+    ok((bool) DB::value("SELECT 1 FROM cpt_lignes l JOIN cpt_comptes c ON c.id = l.compte_id JOIN cpt_ecritures e ON e.id = l.ecriture_id WHERE c.numero = '521' AND e.origine = 'pos_reglements' AND l.credit = 5000"), 'paiement fournisseur par virement : sortie de la banque');
+    ok($solde('7061') < 0, 'recettes clinique / pressing / établissement en prestations de services');
+    eq(-round((float) DB::value("SELECT COALESCE(SUM(amount), 0) FROM cash_movements WHERE type LIKE 'ecole\\_salaire%'"), 2), $solde('6611'), 'salaires payés en caisse (annulations déduites) en charges de personnel');
+    $bal = $R::balance($ex, "$y-01-01", "$y-12-31", '', '', true);
+    eq(round($bal['total']['md'], 2), round($bal['total']['mc'], 2), 'balance : total débit = total crédit');
+    eq(round($bal['total']['fd'], 2), round($bal['total']['fc'], 2), 'balance : soldes débiteurs = soldes créditeurs');
+
+    // ------------------------------------------------------------- saisie manuelle
+    $od = (int) DB::value("SELECT id FROM cpt_journaux WHERE code = 'OD'");
+    $ac = (int) DB::value("SELECT id FROM cpt_journaux WHERE code = 'AC'");
+    $fourn = $C::saveTiers(['type' => 'fournisseur', 'nom' => 'NIGELEC', 'compte' => '4011 — Fournisseurs', 'telephone' => '20 72 26 92']);
+    $fcode = DB::value('SELECT code FROM cpt_tiers WHERE id = ?', [$fourn]);
+    ok(str_starts_with($fcode, 'F'), 'code tiers automatique');
+    $entry = fn(array $lines, int $j = 0, string $date = '') => ['journal_id' => $j ?: $ac, 'date_ecriture' => $date ?: "$y-03-15", 'piece' => 'F-125', 'libelle' => 'Facture électricité mars', 'lignes' => $lines];
+    throws(fn() => $C::save($entry([['compte' => '6052', 'debit' => '50 000'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '45 000']])), 'déséquilibrée');
+    throws(fn() => $C::save($entry([['compte' => '6052', 'debit' => '50000'], ['compte' => '4011', 'credit' => '50000']])), 'collectif');
+    throws(fn() => $C::save($entry([['compte' => '605', 'debit' => '50000'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '50000']])), 'sous-comptes');
+    throws(fn() => $C::save($entry([['compte' => '6999', 'debit' => '50000'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '50000']])), 'n\'existe pas');
+    throws(fn() => $C::save($entry([['compte' => '6052', 'debit' => '50000', 'credit' => '1'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '50000']])), 'pas les deux');
+    throws(fn() => $C::save($entry([['compte' => '6052', 'debit' => '50000']])), 'deux lignes');
+    throws(fn() => $C::save($entry([['compte' => '6052', 'debit' => '1'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '1']], 0, ($y + 3) . '-01-01')), 'Aucun exercice');
+    $e1 = $C::save($entry([['compte' => '6052 — Fournitures non stockables – électricité', 'debit' => '42 372,88', 'libelle' => 'Électricité HT'], ['compte' => '4454', 'debit' => '7 627,12'],
+        ['compte' => '4011 — Fournisseurs', 'tiers' => $fcode . ' — NIGELEC', 'credit' => '50000', 'echeance' => "$y-04-15"]]));
+    eq(['brouillard', null], array_values(DB::one('SELECT statut, numero FROM cpt_ecritures WHERE id = ?', [$e1])), 'brouillard sans numéro');
+    eq(3, (int) DB::value('SELECT COUNT(*) FROM cpt_lignes WHERE ecriture_id = ?', [$e1]), 'trois lignes');
+    eq('Facture électricité mars', DB::value('SELECT libelle FROM cpt_lignes WHERE ecriture_id = ? AND ordre = 2', [$e1]), 'libellé de ligne repris de l\'écriture');
+    $C::save($entry([['compte' => '6052', 'debit' => '42372.88'], ['compte' => '4454', 'debit' => '7627.12'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '50000']]), $e1);
+    $C::validate($e1);
+    $no1 = (int) DB::value('SELECT numero FROM cpt_ecritures WHERE id = ?', [$e1]);
+    $pay = $C::save(['journal_id' => (int) DB::value("SELECT id FROM cpt_journaux WHERE code = 'BQ'"), 'date_ecriture' => "$y-04-10", 'libelle' => 'Règlement NIGELEC',
+        'lignes' => [['compte' => '4011', 'tiers' => $fcode, 'debit' => '30000'], ['compte' => '521', 'credit' => '30000']]], null, true);
+    $pay2 = $C::save(['journal_id' => (int) DB::value("SELECT id FROM cpt_journaux WHERE code = 'BQ'"), 'date_ecriture' => "$y-04-20", 'libelle' => 'Solde NIGELEC',
+        'lignes' => [['compte' => '4011', 'tiers' => $fcode, 'debit' => '20000'], ['compte' => '521', 'credit' => '20000']]], null, true);
+    $e2 = $C::save($entry([['compte' => '6052', 'debit' => '1000'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '1000']], 0, "$y-03-16"), null, true);
+    eq($no1 + 1, (int) DB::value('SELECT numero FROM cpt_ecritures WHERE id = ?', [$e2]), 'numérotation chronologique dans le journal');
+    throws(fn() => $C::save($entry([['compte' => '6052', 'debit' => '1'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '1']]), $e1), 'validée ne se modifie plus');
+    throws(fn() => $C::deleteDraft($e1), 'ne se supprime pas');
+    // Extourne
+    throws(fn() => $C::extourne($e2, "$y-03-20", ''), 'Motif');
+    $x2 = $C::extourne($e2, "$y-03-20", 'Doublon de saisie');
+    $xl = DB::one('SELECT SUM(debit) AS d, SUM(credit) AS c FROM cpt_lignes l JOIN cpt_comptes c ON c.id = l.compte_id WHERE ecriture_id = ? AND c.numero = \'6052\'', [$x2]);
+    eq([0.0, 1000.0], [(float) $xl['d'], (float) $xl['c']], 'extourne : débit et crédit inversés');
+    eq($x2, (int) DB::value('SELECT extournee_par FROM cpt_ecritures WHERE id = ?', [$e2]), 'écriture d\'origine liée à son extourne');
+    throws(fn() => $C::extourne($e2, "$y-03-21", 'Encore'), 'déjà été extournée');
+    throws(fn() => $C::extourne($x2, "$y-03-21", 'Encore'), 'ne s\'extourne pas');
+    // Brouillard supprimable
+    $d = $C::save($entry([['compte' => '6052', 'debit' => '5'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '5']], $od));
+    $C::deleteDraft($d);
+    eq(null, DB::one('SELECT id FROM cpt_ecritures WHERE id = ?', [$d]), 'brouillard supprimé');
+
+    // ------------------------------------------------------------- lettrage
+    $lid = fn(int $e) => (int) DB::value("SELECT l.id FROM cpt_lignes l JOIN cpt_comptes c ON c.id = l.compte_id WHERE l.ecriture_id = ? AND c.numero = '4011'", [$e]);
+    throws(fn() => $C::lettrer([$lid($e1), $lid($pay)]), 'débit');
+    throws(fn() => $C::lettrer([$lid($e1), $lid($pay)]), '50 000');
+    $code = $C::lettrer([$lid($e1), $lid($pay), $lid($pay2)]);
+    eq('A', $code, 'lettrage A');
+    eq(3, (int) DB::value('SELECT COUNT(*) FROM cpt_lignes WHERE lettrage = ?', ['A']), 'trois lignes lettrées');
+    $code2 = $C::lettrer([$lid($e2), $lid($x2)]);
+    eq('B', $code2, 'code suivant B');
+    eq(2, $C::delettrer((int) DB::value("SELECT id FROM cpt_comptes WHERE numero = '4011'"), 'B'), 'délettrage');
+    throws(fn() => $C::lettrer([$lid($e1), $lid($e2)]), 'déjà lettrée');
+
+    // ------------------------------------------------------------- verrouillage de période
+    $dr = $C::save($entry([['compte' => '6052', 'debit' => '9'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '9']], $od, "$y-02-10"));
+    throws(fn() => $C::setVerrou($ex, "$y-03-31"), 'brouillard');
+    $C::deleteDraft($dr);
+    $C::setVerrou($ex, "$y-03-31");
+    throws(fn() => $C::save($entry([['compte' => '6052', 'debit' => '1'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '1']], $od, "$y-03-31")), 'verrouillée');
+    throws(fn() => $C::extourne($e1, "$y-03-30", 'Test'), 'verrouillée');
+    $C::setVerrou($ex, null);
+
+    // ------------------------------------------------------------- états de synthèse
+    $bl = $R::bilan($ex, "$y-12-31", true);
+    eq(0.0, $bl['ecart'], 'bilan SYSCOHADA : total actif = total passif');
+    eq([], $bl['non_classes'], 'tous les comptes de bilan sont classés');
+    $res = $R::resultat($ex, "$y-12-31", true);
+    eq(round($bl['resultat'], 2), round($res['valeurs']['XI'], 2), 'résultat net du compte de résultat = résultat du bilan');
+    eq(round(-$solde('7011'), 2), round($res['valeurs']['TA'], 2), 'TA ventes de marchandises');
+    eq(round($res['valeurs']['TA'] + $res['valeurs']['RA'] + $res['valeurs']['RB'], 2), round($res['valeurs']['XA'], 2), 'XA marge commerciale = TA + RA + RB');
+    $gl = $R::grandLivre($ex, "$y-01-01", "$y-12-31", '4011', '4011', true);
+    $acc = array_values($gl['comptes'])[0];
+    eq($solde('4011'), round($acc['solde'], 2), 'grand livre : solde final = solde du compte');
+    $bt = $R::balanceTiers($ex, 'fournisseur', "$y-12-31", true);
+    ok(in_array('NIGELEC', array_column($bt, 'nom'), true), 'balance des fournisseurs');
+
+    // ------------------------------------------------------------- import de plan CSV
+    $imp = $C::importCsv("Numéro;Libellé\n5211;Banque BIA Niger\n5212;Ecobank\n4011;Ne doit pas remplacer\nabc;Mauvais\n", false);
+    eq([2, 0, 1], [$imp['added'], $imp['updated'], count($imp['errors'])], 'import CSV : 2 ajoutés, existants conservés, ligne invalide signalée');
+    eq('Fournisseurs', DB::value("SELECT libelle FROM cpt_comptes WHERE numero = '4011'"));
+    throws(fn() => $C::save($entry([['compte' => '521', 'debit' => '1'], ['compte' => '5711', 'credit' => '1']], $od)), 'sous-comptes');
+
+    // ------------------------------------------------------------- écrans
+    $tok = $a->token("$B/compta/saisie");
+    $resp = $a->req('POST', "$B/compta/ecritures", http_build_query(['_csrf' => $tok, 'journal_id' => $od, 'date_ecriture' => "$y-05-02", 'libelle' => 'Apport en caisse', 'action' => 'valider',
+        'lignes' => [['compte' => '5711 — Caisse en monnaie nationale', 'debit' => '100 000'], ['compte' => '1042', 'credit' => '100 000'], ['compte' => '', 'debit' => '']]]));
+    ok(str_contains($resp['headers'], 'derniere='), 'saisie par le formulaire, validée');
+    ok((bool) DB::value("SELECT id FROM cpt_ecritures WHERE libelle = 'Apport en caisse' AND statut = 'valide'"), 'écriture du formulaire enregistrée');
+    $bad = $a->req('POST', "$B/compta/ecritures", http_build_query(['_csrf' => $tok, 'journal_id' => $od, 'date_ecriture' => "$y-05-02", 'libelle' => 'Faux',
+        'lignes' => [['compte' => '5711', 'debit' => '10'], ['compte' => '1042', 'credit' => '9']]]));
+    ok(str_contains($a->req('GET', "$B/compta/saisie")['body'], 'déséquilibrée'), 'écriture déséquilibrée refusée avec message');
+    $dp = $C::save($entry([['compte' => '6052', 'debit' => '7'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '7']], $od, "$y-06-02"));
+    ok(str_contains($a->req('GET', "$B/compta/saisie?id=$e1")['headers'], "/compta/ecritures/$e1"), 'écriture validée : pas d\'écran de modification');
+    foreach (['/compta', '/compta/saisie', "/compta/saisie?id=$dp", "/compta/ecritures/$dp", "/compta/saisie?copie=$e1", '/compta/ecritures', '/compta/ecritures?statut=brouillard&origine=auto', "/compta/ecritures/$e1", "/compta/ecritures/$e1?print=1",
+              '/compta/lettrage', '/compta/lettrage?compte=4011&mode=non_lettrees', "/compta/lettrage?compte=4011&tiers=$fcode", '/compta/etats', '/compta/etats/journal', '/compta/etats/journal?print=1', '/compta/etats/centralisateur',
+              '/compta/etats/grand-livre?du_compte=4&au_compte=5', '/compta/etats/balance', '/compta/etats/balance?niveau=classe&statut=valide', '/compta/etats/balance-tiers', '/compta/etats/bilan', '/compta/etats/bilan?print=1',
+              '/compta/etats/resultat', '/compta/generation', '/compta/comptes', '/compta/comptes?classe=6&edit=1', '/compta/comptes?nouveau=1', '/compta/tiers', "/compta/tiers?edit=$fourn", '/compta/journaux', '/compta/exercices', '/compta/parametres'] as $u) {
+        $resp = $a->req('GET', $B . $u);
+        eq(200, $resp['code'], "page $u");
+        ok(!str_contains($resp['body'], 'Fatal') && !str_contains($resp['body'], 'Warning:'), "page $u sans erreur PHP");
+    }
+    foreach (['/compta/ecritures', '/compta/etats/journal', '/compta/etats/grand-livre', '/compta/etats/balance', '/compta/etats/balance-tiers', '/compta/etats/bilan', '/compta/etats/resultat', '/compta/comptes', '/compta/etats/centralisateur'] as $u) {
+        $csv = $a->req('GET', "$B$u?export=csv");
+        ok($csv['code'] === 200 && str_contains($csv['headers'], 'text/csv'), "export CSV $u");
+    }
+    ok(str_contains($a->req('GET', "$B/compta/saisie?id=$dp")['body'], 'value="7"'), 'brouillard rechargé dans la grille de saisie');
+    $C::deleteDraft($dp);
+    $pdf = $a->req('GET', "$B/compta/etats/balance?export=pdf");
+    ok($pdf['code'] === 200 && str_starts_with($pdf['body'], '%PDF'), 'balance en PDF');
+    ok(str_contains($a->req('GET', "$B/compta/etats/bilan")['body'], 'TOTAL GÉNÉRAL'), 'bilan affiché');
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(403, $c->req('GET', "$B/compta")['code'], 'caissier : pas d\'accès à la comptabilité');
+    $au = new Http();
+    $au->login($B, 'auditeur', 'Mot-de-passe-2026');
+    eq(200, $au->req('GET', "$B/compta/etats/balance")['code'], 'auditeur : consultation');
+    eq(403, $au->req('GET', "$B/compta/saisie")['code'], 'auditeur : pas de saisie');
+    eq(403, $au->req('POST', "$B/compta/ecritures/$e1/extourner", http_build_query(['_csrf' => $au->token("$B/compta"), 'date' => "$y-06-01", 'motif' => 'test']))['code'], 'auditeur : pas d\'extourne');
+
+    // ------------------------------------------------------------- clôture et à-nouveaux
+    $br = $C::save($entry([['compte' => '6052', 'debit' => '3'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '3']], $od, "$y-06-01"));
+    ok((bool) array_filter($C::clotureChecks($C::exercice($ex)), fn($i) => str_contains($i, 'brouillard')), 'clôture refusée tant qu\'il reste du brouillard');
+    throws(fn() => $C::cloturer($ex), 'brouillard');
+    $C::validate($br);
+    $before = $R::balance($ex, "$y-01-01", "$y-12-31", '', '', true);
+    $resultat = $R::resultat($ex, "$y-12-31", true)['valeurs']['XI'];
+    $bk = fn() => glob(App\Services\BackupService::dir() . '/*avant_cloture_compta*.sql.gz') ?: [];
+    $nbBackups = count($bk());
+    $cl = $C::cloturer($ex);
+    eq($nbBackups + 1, count($bk()), 'sauvegarde complète avant la clôture');
+    eq(round($resultat, 2), round($cl['resultat'], 2), 'résultat de clôture = résultat net');
+    eq('cloture', DB::value('SELECT statut FROM cpt_exercices WHERE id = ?', [$ex]), 'exercice clôturé');
+    $next = (int) $cl['next']['id'];
+    eq(($y + 1) . '-01-01', $cl['next']['date_debut'], 'exercice suivant créé');
+    $an = DB::one('SELECT * FROM cpt_ecritures WHERE id = ?', [$cl['an']]);
+    eq(['valide', $next, ($y + 1) . '-01-01'], [$an['statut'], (int) $an['exercice_id'], $an['date_ecriture']], 'à-nouveaux validés au premier jour de l\'exercice suivant');
+    $nb = $R::balance($next, ($y + 1) . '-01-01', ($y + 1) . '-12-31', '', '', true);
+    $closing = [];
+    foreach ($before['lignes'] as $l) {
+        if ($l['classe'] <= 5 && abs($l['fd'] - $l['fc']) >= 0.01) { $closing[$l['numero']] = round($l['fd'] - $l['fc'], 2); }
+    }
+    $opening = [];
+    foreach ($nb['lignes'] as $l) {
+        if ($l['classe'] <= 5 && !in_array($l['numero'], ['131', '139'], true)) { $opening[$l['numero']] = round($l['od'] - $l['oc'], 2); }
+    }
+    ksort($closing); ksort($opening);
+    eq($closing, $opening, 'soldes d\'ouverture N+1 = soldes de clôture N (classes 1 à 5)');
+    eq(round($resultat, 2), -$solde($resultat >= 0 ? '131' : '139'), 'résultat reporté au compte 131 / 139');
+    $unl = (int) DB::value("SELECT COUNT(*) FROM cpt_lignes l JOIN cpt_ecritures e ON e.id = l.ecriture_id JOIN cpt_comptes c ON c.id = l.compte_id WHERE e.exercice_id = ? AND c.numero = '4011' AND l.tiers_id = ? AND l.lettrage IS NULL", [$ex, $fourn]);
+    eq($unl, (int) DB::value("SELECT COUNT(*) FROM cpt_lignes l JOIN cpt_comptes c ON c.id = l.compte_id WHERE l.ecriture_id = ? AND c.numero = '4011' AND l.tiers_id = ?", [$cl['an'], $fourn]), 'à-nouveaux détaillés : une ligne par ligne non lettrée du fournisseur');
+    throws(fn() => $C::save($entry([['compte' => '6052', 'debit' => '1'], ['compte' => '4011', 'tiers' => $fcode, 'credit' => '1']], $od, "$y-12-01")), 'clôturé');
+    throws(fn() => $C::cloturer($ex), 'déjà clôturé');
+    eq(200, $a->req('GET', "$B/compta/etats/bilan?exercice=$next")['code'], 'bilan N+1 avec colonne N-1');
+    eq(0.0, $R::bilan($next, ($y + 1) . '-12-31', true)['ecart'], 'bilan d\'ouverture N+1 équilibré');
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

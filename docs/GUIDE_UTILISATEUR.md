@@ -263,8 +263,43 @@ Les responsables trouvent aussi :
 N'ouvrez à l'écran que ce qui est utile : l'écran partagé peut montrer des données de clients
 (loi n° 2017-28). Installation et sécurité : `addons/marwa_assist/README.md`.
 
+### Comptabilité générale
+À installer une fois : **Système & maintenance → Modules complémentaires → Comptabilité générale → Installer**.
+Tout se trouve ensuite dans la catégorie **Comptabilité** du menu, et dans les onglets en haut de chaque page comptable.
+1. **Mise en place** (première ouverture) : choisissez le plan (SYSCOHADA révisé recommandé), les dates du
+   premier exercice, puis validez. Les journaux AC, VT, CA, BQ, MM, OD et AN sont créés.
+2. **Soldes de départ** : une écriture dans le journal **AN**, au premier jour de l'exercice (caisse, banque,
+   clients, fournisseurs, capital…).
+3. **Saisie** : journal, date, pièce, libellé, puis une ligne par compte :
+   - tapez le numéro ou le nom du compte et choisissez dans la liste ;
+   - débit ou crédit ;
+   - le tiers est demandé pour un compte client ou fournisseur ;
+   - **Équilibrer** porte l'écart sur la ligne en cours, ou sur le compte de banque / caisse du journal.
+   - « Enregistrer au brouillard » laisse l'écriture modifiable ; « Enregistrer et valider » la numérote
+     définitivement.
+4. **Écritures de la caisse** :
+   - le logiciel prépare les écritures des ventes, achats, règlements, dépenses, recettes des modules et
+     banques, une par journée terminée ;
+   - contrôlez-les dans **Écritures et brouillard**, puis **Valider la sélection** ;
+   - les comptes utilisés se règlent dans **Paramètres comptables** (par exemple un compte par catégorie
+     de dépense).
+5. **Corriger une écriture validée** : ouvrez-la, puis **Extourner** avec un motif. L'écriture inverse est
+   passée ; saisissez ensuite la bonne écriture.
+6. **Lettrage** : **Consultation et lettrage**, choisissez le compte (401, 411…) et le tiers. Cochez la facture
+   et son règlement : quand l'écart est nul, **Lettrer la sélection**.
+7. **États** :
+   - journal, grand livre, balance, balance des tiers ;
+   - bilan et compte de résultat SYSCOHADA ;
+   - « Validées seulement » pour les états définitifs ;
+   - **Imprimer**, **CSV** ou **PDF**.
+8. **Fin de mois** : **Exercices et clôture → Verrouiller une période**. Plus aucune écriture ne peut alors
+   être passée avant cette date.
+9. **Fin d'exercice** : validez tout le brouillard, puis tapez CLOTURER et cliquez **Clôturer**. Une
+   sauvegarde est faite d'abord, et les à-nouveaux sont passés dans l'exercice suivant. Cette étape est
+   irréversible.
+
 ### Banques et coffres
-Menu **Caisse → Banques et coffres**.
+Menu **Trésorerie & banques → Banques et coffres**.
 1. Créez vos comptes : banque, coffre, argent gardé par le propriétaire, mobile money, avec leur solde actuel.
 2. Après chaque clôture de caisse : **Clôtures à verser**, puis choisissez le compte, le montant, le n° de
    bordereau et **Verser**. Vous pouvez répartir entre plusieurs comptes. Imprimez le reçu.
@@ -376,6 +411,10 @@ cause.
 
 ## Affichage
 - Le **menu de gestion** est à droite ; le remettre à gauche : Paramètres → Position du menu.
+- Le menu est rangé **par catégories** (Gestion des ventes, Gestion des articles, Comptabilité…) :
+  - seule la catégorie de la page affichée est ouverte ;
+  - cliquez sur une catégorie pour voir ses titres ;
+  - la zone **Rechercher dans le menu** trouve une page en tapant quelques lettres ; « Entrée » l'ouvre.
 - L'écran de connexion affiche le numéro d'**assistance** (modifiable dans les paramètres).
 
 ## TVA et rapport de TVA
