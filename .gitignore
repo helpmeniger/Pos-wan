@@ -34,3 +34,6 @@ bin-release/
 *.sql.gz
 # La console de l'application doit être versionnée (le modèle ci-dessus ignore les dossiers bin/)
 !/bin/
+
+# Fichier de verrou d'anciennes versions
+/storage/installed.lock

@@ -59,8 +59,13 @@ final class Env
         };
     }
 
+    /** Remplace aussi une valeur venant de l'environnement du processus (ex : bascule vers la base de test). */
     public static function set(string $key, string $value): void
     {
         self::$values[$key] = $value;
+        putenv($key . '=' . $value);
+        if (isset($_SERVER[$key])) {
+            $_SERVER[$key] = $value;
+        }
     }
 }

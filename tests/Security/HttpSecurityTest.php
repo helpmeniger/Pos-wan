@@ -19,6 +19,18 @@ final class HttpSecurityTest extends HttpTestCase
         $this->assertArrayNotHasKey('x-powered-by', $h, 'La version de PHP ne doit pas être divulguée');
     }
 
+    public function testErrorPagesAlsoCarrySecurityHeaders(): void
+    {
+        foreach (['/page-inexistante', '/admin'] as $path) {
+            $h = $this->client()->get($path)['headers'];
+            $this->assertSame('DENY', $h['x-frame-options'] ?? '', $path);
+        }
+        [$worker] = $this->registeredClient('WORKER');
+        $forbidden = $worker->get('/admin');
+        $this->assertSame(403, $forbidden['status']);
+        $this->assertStringContainsString("default-src 'self'", $forbidden['headers']['content-security-policy'] ?? '');
+    }
+
     public function testSessionCookieIsHttpOnlyAndSameSite(): void
     {
         $c = $this->client();

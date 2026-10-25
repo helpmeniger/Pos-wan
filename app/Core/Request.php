@@ -11,6 +11,7 @@ final class Request
     private array $routeParams = [];
     /** @var array<string, mixed> */
     private array $attributes = [];
+    private string $basePath = '';
 
     /**
      * @param array<string, mixed> $query
@@ -36,10 +37,8 @@ final class Request
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $uri = $_SERVER['REQUEST_URI'] ?? '/';
         $path = parse_url($uri, PHP_URL_PATH) ?: '/';
-        // Application installée dans un sous-dossier (ex : http://localhost/job-niger/public/)
-        $script = $_SERVER['SCRIPT_NAME'] ?? '';
-        $base = rtrim(str_replace('\\', '/', dirname($script)), '/');
-        if ($base !== '' && $base !== '.' && str_starts_with($path, $base)) {
+        $base = self::detectBasePath($path, (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+        if ($base !== '') {
             $path = substr($path, strlen($base)) ?: '/';
         }
         $raw = (string) file_get_contents('php://input');
@@ -56,7 +55,41 @@ final class Request
                 $method = $override;
             }
         }
-        return new self($method, '/' . trim($path, '/'), $_GET, $body, $_SERVER, $_FILES, $_COOKIE, $raw);
+        $request = new self($method, '/' . trim($path, '/'), $_GET, $body, $_SERVER, $_FILES, $_COOKIE, $raw);
+        $request->basePath = $base;
+        return $request;
+    }
+
+    /**
+     * Sous-dossier d'installation tel qu'il apparaît dans l'URL :
+     *  - VirtualHost sur public/                 → ''
+     *  - http://localhost/job-niger/public/...   → '/job-niger/public'
+     *  - http://localhost/job-niger/... (.htaccess racine vers public/) → '/job-niger'
+     */
+    public static function detectBasePath(string $path, string $scriptName): string
+    {
+        $scriptDir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+        if ($scriptDir === '' || $scriptDir === '.') {
+            return '';
+        }
+        $candidates = [$scriptDir];
+        if (basename($scriptDir) === 'public') {
+            $candidates[] = rtrim(dirname($scriptDir), '/');
+        }
+        foreach ($candidates as $candidate) {
+            if ($candidate === '' || $candidate === '.') {
+                continue;
+            }
+            if ($path === $candidate || str_starts_with($path, $candidate . '/')) {
+                return $candidate;
+            }
+        }
+        return '';
+    }
+
+    public function basePath(): string
+    {
+        return $this->basePath;
     }
 
     public function method(): string

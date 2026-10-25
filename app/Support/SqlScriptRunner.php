@@ -33,7 +33,17 @@ final class SqlScriptRunner
             if (preg_match('/^\s*(CREATE\s+DATABASE|USE\s)/i', $statement)) {
                 continue;
             }
-            $this->pdo->exec($statement);
+            // query() + lecture complète : certaines instructions (SELECT, EXECUTE…) renvoient un résultat
+            // qui doit être consommé avant l'instruction suivante
+            $stmt = $this->pdo->query($statement);
+            if ($stmt !== false) {
+                do {
+                    if ($stmt->columnCount() > 0) {
+                        $stmt->fetchAll();
+                    }
+                } while ($stmt->nextRowset());
+                $stmt->closeCursor();
+            }
             $count++;
         }
         return $count;

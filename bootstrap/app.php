@@ -77,8 +77,9 @@ $container->singleton(Router::class, function (Container $c) use ($root) {
         'role' => Middleware\RequireRole::class,
         'password.fresh' => Middleware\ForcePasswordChange::class,
         'throttle' => Middleware\Throttle::class,
+        'installer' => Middleware\RedirectToInstaller::class,
     ]);
-    $router->globalMiddleware(['headers', 'session', 'csrf', 'password.fresh']);
+    $router->globalMiddleware(['session', 'installer', 'csrf', 'password.fresh']);  // en-têtes de sécurité : Application::handle()
     (require $root . '/routes/web.php')($router);
     (require $root . '/routes/api.php')($router);
     return $router;

@@ -21,16 +21,25 @@
         "ext-sodium": "Hachage Argon2id (sinon repli bcrypt)"
     },
     "autoload": {
-        "psr-4": { "App\\": "app/" },
-        "files": ["app/Core/helpers.php"]
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "files": [
+            "app/Core/helpers.php"
+        ]
     },
     "autoload-dev": {
-        "psr-4": { "Tests\\": "tests/" }
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
     },
     "scripts": {
         "test": "phpunit",
         "test:unit": "phpunit --testsuite Unit",
-        "db:smoke": "bash tests/Database/run_schema_smoke.sh"
+        "db:smoke": "bash tests/Database/run_schema_smoke.sh",
+        "post-autoload-dump": [
+            "@php -r \"file_put_contents('vendor/.htaccess', 'Require all denied'.PHP_EOL);\""
+        ]
     },
     "config": {
         "sort-packages": true,

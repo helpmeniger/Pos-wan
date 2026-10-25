@@ -286,5 +286,5 @@ INSERT INTO moderation_rules (pattern, applies_to, action, reason) VALUES
   ('envoyez votre code',        'MESSAGE', 'SIGNALER',               'Tentative d''hameçonnage');
 
 -- Séquences de numérotation
-INSERT INTO document_sequences (name, last_value) VALUES
+INSERT INTO document_sequences (name, current_value) VALUES
   ('RECEIPT-2026', 0), ('INVOICE-2026', 0);

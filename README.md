@@ -26,7 +26,9 @@ mot de passe oublié, vérification du téléphone par code SMS (pilote de déve
 rôles et permissions, verrouillage anti-force brute, tableaux de bord prestataire / demandeur / administration
 alimentés par la base, notifications internes, API JSON des référentiels, console d'exploitation.
 
-L'installation pas à pas sous WampServer est décrite dans **[INSTALLATION.md](INSTALLATION.md)**.
+**Installation sous WampServer :** décompressez le projet dans `C:\wamp64\www\job-niger`, ouvrez
+<http://localhost/job-niger/> : l'assistant d'installation fait le reste (base, tables, administrateur, configuration).
+Détails, installation manuelle et mise en ligne : **[INSTALLATION.md](INSTALLATION.md)**.
 
 | Document | Contenu |
 |---|---|
@@ -45,7 +47,7 @@ php bin/console key:generate
 php bin/console migrate         # schéma + données de référence + migrations
 php bin/console admin:create --phone="90 00 00 01" --first=Prénom --last=Nom
 php -S 127.0.0.1:8080 -t public public/index.php   # ou VirtualHost Apache (voir INSTALLATION.md)
-vendor/bin/phpunit              # 82 tests (base dédiée job_niger_test)
+vendor/bin/phpunit              # 93 tests (base dédiée job_niger_test), validés sur MariaDB 10.11 et MySQL 8.0
 ```
 
 ## Avertissement

@@ -11,6 +11,10 @@ use App\Core\Router;
  * CSRF sur toute requête non sûre, obligation de changer un mot de passe temporaire.
  */
 return function (Router $r): void {
+    // ---- Assistant de première installation (désactivé une fois l'application installée)
+    $r->get('/installation', [Web\InstallController::class, 'show'], 'install');
+    $r->post('/installation', [Web\InstallController::class, 'install']);
+
     // ---- Pages publiques
     $r->get('/', [Web\HomeController::class, 'index'], 'home');
     $r->get('/categories', [Web\HomeController::class, 'categories'], 'categories');

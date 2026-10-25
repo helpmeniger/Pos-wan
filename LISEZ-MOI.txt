@@ -1,0 +1,26 @@
+JOB NIGER - INSTALLATION RAPIDE SOUS WAMPSERVER
+===============================================
+
+1. Demarrez WampServer et attendez que son icone soit VERTE.
+
+2. Decompressez ce zip dans C:\wamp64\www\
+   Vous devez obtenir C:\wamp64\www\job-niger\ qui contient directement
+   les dossiers app, public, vendor...
+
+3. Ouvrez votre navigateur sur :   http://localhost/job-niger/
+
+4. L'assistant d'installation s'ouvre. Valeurs par defaut de WampServer :
+      Serveur 127.0.0.1  -  Port 3306 (MySQL) ou 3307 (MariaDB)
+      Utilisateur root   -  Mot de passe : laisser VIDE
+   Choisissez votre telephone et votre mot de passe administrateur,
+   puis cliquez sur "Installer JOB NIGER".
+
+5. Connectez-vous avec ce telephone et ce mot de passe.
+
+En cas de page "activez le module rewrite" :
+   Icone WampServer > Apache > Modules Apache > cocher rewrite_module
+
+Pour tout reinstaller : supprimez le fichier .env du dossier job-niger,
+puis rouvrez http://localhost/job-niger/
+
+Guide complet : INSTALLATION.md

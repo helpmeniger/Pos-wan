@@ -1,15 +1,45 @@
 # Installation de JOB NIGER sous WampServer (Windows)
 
-> État actuel : **Phase 2** (socle, comptes, connexion, rôles, tableaux de bord de base).
-> Les annonces, la messagerie et le module financier arrivent dans les phases suivantes.
+## ⚡ Installation simple et automatique (recommandée, 3 minutes)
 
-Chemins utilisés dans ce guide :
+1. **Démarrez WampServer** et attendez que son icône soit **verte**.
+2. **Décompressez** `job-niger.zip` dans `C:\wamp64\www\`
+   → vous obtenez le dossier `C:\wamp64\www\job-niger` (avec `app`, `public`, `vendor`… directement dedans).
+3. Ouvrez votre navigateur sur **<http://localhost/job-niger/>**
+   → l'**assistant d'installation** s'ouvre tout seul.
+4. L'assistant vérifie votre ordinateur (version de PHP, extensions, droits d'écriture, module Apache *rewrite*).
+   Si un point est en rouge, l'assistant indique quoi cocher dans le menu WampServer.
+5. Remplissez le formulaire :
+   - Base de données : serveur `127.0.0.1`, port `3306` (MySQL) ou `3307` (MariaDB), utilisateur `root`,
+     mot de passe **vide** (valeurs par défaut de WampServer). La base `job_niger` est créée automatiquement.
+   - Votre compte administrateur : nom, téléphone (qui sert d'identifiant), mot de passe.
+6. Cliquez sur **« Installer JOB NIGER »**. Quelques secondes plus tard, la page de connexion s'affiche :
+   connectez-vous avec le téléphone et le mot de passe choisis.
 
-| Élément | Valeur |
+C'est tout : tables, 221 métiers, rôles, paramètres et fichier `.env` (avec une clé secrète unique) sont créés automatiquement.
+L'assistant se désactive dès que l'installation est terminée. Il n'est accessible que depuis l'ordinateur lui-même
+ou le réseau local.
+
+> **Pour réinstaller à zéro** : supprimez le fichier `C:\wamp64\www\job-niger\.env` (et, si vous le souhaitez, la base `job_niger`
+> dans phpMyAdmin), puis rouvrez <http://localhost/job-niger/>.
+
+### Problèmes fréquents
+
+| Ce que vous voyez | Solution |
 |---|---|
-| Dossier du projet | `C:/wamp64/www/job-niger` |
-| Racine web (DocumentRoot) | `C:/wamp64/www/job-niger/public` |
-| Nom local | `http://job-niger.local` |
+| **Erreur 403 « Forbidden »** | Vous utilisez une version antérieure au 25/10/2026 : remplacez le dossier par celui du nouveau zip. Vérifiez aussi que le dossier s'appelle bien `job-niger` et contient directement `public`, `app`… (pas `job-niger\job-niger\…`). |
+| Page « activez le module rewrite » | Icône WampServer → **Apache** → **Modules Apache** → cocher `rewrite_module`, puis recharger la page. |
+| « Accès refusé pour l'utilisateur root » | Vous avez défini un mot de passe MySQL : saisissez-le dans l'assistant. |
+| « Aucun serveur MySQL ne répond » | Icône WampServer pas verte, ou mauvais port : essayez `3306` puis `3307`. |
+| « La base contient déjà … table(s) » | Choisissez un autre nom de base (ex : `job_niger2`) ou videz-la dans phpMyAdmin. |
+| Page d'erreur après une ancienne installation manuelle | Supprimez le fichier `.env` puis rechargez : l'assistant reprend la main. |
+
+---
+
+# Installation manuelle et configuration avancée
+
+> Les sections suivantes s'adressent aux personnes qui préfèrent la ligne de commande, veulent un nom de domaine local
+> (`job-niger.local`) ou préparent la mise en ligne.
 
 ## 1. Vérifier WampServer et PHP
 
@@ -117,8 +147,8 @@ puis chaque fichier de `database/migrations/` (voir `database/migrations/README.
 
 Astuce : Wamp propose aussi **« Ajouter un Virtual Host »** depuis `http://localhost` (rubrique *Outils*) ; indiquez alors bien le dossier `public`.
 
-**Sans VirtualHost** (déconseillé) : `http://localhost/job-niger/public/` fonctionne si vous renseignez
-`APP_BASE_PATH=/job-niger/public` dans `.env`.
+**Sans VirtualHost** : `http://localhost/job-niger/` fonctionne directement (le fichier `.htaccess` de la racine
+renvoie vers `public/` et bloque les dossiers internes). Le sous-dossier est détecté automatiquement.
 
 ## 8. Permissions des dossiers
 

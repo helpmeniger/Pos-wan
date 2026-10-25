@@ -17,7 +17,12 @@ final class SecurityHeaders implements MiddlewareInterface
 
     public function handle(Request $request, callable $next, string ...$args): Response
     {
-        $response = $next($request);
+        return $this->apply($request, $next($request));
+    }
+
+    /** Appliqué aussi par le noyau aux pages d'erreur (exceptions qui ne repassent pas par ce middleware). */
+    public function apply(Request $request, Response $response): Response
+    {
         $csp = implode('; ', [
             "default-src 'self'",
             "script-src 'self'",

@@ -1,3 +1,24 @@
-# Si, par erreur, la racine du projet est exposée (au lieu de public/), tout est refusé.
-# Configurez le DocumentRoot sur le dossier public/ (voir INSTALLATION.md).
-Require all denied
+# =============================================================================
+#  JOB NIGER — racine du projet
+#  Cas recommandé : VirtualHost dont le DocumentRoot est le dossier public/
+#  (ce fichier n'est alors jamais lu). Cas WampServer « simple » : projet copié
+#  dans C:/wamp64/www/job-niger et ouvert via http://localhost/job-niger/ —
+#  toutes les requêtes sont alors renvoyées vers public/.
+# =============================================================================
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Dossiers et fichiers internes : jamais servis
+    RewriteRule ^(app|bin|bootstrap|config|database|docs|routes|storage|tests|vendor)(/|$) - [F,L]
+    RewriteRule (^|/)\. - [F,L]
+    RewriteRule ^[^/]+\.(md|json|lock|xml|dist|sh|bat|sql|env|log)$ - [F,L]
+    # Tout le reste est servi par le dossier public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Garde-fou si mod_rewrite est désactivé : fichiers sensibles refusés
+<FilesMatch "^\.|\.(env|md|json|lock|xml|dist|sh|bat|sql|log)$">
+    Require all denied
+</FilesMatch>
