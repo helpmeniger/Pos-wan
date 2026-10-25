@@ -132,6 +132,7 @@ sont choisis pendant l'installation.
 | [docs/GUIDE_UTILISATEUR.md](docs/GUIDE_UTILISATEUR.md) | Utilisation de la caisse et des modules |
 | [docs/ETAT_DU_PROJET.md](docs/ETAT_DU_PROJET.md) | Ce qui est terminé, testé, et ce qui reste à faire |
 | [docs/DEMARRAGE_WINDOWS.md](docs/DEMARRAGE_WINDOWS.md) | Raccourci, démarrage automatique de Wamp et de POS Marwa, accès mobile, HTTPS pour la caméra |
+| [docs/HEBERGEMENT_O2SWITCH.md](docs/HEBERGEMENT_O2SWITCH.md) | Hébergement en ligne sur o2switch (cPanel) : racine `public/`, secrets dans `.env`, HTTPS, installation sûre, sauvegardes, limites |
 | [docs/AMELIORATIONS_2.0.md](docs/AMELIORATIONS_2.0.md) | Version 2.0 : analyse, fichiers, migrations, vérifications, limites |
 | [docs/MODULES.md](docs/MODULES.md) | Ajouter / créer un module complémentaire |
 | [CHANGELOG.md](CHANGELOG.md) | Historique des versions |
