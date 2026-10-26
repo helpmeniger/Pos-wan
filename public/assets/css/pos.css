@@ -158,3 +158,9 @@ a.btn-validate:hover { color: #fff; }
 .mode-link { font-size: .8rem; padding: 2px 8px; border-radius: 12px; background: #eef2f7; color: #14213d; text-decoration: none; }
 .mode-link.warn { background: #fff3cd; color: #7a5b00; } .mode-link.danger { background: #f8d7da; color: #842029; }
 [data-bs-theme="dark"] .mode-link { background: #2a3446; color: #e6ebf5; }
+
+/* ---------- Caisse hors connexion : bandeau d'état ---------- */
+.net-bar { flex: 0 0 auto; padding: .45rem .7rem; font-size: .9rem; line-height: 1.8; }
+.net-bar.off { background: #c0392b; color: #fff; }
+.net-bar.warn { background: #f5a623; color: #14213d; }
+.net-bar.sync { background: #1f6feb; color: #fff; }

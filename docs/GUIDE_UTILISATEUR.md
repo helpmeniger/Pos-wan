@@ -61,7 +61,36 @@ Les touches sont modifiables dans Paramètres.
 - **Mise en attente** (F8) : le client va chercher un article ; servir le suivant ; *Reprendre* pour rappeler la vente.
 - **Médicament sur ordonnance** (pharmacie) : renseigner prescripteur et patient dans la fenêtre d'encaissement ; un pharmacien doit être connecté ou autoriser.
 - **Coupure réseau / double clic** : la vente n'est jamais enregistrée deux fois ; réessayer sans crainte.
+- **Caisse hors connexion** (v2.11) : voir ci-dessous.
 - **Réimpression** : *Tickets* → icône imprimante ; la copie porte la mention DUPLICATA (permission requise).
+
+## Caisse hors connexion (coupure Internet ou serveur injoignable)
+
+Une fois la caisse ouverte **au moins une fois avec la connexion**, elle continue de vendre si la
+connexion tombe :
+
+1. Un **bandeau rouge « Hors connexion »** apparaît en haut de la caisse.
+2. Les articles, la recherche et le code-barres fonctionnent avec le **catalogue gardé sur
+   l'appareil** (mis à jour toutes les 10 minutes quand la connexion est là).
+3. **Valider** : la vente reçoit un **numéro provisoire** (ex. `HL-2610-143205-4BDB`), la monnaie
+   s'affiche, un **ticket provisoire** s'imprime par le navigateur. La vente est gardée dans le
+   navigateur de ce poste, même si la page est rechargée ou le PC redémarré.
+4. **Retour de la connexion** : les ventes sont envoyées **automatiquement** (bouton « Envoyer
+   maintenant » en plus). Le serveur leur donne leur numéro définitif ; la date et le numéro
+   provisoire sont recopiés dans la note de la vente. Aucune vente ne peut être enregistrée deux fois.
+5. **Fermer le navigateur ou l'application** alors que des ventes ne sont pas envoyées : le
+   navigateur demande confirmation, et le bandeau rappelle qu'il faut **rétablir la connexion pour
+   les enregistrer**. Si vous fermez quand même, elles restent gardées sur ce poste et partent à la
+   prochaine ouverture de la caisse (même utilisateur).
+6. **Vente refusée** à l'envoi (caisse fermée entre-temps, stock insuffisant, plafond de crédit…) :
+   bouton rouge « vente(s) refusée(s) — vérifier » → **Réessayer**, **Reprendre dans le panier**
+   (pour corriger puis valider) ou **Supprimer** (après confirmation ; la vente n'existe alors nulle part).
+
+Hors connexion, **impossible** : rechercher ou créer un client (le client déjà choisi reste),
+mettre en attente / reprendre, consulter les tickets, et toute opération qui exige l'autorisation
+d'un responsable (remise ou prix sans droit, vente à crédit sans droit, prix de gros sans droit) :
+son mot de passe ne peut pas être vérifié sans le serveur. Les autres pages (stocks, rapports…)
+exigent la connexion.
 
 ## Devis et bons de livraison
 - **Devis** (menu Gestion des ventes → Devis) : *Nouveau devis*, choisir une fiche client ou

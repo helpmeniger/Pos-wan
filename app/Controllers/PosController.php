@@ -40,7 +40,9 @@ final class PosController extends Controller
                 'discount' => can('pos.discount'), 'price' => can('pos.price_override'), 'credit' => can('pos.credit_sale'),
                 'wholesale' => can('pos.wholesale'), 'cancel' => can('pos.cancel_sale'), 'customers' => can('customers.manage'),
                 'cash' => can('cash.open_close'), 'returns' => can('returns.create'),
+                'discountHigh' => can('pos.discount_high'), 'dispense' => can('pharmacy.dispense'),
             ],
+            'shop' => (string) setting('company_name', 'POS Marwa'),
             'shortcuts' => is_array($shortcuts) ? $shortcuts : self::defaultShortcuts(),
             'autoPrint' => setting('pos_auto_print', '1') === '1',
             'quickValidate' => setting('pos_quick_validate', '1') === '1',
@@ -60,10 +62,10 @@ final class PosController extends Controller
     }
 
     /** Fiche article au format caisse (prix effectif calculé comme côté serveur). */
-    private function present(array $p): array
+    private function present(array $p, ?array $preloadedPacks = null): array
     {
-        $packs = [];
-        if (feature('packaging')) {
+        $packs = $preloadedPacks ?? [];
+        if ($preloadedPacks === null && feature('packaging')) {
             $packs = DB::all('SELECT id, name, factor, sale_price, barcode FROM product_packagings WHERE product_id = ? ORDER BY factor', [$p['id']]);
         }
         $promo = SaleService::promoActive($p);
@@ -85,7 +87,7 @@ final class PosController extends Controller
             'color' => $p['cat_color'] ?? '#5d6d7e',
             'rx' => (int) $p['requires_prescription'] === 1 && feature('pharmacy'),
             'tax' => \App\Services\Tax::rate($p),
-            'packs' => array_map(fn($k) => ['id' => (int) $k['id'], 'name' => $k['name'], 'factor' => (float) $k['factor'], 'price' => (float) $k['sale_price'], 'barcode' => $k['barcode']], $packs),
+            'packs' => $preloadedPacks ?? array_map(fn($k) => ['id' => (int) $k['id'], 'name' => $k['name'], 'factor' => (float) $k['factor'], 'price' => (float) $k['sale_price'], 'barcode' => $k['barcode']], $packs),
         ];
     }
 
@@ -152,6 +154,41 @@ final class PosController extends Controller
         $rows = DB::all($sql, $params);
         $more = count($rows) > $per;
         json_response(['ok' => true, 'items' => array_map([$this, 'present'], array_slice($rows, 0, $per)), 'more' => $more]);
+    }
+
+    /**
+     * Catalogue complet de la caisse, gardé dans le navigateur pour vendre hors connexion
+     * (recherche, code-barres, conditionnements). Les prix et le stock restent recalculés
+     * et vérifiés par le serveur à la synchronisation de chaque vente.
+     */
+    public function catalog(): void
+    {
+        $rows = DB::all($this->baseQuery() . ' ORDER BY p.name LIMIT 20000');
+        $packs = [];
+        if (feature('packaging') && $rows) {
+            foreach (DB::all('SELECT id, product_id, name, factor, sale_price, barcode FROM product_packagings ORDER BY factor') as $k) {
+                $packs[(int) $k['product_id']][] = ['id' => (int) $k['id'], 'name' => $k['name'], 'factor' => (float) $k['factor'], 'price' => (float) $k['sale_price'], 'barcode' => $k['barcode']];
+            }
+        }
+        $parents = [];
+        foreach (DB::all('SELECT id, parent_id FROM categories') as $c) {
+            $parents[(int) $c['id']] = $c['parent_id'] !== null ? (int) $c['parent_id'] : null;
+        }
+        $items = [];
+        foreach ($rows as $p) {
+            $it = $this->present($p, $packs[(int) $p['id']] ?? []);
+            $cat = $p['category_id'] !== null ? (int) $p['category_id'] : 0;
+            $it['cats'] = array_values(array_filter([$cat, $parents[$cat] ?? null]));
+            $it['dci'] = (string) ($p['active_ingredient'] ?? '');
+            $items[] = $it;
+        }
+        json_response(['ok' => true, 'items' => $items, 'at' => date('Y-m-d H:i:s')]);
+    }
+
+    /** Présence du serveur + jeton de sécurité à jour (synchronisation des ventes faites hors connexion). */
+    public function ping(): void
+    {
+        json_response(['ok' => true, 'csrf' => csrf_token(), 'userId' => (int) $this->user()['id']]);
     }
 
     /** Recherche exacte (douchette code-barres) : code-barres article, code-barres conditionnement ou référence. */

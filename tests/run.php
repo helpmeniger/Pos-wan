@@ -2116,6 +2116,45 @@ test('Caisses simultanées : 10 ventes en même temps pour 5 en stock, aucune su
     ok(!empty($r['duplicate']), 'double envoi reconnu');
     eq(0.0, stock($pid), 'pas de double déduction');
 });
+test('Caisse hors connexion : catalogue gardé sur l\'appareil, jeton à jour, renvoi des ventes sans doublon', function () use ($B) {
+    // Sans session : rien n'est livré
+    eq(401, (new Http())->req('GET', "$B/pos/catalog", null, ['Accept: application/json'])['code'], 'catalogue : connexion obligatoire');
+    eq(401, (new Http())->req('GET', "$B/pos/ping", null, ['Accept: application/json'])['code'], 'ping : connexion obligatoire');
+    actingAs('admin');
+    if (!DB::value("SELECT id FROM cash_sessions WHERE register_id = 1 AND status = 'open'")) {
+        S\CashService::open(1, 0);
+    }
+    $pid = S\ProductService::create(S\ProductService::validate(['name' => 'Article hors ligne', 'barcode' => '2999000000017', 'sale_price' => 700, 'cost_price' => 400, 'track_stock' => 1]), 10, 1);
+    DB::update('products', ['track_stock' => 1], 'id = ?', [$pid]);
+    $h = new Http();
+    $h->login($B, 'caissier', 'Mot-de-passe-2026');
+    preg_match('/name="csrf-token" content="([^"]+)"/', $h->req('GET', "$B/pos")['body'], $m);
+    $cat = json_decode($h->req('GET', "$B/pos/catalog", null, ['Accept: application/json'])['body'], true);
+    ok($cat['ok'] && count($cat['items']) === (int) DB::value("SELECT COUNT(*) FROM products p LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN categories pc ON pc.id = c.parent_id WHERE p.status = 'active' AND p.sellable = 1 AND " . S\ProductService::CHANNEL_SQL . " IN ('all','shop')"), 'catalogue complet des articles vendables (' . count($cat['items']) . ')');
+    $it = array_values(array_filter($cat['items'], fn($x) => $x['id'] === $pid))[0] ?? null;
+    ok($it && $it['barcode'] === '2999000000017' && $it['price'] == 700 && $it['stock'] == 10 && isset($it['packs'], $it['cats']), 'article : code-barres, prix, stock, conditionnements, catégories');
+    ok(!str_contains(json_encode($cat), 'cost_price') && !array_key_exists('cost', $it), 'aucun prix d\'achat ni donnée interne dans le catalogue');
+    $ping = json_decode($h->req('GET', "$B/pos/ping", null, ['Accept: application/json'])['body'], true);
+    ok($ping['ok'] && $ping['csrf'] === ($m[1] ?? '') && $ping['userId'] === (int) DB::value("SELECT id FROM users WHERE username = 'caissier'"), 'ping : jeton de sécurité et utilisateur de la session');
+    // Vente faite hors connexion puis envoyée deux fois (coupure pendant la réponse) : une seule vente
+    $u = uuid();
+    $body = json_encode(['_csrf' => $ping['csrf'], 'client_uuid' => $u, 'items' => [['product_id' => $pid, 'quantity' => 2]], 'payments' => [['method' => 'cash', 'amount' => 1400]],
+        'note' => '[Vente hors connexion du 26/10/2026 10:00, ticket provisoire HL-2610-100000-ABCD]', 'print_ticket' => false]);
+    $hdr = ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $ping['csrf']];
+    $r1 = json_decode($h->req('POST', "$B/pos/checkout", $body, $hdr)['body'], true);
+    $r2 = json_decode($h->req('POST', "$B/pos/checkout", $body, $hdr)['body'], true);
+    ok($r1['ok'] && !$r1['duplicate'] && $r2['ok'] && $r2['duplicate'] && $r1['sale_id'] === $r2['sale_id'], 'renvoi : « déjà enregistrée », même vente');
+    eq(1, (int) DB::value('SELECT COUNT(*) FROM sales WHERE client_uuid = ?', [$u]));
+    eq(8.0, stock($pid), 'stock déduit une seule fois');
+    ok(str_contains((string) DB::value('SELECT note FROM sales WHERE client_uuid = ?', [$u]), 'HL-2610-100000-ABCD'), 'numéro provisoire conservé dans la note');
+    // Le serveur reste juge : prix envoyé par le navigateur ignoré sans droit, stock vérifié
+    $r3 = json_decode($h->req('POST', "$B/pos/checkout", json_encode(['_csrf' => $ping['csrf'], 'client_uuid' => uuid(), 'items' => [['product_id' => $pid, 'quantity' => 50]], 'payments' => [['method' => 'cash', 'amount' => 35000]]]), $hdr)['body'], true);
+    ok(!$r3['ok'] && $r3['error'] !== '', 'vente hors connexion au-delà du stock : refusée à la synchronisation (' . $r3['error'] . ')');
+    // Service worker : seule la caisse est gardée ; ni POST ni JSON mis en cache
+    $sw = (string) file_get_contents(PUBLIC_PATH . '/sw.js');
+    ok(str_contains($sw, "req.method !== 'GET'") && str_contains($sw, "SCOPE + 'pos'") && !str_contains($sw, 'pos/catalog') && !str_contains($sw, 'pos/checkout'), 'service worker : page de caisse et fichiers statiques seulement');
+    ok(str_contains((string) file_get_contents(PUBLIC_PATH . '/assets/js/pos.js'), "addEventListener('beforeunload'"), 'avertissement à la fermeture avec des ventes non envoyées');
+});
 test('POS Marwa (HTTP) : accès mobile, QR code, /health, appareils, application installable', function () use ($B) {
     $h = json_decode((new Http())->req('GET', "$B/health")['body'], true);
     ok(($h['ok'] ?? false) && $h['app'] === 'POS Marwa' && !isset($h['db_password']), '/health public, sans donnée sensible');

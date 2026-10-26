@@ -27,11 +27,12 @@ certaines fonctions ne peuvent pas marcher : le serveur ne « voit » pas le ré
 | Réception DICOM des appareils d'imagerie (port réseau) | ❌ mutualisé : pas de port personnalisé |
 | Serveur d'assistance RustDesk (MARWA REMOTE ASSIST, ports 21115-21117) | ❌ à garder sur un VPS ou un PC dédié |
 | Voix Piper côté serveur | ⚠️ à tester (dépend de l'autorisation d'exécuter des programmes) ; la voix du navigateur reste disponible |
-| Fonctionnement **sans Internet** | ❌ par nature : une coupure Internet arrête la caisse en ligne |
+| **Caisse** pendant une coupure Internet (v2.11) | ✅ après une première ouverture en ligne : ventes gardées sur le poste, envoyées au retour de la connexion (voir § 15) |
+| Autres pages (stocks, achats, rapports, clients, modules) sans Internet | ❌ elles lisent et écrivent directement sur le serveur |
 
-**Conseil** : pour une caisse qui doit travailler même pendant une coupure Internet, gardez
-l'installation locale (WampServer, voir `INSTALLATION_WAMPSERVER.md`). Utilisez o2switch pour une
-gestion multi-sites, une consultation à distance, ou une activité où Internet est fiable.
+**Conseil** : la caisse hors connexion couvre les coupures de quelques minutes à quelques heures.
+Si Internet manque souvent pendant des journées entières, gardez l'installation locale
+(WampServer, voir `INSTALLATION_WAMPSERVER.md`).
 
 ---
 
@@ -57,17 +58,20 @@ Les variables `ASSIST_HOST` et `ASSIST_KEY` (assistance à distance) contiennent
 
 ## 2. Préparer l'archive à envoyer (sur votre PC)
 
-1. **Utilisez l'archive de version** (`pos-marwa-2.10.0.zip`), produite avec `git archive`.
+1. **Utilisez l'archive d'hébergement** (`pos-marwa-2.11.0-o2switch.zip`), produite avec `git archive`.
    - Elle **exclut** `outils-auteur/` : le générateur de licences ne part jamais chez un client ni sur un
      serveur.
-   - Elle ne contient **aucun** fichier `.env`.
+   - Elle ne contient **aucun** fichier `.env`, aucune base, aucune sauvegarde, aucun journal, aucune
+     clé : vous créez le `.env` sur le serveur (§ 8).
+   - Elle exclut aussi ce qui ne sert pas sur un hébergement Linux : la suite de tests (`tests/`) et
+     les scripts Windows (`windows/`).
 2. **Ne clonez pas** le dépôt Git sur le serveur (outil « Git Version Control » de cPanel). Un clonage
    apporterait `outils-auteur/` et tout l'historique, et vous obligerait à donner au serveur un accès à
    votre dépôt.
 3. Vérifiez l'empreinte de l'archive :
    ```
-   sha256sum pos-marwa-2.10.0.zip      (Linux / macOS)
-   certutil -hashfile pos-marwa-2.10.0.zip SHA256      (Windows)
+   sha256sum pos-marwa-2.11.0-o2switch.zip      (Linux / macOS)
+   certutil -hashfile pos-marwa-2.11.0-o2switch.zip SHA256      (Windows)
    ```
    Le résultat doit être identique à celui du fichier `.sha256`.
 
@@ -109,7 +113,7 @@ Si vous ne pouvez vraiment pas changer la racine, le `.htaccess` à la racine du
 ## 5. Envoyer et décompresser les fichiers
 
 1. Dans **Gestionnaire de fichiers**, allez dans `/home/VOTRE_COMPTE/`.
-2. Envoyez `pos-marwa-2.10.0.zip`, puis **Extraire**.
+2. Envoyez `pos-marwa-2.11.0-o2switch.zip`, puis **Extraire**.
 3. L'archive contient un dossier `pos-marwa/`. Renommez-le `posmarwa` (ou adaptez l'étape 4).
 4. Vérifiez la structure : `/home/VOTRE_COMPTE/posmarwa/public/index.php` doit exister.
 5. Supprimez le fichier ZIP du serveur.
@@ -327,7 +331,39 @@ solution la plus simple sur le plan réglementaire.
 
 ---
 
-## 15. Liste de contrôle finale
+## 15. Caisse hors connexion (coupure Internet)
+
+**Ce qui se passe** : à l'ouverture de la caisse (en HTTPS), le navigateur garde la page de caisse,
+ses fichiers et le catalogue des articles vendables. Si Internet tombe, la caisse continue :
+chaque vente validée est gardée **dans le navigateur du poste** avec son identifiant unique, puis
+envoyée au serveur dès le retour de la connexion. Le serveur recalcule tout (prix, remises, stock,
+droits) : il peut refuser une vente, qui est alors présentée au caissier (jamais effacée en silence).
+
+**Conditions** :
+- **HTTPS obligatoire** (fourni par o2switch, § 9) : sans HTTPS, le navigateur refuse de garder la
+  page ; une caisse déjà ouverte continue, mais ne peut pas être rouverte sans connexion.
+- **Ouvrir la caisse au moins une fois avec la connexion** sur chaque poste, et après chaque mise à jour.
+- **Ne pas effacer les données de navigation** du poste et ne pas utiliser de navigation privée :
+  c'est là que sont gardées les ventes non envoyées.
+- **Rétablir la connexion avant de clôturer la caisse** : une vente arrivée après la clôture est
+  refusée (« caisse fermée ») et reste à traiter sur le poste.
+- La session de travail expire après `SESSION_IDLE_MINUTES` (30 min par défaut) sans échange avec le
+  serveur : après une longue coupure, le bandeau demande de **se reconnecter** ; les ventes partent
+  ensuite automatiquement.
+
+**Limites (à connaître)** :
+- Le stock affiché hors connexion est celui du dernier chargement, diminué des ventes du poste ; il
+  ignore les ventes des autres caisses. Un article épuisé entre-temps est refusé à l'envoi.
+- Pas d'autorisation de responsable hors connexion (mot de passe non vérifiable) ; le plafond de
+  crédit d'un client n'est vérifié qu'à l'envoi.
+- La date de la vente dans POS Marwa est celle de l'envoi ; l'heure réelle et le numéro provisoire
+  sont recopiés dans la note de la vente.
+- Les ventes gardées sur un poste (articles, client choisi, ordonnance : nom du patient) restent dans
+  le navigateur jusqu'à leur envoi : verrouillez la session Windows du poste (loi n° 2017-28).
+- Le ticket provisoire n'est pas le ticket définitif ; réimprimez le ticket définitif depuis
+  *Tickets* si le client le demande.
+
+## 16. Liste de contrôle finale
 
 - [ ] Racine web = `posmarwa/public`.
 - [ ] `.env` hors de `public/`, en droits 600.
@@ -339,4 +375,5 @@ solution la plus simple sur le plan réglementaire.
 - [ ] Sauvegarde Cron quotidienne, copie chiffrée hebdomadaire hors serveur, restauration testée.
 - [ ] Double authentification o2switch, SSH limité à votre IP, pas de FTP en clair.
 - [ ] `outils-auteur/` et la clé privée de licence absents du serveur.
+- [ ] Caisse ouverte une fois en HTTPS sur chaque poste ; coupure simulée (Wi-Fi coupé) : vente gardée puis envoyée.
 - [ ] Question des données personnelles vérifiée auprès de la HAPDP (clinique, établissement, hôtel).

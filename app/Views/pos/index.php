@@ -21,6 +21,7 @@
 <div class="pos">
   <!-- ============ ZONE ARTICLES ============ -->
   <section class="pos-left">
+    <div class="net-bar d-none" id="netBar" role="status" aria-live="polite"></div>
     <div class="cat-bar" id="catBar">
       <button class="cat-tile active" data-cat="0"><span class="cat-ico" style="background:#14213d"><i class="bi bi-grid-3x3-gap-fill"></i></span><span>TOUT</span></button>
       <?php foreach ($categories as $c): ?>
@@ -241,7 +242,7 @@
 <div class="modal fade" id="doneModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content text-center p-3">
     <i class="bi bi-check-circle-fill text-success display-3"></i>
-    <h4 class="mt-2">Vente enregistrée</h4>
+    <h4 class="mt-2" id="doneTitle">Vente enregistrée</h4>
     <p class="mb-1" id="doneNumber"></p>
     <div class="done-change">Monnaie à rendre : <output id="doneChange"><?= e(money(0)) ?></output></div>
     <div class="d-flex gap-2 justify-content-center mt-3">

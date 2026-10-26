@@ -30,6 +30,8 @@ final class VoiceService
             'pos.sale.saved' => ['caisse', 'Vente enregistrée : total et monnaie à rendre', 1, true],
             'pos.sale.refused' => ['caisse', 'Vente refusée par le serveur (motif lu)', 3, true],
             'pos.sale.unknown' => ['caisse', 'Connexion interrompue pendant la validation : vente non confirmée', 3, true],
+            'pos.sale.offline' => ['caisse', 'Vente gardée hors connexion (sera enregistrée au retour de la connexion)', 2, true],
+            'pos.offline.synced' => ['caisse', 'Vente faite hors connexion enregistrée sur le serveur', 0, false],
             'pos.auth.required' => ['caisse', 'Autorisation d\'un responsable nécessaire', 2, true],
             'pos.payment.insufficient' => ['caisse', 'Montant reçu insuffisant', 2, true],
             'pos.payment.error' => ['caisse', 'Paiement refusé (motif lu)', 3, true],

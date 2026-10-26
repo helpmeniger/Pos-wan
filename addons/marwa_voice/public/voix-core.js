@@ -239,6 +239,9 @@
         + (Number(d.change) > 0 ? ' Monnaie à rendre : ' + amount(d.change, cur.code, cur.decimals, cur.name) + '.' : ''),
     'pos.sale.refused': (d) => 'Attention, la vente n\'a pas été enregistrée. ' + (d.error ? normalize(d.error) : 'Vérifiez les informations avant de continuer.'),
     'pos.sale.unknown': () => 'La connexion au serveur a été interrompue. La vente n\'est pas confirmée. Validez à nouveau : elle ne sera pas enregistrée deux fois.',
+    'pos.sale.offline': (d, cur) => 'Pas de connexion. Vente gardée sur cet appareil, elle sera enregistrée au retour de la connexion. Total : ' + amount(d.total, cur.code, cur.decimals, cur.name) + '.'
+      + (Number(d.change) > 0 ? ' Monnaie à rendre : ' + amount(d.change, cur.code, cur.decimals, cur.name) + '.' : ''),
+    'pos.offline.synced': () => 'Vente hors connexion enregistrée sur le serveur.',
     'pos.auth.required': () => 'Cette opération demande l\'autorisation d\'un responsable.',
     'pos.print.failed': () => 'La vente est enregistrée, mais l\'impression du ticket a échoué. Vous pouvez réimprimer le ticket.',
     'pos.print.sent': () => 'Ticket envoyé à l\'imprimante.',

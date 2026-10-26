@@ -219,6 +219,13 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
   clients/fournisseurs et séquences de numérotation.
 - **Idempotence** des ventes (identifiant unique généré par la caisse) : une double validation
   ou une nouvelle tentative après coupure réseau ne crée jamais de doublon.
+- **Caisse hors connexion** (v2.11) : les ventes gardées dans le navigateur sont renvoyées avec le
+  même identifiant ; le serveur recalcule prix, remises, taxes, stock et droits à la réception et
+  peut les refuser (présentées au caissier, jamais supprimées sans confirmation). Hors connexion,
+  aucune autorisation de responsable n'est acceptée (mot de passe non vérifiable). Le service worker
+  ne garde que la page de caisse et les fichiers statiques : aucune réponse JSON, aucune requête POST.
+  Les ventes en attente (articles, client, nom du patient d'une ordonnance) restent dans le
+  navigateur du poste jusqu'à leur envoi : poste à verrouiller (loi n° 2017-28).
 - Une seule session ouverte par caisse (index unique en base).
 - Stock négatif bloqué par défaut ; quantités modifiables uniquement par des mouvements tracés.
 - **Aucune suppression** de ventes, paiements, mouvements, dépenses : annulation, retour ou

@@ -20,7 +20,8 @@ et **paiement mixte** ; monnaie à rendre ; vente à crédit avec plafond ; mise
 reprise ; tickets 58/80 mm et factures A4 (**3 modèles** chacun, **QR code** de vérification) ;
 réimpression contrôlée (DUPLICATA) ; **Valider = encaissement espèces direct** sans fenêtre ;
 opérateurs **mobile money** paramétrables ; anti-double validation ; raccourcis clavier
-configurables ; plein écran.
+configurables ; plein écran ; **caisse hors connexion** (ventes gardées sur le poste pendant une
+coupure Internet, envoyées automatiquement au retour de la connexion, alerte à la fermeture).
 
 **Nouveautés 2.0**
 - **Modes de fonctionnement** : Commerce, Restaurant, Pharmacie, Clinique, Clinique + Pharmacie

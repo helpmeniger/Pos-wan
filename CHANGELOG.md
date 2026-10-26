@@ -2,6 +2,35 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.11.0] — 2026-10-26
+
+### Ajouté
+- **Caisse hors connexion** : une fois ouverte avec la connexion, la caisse continue de vendre
+  pendant une coupure Internet ou une panne du serveur.
+  - Page de caisse et fichiers gardés par le service worker (`public/sw.js`, HTTPS ou poste local) ;
+    réouverture de la caisse possible sans connexion.
+  - Catalogue des articles vendables gardé sur l'appareil (IndexedDB, nouveau `GET /pos/catalog`,
+    rafraîchi toutes les 10 min) : recherche, catégories, code-barres et conditionnements hors ligne.
+  - Ventes validées hors ligne gardées dans le navigateur avec leur `client_uuid`, numéro provisoire
+    `HL-…`, ticket provisoire imprimé par le navigateur.
+  - Envoi automatique au retour de la connexion (événement `online`, toutes les 20 s, bouton
+    « Envoyer maintenant ») ; jeton de sécurité renouvelé par `GET /pos/ping` ; aucun doublon possible.
+  - Ventes refusées par le serveur présentées au caissier : réessayer, reprendre dans le panier,
+    supprimer (après confirmation). Jamais effacées en silence.
+  - Bandeau d'état (hors connexion, ventes à envoyer, session expirée, ventes refusées) et
+    **avertissement du navigateur à la fermeture** tant que des ventes ne sont pas envoyées ;
+    confirmation avant déconnexion.
+  - Hors connexion, refus immédiat des opérations exigeant l'autorisation d'un responsable.
+  - MARWA VOICE : annonce « vente gardée sur cet appareil » (jamais « enregistrée ») et événement
+    « vente hors connexion enregistrée ».
+- Archive d'hébergement `pos-marwa-2.11.0-o2switch.zip` : sans `.env`, `outils-auteur/`, tests ni
+  scripts Windows.
+
+### Modifié
+- `pos.js` : les appels réseau ne lèvent plus d'exception en cas de coupure (délai maximal 15 s,
+  20 s pour la validation) ; une réponse 5xx est traitée comme une coupure.
+- La copie locale de la caisse est oubliée à la déconnexion.
+
 ## [2.10.0] — 2026-10-24
 
 ### Ajouté

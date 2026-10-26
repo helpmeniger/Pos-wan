@@ -34,6 +34,8 @@ $router->get('/menu', [C\DashboardController::class, 'menu']);
 // --- Caisse (POS) ---
 $router->get('/pos', [C\PosController::class, 'index']); // permission vérifiée dans le contrôleur (redirection selon le mode)
 $router->get('/pos/products', [C\PosController::class, 'products'], 'pos.sell');
+$router->get('/pos/catalog', [C\PosController::class, 'catalog'], 'pos.sell');
+$router->get('/pos/ping', [C\PosController::class, 'ping'], 'pos.sell');
 $router->get('/pos/lookup', [C\PosController::class, 'lookup'], 'pos.sell');
 $router->get('/pos/stock', [C\PosController::class, 'stock'], 'pos.sell');
 $router->get('/pos/customers', [C\PosController::class, 'customers'], 'pos.sell');

@@ -32,6 +32,7 @@ eq(V.phrase('pos.sale.saved', { total: 12500, change: 2500 }), 'Vente enregistr�
 eq(V.phrase('pos.sale.saved', { total: 500, change: 0 }), 'Vente enregistrée. Total : cinq cents francs CFA.', 'vente sans monnaie');
 eq(/déjà enregistrée/.test(V.phrase('pos.sale.saved', { duplicate: true, total: 1 })), true, 'vente en double');
 eq(/n'est pas confirmée/.test(V.phrase('pos.sale.unknown', {})), true, 'coupure : état non confirmé');
+eq(V.phrase('pos.sale.offline', { total: 1500, change: 500 }), 'Pas de connexion. Vente gardée sur cet appareil, elle sera enregistrée au retour de la connexion. Total : mille cinq cents francs CFA. Monnaie à rendre : cinq cents francs CFA.', 'vente hors connexion : jamais annoncée comme enregistrée sur le serveur');
 eq(/enregistrée, mais l'impression/.test(V.phrase('pos.print.failed', {})), true, 'échec impression');
 eq(V.phrase('inconnu', {}), null, 'événement inconnu non lu');
 

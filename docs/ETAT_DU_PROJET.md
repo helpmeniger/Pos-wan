@@ -1,4 +1,4 @@
-# État du projet — version 2.10.0 (POS Marwa)
+# État du projet — version 2.11.0 (POS Marwa)
 
 ## Terminé et vérifié
 
@@ -10,6 +10,7 @@
 | Caisse : recherche, scan, catégories, quantités rapides, conditionnements, gros, promo | ✅ | Tests + navigation Chromium |
 | Paiements multiples / mixtes, monnaie, crédit avec plafond, autorisation superviseur | ✅ | Tests |
 | Mise en attente / reprise, tickets 58/80 mm, facture A4, réimpression DUPLICATA | ✅ | Tests + rendu |
+| **v2.11** Caisse hors connexion : catalogue local, ventes gardées, envoi automatique, ventes refusées, alerte à la fermeture | ✅ | Tests PHP + Chromium avec coupure réseau simulée (32/32 : réouverture sans connexion, refus « caisse fermée », reprise, suppression confirmée, deux onglets, aucun doublon). **Non testé sur o2switch réel ni sur une vraie coupure 4G** |
 | Retours (partiels, avoir, remise en stock), annulations contre-passées | ✅ | Tests |
 | Articles : CRUD, archivage, photos sécurisées, import/export CSV, étiquettes, EAN internes, prix groupés, historique, doublons | ✅ | Tests |
 | Stocks : mouvements, ajustements, transferts, inventaires, lots/FEFO, rappels, traçabilité | ✅ | Tests (dont cohérence stock = Σ mouvements = Σ lots) |
@@ -74,7 +75,7 @@
 | **v2.8** Banques et coffres : comptes, versements des clôtures, dépôts, retraits, virements, annulations, relevés, reçus | ✅ | Tests PHP (soldes, plafonds, annulations, droits) + Chromium |
 | **v2.8** Pressing : écran des dépôts en cours + affichage clients | ✅ | Tests PHP + Chromium (avancement, aucune donnée personnelle côté clients) |
 | **v2.8** Assistance automatique (agent sur chaque poste) | ✅ fonctionnel, ⚠️ à valider sur place | Agent exécuté par PowerShell 7 contre POS Marwa, RustDesk simulé (11/11 + coupure de sécurité). **Non exécuté sur un vrai Windows** |
-**Résultat de la suite de tests : 133 réussis, 0 échec** (`php tests/run.php`), plus 15 vérifications JavaScript du moteur de comptage (`node tests/js/track.test.js`).
+**Résultat de la suite de tests : 136 réussis, 0 échec** (`php tests/run.php`), plus 15 vérifications JavaScript du moteur de comptage (`node tests/js/track.test.js`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 
@@ -92,7 +93,7 @@
 | Clinique : résultats de laboratoire / imagerie, facturation électronique aux assurances | Examens facturés comme actes ; montants dus par organisme dans le rapport | Module laboratoire |
 | Clinique : certification logiciel médical | Non certifié : outil de gestion, seuils d'alerte indicatifs | — |
 | Protection anti-copie | Clé signée liée à l'installation + lecture seule ; code PHP lisible, donc contournable par un informaticien | Encodage ionCube / SourceGuardian (payant) |
-| Mode hors ligne (coupure du serveur local) | Le panier en cours est conservé dans le navigateur, mais la vente nécessite le serveur | File d'attente locale synchronisée |
+| Mode hors ligne : pages autres que la caisse | Stocks, achats, rapports, clients, modules exigent la connexion ; hors ligne, la caisse ne peut ni chercher/créer un client, ni mettre en attente, ni faire autoriser par un responsable ; stock affiché sans les ventes des autres caisses | — |
 | Traductions | Générées et contrôlées automatiquement, non relues par des locuteurs natifs (haoussa en priorité) ; certains messages dynamiques restent en français | Relecture ; ajout des textes manquants dans `lang/<code>.php` |
 | Devise | Changement d'affichage uniquement : aucun taux de change, montants existants non convertis | — |
 | Restaurant : modificateurs payants (suppléments), menus/formules à prix fixe, réservations | Notes libres ; suppléments à saisir comme articles | Options d'articles et réservations |
