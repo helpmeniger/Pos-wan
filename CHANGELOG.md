@@ -19,6 +19,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [
   - hôte proposé par défaut : `localhost` ; durée d'exécution portée à 5 minutes.
 - Les mots de passe saisis ne sont plus gardés dans la session après un formulaire refusé.
 - `bin/install.php` : mêmes vérifications et messages en ligne de commande.
+- `bin/tables-sql.php` : fichier SQL unique (tables, permissions, rôles, sans compte) à importer dans
+  phpMyAdmin quand l'assistant ne peut pas créer les tables ; l'assistant crée ensuite l'administrateur.
 
 ## [2.11.0] — 2026-10-26
 

@@ -219,6 +219,24 @@ personne qui y arriverait avant vous pourrait créer le compte administrateur. D
 
 Dans les deux cas, **ne cochez pas les données de démonstration** pour une boutique réelle.
 
+### Méthode C — créer les tables à la main dans phpMyAdmin, puis l'assistant
+
+À utiliser si l'assistant ne peut pas créer les tables lui-même.
+1. Fichier à importer : `pos-marwa-<version>-tables.sql`, fourni avec la version ou produit sur
+   votre PC par `php bin/tables-sql.php > pos-marwa-tables.sql`. Il contient les tables, les
+   permissions et les rôles, **aucun compte ni mot de passe**.
+2. cPanel → **phpMyAdmin** → cliquez sur votre base (`moncompte_posmarwa`) dans la colonne de gauche.
+   La base doit être **vide**.
+3. Onglet **Importer** → **Choisir un fichier** → le fichier `.sql` → jeu de caractères `utf-8` →
+   **Importer** (bouton en bas). Message attendu : « L'importation a réussi ». La base compte alors
+   environ 60 tables.
+4. Ouvrez `https://caisse.votredomaine.com/install` : saisissez la base, le nom de votre commerce et
+   l'administrateur. L'assistant reconnaît les tables déjà présentes et crée seulement la boutique, la
+   caisse, les réglages et le compte administrateur.
+
+Si phpMyAdmin affiche « #1050 Table … already exists » ou « #1060 Duplicate column », la base
+n'était pas vide (import déjà fait) : passez directement à l'étape 4.
+
 ### Si l'assistant n'arrive pas à créer les tables
 
 L'assistant vérifie la base **avant** d'écrire quoi que ce soit et affiche la cause exacte. Corrigez,
