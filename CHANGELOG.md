@@ -2,6 +2,24 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.11.1] — 2026-10-27
+
+### Corrigé
+- **Assistant d'installation** (`/install`) : après une erreur de connexion à la base, le `.env` était
+  déjà écrit avec les paramètres erronés et les champs de la base étaient masqués : impossible de
+  corriger depuis la fenêtre. Désormais :
+  - le `.env` n'est écrit (ou ses seules lignes `DB_*` corrigées) qu'après une connexion réussie et une
+    vérification des droits (création, modification, index, suppression d'une table d'essai) ;
+  - les champs de la base restent affichés et modifiables tant que l'installation n'est pas terminée ;
+  - message précis selon l'erreur MySQL (1049 base inconnue / préfixe cPanel, 1045 accès refusé,
+    1044-1142 droits, 2002 hôte) avec le détail MySQL, au lieu d'un message unique ;
+  - base contenant les tables d'une autre application : refusée, sans rien modifier ;
+  - installation interrompue : reprise (tables, colonnes et index déjà créés ignorés) ;
+  - base POS Marwa existante (fichiers réinstallés) : données conservées, sauvegarde, structure mise à jour ;
+  - hôte proposé par défaut : `localhost` ; durée d'exécution portée à 5 minutes.
+- Les mots de passe saisis ne sont plus gardés dans la session après un formulaire refusé.
+- `bin/install.php` : mêmes vérifications et messages en ligne de commande.
+
 ## [2.11.0] — 2026-10-26
 
 ### Ajouté

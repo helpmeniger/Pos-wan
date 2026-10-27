@@ -58,7 +58,7 @@ Les variables `ASSIST_HOST` et `ASSIST_KEY` (assistance à distance) contiennent
 
 ## 2. Préparer l'archive à envoyer (sur votre PC)
 
-1. **Utilisez l'archive d'hébergement** (`pos-marwa-2.11.0-o2switch.zip`), produite avec `git archive`.
+1. **Utilisez l'archive d'hébergement** (`pos-marwa-2.11.1-o2switch.zip`), produite avec `git archive`.
    - Elle **exclut** `outils-auteur/` : le générateur de licences ne part jamais chez un client ni sur un
      serveur.
    - Elle ne contient **aucun** fichier `.env`, aucune base, aucune sauvegarde, aucun journal, aucune
@@ -70,8 +70,8 @@ Les variables `ASSIST_HOST` et `ASSIST_KEY` (assistance à distance) contiennent
    votre dépôt.
 3. Vérifiez l'empreinte de l'archive :
    ```
-   sha256sum pos-marwa-2.11.0-o2switch.zip      (Linux / macOS)
-   certutil -hashfile pos-marwa-2.11.0-o2switch.zip SHA256      (Windows)
+   sha256sum pos-marwa-2.11.1-o2switch.zip      (Linux / macOS)
+   certutil -hashfile pos-marwa-2.11.1-o2switch.zip SHA256      (Windows)
    ```
    Le résultat doit être identique à celui du fichier `.sha256`.
 
@@ -113,7 +113,7 @@ Si vous ne pouvez vraiment pas changer la racine, le `.htaccess` à la racine du
 ## 5. Envoyer et décompresser les fichiers
 
 1. Dans **Gestionnaire de fichiers**, allez dans `/home/VOTRE_COMPTE/`.
-2. Envoyez `pos-marwa-2.11.0-o2switch.zip`, puis **Extraire**.
+2. Envoyez `pos-marwa-2.11.1-o2switch.zip`, puis **Extraire**.
 3. L'archive contient un dossier `pos-marwa/`. Renommez-le `posmarwa` (ou adaptez l'étape 4).
 4. Vérifiez la structure : `/home/VOTRE_COMPTE/posmarwa/public/index.php` doit exister.
 5. Supprimez le fichier ZIP du serveur.
@@ -218,6 +218,29 @@ personne qui y arriverait avant vous pourrait créer le compte administrateur. D
    fichier à **600**.
 
 Dans les deux cas, **ne cochez pas les données de démonstration** pour une boutique réelle.
+
+### Si l'assistant n'arrive pas à créer les tables
+
+L'assistant vérifie la base **avant** d'écrire quoi que ce soit et affiche la cause exacte. Corrigez,
+puis cliquez de nouveau sur « Installer » dans la même fenêtre (les champs de la base restent
+modifiables, même si un `.env` existe déjà) :
+
+| Message affiché | Cause | Correction |
+|---|---|---|
+| « La base … n'existe pas » | Nom saisi sans le préfixe o2switch | Saisir le nom complet : `moncompte_posmarwa` |
+| « Utilisateur ou mot de passe de la base refusé » | Utilisateur sans préfixe, ou mot de passe différent | Nom complet de l'utilisateur ; au besoin, changer son mot de passe dans cPanel et le ressaisir |
+| « L'utilisateur n'a pas les droits nécessaires » | Utilisateur non relié à la base | cPanel → Bases de données MySQL → « Ajouter un utilisateur à une base de données » → **TOUS LES PRIVILÈGES** |
+| « Serveur MySQL injoignable » | Mauvais hôte | Hôte `localhost` |
+| « contient déjà … table(s) d'une autre application » | Base déjà utilisée (WordPress…) | Créer une nouvelle base vide (rien n'est modifié dans l'autre) |
+| « Mot de passe … guillemet » | `"` dans le mot de passe MySQL | Choisir un autre mot de passe dans cPanel |
+
+Une installation **interrompue** (fenêtre fermée, coupure) reprend où elle s'est arrêtée : les tables
+déjà créées sont conservées. Si la base contient déjà une installation complète de POS Marwa (fichiers
+réinstallés), ses données sont gardées, une sauvegarde est faite, et l'assistant se ferme.
+
+**Version 2.11.0 seulement** : après une erreur de connexion, l'assistant gardait un `.env` erroné et
+masquait les champs de la base. Remplacez les fichiers par l'archive 2.11.1, ou supprimez le fichier
+`posmarwa/.env` dans le Gestionnaire de fichiers, puis recommencez.
 
 ---
 

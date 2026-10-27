@@ -76,9 +76,70 @@ final class InstallService
         // Retire les commentaires de ligne puis découpe sur « ; » en fin de ligne
         $sql = preg_replace('/^\s*--.*$/m', '', $sql);
         foreach (preg_split('/;\s*$/m', $sql) ?: [] as $stmt) {
-            if (trim($stmt) !== '') {
-                DB::connection()->exec($stmt);
+            if (trim($stmt) === '') {
+                continue;
             }
+            try {
+                DB::connection()->exec($stmt);
+            } catch (\PDOException $e) {
+                // Reprise après une installation ou une mise à jour interrompue : table, colonne ou
+                // index déjà créés par l'essai précédent (MySQL n'a pas « ADD COLUMN IF NOT EXISTS »).
+                if (!in_array((int) ($e->errorInfo[1] ?? 0), [1050, 1060, 1061], true)) {
+                    throw $e;
+                }
+                \App\Core\Logger::info('Déjà en place, ignoré : ' . mb_substr(trim($stmt), 0, 120));
+            }
+        }
+    }
+
+    /**
+     * Vérifie la base AVANT toute écriture : connexion, droits de création, et refus d'une base
+     * qui contient les tables d'une autre application (rien n'y est modifié).
+     */
+    public static function checkDatabase(): void
+    {
+        $pdo = DB::connection();
+        $name = (string) DB::value('SELECT DATABASE()');
+        $tables = array_values(array_diff(array_column(DB::all('SELECT TABLE_NAME AS t FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()'), 't'), ['pm_install_test']));
+        if ($tables && !in_array('schema_migrations', $tables, true)) {
+            throw new BusinessException(sprintf('La base « %s » contient déjà %d table(s) d\'une autre application (%s…). POS Marwa doit être installé dans une base vide : créez une nouvelle base dans cPanel. Aucune table n\'a été modifiée.', $name, count($tables), implode(', ', array_slice($tables, 0, 3))));
+        }
+        $pdo->exec('CREATE TABLE IF NOT EXISTS pm_install_test (id INT UNSIGNED NOT NULL PRIMARY KEY) ENGINE=InnoDB');
+        try {
+            $pdo->exec('ALTER TABLE pm_install_test ADD COLUMN v INT NULL, ADD INDEX idx_v (v)');
+        } catch (\PDOException $e) {
+            if (!in_array((int) ($e->errorInfo[1] ?? 0), [1060, 1061], true)) {
+                throw $e;
+            }
+        }
+        $pdo->exec('DROP TABLE pm_install_test');
+    }
+
+    /** Message clair, en français, pour une erreur MySQL rencontrée pendant l'installation. */
+    public static function explainDbError(\PDOException $e, string $db): string
+    {
+        $code = (int) ($e->errorInfo[1] ?? 0);
+        if (!$code && preg_match('/\[(\d{4})\]/', $e->getMessage(), $m)) {
+            $code = (int) $m[1];
+        }
+        $detail = trim((string) preg_replace('/^SQLSTATE\[\w+\]:?\s*(\[\d+\]\s*)?([^:\[]*:\s*\d{4}\s+)?/', '', $e->getMessage()));
+        $msg = match (true) {
+            $code === 1045 => 'Utilisateur ou mot de passe de la base refusé. Dans cPanel → « Bases de données MySQL », vérifiez le nom COMPLET de l\'utilisateur (ex. moncompte_posmarwa) ; en cas de doute, changez son mot de passe et saisissez-le de nouveau ici.',
+            in_array($code, [1044, 1142, 1227], true) => 'L\'utilisateur n\'a pas les droits nécessaires sur la base « ' . $db . ' ». Dans cPanel → « Bases de données MySQL » → « Ajouter un utilisateur à une base de données », choisissez l\'utilisateur et la base, puis cochez « TOUS LES PRIVILÈGES ».',
+            $code === 1049 => 'La base « ' . $db . ' » n\'existe pas. Créez-la dans cPanel ; sur o2switch son nom complet commence par votre identifiant cPanel (ex. moncompte_posmarwa) : saisissez ce nom complet.',
+            in_array($code, [2002, 2003, 2005, 2006], true) => 'Serveur MySQL injoignable avec l\'hôte indiqué. Sur o2switch (et WampServer), l\'hôte est « localhost ».',
+            default => 'Erreur MySQL' . ($code ? ' n° ' . $code : '') . ' pendant l\'installation. Les tables déjà créées sont conservées : corrigez la cause puis cliquez de nouveau sur « Installer », l\'installation reprendra où elle s\'est arrêtée.',
+        };
+        return $msg . ($detail !== '' ? ' — Détail MySQL : ' . mb_substr($detail, 0, 300) : '');
+    }
+
+    /** Nombre d'utilisateurs d'une installation POS Marwa déjà présente dans la base (0 sinon). */
+    public static function existingUsers(): int
+    {
+        try {
+            return (int) DB::value('SELECT COUNT(*) FROM users');
+        } catch (\PDOException) {
+            return 0;
         }
     }
 
@@ -172,10 +233,24 @@ final class InstallService
      * Installation complète.
      * @param array $d {company, business_type, admin_username, admin_name, admin_password, store_name, demo(bool)}
      */
-    public static function install(array $d): void
+    public static function install(array $d): string
     {
         if (self::isInstalled()) {
             throw new BusinessException('POS Marwa est déjà installé.');
+        }
+        self::checkDatabase();
+        // Base contenant déjà POS Marwa (installation précédente terminée, ou fichiers réinstallés) :
+        // rien n'est effacé ; sauvegarde, mise à jour de la structure, puis fermeture de l'assistant.
+        if (self::existingUsers() > 0) {
+            try {
+                BackupService::create('avant_reprise_installation');
+            } catch (\Throwable $e) {
+                throw new BusinessException('Cette base contient déjà POS Marwa, mais la sauvegarde de sécurité a échoué (' . $e->getMessage() . ') : rien n\'a été modifié. Vérifiez que storage/ est inscriptible.');
+            }
+            self::migrate();
+            file_put_contents(self::lockFile(), date('c') . "\n");
+            \App\Core\Audit::log('system.install_resume', null, null, ['users' => self::existingUsers()], null);
+            return 'existing';
         }
         if ($err = Auth::passwordPolicyError((string) $d['admin_password'], (string) $d['admin_username'])) {
             throw new BusinessException($err);
@@ -222,5 +297,6 @@ final class InstallService
         }
         file_put_contents(self::lockFile(), date('c') . "\n");
         \App\Core\Audit::log('system.install', null, null, ['business_type' => $d['business_type'], 'demo' => !empty($d['demo'])], null);
+        return 'new';
     }
 }

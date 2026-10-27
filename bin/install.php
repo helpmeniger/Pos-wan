@@ -23,13 +23,23 @@ if (!is_file(BASE_PATH . '/.env')) {
     fwrite(STDERR, "Fichier .env absent : copiez .env.example en .env et renseignez la base de données.\n");
     exit(1);
 }
-InstallService::install([
-    'company' => $o['company'] ?? 'Mon commerce',
-    'business_type' => $o['type'] ?? 'alimentation',
-    'admin_username' => $o['user'] ?? 'admin',
-    'admin_name' => $o['name'] ?? 'Administrateur',
-    'admin_password' => $pwd,
-    'store_name' => $o['store'] ?? '',
-    'demo' => isset($o['demo']),
-]);
-echo "POS Marwa installé avec succès.\n";
+try {
+    $result = InstallService::install([
+        'company' => $o['company'] ?? 'Mon commerce',
+        'business_type' => $o['type'] ?? 'alimentation',
+        'admin_username' => $o['user'] ?? 'admin',
+        'admin_name' => $o['name'] ?? 'Administrateur',
+        'admin_password' => $pwd,
+        'store_name' => $o['store'] ?? '',
+        'demo' => isset($o['demo']),
+    ]);
+} catch (\PDOException $e) {
+    fwrite(STDERR, InstallService::explainDbError($e, (string) config('database.database')) . "\n");
+    exit(1);
+} catch (\App\Core\BusinessException $e) {
+    fwrite(STDERR, $e->getMessage() . "\n");
+    exit(1);
+}
+echo $result === 'existing'
+    ? "Base POS Marwa existante conservée (sauvegarde dans storage/backups), structure mise à jour.\n"
+    : "POS Marwa installé avec succès.\n";

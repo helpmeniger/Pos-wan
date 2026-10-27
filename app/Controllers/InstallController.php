@@ -50,6 +50,8 @@ final class InstallController extends Controller
     public function submit(): void
     {
         $this->guard();
+        @set_time_limit(300);
+        ignore_user_abort(true); // une fenêtre fermée pendant la création des tables n'interrompt pas l'installation
         $data = [
             'company' => Request::str('company'),
             'business_type' => Request::str('business_type'),
@@ -69,46 +71,98 @@ final class InstallController extends Controller
             if ($data['admin_password'] !== (string) Request::input('admin_password_confirm', '')) {
                 throw new BusinessException('La confirmation du mot de passe ne correspond pas.');
             }
-            if (!is_file(BASE_PATH . '/.env')) {
-                $this->writeEnv();
-            }
-            DB::connection(); // vérifie l'accès à la base
-            InstallService::install($data);
+            $this->configureDatabase();
+            $result = InstallService::install($data);
         } catch (BusinessException $e) {
             $this->fail($e->getMessage(), '/install');
         } catch (\PDOException $e) {
             \App\Core\Logger::error('Installation : ' . $e->getMessage());
-            $this->fail('Connexion à la base impossible : vérifiez l\'hôte, le nom de la base (créée au préalable), l\'utilisateur et le mot de passe.', '/install');
+            $this->fail(InstallService::explainDbError($e, (string) config('database.database')), '/install');
         }
-        flash('success', 'Installation terminée. Connectez-vous avec le compte administrateur créé.');
+        flash('success', $result === 'existing'
+            ? 'Cette base contenait déjà POS Marwa : ses données sont conservées (sauvegarde faite dans storage/backups). Connectez-vous avec un compte existant.'
+            : 'Installation terminée. Connectez-vous avec le compte administrateur créé.');
         redirect('/login');
     }
 
-    private function writeEnv(): void
+    /**
+     * Paramètres de la base : ceux saisis dans le formulaire (corrigent un .env existant) ou,
+     * champs laissés vides, ceux du .env. Le .env n'est écrit qu'APRÈS une connexion réussie
+     * et une vérification des droits : une erreur de saisie ne bloque plus l'assistant.
+     */
+    private function configureDatabase(): void
     {
-        $host = Request::str('db_host', '127.0.0.1');
-        $port = (string) max(1, Request::int('db_port', 3306));
-        $name = Request::str('db_name', 'poswan');
-        $user = Request::str('db_user');
-        $pass = (string) Request::input('db_pass', '');
-        foreach ([$host, $name, $user] as $v) {
-            if (!preg_match('/^[A-Za-z0-9._-]+$/', $v)) {
-                throw new BusinessException('Paramètres de base de données invalides.');
+        $hasEnv = is_file(BASE_PATH . '/.env');
+        $typed = Request::str('db_name') !== '' || Request::str('db_user') !== '';
+        if (!$typed && !$hasEnv) {
+            throw new BusinessException('Renseignez la base de données : nom, utilisateur et mot de passe créés dans cPanel (ou phpMyAdmin).');
+        }
+        if ($typed) {
+            $host = Request::str('db_host') ?: 'localhost';
+            $port = (string) max(1, Request::int('db_port', 3306));
+            $name = Request::str('db_name');
+            $user = Request::str('db_user');
+            $pass = (string) Request::input('db_pass', '');
+            if ($pass === '' && $hasEnv) {
+                $pass = (string) Env::get('DB_PASSWORD', ''); // champ vide : mot de passe du .env conservé
             }
+            foreach (['hôte' => $host, 'nom de la base' => $name, 'utilisateur' => $user] as $label => $v) {
+                if (!preg_match('/^[A-Za-z0-9._-]+$/', $v)) {
+                    throw new BusinessException("Paramètre de base de données invalide ($label) : lettres, chiffres, point, tiret et souligné uniquement.");
+                }
+            }
+            if (preg_match('/[\r\n"]/', $pass)) {
+                throw new BusinessException('Le mot de passe de la base contient un guillemet ou un retour à la ligne : choisissez-en un autre dans cPanel.');
+            }
+            foreach (['DB_HOST' => $host, 'DB_PORT' => $port, 'DB_DATABASE' => $name, 'DB_USERNAME' => $user, 'DB_PASSWORD' => $pass] as $k => $v) {
+                Env::set($k, $v);
+            }
+            \App\Core\Config::load(BASE_PATH . '/config');
+            DB::setConnection(null);
         }
-        if (preg_match('/[\r\n"]/', $pass)) {
-            throw new BusinessException('Le mot de passe de la base contient des caractères non pris en charge.');
+        InstallService::checkDatabase(); // connexion, droits, base vide ou installation interrompue
+        if ($typed) {
+            $this->saveEnv([
+                'DB_HOST' => $host, 'DB_PORT' => $port, 'DB_DATABASE' => $name, 'DB_USERNAME' => $user, 'DB_PASSWORD' => '"' . $pass . '"',
+            ]);
         }
-        $key = bin2hex(random_bytes(32));
-        $env = "APP_ENV=production\nAPP_DEBUG=false\nAPP_KEY={$key}\nAPP_BASE_URL=\nAPP_TIMEZONE=Africa/Niamey\n\nDB_HOST={$host}\nDB_PORT={$port}\nDB_DATABASE={$name}\nDB_USERNAME={$user}\nDB_PASSWORD=\"{$pass}\"\n\nSESSION_IDLE_MINUTES=30\nSESSION_MAX_HOURS=12\nSESSION_SECURE=false\n";
-        if (file_put_contents(BASE_PATH . '/.env', $env, LOCK_EX) === false) {
-            throw new BusinessException('Impossible d\'écrire le fichier .env : vérifiez les droits du dossier.');
+    }
+
+    /** Crée le .env, ou n'y remplace que les lignes de la base (les autres réglages sont conservés). */
+    private function saveEnv(array $db): void
+    {
+        $file = BASE_PATH . '/.env';
+        if (is_file($file)) {
+            $lines = file($file, FILE_IGNORE_NEW_LINES) ?: [];
+            foreach ($db as $k => $v) {
+                $found = false;
+                foreach ($lines as $i => $line) {
+                    if (preg_match('/^\s*' . $k . '\s*=/', $line)) {
+                        $lines[$i] = "$k=$v";
+                        $found = true;
+                    }
+                }
+                if (!$found) {
+                    $lines[] = "$k=$v";
+                }
+            }
+            if (!preg_match('/^\s*APP_KEY\s*=\s*\S{32,}/m', implode("\n", $lines))) {
+                $lines = array_values(array_filter($lines, fn($l) => !preg_match('/^\s*APP_KEY\s*=/', $l)));
+                $key = bin2hex(random_bytes(32));
+                array_unshift($lines, "APP_KEY=$key");
+                Env::set('APP_KEY', $key);
+            }
+            $env = implode("\n", $lines) . "\n";
+        } else {
+            $key = bin2hex(random_bytes(32));
+            Env::set('APP_KEY', $key);
+            $env = "APP_ENV=production\nAPP_DEBUG=false\nAPP_KEY={$key}\nAPP_BASE_URL=\nAPP_TIMEZONE=Africa/Niamey\n\n"
+                . "DB_HOST={$db['DB_HOST']}\nDB_PORT={$db['DB_PORT']}\nDB_DATABASE={$db['DB_DATABASE']}\nDB_USERNAME={$db['DB_USERNAME']}\nDB_PASSWORD={$db['DB_PASSWORD']}\n\n"
+                . "SESSION_IDLE_MINUTES=30\nSESSION_MAX_HOURS=12\nSESSION_SECURE=false\n";
         }
-        @chmod(BASE_PATH . '/.env', 0640);
-        foreach (['DB_HOST' => $host, 'DB_PORT' => $port, 'DB_DATABASE' => $name, 'DB_USERNAME' => $user, 'DB_PASSWORD' => $pass, 'APP_KEY' => $key] as $k => $v) {
-            Env::set($k, $v);
+        if (file_put_contents($file, $env, LOCK_EX) === false) {
+            throw new BusinessException('Connexion à la base réussie, mais impossible d\'écrire le fichier .env : vérifiez les droits du dossier du logiciel (755).');
         }
-        \App\Core\Config::load(BASE_PATH . '/config');
-        DB::setConnection(null);
+        @chmod($file, 0640);
     }
 }

@@ -30,7 +30,7 @@ abstract class Controller
     protected function withOld(): void
     {
         $old = $_POST;
-        unset($old['_csrf'], $old['password'], $old['password_confirm'], $old['pin'], $old['current_password']);
+        unset($old['_csrf'], $old['password'], $old['password_confirm'], $old['pin'], $old['current_password'], $old['db_pass'], $old['admin_password'], $old['admin_password_confirm']);
         Session::set('_old', $old);
     }
 

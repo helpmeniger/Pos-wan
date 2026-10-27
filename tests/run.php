@@ -4181,6 +4181,42 @@ test('Module Hôtel (HTTP) : écrans, plan des chambres, formulaires, droits, mo
     ok(!S\BusinessMode::hides('/hotel') || !in_array($before, ['commerce', 'restaurant'], true), 'commerce et restaurant : menus de l\'hôtel visibles (hôtel avec bar ou restaurant)');
 });
 
+test('Installation : messages MySQL clairs, base d\'une autre application refusée, reprise sans perte', function () use ($env) {
+    $err = function (int $code, string $msg) { $e = new PDOException($msg); $e->errorInfo = ['HY000', $code, $msg]; return $e; };
+    ok(str_contains(S\InstallService::explainDbError(new PDOException("SQLSTATE[HY000] [1049] Unknown database 'posmarwa'"), 'posmarwa'), 'moncompte_posmarwa'), '1049 : nom complet avec le préfixe cPanel');
+    ok(str_contains(S\InstallService::explainDbError(new PDOException("SQLSTATE[HY000] [1045] Access denied for user 'x'@'localhost' (using password: YES)"), 'b'), 'mot de passe de la base refusé'), '1045 : utilisateur ou mot de passe');
+    ok(str_contains(S\InstallService::explainDbError($err(1142, 'SQLSTATE[42000]: Syntax error or access violation: 1142 CREATE command denied'), 'b'), 'TOUS LES PRIVILÈGES'), '1142 : droits à accorder dans cPanel');
+    ok(str_contains(S\InstallService::explainDbError(new PDOException('SQLSTATE[HY000] [2002] Connection refused'), 'b'), 'localhost'), '2002 : hôte');
+    // Migration rejouée (installation interrompue) : colonnes et index déjà présents ignorés
+    S\InstallService::runSqlFile(BASE_PATH . '/database/migrations/0002_restaurant.sql');
+    ok(true, 'migration rejouée sans erreur (colonnes déjà créées)');
+    S\InstallService::checkDatabase();
+    ok(!DB::value("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pm_install_test'"), 'vérification des droits sans table laissée');
+    // Base d'une autre application : refusée, rien de modifié
+    $main = DB::connection();
+    $main->exec('DROP DATABASE IF EXISTS poswan_test_autre');
+    $main->exec('CREATE DATABASE poswan_test_autre');
+    $main->exec('CREATE TABLE poswan_test_autre.wp_posts (id INT)');
+    DB::setConnection(new PDO("mysql:host={$env['DB_HOST']};dbname=poswan_test_autre;charset=utf8mb4", $env['DB_USERNAME'], $env['DB_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]));
+    throws(fn() => S\InstallService::checkDatabase(), 'autre application');
+    eq(['wp_posts'], array_column(DB::all('SHOW TABLES'), 'Tables_in_poswan_test_autre'), 'tables de l\'autre application intactes');
+    DB::setConnection($main);
+    $main->exec('DROP DATABASE poswan_test_autre');
+    // Fichiers réinstallés sur une base POS Marwa existante : données conservées, sauvegarde faite
+    $sales = (int) DB::value('SELECT COUNT(*) FROM sales');
+    rename(S\InstallService::lockFile(), S\InstallService::lockFile() . '.reprise');
+    try {
+        $r = S\InstallService::install(['company' => 'Autre', 'business_type' => 'boutique', 'admin_username' => 'nouveau', 'admin_name' => '', 'admin_password' => 'Nouveau-2026-xx', 'store_name' => '', 'demo' => false]);
+    } finally {
+        @unlink(S\InstallService::lockFile());
+        rename(S\InstallService::lockFile() . '.reprise', S\InstallService::lockFile());
+    }
+    eq('existing', $r);
+    eq($sales, (int) DB::value('SELECT COUNT(*) FROM sales'), 'ventes conservées');
+    eq(null, DB::value("SELECT id FROM users WHERE username = 'nouveau'"), 'aucun compte ajouté');
+    ok((bool) glob(STORAGE_PATH . '/backups/*avant_reprise_installation*.sql.gz'), 'sauvegarde avant reprise');
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

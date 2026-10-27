@@ -14,17 +14,16 @@
     </ul>
     <form method="post" action="<?= e(url('/install')) ?>" autocomplete="off">
       <?= csrf_field() ?>
-      <?php if (!$hasEnv): ?>
       <h2 class="h6">2. Base de données MySQL / MariaDB</h2>
-      <p class="small text-secondary">Créez d'abord la base (ex. <code>poswan</code>, interclassement utf8mb4_unicode_ci) et un utilisateur dédié dans phpMyAdmin. N'utilisez pas le compte <code>root</code> sans mot de passe.</p>
+      <p class="small text-secondary">Créez d'abord la base <b>vide</b> et un utilisateur dédié (cPanel → « Bases de données MySQL », ou phpMyAdmin), puis donnez à l'utilisateur <b>tous les privilèges</b> sur cette base. Sur o2switch, l'hôte est <code>localhost</code> et les noms complets commencent par votre identifiant cPanel (ex. <code>moncompte_posmarwa</code>). N'utilisez pas le compte <code>root</code> sans mot de passe.</p>
+      <?php if ($hasEnv): ?><div class="alert alert-info small">Un fichier <code>.env</code> existe déjà. Laissez ces champs vides pour utiliser ses paramètres, ou remplissez-les pour les corriger (mot de passe vide : celui du <code>.env</code> est conservé). Le fichier n'est modifié qu'après une connexion réussie.</div><?php endif; ?>
       <div class="row g-2 mb-3">
-        <div class="col-md-4"><label class="form-label">Hôte</label><input name="db_host" class="form-control" value="127.0.0.1" required></div>
-        <div class="col-md-2"><label class="form-label">Port</label><input name="db_port" class="form-control" value="3306" required></div>
-        <div class="col-md-6"><label class="form-label">Nom de la base</label><input name="db_name" class="form-control" value="poswan" required></div>
-        <div class="col-md-6"><label class="form-label">Utilisateur</label><input name="db_user" class="form-control" required></div>
-        <div class="col-md-6"><label class="form-label">Mot de passe</label><input type="password" name="db_pass" class="form-control"></div>
+        <div class="col-md-4"><label class="form-label">Hôte</label><input name="db_host" class="form-control" value="<?= e(App\Core\Session::old('db_host', 'localhost')) ?>" <?= $hasEnv ? '' : 'required' ?>></div>
+        <div class="col-md-2"><label class="form-label">Port</label><input name="db_port" class="form-control" value="<?= e(App\Core\Session::old('db_port', '3306')) ?>"></div>
+        <div class="col-md-6"><label class="form-label">Nom complet de la base</label><input name="db_name" class="form-control" value="<?= e(App\Core\Session::old('db_name')) ?>" placeholder="moncompte_posmarwa" <?= $hasEnv ? '' : 'required' ?>></div>
+        <div class="col-md-6"><label class="form-label">Utilisateur complet</label><input name="db_user" class="form-control" value="<?= e(App\Core\Session::old('db_user')) ?>" placeholder="moncompte_posmarwa" <?= $hasEnv ? '' : 'required' ?>></div>
+        <div class="col-md-6"><label class="form-label">Mot de passe</label><input type="password" name="db_pass" class="form-control" autocomplete="new-password"></div>
       </div>
-      <?php else: ?><div class="alert alert-info small">Le fichier <code>.env</code> existe : ses paramètres de base de données seront utilisés.</div><?php endif; ?>
       <h2 class="h6">3. Votre commerce</h2>
       <div class="row g-2 mb-3">
         <div class="col-md-6"><label class="form-label required">Nom commercial</label><input name="company" class="form-control" required maxlength="150" value="<?= e(App\Core\Session::old('company')) ?>"></div>
