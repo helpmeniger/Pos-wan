@@ -2,6 +2,14 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.11.2] — 2026-10-28
+
+### Ajouté
+- **Pressing 1.3.0 : articles au kilo.** Unité par article (à la pièce ou au kilo, prix par kg),
+  poids saisi avec virgule au dépôt (4,5 kg), article fourni « Linge au kilo », poids total sur
+  la fiche, le ticket, les étiquettes, les listes, l'écran de l'atelier et le rapport, retrait
+  partiel au poids. Les articles à la pièce restent en nombre entier. Migration automatique.
+
 ## [2.11.1] — 2026-10-27
 
 ### Corrigé

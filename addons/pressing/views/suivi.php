@@ -17,7 +17,7 @@
     <td><a href="<?= e(url('/pressing/client', ['phone' => $o['phone']])) ?>"><?= e($o['customer_name']) ?></a></td>
     <td class="text-nowrap"><a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $o['phone'])) ?>"><?= e($o['phone']) ?></a></td>
     <td style="max-width:260px"><?= e($o['clothes'] ?? '') ?></td>
-    <td class="num"><?= (int) $o['pieces'] ?></td>
+    <td class="num"><?= (int) $o['pieces'] ?><?= (float) ($o['weight'] ?? 0) > 0 ? '<br><small class="text-secondary">' . e(PS::qty($o['weight'], 'kg')) . '</small>' : '' ?></td>
     <td class="text-nowrap"><?= e(fdate($o['created_at'])) ?></td>
     <td class="text-nowrap"><?= e(fdate($o['due_date'], false)) ?></td>
     <td class="num"><?= money($o['total']) ?></td>

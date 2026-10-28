@@ -1,10 +1,10 @@
 {
     "code": "pressing",
     "name": "Pressing",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "requires": "2.0.0",
     "author": "POS Marwa",
-    "description": "Gestion complète d'un pressing : tarifs par article et par service, dépôts avec étiquettes, express, acompte, suivi du traitement (reçu, en cours, prêt, retiré), retrait avec paiement du solde, relances des clients, rapport.",
+    "description": "Gestion complète d'un pressing : tarifs par article et par service (à la pièce ou au kilo), dépôts avec étiquettes, express, acompte, suivi du traitement (reçu, en cours, prêt, retiré), retrait avec paiement du solde, relances des clients, rapport.",
     "icon": "bi-basket2",
     "color": "#1f77b4",
     "permissions": {

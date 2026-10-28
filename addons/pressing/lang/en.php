@@ -13,4 +13,5 @@ return [
     'Annuler le dépôt' => 'Cancel drop-off', 'Reste à payer' => 'Balance due', 'Payé' => 'Paid', 'Déposé le' => 'Dropped off on', 'Prêt le' => 'Ready on', 'Retiré le' => 'Collected on',
     'DÉPÔT PRESSING' => 'DRY-CLEANING TICKET', 'Aucun dépôt.' => 'No orders.', 'Enregistrer les tarifs' => 'Save prices', 'Nouvel article' => 'New item',
     'Service non proposé pour cet article.' => 'Service not offered for this item.', 'Linge remis au client.' => 'Items handed over to the customer.',
+    'Poids' => 'Weight', 'par kg' => 'per kg', 'Poids en kg, ex. 4,5' => 'Weight in kg, e.g. 4.5', 'À la pièce' => 'Per item', 'Au kilo (kg)' => 'By weight (kg)',
 ];

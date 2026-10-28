@@ -424,6 +424,7 @@ Module fourni (`addons/pressing/`) : à installer depuis Modules complémentaire
 `addons/pressing/README.md`.
 
 **Caisse pressing** : nouveau dépôt, et retrait par numéro, téléphone ou scan du ticket.
+Articles **au kilo** (ex. « Linge au kilo ») : toucher l'article puis saisir le poids avec une virgule (4,5) ; le prix est calculé au kilo. L'unité de chaque article se règle dans Pressing → Tarifs.
 
 **Suivi des vêtements** :
 - filtres : en cours, en retard, retrait proche, prêts, impayés, retirés ;

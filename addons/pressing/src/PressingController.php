@@ -149,7 +149,7 @@ final class PressingController extends Controller
     {
         $phone = trim((string) Request::query('phone', ''));
         $digits = preg_replace('/\D/', '', $phone);
-        $orders = $digits !== '' ? DB::all("SELECT o.*, (SELECT GROUP_CONCAT(CONCAT(i.quantity, ' ', i.article_name) SEPARATOR ', ') FROM pressing_items i WHERE i.order_id = o.id) AS clothes
+        $orders = $digits !== '' ? DB::all("SELECT o.*, (SELECT " . PressingService::CLOTHES_SQL . " FROM pressing_items i WHERE i.order_id = o.id) AS clothes
                 FROM pressing_orders o WHERE REPLACE(REPLACE(REPLACE(o.phone, ' ', ''), '+', ''), '-', '') LIKE ? ORDER BY o.id DESC LIMIT 200", ['%' . substr((string) $digits, -8)]) : [];
         view('pressing::client', ['title' => 'Historique client', 'phone' => $phone, 'orders' => $orders]);
     }
@@ -175,7 +175,7 @@ final class PressingController extends Controller
             $where .= ' AND (o.number LIKE ? OR o.customer_name LIKE ? OR o.phone LIKE ?)';
             array_push($params, $like, $like, $like);
         }
-        $rows = DB::all("SELECT o.*, (SELECT GROUP_CONCAT(CONCAT(i.quantity, ' ', i.article_name) ORDER BY i.line_no SEPARATOR ', ') FROM pressing_items i WHERE i.order_id = o.id) AS clothes,
+        $rows = DB::all("SELECT o.*, (SELECT " . PressingService::CLOTHES_SQL . " FROM pressing_items i WHERE i.order_id = o.id) AS clothes,
                 (SELECT MAX(p.created_at) FROM pressing_payments p WHERE p.order_id = o.id) AS last_payment
                 FROM pressing_orders o WHERE $where ORDER BY FIELD(o.status, 'ready', 'partial', 'processing', 'received', 'delivered', 'cancelled'), o.due_date, o.id DESC LIMIT 1000", $params);
         $counts = [
@@ -224,11 +224,11 @@ final class PressingController extends Controller
     public function tarifsSave(): void
     {
         if (Request::str('new_name') !== '') {
-            $this->attempt(fn() => PressingService::addArticle(Request::str('new_name'), Request::str('new_category')), '/pressing/tarifs');
+            $this->attempt(fn() => PressingService::addArticle(Request::str('new_name'), Request::str('new_category'), Request::str('new_unit', 'piece')), '/pressing/tarifs');
             flash('success', t('Article ajouté : saisissez ses prix.'));
             redirect('/pressing/tarifs');
         }
-        $this->attempt(fn() => PressingService::saveTarifs((array) Request::input('prices', []), (array) Request::input('names', []), (array) Request::input('active', [])), '/pressing/tarifs');
+        $this->attempt(fn() => PressingService::saveTarifs((array) Request::input('prices', []), (array) Request::input('names', []), (array) Request::input('active', []), (array) Request::input('units', [])), '/pressing/tarifs');
         flash('success', t('Tarifs enregistrés.'));
         redirect('/pressing/tarifs');
     }
@@ -248,8 +248,8 @@ final class PressingController extends Controller
         view('pressing::report', [
             'title' => 'Rapport pressing', 'from' => $from, 'to' => $to, 'orders' => $orders,
             'payments' => DB::all('SELECT method, kind, SUM(amount) AS total, COUNT(*) AS n FROM pressing_payments WHERE created_at BETWEEN ? AND ? GROUP BY method, kind ORDER BY method', $range),
-            'services' => DB::all("SELECT i.service, SUM(i.quantity) AS qty, SUM(i.line_total) AS total FROM pressing_items i JOIN pressing_orders o ON o.id = i.order_id WHERE o.status <> 'cancelled' AND o.created_at BETWEEN ? AND ? GROUP BY i.service ORDER BY total DESC", $range),
-            'articles' => DB::all("SELECT i.article_name, SUM(i.quantity) AS qty, SUM(i.line_total) AS total FROM pressing_items i JOIN pressing_orders o ON o.id = i.order_id WHERE o.status <> 'cancelled' AND o.created_at BETWEEN ? AND ? GROUP BY i.article_name ORDER BY qty DESC LIMIT 15", $range),
+            'services' => DB::all("SELECT i.service, SUM(IF(i.unit = 'kg', 0, i.quantity)) AS qty, SUM(IF(i.unit = 'kg', i.quantity, 0)) AS kg, SUM(i.line_total) AS total FROM pressing_items i JOIN pressing_orders o ON o.id = i.order_id WHERE o.status <> 'cancelled' AND o.created_at BETWEEN ? AND ? GROUP BY i.service ORDER BY total DESC", $range),
+            'articles' => DB::all("SELECT i.article_name, SUM(IF(i.unit = 'kg', 0, i.quantity)) AS qty, SUM(IF(i.unit = 'kg', i.quantity, 0)) AS kg, SUM(i.line_total) AS total FROM pressing_items i JOIN pressing_orders o ON o.id = i.order_id WHERE o.status <> 'cancelled' AND o.created_at BETWEEN ? AND ? GROUP BY i.article_name ORDER BY total DESC LIMIT 15", $range),
         ]);
     }
 

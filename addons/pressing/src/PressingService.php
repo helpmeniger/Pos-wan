@@ -19,8 +19,27 @@ final class PressingService
 {
     public const SERVICES = ['lavage' => 'Lavage + repassage', 'sec' => 'Nettoyage à sec', 'repassage' => 'Repassage seul', 'teinture' => 'Teinture'];
     public const STATUSES = ['received' => 'Déposé — en attente de traitement', 'processing' => 'En cours de traitement', 'ready' => 'Prêt à être retiré', 'partial' => 'Partiellement retiré', 'delivered' => 'Retiré', 'cancelled' => 'Annulé'];
+    /** Unités de facturation d'un article : à la pièce, ou au poids (quantité décimale, ex. 4,5 kg). */
+    public const UNITS = ['piece' => 'À la pièce', 'kg' => 'Au kilo (kg)'];
+    /** Liste « 3 Chemise, 4,5 kg Linge au kilo » d'un dépôt (requêtes SQL ; alias de ligne : i). */
+    public const CLOTHES_SQL = "GROUP_CONCAT(CONCAT(REPLACE(TRIM(TRAILING '.' FROM TRIM(TRAILING '0' FROM i.quantity)), '.', ','), IF(i.unit = 'kg', ' kg', ''), ' ', i.article_name) ORDER BY i.line_no SEPARATOR ', ')";
     /** Libellés courts (badges, listes). */
     public const SHORT = ['received' => 'Déposé', 'processing' => 'En traitement', 'ready' => 'Prêt', 'partial' => 'Retrait partiel', 'delivered' => 'Retiré', 'cancelled' => 'Annulé'];
+
+    /** Quantité saisie (virgule ou point décimal acceptés) ; null si illisible. */
+    public static function parseQty(mixed $v): ?float
+    {
+        $raw = str_replace([' ', "\u{00a0}", ','], ['', '', '.'], trim((string) $v));
+        return $raw !== '' && is_numeric($raw) ? round((float) $raw, 3) : null;
+    }
+
+    /** Affichage d'une quantité : « 3 », « 4,5 kg », « 0,75 kg ». */
+    public static function qty(mixed $q, string $unit = 'piece'): string
+    {
+        $q = round((float) $q, 3);
+        $txt = rtrim(rtrim(number_format($q, 3, ',', ' '), '0'), ',');
+        return $unit === 'kg' ? $txt . ' kg' : $txt;
+    }
 
     /** Jours de retard : dépôt non prêt après la date prévue, ou prêt mais non retiré après cette date. */
     public static function lateDays(array $o): int
@@ -38,7 +57,7 @@ final class PressingService
     {
         $out = [];
         foreach (DB::all('SELECT * FROM pressing_articles' . ($activeOnly ? ' WHERE active = 1' : '') . ' ORDER BY sort_order, name') as $a) {
-            $out[(int) $a['id']] = ['id' => (int) $a['id'], 'name' => $a['name'], 'category' => $a['category'], 'active' => (int) $a['active'], 'prices' => []];
+            $out[(int) $a['id']] = ['id' => (int) $a['id'], 'name' => $a['name'], 'category' => $a['category'], 'unit' => ($a['unit'] ?? 'piece') === 'kg' ? 'kg' : 'piece', 'active' => (int) $a['active'], 'prices' => []];
         }
         foreach (DB::all('SELECT * FROM pressing_prices') as $p) {
             if (isset($out[(int) $p['article_id']])) {
@@ -106,21 +125,28 @@ final class PressingService
         $lines = [];
         $subtotal = 0.0;
         $pieces = 0;
+        $weight = 0.0;
+        $decimals = currency()['decimals'];
         foreach ((array) ($d['lines'] ?? []) as $l) {
             $aid = (int) ($l['article_id'] ?? 0);
             if ($aid <= 0) {
                 continue;
             }
             $svc = (string) ($l['service'] ?? '');
-            $q = (int) ($l['quantity'] ?? 0);
             if (!isset($tarifs[$aid])) {
                 throw new BusinessException('Article inconnu ou désactivé.');
             }
+            $unit = $tarifs[$aid]['unit'];
+            $q = self::parseQty($l['quantity'] ?? '');
             if (!isset(self::SERVICES[$svc], $tarifs[$aid]['prices'][$svc])) {
                 throw new BusinessException('Service « ' . (self::SERVICES[$svc] ?? $svc) . ' » non proposé pour « ' . $tarifs[$aid]['name'] . ' ».');
             }
-            if ($q < 1 || $q > 200) {
-                throw new BusinessException('Quantité invalide pour « ' . $tarifs[$aid]['name'] . ' ».');
+            if ($unit === 'kg') {
+                if ($q === null || $q < 0.001 || $q > 1000) {
+                    throw new BusinessException('Poids invalide pour « ' . $tarifs[$aid]['name'] . ' » : indiquez les kilos, par exemple 4,5.');
+                }
+            } elseif ($q === null || $q < 1 || $q > 200 || abs($q - round($q)) > 0.0001) {
+                throw new BusinessException('Quantité invalide pour « ' . $tarifs[$aid]['name'] . ' » : nombre entier de pièces (seuls les articles au kilo acceptent une virgule).');
             }
             $list = $tarifs[$aid]['prices'][$svc];
             $price = $list;
@@ -130,11 +156,13 @@ final class PressingService
                 }
                 $price = max(0.0, round((float) $l['unit_price'], 2));
             }
-            $lines[] = ['article_id' => $aid, 'article_name' => $tarifs[$aid]['name'], 'service' => $svc, 'quantity' => $q, 'unit_price' => $price, 'list_price' => $list, 'line_total' => round($price * $q, 2),
+            $lines[] = ['article_id' => $aid, 'article_name' => $tarifs[$aid]['name'], 'service' => $svc, 'quantity' => $q, 'unit' => $unit, 'unit_price' => $price, 'list_price' => $list, 'line_total' => round($price * $q, $decimals),
                 'color' => mb_substr(trim((string) ($l['color'] ?? '')), 0, 60) ?: null, 'brand' => mb_substr(trim((string) ($l['brand'] ?? '')), 0, 80) ?: null,
                 'defects' => mb_substr(trim((string) ($l['defects'] ?? '')), 0, 255) ?: null];
-            $subtotal += $price * $q;
-            $pieces += $q;
+            $subtotal += round($price * $q, $decimals);
+            // Un sac de linge pesé compte pour un colis (une étiquette)
+            $pieces += $unit === 'kg' ? 1 : (int) round($q);
+            $weight += $unit === 'kg' ? $q : 0.0;
         }
         if (!$lines) {
             throw new BusinessException('Ajoutez au moins un article.');
@@ -171,12 +199,12 @@ final class PressingService
         }
         $customerId = DB::value("SELECT id FROM customers WHERE REPLACE(REPLACE(phone, ' ', ''), '+', '') LIKE ? LIMIT 1", ['%' . substr(self::digits($phone), -8)]);
 
-        return DB::transaction(function () use ($name, $phone, $express, $due, $subtotal, $expressFee, $discount, $total, $pieces, $lines, $d, $dep, $tendered, $customerId) {
+        return DB::transaction(function () use ($name, $phone, $express, $due, $subtotal, $expressFee, $discount, $total, $pieces, $weight, $lines, $d, $dep, $tendered, $customerId) {
             $number = Sequence::next('pressing');
             $id = DB::insert('pressing_orders', [
                 'number' => $number, 'customer_id' => $customerId ?: null, 'customer_name' => mb_substr($name, 0, 150), 'phone' => mb_substr($phone, 0, 50),
                 'express' => $express ? 1 : 0, 'due_date' => $due, 'subtotal' => $subtotal, 'express_fee' => $expressFee, 'discount' => $discount, 'total' => $total,
-                'pieces' => $pieces, 'note' => mb_substr(trim((string) ($d['note'] ?? '')), 0, 255) ?: null, 'user_id' => Auth::id(),
+                'pieces' => $pieces, 'weight' => round($weight, 3), 'note' => mb_substr(trim((string) ($d['note'] ?? '')), 0, 255) ?: null, 'user_id' => Auth::id(),
             ]);
             $short = ltrim(substr($number, -6), '0') ?: '0';
             foreach ($lines as $i => $l) {
@@ -297,22 +325,26 @@ final class PressingService
             $items = DB::all('SELECT * FROM pressing_items WHERE order_id = ? FOR UPDATE', [$id]);
             $taken = [];
             foreach ($items as $it) {
-                $q = (int) ($qtys[$it['id']] ?? 0);
-                $left = (int) $it['quantity'] - (int) $it['picked_qty'];
+                $q = self::parseQty($qtys[$it['id']] ?? '') ?? 0.0;
+                $unit = ($it['unit'] ?? 'piece') === 'kg' ? 'kg' : 'piece';
+                $left = round((float) $it['quantity'] - (float) $it['picked_qty'], 3);
                 if ($q <= 0) {
                     continue;
                 }
-                if ($q > $left) {
-                    throw new BusinessException('« ' . $it['article_name'] . ' » : seulement ' . $left . ' pièce(s) restante(s).');
+                if ($unit === 'piece' && abs($q - round($q)) > 0.0001) {
+                    throw new BusinessException('« ' . $it['article_name'] . ' » : nombre entier de pièces.');
+                }
+                if ($q > $left + 0.0005) {
+                    throw new BusinessException('« ' . $it['article_name'] . ' » : seulement ' . ($unit === 'kg' ? self::qty($left, 'kg') : self::qty($left) . ' pièce(s)') . ' restante(s).');
                 }
                 DB::run('UPDATE pressing_items SET picked_qty = picked_qty + ?, picked_at = NOW() WHERE id = ?', [$q, $it['id']]);
-                $taken[] = $q . ' × ' . $it['article_name'] . ' [' . $it['tag'] . ']';
+                $taken[] = ($unit === 'kg' ? self::qty($q, 'kg') : self::qty($q) . ' ×') . ' ' . $it['article_name'] . ' [' . $it['tag'] . ']';
             }
             if (!$taken) {
                 throw new BusinessException('Indiquez les pièces remises au client.');
             }
-            $remaining = (int) DB::value('SELECT COALESCE(SUM(quantity - picked_qty),0) FROM pressing_items WHERE order_id = ?', [$id]);
-            if ($remaining === 0) {
+            $remaining = (int) DB::value("SELECT COALESCE(SUM(IF(unit = 'kg', IF(quantity - picked_qty > 0.0005, 1, 0), quantity - picked_qty)),0) FROM pressing_items WHERE order_id = ?", [$id]);
+            if ($remaining <= 0) {
                 return self::deliver($id, $pay);
             }
             $change = (float) ($pay['amount'] ?? 0) > 0 ? self::pay($id, $pay) : 0.0;
@@ -344,16 +376,20 @@ final class PressingService
     }
 
     /** Enregistre la grille des tarifs (prix vide = service non proposé). */
-    public static function saveTarifs(array $prices, array $names, array $active): void
+    public static function saveTarifs(array $prices, array $names, array $active, array $units = []): void
     {
-        DB::transaction(function () use ($prices, $names, $active) {
+        DB::transaction(function () use ($prices, $names, $active, $units) {
             foreach ($names as $aid => $name) {
                 $aid = (int) $aid;
                 $name = trim((string) $name);
                 if ($name === '') {
                     throw new BusinessException('Le nom d\'un article ne peut pas être vide.');
                 }
-                DB::update('pressing_articles', ['name' => mb_substr($name, 0, 100), 'active' => !empty($active[$aid]) ? 1 : 0], 'id = ?', [$aid]);
+                $row = ['name' => mb_substr($name, 0, 100), 'active' => !empty($active[$aid]) ? 1 : 0];
+                if (isset($units[$aid], self::UNITS[$units[$aid]])) {
+                    $row['unit'] = $units[$aid]; // les dépôts déjà enregistrés gardent leur unité
+                }
+                DB::update('pressing_articles', $row, 'id = ?', [$aid]);
                 foreach (array_keys(self::SERVICES) as $svc) {
                     $raw = trim(str_replace([' ', ','], ['', '.'], (string) ($prices[$aid][$svc] ?? '')));
                     if ($raw === '') {
@@ -370,7 +406,7 @@ final class PressingService
         });
     }
 
-    public static function addArticle(string $name, string $category): int
+    public static function addArticle(string $name, string $category, string $unit = 'piece'): int
     {
         $name = trim($name);
         if ($name === '') {
@@ -379,7 +415,7 @@ final class PressingService
         if (DB::value('SELECT id FROM pressing_articles WHERE name = ?', [$name])) {
             throw new BusinessException('Cet article existe déjà.');
         }
-        return DB::insert('pressing_articles', ['name' => mb_substr($name, 0, 100), 'category' => mb_substr(trim($category) ?: 'Vêtements', 0, 50), 'sort_order' => (int) DB::value('SELECT COALESCE(MAX(sort_order),0)+1 FROM pressing_articles')]);
+        return DB::insert('pressing_articles', ['name' => mb_substr($name, 0, 100), 'category' => mb_substr(trim($category) ?: 'Vêtements', 0, 50), 'unit' => isset(self::UNITS[$unit]) ? $unit : 'piece', 'sort_order' => (int) DB::value('SELECT COALESCE(MAX(sort_order),0)+1 FROM pressing_articles')]);
     }
 
     /**
@@ -388,8 +424,8 @@ final class PressingService
      */
     public static function board(bool $public = false): array
     {
-        $rows = DB::all("SELECT o.id, o.number, o.customer_name, o.phone, o.status, o.express, o.due_date, o.pieces, o.total, o.paid, o.created_at, o.ready_at, o.note,
-                (SELECT GROUP_CONCAT(CONCAT(i.quantity, ' ', i.article_name) ORDER BY i.line_no SEPARATOR ', ') FROM pressing_items i WHERE i.order_id = o.id) AS clothes
+        $rows = DB::all("SELECT o.id, o.number, o.customer_name, o.phone, o.status, o.express, o.due_date, o.pieces, o.weight, o.total, o.paid, o.created_at, o.ready_at, o.note,
+                (SELECT " . self::CLOTHES_SQL . " FROM pressing_items i WHERE i.order_id = o.id) AS clothes
                 FROM pressing_orders o WHERE o.status IN ('received','processing','ready','partial')
                 ORDER BY o.express DESC, o.due_date, o.id LIMIT 600");
         $today = date('Y-m-d');
@@ -409,7 +445,7 @@ final class PressingService
             $first = trim(explode(' ', trim((string) $o['customer_name']))[0] ?? '');
             $cols[$col][] = $public ? ['number' => $o['number'], 'name' => $first, 'status' => $o['status'], 'express' => (bool) $o['express']] : [
                 'id' => (int) $o['id'], 'number' => $o['number'], 'name' => $o['customer_name'], 'phone' => $o['phone'], 'status' => $o['status'],
-                'express' => (bool) $o['express'], 'due' => $o['due_date'], 'late' => $late, 'pieces' => (int) $o['pieces'],
+                'express' => (bool) $o['express'], 'due' => $o['due_date'], 'late' => $late, 'pieces' => (int) $o['pieces'], 'weight' => (float) $o['weight'],
                 'clothes' => mb_substr((string) $o['clothes'], 0, 160), 'rest' => $rest, 'note' => (string) $o['note'],
                 'since' => $o['ready_at'] ?: $o['created_at'], 'due_today' => $o['due_date'] === $today,
             ];

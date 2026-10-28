@@ -33,9 +33,9 @@ $data = ['tarifs' => array_values($tarifs), 'services' => PS::SERVICES, 'express
         </div>
         <?php foreach ($cats as $cat => $list): ?>
           <div class="small text-secondary text-uppercase mt-2 mb-1"><?= e($cat) ?></div>
-          <div class="pressing-tiles"><?php foreach ($list as $a): ?><button type="button" class="pressing-tile" data-article="<?= (int) $a['id'] ?>"><?= e($a['name']) ?></button><?php endforeach; ?></div>
+          <div class="pressing-tiles"><?php foreach ($list as $a): ?><button type="button" class="pressing-tile" data-article="<?= (int) $a['id'] ?>"><?= e($a['name']) ?><?php if ($a['unit'] === 'kg'): ?> <span class="badge bg-info text-dark">kg</span><?php endif; ?></button><?php endforeach; ?></div>
         <?php endforeach; ?>
-        <div class="table-responsive mt-3"><table class="table table-sm align-middle"><thead><tr><th>Article / service</th><th style="width:70px">Qté</th><th style="width:110px">Prix</th><th>Couleur</th><th>Marque</th><th>Défauts constatés</th><th class="num">Total</th><th></th></tr></thead>
+        <div class="table-responsive mt-3"><table class="table table-sm align-middle"><thead><tr><th>Article / service</th><th style="width:120px">Qté / kg</th><th style="width:110px">Prix</th><th>Couleur</th><th>Marque</th><th>Défauts constatés</th><th class="num">Total</th><th></th></tr></thead>
           <tbody id="pLines"><tr class="empty"><td colspan="8" class="text-center text-secondary py-3">Aucun article.</td></tr></tbody></table></div>
       </div></div>
   </div>
@@ -44,6 +44,7 @@ $data = ['tarifs' => array_values($tarifs), 'services' => PS::SERVICES, 'express
       <div class="form-check form-switch mb-2"><input type="hidden" name="express" value="0"><input class="form-check-input" type="checkbox" name="express" value="1" id="pExpress" data-express><label class="form-check-label fw-semibold text-danger" for="pExpress">EXPRESS (+<?= e((string) $data['expressPct']) ?> %, prêt en <?= (int) $data['delaiExpress'] ?> j)</label></div>
       <table class="table table-sm mb-2">
         <tr><td>Pièces</td><td class="num" data-t="pieces">0</td></tr>
+        <tr class="d-none" data-weight-row><td>Poids</td><td class="num" data-t="weight">0 kg</td></tr>
         <tr><td>Sous-total</td><td class="num" data-t="sub"><?= e(money(0)) ?></td></tr>
         <tr><td>Supplément express</td><td class="num" data-t="exp"><?= e(money(0)) ?></td></tr>
         <tr><td>Remise</td><td><input name="discount" class="form-control form-control-sm text-end" inputmode="numeric" value="0" data-discount <?= $manage || can('pos.discount') ? '' : 'readonly' ?>></td></tr>

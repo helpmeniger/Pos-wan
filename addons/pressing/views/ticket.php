@@ -19,11 +19,12 @@
   <table><?php foreach ($items as $i): ?>
     <tr><td colspan="2"><b>[<?= e($i['tag']) ?>]</b> <?= e($i['article_name']) ?> — <?= e(t(PS::SERVICES[$i['service']] ?? $i['service'])) ?></td></tr>
     <?php if ($i['color'] || $i['defects']): ?><tr><td colspan="2" style="font-size:.85em"><?= e(implode(' · ', array_filter([$i['color'], $i['brand'], $i['defects'] ? t('Défauts') . ' : ' . $i['defects'] : null]))) ?></td></tr><?php endif; ?>
-    <tr><td><?= (int) $i['quantity'] ?> x <?= money($i['unit_price'], false) ?></td><td class="num"><?= money($i['line_total'], false) ?></td></tr>
+    <tr><td><?= e(PS::qty($i['quantity'], $i['unit'] ?? 'piece')) ?> x <?= money($i['unit_price'], false) ?><?= ($i['unit'] ?? '') === 'kg' ? '/kg' : '' ?></td><td class="num"><?= money($i['line_total'], false) ?></td></tr>
   <?php endforeach; ?></table>
   <hr>
   <table>
     <tr><td><?= e(t('Pièces')) ?></td><td class="num"><?= (int) $o['pieces'] ?></td></tr>
+    <?php if ((float) ($o['weight'] ?? 0) > 0): ?><tr><td><?= e(t('Poids')) ?></td><td class="num"><?= e(PS::qty($o['weight'], 'kg')) ?></td></tr><?php endif; ?>
     <?php if ((float) $o['express_fee'] > 0): ?><tr><td><?= e(t('Supplément express')) ?></td><td class="num"><?= money($o['express_fee']) ?></td></tr><?php endif; ?>
     <?php if ((float) $o['discount'] > 0): ?><tr><td><?= e(t('Remise')) ?></td><td class="num">-<?= money($o['discount']) ?></td></tr><?php endif; ?>
     <tr><td class="big">TOTAL</td><td class="num big"><?= money($o['total']) ?></td></tr>

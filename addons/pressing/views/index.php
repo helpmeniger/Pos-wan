@@ -35,7 +35,7 @@ $tiles = [
   <tr>
     <td><a class="fw-semibold" href="<?= e(url('/pressing/' . $o['id'])) ?>"><?= e($o['number']) ?></a><?= (int) $o['express'] ? ' <span class="badge bg-danger">EXPRESS</span>' : '' ?><br><small class="text-secondary"><?= e(fdate($o['created_at'])) ?></small></td>
     <td><?= e($o['customer_name']) ?><br><a class="small" href="tel:<?= e(preg_replace('/[^0-9+]/', '', $o['phone'])) ?>"><?= e($o['phone']) ?></a></td>
-    <td class="num"><?= (int) $o['pieces'] ?></td>
+    <td class="num"><?= (int) $o['pieces'] ?><?= (float) ($o['weight'] ?? 0) > 0 ? '<br><small class="text-secondary">' . e(PS::qty($o['weight'], 'kg')) . '</small>' : '' ?></td>
     <td class="<?= $late ? 'text-danger fw-semibold' : '' ?>"><?= e(fdate($o['due_date'], false)) ?><?= $late ? ' <i class="bi bi-alarm"></i>' : '' ?></td>
     <td class="num"><?= money($o['total']) ?></td>
     <td class="num <?= $rest > 0 ? 'text-danger fw-semibold' : 'text-success' ?>"><?= $rest > 0 ? money($rest) : 'payé' ?></td>

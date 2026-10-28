@@ -986,7 +986,7 @@ test('Module exemple « Livraisons » : installation, permissions, données, ré
 $PR = [];
 test('Module Pressing : dépôt express, acompte en caisse, étiquettes, prix protégés', function () use (&$PR) {
     actingAs('admin');
-    eq(['0001_pressing', '0002_suivi_retraits'], App\Core\Addons::install('pressing', false), 'installation');
+    eq(['0001_pressing', '0002_suivi_retraits', '0003_articles_au_poids'], App\Core\Addons::install('pressing', false), 'installation');
     $PR['chemise'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Chemise'");
     $PR['boubou'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Boubou simple'");
     $PR['couverture'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Couverture'");
@@ -1468,6 +1468,39 @@ test('POS Marwa — pressing : retrait partiel, solde au dernier retrait, retard
     eq(3, Addons\Pressing\PressingService::lateDays(['status' => 'ready', 'due_date' => date('Y-m-d', strtotime('-3 days'))]), 'jours de retard');
     eq(0, Addons\Pressing\PressingService::lateDays(['status' => 'delivered', 'due_date' => '2020-01-01']), 'retiré : pas de retard');
     $V2['pressing'] = $id;
+});
+test('Pressing : articles au kilo, poids avec virgule, pièces entières, retrait partiel au poids', function () {
+    actingAs('caissier');
+    $P = Addons\Pressing\PressingService::class;
+    $kilo = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Linge au kilo'");
+    $chem = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Chemise'");
+    eq('kg', DB::value('SELECT unit FROM pressing_articles WHERE id = ?', [$kilo]), 'article fourni au kilo');
+    eq(4.5, $P::parseQty('4,5'));
+    eq(0.75, $P::parseQty(' 0,750 '));
+    eq(null, $P::parseQty('abc'));
+    eq('4,5 kg', $P::qty('4.500', 'kg'));
+    eq('3', $P::qty('3.000'));
+    throws(fn() => $P::create(['customer_name' => 'Kilo', 'phone' => '90 77 77 77', 'lines' => [['article_id' => $chem, 'service' => 'lavage', 'quantity' => '1,5']]]), 'nombre entier');
+    throws(fn() => $P::create(['customer_name' => 'Kilo', 'phone' => '90 77 77 77', 'lines' => [['article_id' => $kilo, 'service' => 'lavage', 'quantity' => '']]]), 'Poids invalide');
+    throws(fn() => $P::create(['customer_name' => 'Kilo', 'phone' => '90 77 77 77', 'lines' => [['article_id' => $kilo, 'service' => 'lavage', 'quantity' => '0']]]), 'Poids invalide');
+    $r = $P::create(['customer_name' => 'Kilo', 'phone' => '90 77 77 77', 'lines' => [
+        ['article_id' => $kilo, 'service' => 'lavage', 'quantity' => '4,5'], ['article_id' => $kilo, 'service' => 'repassage', 'quantity' => '2.25'], ['article_id' => $chem, 'service' => 'lavage', 'quantity' => '3']]]);
+    $o = DB::one('SELECT * FROM pressing_orders WHERE id = ?', [$r['id']]);
+    eq(4500.0 + 1125.0 + 1500.0, (float) $o['total'], '4,5 kg × 1000 + 2,25 kg × 500 + 3 × 500');
+    eq(5, (int) $o['pieces'], 'chaque sac pesé = un colis, plus 3 chemises');
+    eq(6.75, (float) $o['weight'], 'poids total');
+    eq(['4.500', '2.250', '3.000'], array_column(DB::all('SELECT quantity FROM pressing_items WHERE order_id = ? ORDER BY line_no', [$r['id']]), 'quantity'));
+    ok(str_contains((string) DB::value('SELECT ' . $P::CLOTHES_SQL . ' FROM pressing_items i WHERE i.order_id = ?', [$r['id']]), '4,5 kg Linge au kilo'), 'liste des vêtements : 4,5 kg');
+    $P::pay($r['id'], ['method' => 'cash', 'amount' => '7125']);
+    $P::setStatus($r['id'], 'ready');
+    $sac = (int) DB::value('SELECT id FROM pressing_items WHERE order_id = ? AND line_no = 1', [$r['id']]);
+    throws(fn() => $P::deliverPartial($r['id'], [$sac => '5']), 'restante');
+    $P::deliverPartial($r['id'], [$sac => '2,5']);
+    eq('partial', DB::value('SELECT status FROM pressing_orders WHERE id = ?', [$r['id']]), 'retrait partiel au poids');
+    eq(2.5, (float) DB::value('SELECT picked_qty FROM pressing_items WHERE id = ?', [$sac]));
+    $P::deliver($r['id']);
+    eq('delivered', DB::value('SELECT status FROM pressing_orders WHERE id = ?', [$r['id']]));
+    eq(4.5, (float) DB::value('SELECT picked_qty FROM pressing_items WHERE id = ?', [$sac]), 'tout le linge remis');
 });
 test('Menu à droite par défaut ; numéros d\'assistance', function () {
     eq('right', setting('menu_position'));

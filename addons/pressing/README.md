@@ -12,7 +12,8 @@ caisse POS Marwa (ils apparaissent dans la clôture de caisse).
 ## Utilisation au comptoir
 1. **Nouveau dépôt** : nom et téléphone du client (les clients déjà venus sont proposés),
    choisir le service (Lavage + repassage, Nettoyage à sec, Repassage seul, Teinture), puis
-   toucher les articles (Chemise, Grand boubou, Complet pagne…). Pour chaque ligne :
+   toucher les articles (Chemise, Grand boubou, Complet pagne…, ou **Linge au kilo** : saisir le
+   poids, ex. 4,5). Pour chaque ligne :
    quantité, couleur, marque et **défauts constatés** (tache, trou… : ils figurent sur le
    ticket pour éviter les litiges).
 2. **EXPRESS** : supplément (50 % par défaut) et délai court (1 jour).
@@ -54,6 +55,21 @@ Tableau de bord : reçus, en cours, prêts, **en retard** (date de retrait dépa
 | `pressing_conditions` | texte | Conditions imprimées sur le ticket |
 
 Les tarifs fournis (FCFA) sont **indicatifs** : adaptez-les avant la mise en service.
+
+## Version 1.3.0 : articles au kilo
+
+- Chaque article a une **unité** (Pressing → Tarifs, colonne « Unité ») : **À la pièce** ou
+  **Au kilo (kg)**. Pour un article au kilo, le prix saisi est le prix **par kg**.
+- Article fourni : **Linge au kilo** (lavage + repassage 1 000 F/kg, repassage seul 500 F/kg,
+  tarifs indicatifs à adapter).
+- Au dépôt, toucher un article au kilo ouvre la saisie du **poids, avec virgule** (ex. `4,5`).
+  Le dépôt ne peut pas être enregistré tant qu'un poids est vide.
+- Les articles à la pièce restent en **nombre entier** : « 1,5 chemise » est refusé.
+- Un sac pesé compte pour **un colis** (une étiquette, qui indique le poids). Le poids total
+  figure sur la fiche, le ticket, les listes, l'écran de l'atelier et le rapport.
+- Retrait partiel possible au poids (ex. 2,5 kg sur 4,5 kg).
+- Migration `0003_articles_au_poids.sql`, appliquée automatiquement à la mise à jour ; les
+  dépôts existants sont conservés.
 
 ## Version 1.1.0 (POS Marwa 2.0)
 

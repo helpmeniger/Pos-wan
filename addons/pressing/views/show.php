@@ -13,7 +13,7 @@ $msg = sprintf(t('Bonjour %s, votre linge (dépôt %s) est prêt chez %s.'), $o[
 <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
   <a class="btn btn-outline-secondary" href="<?= e(url('/pressing')) ?>"><i class="bi bi-arrow-left"></i> Dépôts</a>
   <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/pressing/' . $o['id'] . '/ticket')) ?>"><i class="bi bi-receipt"></i> Ticket client</a>
-  <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/pressing/' . $o['id'] . '/labels')) ?>"><i class="bi bi-tags"></i> Étiquettes (<?= (int) $o['pieces'] ?>)</a>
+  <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/pressing/' . $o['id'] . '/labels')) ?>"><i class="bi bi-tags"></i> Étiquettes (<?= (int) $o['pieces'] ?>)<?= (float) ($o['weight'] ?? 0) > 0 ? ' · ' . e(PS::qty($o['weight'], 'kg')) : '' ?></a>
   <?php if ($o['status'] === 'ready'): ?><a class="btn btn-outline-success" target="_blank" rel="noopener" href="https://wa.me/<?= e($wa) ?>?text=<?= e(rawurlencode($msg)) ?>"><i class="bi bi-whatsapp"></i> Prévenir le client</a><?php endif; ?>
   <a class="btn btn-outline-secondary" href="<?= e(url('/pressing/client', ['phone' => $o['phone']])) ?>"><i class="bi bi-clock-history"></i> Historique du client</a>
   <span class="ms-auto fs-5"><span class="badge bg-<?= e($colors[$o['status']]) ?>"><?= e(PS::STATUSES[$o['status']]) ?></span><?= (int) $o['express'] ? ' <span class="badge bg-danger">EXPRESS</span>' : '' ?></span>
@@ -23,8 +23,8 @@ $msg = sprintf(t('Bonjour %s, votre linge (dépôt %s) est prêt chez %s.'), $o[
 <div class="row g-3">
   <div class="col-lg-8">
     <div class="card mb-3"><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Étiquette</th><th>Article</th><th>Service</th><th class="num">Qté</th><th class="num">P.U.</th><th class="num">Total</th></tr></thead><tbody>
-      <?php foreach ($items as $i): ?><tr><td><span class="badge bg-dark fs-6"><?= e($i['tag']) ?></span></td><td><?= e($i['article_name']) ?><?= (int) ($i['picked_qty'] ?? 0) > 0 ? ' <span class="badge bg-' . ((int) $i['picked_qty'] >= (int) $i['quantity'] ? 'dark' : 'warning text-dark') . '">retiré ' . (int) $i['picked_qty'] . '/' . (int) $i['quantity'] . '</span>' : '' ?><?php $d = array_filter([$i['color'], $i['brand']]); ?><?= $d ? '<br><small class="text-secondary">' . e(implode(' · ', $d)) . '</small>' : '' ?><?= $i['defects'] ? '<br><small class="text-danger"><i class="bi bi-exclamation-triangle"></i> ' . e($i['defects']) . '</small>' : '' ?></td>
-      <td><?= e(PS::SERVICES[$i['service']] ?? $i['service']) ?></td><td class="num"><?= (int) $i['quantity'] ?></td><td class="num"><?= money($i['unit_price']) ?><?= abs((float) $i['unit_price'] - (float) $i['list_price']) >= 0.01 ? ' <span class="badge bg-warning text-dark" title="Tarif ' . e(money($i['list_price'])) . '">modifié</span>' : '' ?></td><td class="num fw-semibold"><?= money($i['line_total']) ?></td></tr><?php endforeach; ?>
+      <?php foreach ($items as $i): ?><tr><td><span class="badge bg-dark fs-6"><?= e($i['tag']) ?></span></td><td><?= e($i['article_name']) ?><?= (float) ($i['picked_qty'] ?? 0) > 0 ? ' <span class="badge bg-' . ((float) $i['picked_qty'] >= (float) $i['quantity'] - 0.0005 ? 'dark' : 'warning text-dark') . '">retiré ' . e(PS::qty($i['picked_qty'])) . '/' . e(PS::qty($i['quantity'], $i['unit'] ?? 'piece')) . '</span>' : '' ?><?php $d = array_filter([$i['color'], $i['brand']]); ?><?= $d ? '<br><small class="text-secondary">' . e(implode(' · ', $d)) . '</small>' : '' ?><?= $i['defects'] ? '<br><small class="text-danger"><i class="bi bi-exclamation-triangle"></i> ' . e($i['defects']) . '</small>' : '' ?></td>
+      <td><?= e(PS::SERVICES[$i['service']] ?? $i['service']) ?></td><td class="num"><?= e(PS::qty($i['quantity'], $i['unit'] ?? 'piece')) ?></td><td class="num"><?= money($i['unit_price']) ?><?= ($i['unit'] ?? '') === 'kg' ? '<small class="text-secondary">/kg</small>' : '' ?><?= abs((float) $i['unit_price'] - (float) $i['list_price']) >= 0.01 ? ' <span class="badge bg-warning text-dark" title="Tarif ' . e(money($i['list_price'])) . '">modifié</span>' : '' ?></td><td class="num fw-semibold"><?= money($i['line_total']) ?></td></tr><?php endforeach; ?>
     </tbody><tfoot>
       <tr><td colspan="5" class="text-end">Sous-total</td><td class="num"><?= money($o['subtotal']) ?></td></tr>
       <?php if ((float) $o['express_fee'] > 0): ?><tr><td colspan="5" class="text-end">Supplément express</td><td class="num"><?= money($o['express_fee']) ?></td></tr><?php endif; ?>
@@ -71,13 +71,13 @@ $msg = sprintf(t('Bonjour %s, votre linge (dépôt %s) est prêt chez %s.'), $o[
         <div class="col-12 mt-2"><button class="btn btn-success w-100" <?= !in_array($o['status'], ['ready', 'partial'], true) && !can('pressing.manage') ? 'disabled title="Le linge doit être marqué Prêt"' : '' ?>><i class="bi bi-bag-check"></i> Remettre le linge<?= $rest > 0 ? ' et encaisser' : '' ?></button></div>
       </form>
     </div></div>
-    <?php $remainingItems = array_filter($items, fn($i) => (int) $i['quantity'] - (int) ($i['picked_qty'] ?? 0) > 0); ?>
-    <?php if (in_array($o['status'], ['ready', 'partial', 'processing'], true) && setting('pressing_retrait_partiel', '1') === '1' && array_sum(array_map(fn($i) => (int) $i['quantity'] - (int) $i['picked_qty'], $items)) > 1): ?>
+    <?php $remainingItems = array_filter($items, fn($i) => (float) $i['quantity'] - (float) ($i['picked_qty'] ?? 0) > 0.0005); ?>
+    <?php if (in_array($o['status'], ['ready', 'partial', 'processing'], true) && setting('pressing_retrait_partiel', '1') === '1' && (count($remainingItems) > 1 || array_sum(array_map(fn($i) => ($i['unit'] ?? 'piece') === 'kg' ? 0 : (int) round((float) $i['quantity'] - (float) $i['picked_qty']), $remainingItems)) > 1)): ?>
     <div class="card mb-3"><div class="card-header"><i class="bi bi-bag-dash"></i> Retrait partiel</div><div class="card-body">
       <form method="post" action="<?= e(url('/pressing/' . $o['id'] . '/partial')) ?>" class="small"><?= csrf_field() ?>
-        <?php foreach ($remainingItems as $i): $left = (int) $i['quantity'] - (int) $i['picked_qty']; ?>
-          <div class="d-flex align-items-center gap-2 mb-1"><span class="badge bg-dark"><?= e($i['tag']) ?></span><span class="flex-grow-1"><?= e($i['article_name']) ?></span><span class="text-secondary">reste <?= $left ?></span>
-            <input type="number" name="qty[<?= (int) $i['id'] ?>]" min="0" max="<?= $left ?>" value="0" class="form-control form-control-sm" style="width:64px"></div>
+        <?php foreach ($remainingItems as $i): $kg = ($i['unit'] ?? 'piece') === 'kg'; $left = round((float) $i['quantity'] - (float) $i['picked_qty'], 3); ?>
+          <div class="d-flex align-items-center gap-2 mb-1"><span class="badge bg-dark"><?= e($i['tag']) ?></span><span class="flex-grow-1"><?= e($i['article_name']) ?></span><span class="text-secondary">reste <?= e(PS::qty($left, $kg ? 'kg' : 'piece')) ?></span>
+            <?php if ($kg): ?><input name="qty[<?= (int) $i['id'] ?>]" value="0" inputmode="decimal" pattern="[0-9]+([,.][0-9]{1,3})?" title="Kilos, ex. 2,5" class="form-control form-control-sm text-end" style="width:80px"><?php else: ?><input type="number" name="qty[<?= (int) $i['id'] ?>]" min="0" max="<?= (int) round($left) ?>" value="0" class="form-control form-control-sm" style="width:64px"><?php endif; ?></div>
         <?php endforeach; ?>
         <div class="row g-1 mt-1"><?= App\Core\View::partial('pressing::_pay') ?></div>
         <button class="btn btn-sm btn-outline-success w-100 mt-2">Remettre ces pièces</button>
