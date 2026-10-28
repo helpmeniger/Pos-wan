@@ -1,4 +1,4 @@
-# État du projet — version 2.11.3 (POS Marwa)
+# État du projet — version 2.11.4 (POS Marwa)
 
 ## Terminé et vérifié
 

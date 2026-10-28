@@ -56,6 +56,11 @@ Tableau de bord : reçus, en cours, prêts, **en retard** (date de retrait dépa
 
 Les tarifs fournis (FCFA) sont **indicatifs** : adaptez-les avant la mise en service.
 
+## Version 1.3.2
+- Au dépôt, un clic dans une ligne n'ajoute plus de pièce ; la virgule n'est plus jamais
+  ignorée : poids « 4,5 » accepté pour un article au kilo, message clair pour un article à la
+  pièce (passer son unité sur « Au kilo » dans Tarifs pour le peser).
+
 ## Version 1.3.1
 - Caisse : le téléphone d'un client déjà venu ne peut plus être saisi en double (il est
   sélectionné au clic, la saisie le remplace) ; téléphone de plus de 15 chiffres refusé.

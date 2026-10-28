@@ -46,8 +46,9 @@
     tr.dataset.line = '1'; tr.dataset.article = String(aid); tr.dataset.service = svc; tr.dataset.unit = kg ? 'kg' : 'piece';
     tr.innerHTML = `<td><input type="hidden" name="lines[${i}][article_id]" value="${aid}"><input type="hidden" name="lines[${i}][service]" value="${esc(svc)}"><b>${esc(a.name)}</b><br><small class="text-secondary">${esc(D.services[svc])}</small></td>
       <td>${kg
-        ? `<div class="input-group input-group-sm"><input name="lines[${i}][quantity]" value="" inputmode="decimal" required pattern="[0-9]+([,.][0-9]{1,3})?" title="${esc(T('Poids en kg, ex. 4,5'))}" placeholder="4,5" class="form-control text-end" data-q><span class="input-group-text">kg</span></div>`
-        : `<input type="number" min="1" max="200" step="1" name="lines[${i}][quantity]" value="1" class="form-control form-control-sm" data-q>`}</td>
+        ? `<div class="input-group input-group-sm"><input name="lines[${i}][quantity]" value="" inputmode="decimal" autocomplete="off" title="${esc(T('Poids en kg, ex. 4,5'))}" placeholder="4,5" class="form-control text-end" data-q><span class="input-group-text">kg</span></div>`
+        : `<input name="lines[${i}][quantity]" value="1" inputmode="decimal" autocomplete="off" class="form-control form-control-sm text-end" data-q>`}
+        <div class="small text-danger d-none" data-qmsg></div></td>
       <td><input name="lines[${i}][unit_price]" value="${a.prices[svc]}" class="form-control form-control-sm text-end" inputmode="numeric" data-p ${D.canPrice ? '' : 'readonly'}>${kg ? `<small class="text-secondary">${esc(T('par kg'))}</small>` : ''}</td>
       <td><input name="lines[${i}][color]" class="form-control form-control-sm" maxlength="60" placeholder="${esc(T('ex. bleu'))}" data-color></td>
       <td><input name="lines[${i}][brand]" class="form-control form-control-sm" maxlength="80"></td>
@@ -64,11 +65,23 @@
     let sub = 0; let pieces = 0; let weight = 0; let missing = 0;
     $$('tr[data-line]', tbody).forEach((tr) => {
       const kg = tr.dataset.unit === 'kg';
-      // Au kilo : virgule acceptée (4,5) ; à la pièce : nombre entier
-      const q = kg ? Math.max(0, Math.round(num($('[data-q]', tr).value) * 1000) / 1000) : Math.max(0, Math.round(num($('[data-q]', tr).value)));
+      // Champ texte (jamais de virgule avalée par le navigateur) : au kilo 4,5 / 4.5 / ,5 ;
+      // à la pièce, nombre entier — une virgule est signalée au lieu d'être ignorée.
+      const inp = $('[data-q]', tr); const raw = inp.value.replace(/\s/g, '');
+      const isNum = /^\d*(?:[.,]\d*)?$/.test(raw) && /\d/.test(raw);
+      const v = isNum ? num(raw) : 0;
+      let err = '';
+      if (kg) { if (raw !== '' && (!isNum || v <= 0)) err = T('Poids en kg, ex. 4,5'); else if (v > 1000) err = T('1 000 kg au plus.'); }
+      else if (!isNum || v < 1) err = raw === '' ? T('Quantité obligatoire.') : T('Nombre de pièces invalide.');
+      else if (Math.round(v) !== v) err = T('« {a} » se compte à la pièce (nombre entier). Pour le peser, réglez son unité sur « Au kilo » dans Pressing → Tarifs.').replace('{a}', byId[tr.dataset.article] ? byId[tr.dataset.article].name : '');
+      else if (v > 200) err = T('200 pièces au plus.');
+      inp.classList.toggle('is-invalid', !!err);
+      const msg = $('[data-qmsg]', tr); msg.textContent = err; msg.classList.toggle('d-none', !err);
+      const q = err ? 0 : (kg ? Math.round(v * 1000) / 1000 : v);
       const p = num($('[data-p]', tr).value);
       $('[data-lt]', tr).textContent = fmt(q * p); sub += q * p;
-      if (kg) { weight += q; if (q > 0) pieces += 1; else missing++; } else pieces += q;
+      if (err || (kg && q <= 0)) missing++;
+      if (kg) { weight += q; if (q > 0) pieces += 1; } else pieces += q;
     });
     const exp = $('[data-express]').checked ? Math.round(sub * D.expressPct / 100) : 0;
     const disc = Math.min(num($('[data-discount]').value), sub + exp);
@@ -85,12 +98,12 @@
     const ch = $('[data-t="change"]');
     ch.classList.toggle('d-none', paid <= t.total);
     ch.textContent = T('Monnaie à rendre') + ' : ' + fmt(paid - t.total);
-    $('[data-submit]').disabled = t.pieces === 0 || t.missing > 0; // poids à saisir pour chaque article au kilo
+    $('[data-submit]').disabled = t.pieces === 0 || t.missing > 0; // poids à saisir, quantités à corriger
     form.dataset.total = String(t.total);
   }
 
   form.addEventListener('click', (e) => {
-    const tile = e.target.closest('[data-article]'); if (tile) { addLine(Number(tile.dataset.article)); return; }
+    const tile = e.target.closest('.pressing-tile[data-article]'); if (tile) { addLine(Number(tile.dataset.article)); return; }
     const del = e.target.closest('[data-del]');
     if (del) { del.closest('tr').remove(); if (!$('tr[data-line]', tbody)) tbody.innerHTML = `<tr class="empty"><td colspan="8" class="text-center text-secondary py-3">${esc(T('Aucun article.'))}</td></tr>`; recalc(); }
   });

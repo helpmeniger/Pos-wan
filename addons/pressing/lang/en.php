@@ -14,4 +14,6 @@ return [
     'DÉPÔT PRESSING' => 'DRY-CLEANING TICKET', 'Aucun dépôt.' => 'No orders.', 'Enregistrer les tarifs' => 'Save prices', 'Nouvel article' => 'New item',
     'Service non proposé pour cet article.' => 'Service not offered for this item.', 'Linge remis au client.' => 'Items handed over to the customer.',
     'Poids' => 'Weight', 'par kg' => 'per kg', 'Poids en kg, ex. 4,5' => 'Weight in kg, e.g. 4.5', 'À la pièce' => 'Per item', 'Au kilo (kg)' => 'By weight (kg)',
+    '1 000 kg au plus.' => '1,000 kg at most.', 'Quantité obligatoire.' => 'Quantity required.', 'Nombre de pièces invalide.' => 'Invalid number of items.', '200 pièces au plus.' => '200 items at most.',
+    '« {a} » se compte à la pièce (nombre entier). Pour le peser, réglez son unité sur « Au kilo » dans Pressing → Tarifs.' => '“{a}” is counted per item (whole number). To weigh it, set its unit to “By weight (kg)” in Dry cleaning → Prices.',
 ];

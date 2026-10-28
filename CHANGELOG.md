@@ -2,6 +2,18 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.11.4] — 2026-10-28
+
+### Corrigé
+- **Pressing 1.3.2 : saisie des quantités au dépôt.**
+  - Un clic dans une ligne du dépôt (quantité, couleur, marque, défauts) ajoutait une pièce de
+    plus : on ne pouvait pas corriger une quantité ou taper un poids sans qu'elle change.
+  - Les quantités des articles à la pièce utilisaient un champ numérique du navigateur qui
+    avalait la virgule (« 4,5 » devenait « 445 », total faux). Toutes les quantités sont
+    désormais des champs texte : « 4,5 », « 4.5 » et « ,5 » sont acceptés pour un article au
+    kilo ; pour un article à la pièce, une virgule affiche un message (« se compte à la pièce…
+    réglez son unité sur Au kilo dans Tarifs ») et bloque l'enregistrement au lieu d'être ignorée.
+
 ## [2.11.3] — 2026-10-28
 
 ### Corrigé
