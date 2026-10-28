@@ -1481,6 +1481,10 @@ test('Pressing : articles au kilo, poids avec virgule, pièces entières, retrai
     eq('4,5 kg', $P::qty('4.500', 'kg'));
     eq('3', $P::qty('3.000'));
     throws(fn() => $P::create(['customer_name' => 'Kilo', 'phone' => '90 77 77 77', 'lines' => [['article_id' => $chem, 'service' => 'lavage', 'quantity' => '1,5']]]), 'nombre entier');
+    throws(fn() => $P::create(['customer_name' => 'Kilo', 'phone' => '+227 90 77 77 77+227 90 77 77 77', 'lines' => [['article_id' => $chem, 'service' => 'lavage', 'quantity' => '1']]]), 'saisi deux fois');
+    DB::insert('pressing_orders', ['number' => 'PR-TEST-DOUBLON', 'customer_name' => 'Doublon', 'phone' => '90 11 22 3390 11 22 33', 'due_date' => date('Y-m-d'), 'user_id' => Auth::id()]);
+    ok(!in_array('Doublon', array_column($P::recentClients(), 'customer_name'), true), 'numéro doublé jamais reproposé à la saisie');
+    DB::run("DELETE FROM pressing_orders WHERE number = 'PR-TEST-DOUBLON'");
     throws(fn() => $P::create(['customer_name' => 'Kilo', 'phone' => '90 77 77 77', 'lines' => [['article_id' => $kilo, 'service' => 'lavage', 'quantity' => '']]]), 'Poids invalide');
     throws(fn() => $P::create(['customer_name' => 'Kilo', 'phone' => '90 77 77 77', 'lines' => [['article_id' => $kilo, 'service' => 'lavage', 'quantity' => '0']]]), 'Poids invalide');
     $r = $P::create(['customer_name' => 'Kilo', 'phone' => '90 77 77 77', 'lines' => [

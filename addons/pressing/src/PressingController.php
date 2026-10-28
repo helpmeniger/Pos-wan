@@ -59,7 +59,7 @@ final class PressingController extends Controller
 
     public function create(): void
     {
-        $recent = DB::all('SELECT customer_name, phone FROM pressing_orders GROUP BY customer_name, phone ORDER BY MAX(id) DESC LIMIT 300');
+        $recent = PressingService::recentClients();
         view('pressing::form', ['title' => 'Nouveau dépôt pressing', 'tarifs' => PressingService::tarifs(), 'recent' => $recent, 'scripts' => ['addons/pressing/pressing.js']]);
     }
 
@@ -127,7 +127,7 @@ final class PressingController extends Controller
     /** Caisse pressing (caisse principale en mode Pressing) : dépôt direct + retraits. */
     public function caisse(): void
     {
-        $recent = DB::all('SELECT customer_name, phone FROM pressing_orders GROUP BY customer_name, phone ORDER BY MAX(id) DESC LIMIT 300');
+        $recent = PressingService::recentClients();
         view('pressing::form', ['title' => 'Caisse pressing', 'tarifs' => PressingService::tarifs(), 'recent' => $recent, 'scripts' => ['addons/pressing/pressing.js'], 'caisse' => true,
             'ready' => DB::all("SELECT id, number, customer_name, phone, total - paid AS due, due_date FROM pressing_orders WHERE status IN ('ready','partial') ORDER BY due_date LIMIT 12"),
             'readyCount' => (int) DB::value("SELECT COUNT(*) FROM pressing_orders WHERE status IN ('ready','partial')")]);

@@ -67,6 +67,16 @@ final class PressingService
         return $out;
     }
 
+    /**
+     * Clients déjà venus proposés à la saisie (nom → téléphone), le plus récent d'abord.
+     * Un numéro invalide (plus de 15 chiffres, ex. saisi deux fois) n'est jamais reproposé.
+     */
+    public static function recentClients(): array
+    {
+        $rows = DB::all('SELECT customer_name, phone FROM pressing_orders GROUP BY customer_name, phone ORDER BY MAX(id) DESC LIMIT 400');
+        return array_slice(array_values(array_filter($rows, fn($r) => strlen(self::digits((string) $r['phone'])) <= 15)), 0, 300);
+    }
+
     private static function digits(string $phone): string
     {
         return (string) preg_replace('/\D/', '', $phone);
@@ -119,6 +129,9 @@ final class PressingService
         $phone = trim((string) ($d['phone'] ?? ''));
         if ($name === '' || strlen(self::digits($phone)) < 8) {
             throw new BusinessException('Nom du client et téléphone (8 chiffres au moins) obligatoires.');
+        }
+        if (strlen(self::digits($phone)) > 15) {
+            throw new BusinessException('Téléphone invalide (' . strlen(self::digits($phone)) . ' chiffres, 15 au plus) : vérifiez qu\'il n\'a pas été saisi deux fois.');
         }
         $tarifs = self::tarifs();
         $manage = Auth::can('pressing.manage');

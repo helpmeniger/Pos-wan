@@ -2,6 +2,17 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.11.3] — 2026-10-28
+
+### Corrigé
+- **Caisse pressing : téléphone en double.** Quand le nom d'un client déjà venu était tapé, son
+  numéro se remplissait en quittant le champ ; si le caissier tapait aussi le numéro, il
+  s'ajoutait au premier (« +227 96 12 45 7+227 96 12 45 788 »). Désormais le numéro se remplit dès
+  que le nom correspond, il est sélectionné quand on clique dans le champ (la saisie le
+  remplace), il suit le client si l'on en choisit un autre, et un numéro tapé à la main n'est
+  jamais modifié. Le serveur refuse un téléphone de plus de 15 chiffres, et un numéro doublé
+  déjà enregistré n'est plus proposé. Module Pressing 1.3.1.
+
 ## [2.11.2] — 2026-10-28
 
 ### Ajouté

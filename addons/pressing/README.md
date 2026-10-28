@@ -56,6 +56,10 @@ Tableau de bord : reçus, en cours, prêts, **en retard** (date de retrait dépa
 
 Les tarifs fournis (FCFA) sont **indicatifs** : adaptez-les avant la mise en service.
 
+## Version 1.3.1
+- Caisse : le téléphone d'un client déjà venu ne peut plus être saisi en double (il est
+  sélectionné au clic, la saisie le remplace) ; téléphone de plus de 15 chiffres refusé.
+
 ## Version 1.3.0 : articles au kilo
 
 - Chaque article a une **unité** (Pressing → Tarifs, colonne « Unité ») : **À la pièce** ou

@@ -102,11 +102,28 @@
   });
   $('[data-pay-full]').addEventListener('click', () => { $('[data-pay-amount]').value = Math.round(totals().total); recalc(); });
   $('[data-pay-half]').addEventListener('click', () => { $('[data-pay-amount]').value = Math.round(totals().total / 2); recalc(); });
-  // Client déjà venu : le téléphone se remplit à partir de la liste
-  $('[data-client-name]').addEventListener('change', (e) => {
-    const o = $$('#pClients option').find((x) => x.value === e.target.value);
-    if (o && !$('[data-client-phone]').value) $('[data-client-phone]').value = o.dataset.phone;
+  // Client déjà venu : le téléphone se remplit à partir de la liste. Un numéro rempli ainsi est
+  // sélectionné quand on clique dans le champ : ce que l'on tape le remplace (jamais de doublon),
+  // et il suit le client si l'on en choisit un autre. Un numéro tapé à la main n'est jamais touché.
+  const nameEl = $('[data-client-name]');
+  const phoneEl = $('[data-client-phone]');
+  let autoPhone = '';
+  let selectOnClick = false;
+  const fillPhone = () => {
+    const o = $$('#pClients option').find((x) => x.value === nameEl.value.trim());
+    if (!o || !(phoneEl.value === '' || phoneEl.value === autoPhone)) return;
+    phoneEl.value = o.dataset.phone;
+    autoPhone = o.dataset.phone;
+  };
+  nameEl.addEventListener('input', fillPhone);
+  nameEl.addEventListener('change', fillPhone);
+  phoneEl.addEventListener('focus', () => {
+    if (!autoPhone || phoneEl.value !== autoPhone) return;
+    phoneEl.select();
+    selectOnClick = true;
   });
+  phoneEl.addEventListener('mouseup', (e) => { if (selectOnClick) { e.preventDefault(); phoneEl.select(); selectOnClick = false; } });
+  phoneEl.addEventListener('input', () => { autoPhone = ''; selectOnClick = false; });
   form.addEventListener('submit', () => { $('[data-submit]').disabled = true; });
   recalc();
 })();
