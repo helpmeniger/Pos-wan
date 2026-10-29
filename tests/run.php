@@ -986,7 +986,7 @@ test('Module exemple « Livraisons » : installation, permissions, données, ré
 $PR = [];
 test('Module Pressing : dépôt express, acompte en caisse, étiquettes, prix protégés', function () use (&$PR) {
     actingAs('admin');
-    eq(['0001_pressing', '0002_suivi_retraits', '0003_articles_au_poids'], App\Core\Addons::install('pressing', false), 'installation');
+    eq(['0001_pressing', '0002_suivi_retraits', '0003_articles_au_poids', '0004_express_livraison'], App\Core\Addons::install('pressing', false), 'installation');
     $PR['chemise'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Chemise'");
     $PR['boubou'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Boubou simple'");
     $PR['couverture'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Couverture'");
@@ -1468,6 +1468,38 @@ test('POS Marwa — pressing : retrait partiel, solde au dernier retrait, retard
     eq(3, Addons\Pressing\PressingService::lateDays(['status' => 'ready', 'due_date' => date('Y-m-d', strtotime('-3 days'))]), 'jours de retard');
     eq(0, Addons\Pressing\PressingService::lateDays(['status' => 'delivered', 'due_date' => '2020-01-01']), 'retiré : pas de retard');
     $V2['pressing'] = $id;
+});
+test('Pressing : pourcentage express au choix, livraison à domicile, colonne « Prêts à livrer »', function () {
+    $P = Addons\Pressing\PressingService::class;
+    $chem = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Chemise'");
+    $line = [['article_id' => $chem, 'service' => 'lavage', 'quantity' => 4]]; // 2 000 F
+    actingAs('admin');
+    $P::saveSettings(['express_pourcent' => '50', 'express_choix' => '25 ; 50 ; 100', 'express_delai' => '1', 'delai' => '3', 'livraison_frais' => '1000']);
+    eq([25.0, 50.0, 100.0], $P::expressChoices(), 'choix proposés');
+    throws(fn() => $P::saveSettings(['express_pourcent' => '50', 'express_choix' => '25 ; abc', 'express_delai' => '1', 'delai' => '3', 'livraison_frais' => '0']), 'Choix express');
+    actingAs('caissier');
+    $r = $P::create(['customer_name' => 'Express', 'phone' => '90 66 66 66', 'express' => true, 'express_pct' => '100', 'lines' => $line]);
+    $o = DB::one('SELECT * FROM pressing_orders WHERE id = ?', [$r['id']]);
+    eq([2000.0, 100.0, 4000.0], [(float) $o['express_fee'], (float) $o['express_pct'], (float) $o['total']], 'express 100 % choisi par le caissier');
+    $r = $P::create(['customer_name' => 'Express', 'phone' => '90 66 66 66', 'express' => true, 'lines' => $line]);
+    eq(1000.0, (float) DB::value('SELECT express_fee FROM pressing_orders WHERE id = ?', [$r['id']]), 'sans choix : taux par défaut 50 %');
+    throws(fn() => $P::create(['customer_name' => 'Express', 'phone' => '90 66 66 66', 'express' => true, 'express_pct' => '10', 'lines' => $line]), 'seuls les choix proposés');
+    actingAs('admin');
+    $r = $P::create(['customer_name' => 'Express', 'phone' => '90 66 66 66', 'express' => true, 'express_pct' => '37,5', 'lines' => $line]);
+    eq(750.0, (float) DB::value('SELECT express_fee FROM pressing_orders WHERE id = ?', [$r['id']]), 'responsable : 37,5 % libre');
+    throws(fn() => $P::create(['customer_name' => 'Express', 'phone' => '90 66 66 66', 'express' => true, 'express_pct' => '400', 'lines' => $line]), 'invalide');
+    // Livraison à domicile
+    actingAs('caissier');
+    throws(fn() => $P::create(['customer_name' => 'Livré', 'phone' => '90 55 44 33', 'delivery' => true, 'delivery_address' => '', 'lines' => $line]), 'adresse');
+    $r = $P::create(['customer_name' => 'Livré', 'phone' => '90 55 44 33', 'delivery' => true, 'delivery_address' => 'Plateau, rue du Fleuve, porte bleue', 'lines' => $line]);
+    $o = DB::one('SELECT * FROM pressing_orders WHERE id = ?', [$r['id']]);
+    eq([1, 1000.0, 3000.0], [(int) $o['delivery'], (float) $o['delivery_fee'], (float) $o['total']], 'frais de livraison par défaut ajoutés');
+    $P::setStatus($r['id'], 'ready');
+    $board = $P::board();
+    ok(in_array($r['id'], array_column($board['columns']['delivery'], 'id'), true) && !in_array($r['id'], array_column($board['columns']['ready'], 'id'), true), 'écran : colonne « Prêts à livrer », pas « Prêts à retirer »');
+    eq(1, $board['totals']['delivery'] >= 1 ? 1 : 0, 'compteur « à livrer »');
+    ok(!in_array('Livré', array_column($P::board(true)['ready'], 'name'), true), 'affichage clients : livraisons non montrées');
+    $GLOBALS['PR_LIVRAISON'] = $r['id'];
 });
 test('Pressing : articles au kilo, poids avec virgule, pièces entières, retrait partiel au poids', function () {
     actingAs('caissier');
@@ -4256,6 +4288,22 @@ test('Installation : messages MySQL clairs, base d\'une autre application refus�
     ok((bool) glob(STORAGE_PATH . '/backups/*avant_reprise_installation*.sql.gz'), 'sauvegarde avant reprise');
 });
 
+test('Pressing (HTTP) : « Livré » depuis l\'écran, ticket de livraison, réglages réservés', function () use ($B) {
+    $r = ['id' => $GLOBALS['PR_LIVRAISON']];
+    $P = Addons\Pressing\PressingService::class;
+    // Depuis l'écran : refusé tant que ce n'est pas payé, puis livré
+    $h = new Http(); $h->login($B, 'caissier', 'Mot-de-passe-2026');
+    preg_match('/name="csrf-token" content="([^"]+)"/', $h->req('GET', "$B/pressing/ecran")['body'], $m);
+    $hdr = ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . ($m[1] ?? '')];
+    $d = json_decode($h->req('POST', "$B/pressing/ecran/{$r['id']}/livrer", json_encode(['_csrf' => $m[1] ?? '']), $hdr)['body'], true);
+    ok(!$d['ok'] && str_contains($d['error'], 'Reste à payer'), 'livraison refusée tant que le solde n\'est pas encaissé');
+    $P::pay($r['id'], ['method' => 'cash', 'amount' => '3000']);
+    $d = json_decode($h->req('POST', "$B/pressing/ecran/{$r['id']}/livrer", json_encode(['_csrf' => $m[1] ?? '']), $hdr)['body'], true);
+    ok($d['ok'] && DB::value('SELECT status FROM pressing_orders WHERE id = ?', [$r['id']]) === 'delivered', 'livré depuis l\'écran');
+    $t = $h->req('GET', "$B/pressing/{$r['id']}/ticket")['body'];
+    ok(str_contains($t, 'porte bleue') && str_contains($t, 'LIVRAISON'), 'ticket : adresse de livraison');
+    eq(403, $h->req('POST', "$B/pressing/reglages", http_build_query(['_csrf' => $m[1] ?? '', 'express_pourcent' => '10']))['code'], 'réglages réservés au responsable');
+});
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

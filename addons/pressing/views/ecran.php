@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('addons/pressing/pressing-ecran.css')) ?>">
 </head>
-<body class="pe<?= $public ? ' pe-public' : '' ?>" data-refresh="<?= (int) $refresh ?>" data-public="<?= $public ? '1' : '0' ?>" data-can="<?= $canProcess && !$public ? '1' : '0' ?>">
+<body class="pe<?= $public ? ' pe-public' : '' ?>" data-refresh="<?= (int) $refresh ?>" data-public="<?= $public ? '1' : '0' ?>" data-can="<?= $canProcess && !$public ? '1' : '0' ?>" data-deliver="<?= !empty($canDeliver) && !$public ? '1' : '0' ?>">
 <header class="pe-head">
   <div class="pe-title"><i class="bi bi-basket2-fill"></i> <?= e($public ? t('Vos vêtements sont prêts') : t('Dépôts en cours')) ?><small><?= e(setting('company_name')) ?></small></div>
   <?php if (!$public): ?>
@@ -18,6 +18,7 @@
     <span class="k late"><b id="kLate">–</b> <?= e(t('en retard')) ?></span>
     <span class="k today"><b id="kToday">–</b> <?= e(t('à rendre aujourd\'hui')) ?></span>
     <span class="k ready"><b id="kReady">–</b> <?= e(t('prêts à retirer')) ?></span>
+    <span class="k deliv"><b id="kDelivery">–</b> <?= e(t('à livrer')) ?></span>
     <span class="k exp"><b id="kExpress">–</b> express</span>
     <span class="k"><b id="kPieces">–</b> <?= e(t('pièces')) ?></span>
     <span class="k due"><b id="kDue">–</b> <?= e(t('reste à encaisser')) ?></span>

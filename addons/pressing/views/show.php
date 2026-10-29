@@ -16,7 +16,7 @@ $msg = sprintf(t('Bonjour %s, votre linge (dépôt %s) est prêt chez %s.'), $o[
   <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/pressing/' . $o['id'] . '/labels')) ?>"><i class="bi bi-tags"></i> Étiquettes (<?= (int) $o['pieces'] ?>)<?= (float) ($o['weight'] ?? 0) > 0 ? ' · ' . e(PS::qty($o['weight'], 'kg')) : '' ?></a>
   <?php if ($o['status'] === 'ready'): ?><a class="btn btn-outline-success" target="_blank" rel="noopener" href="https://wa.me/<?= e($wa) ?>?text=<?= e(rawurlencode($msg)) ?>"><i class="bi bi-whatsapp"></i> Prévenir le client</a><?php endif; ?>
   <a class="btn btn-outline-secondary" href="<?= e(url('/pressing/client', ['phone' => $o['phone']])) ?>"><i class="bi bi-clock-history"></i> Historique du client</a>
-  <span class="ms-auto fs-5"><span class="badge bg-<?= e($colors[$o['status']]) ?>"><?= e(PS::STATUSES[$o['status']]) ?></span><?= (int) $o['express'] ? ' <span class="badge bg-danger">EXPRESS</span>' : '' ?></span>
+  <span class="ms-auto fs-5"><span class="badge bg-<?= e($colors[$o['status']]) ?>"><?= e(PS::STATUSES[$o['status']]) ?></span><?= (int) $o['express'] ? ' <span class="badge bg-danger">EXPRESS' . ($o['express_pct'] !== null ? ' +' . e(PS::qty($o['express_pct'])) . ' %' : '') . '</span>' : '' ?><?= (int) ($o['delivery'] ?? 0) ? ' <span class="badge bg-primary"><i class="bi bi-truck"></i> LIVRAISON</span>' : '' ?></span>
 </div>
 <?php if ($lateDays): ?><div class="alert alert-danger py-2"><i class="bi bi-alarm"></i> <?= $o['status'] === 'ready' || $o['status'] === 'partial' ? 'Prêt mais non retiré' : 'En retard' ?> : <b><?= $lateDays ?> jour(s)</b> après la date prévue (<?= e(fdate($o['due_date'], false)) ?>).</div><?php endif; ?>
 <?php if ($o['status'] === 'cancelled'): ?><div class="alert alert-secondary py-2">Annulé : <?= e($o['cancel_reason']) ?></div><?php endif; ?>
@@ -27,7 +27,8 @@ $msg = sprintf(t('Bonjour %s, votre linge (dépôt %s) est prêt chez %s.'), $o[
       <td><?= e(PS::SERVICES[$i['service']] ?? $i['service']) ?></td><td class="num"><?= e(PS::qty($i['quantity'], $i['unit'] ?? 'piece')) ?></td><td class="num"><?= money($i['unit_price']) ?><?= ($i['unit'] ?? '') === 'kg' ? '<small class="text-secondary">/kg</small>' : '' ?><?= abs((float) $i['unit_price'] - (float) $i['list_price']) >= 0.01 ? ' <span class="badge bg-warning text-dark" title="Tarif ' . e(money($i['list_price'])) . '">modifié</span>' : '' ?></td><td class="num fw-semibold"><?= money($i['line_total']) ?></td></tr><?php endforeach; ?>
     </tbody><tfoot>
       <tr><td colspan="5" class="text-end">Sous-total</td><td class="num"><?= money($o['subtotal']) ?></td></tr>
-      <?php if ((float) $o['express_fee'] > 0): ?><tr><td colspan="5" class="text-end">Supplément express</td><td class="num"><?= money($o['express_fee']) ?></td></tr><?php endif; ?>
+      <?php if ((float) $o['express_fee'] > 0): ?><tr><td colspan="5" class="text-end">Supplément express<?= $o['express_pct'] !== null ? ' (' . e(PS::qty($o['express_pct'])) . ' %)' : '' ?></td><td class="num"><?= money($o['express_fee']) ?></td></tr><?php endif; ?>
+      <?php if ((float) ($o['delivery_fee'] ?? 0) > 0): ?><tr><td colspan="5" class="text-end">Frais de livraison</td><td class="num"><?= money($o['delivery_fee']) ?></td></tr><?php endif; ?>
       <?php if ((float) $o['discount'] > 0): ?><tr><td colspan="5" class="text-end">Remise</td><td class="num">− <?= money($o['discount']) ?></td></tr><?php endif; ?>
       <tr class="fw-bold"><td colspan="5" class="text-end">TOTAL</td><td class="num"><?= money($o['total']) ?></td></tr>
       <tr><td colspan="5" class="text-end">Payé</td><td class="num text-success"><?= money($o['paid']) ?></td></tr>
@@ -48,6 +49,7 @@ $msg = sprintf(t('Bonjour %s, votre linge (dépôt %s) est prêt chez %s.'), $o[
       <dt class="col-5">N°</dt><dd class="col-7"><?= e($o['number']) ?></dd>
       <dt class="col-5">Client</dt><dd class="col-7"><?= e($o['customer_name']) ?><br><a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $o['phone'])) ?>"><?= e($o['phone']) ?></a></dd>
       <dt class="col-5">Déposé le</dt><dd class="col-7"><?= e(fdate($o['created_at'])) ?><br><span class="text-secondary"><?= e($o['user_name']) ?></span></dd>
+      <?php if ((int) ($o['delivery'] ?? 0)): ?><dt class="col-5 text-primary"><i class="bi bi-truck"></i> Livraison</dt><dd class="col-7"><?= e((string) $o['delivery_address']) ?></dd><?php endif; ?>
       <dt class="col-5">Retrait prévu</dt><dd class="col-7 <?= $late ? 'text-danger fw-semibold' : '' ?>"><?= e(fdate($o['due_date'], false)) ?></dd>
       <?php if ($o['ready_at']): ?><dt class="col-5">Prêt le</dt><dd class="col-7"><?= e(fdate($o['ready_at'])) ?></dd><?php endif; ?>
       <?php if ($o['delivered_at']): ?><dt class="col-5">Retiré le</dt><dd class="col-7"><?= e(fdate($o['delivered_at'])) ?><br><span class="text-secondary"><?= e($o['delivered_name'] ?? '') ?></span></dd><?php endif; ?>

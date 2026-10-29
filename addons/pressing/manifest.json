@@ -1,7 +1,7 @@
 {
     "code": "pressing",
     "name": "Pressing",
-    "version": "1.3.2",
+    "version": "1.4.0",
     "requires": "2.0.0",
     "author": "POS Marwa",
     "description": "Gestion complète d'un pressing : tarifs par article et par service (à la pièce ou au kilo), dépôts avec étiquettes, express, acompte, suivi du traitement (reçu, en cours, prêt, retiré), retrait avec paiement du solde, relances des clients, rapport.",
@@ -33,6 +33,8 @@
         "pressing_retrait_partiel": "1",
         "pressing_alerte_jours": "1",
         "pressing_express_pourcent": "50",
+        "pressing_express_choix": "25,50,100",
+        "pressing_livraison_frais": "1000",
         "pressing_express_delai_jours": "1",
         "pressing_relance_jours": "30",
         "pressing_conditions": "Vérifiez vos vêtements au retrait. Les articles non retirés après 90 jours ne sont plus garantis. Présentez ce ticket pour retirer votre linge."

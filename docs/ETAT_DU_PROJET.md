@@ -1,4 +1,4 @@
-# État du projet — version 2.11.4 (POS Marwa)
+# État du projet — version 2.12.0 (POS Marwa)
 
 ## Terminé et vérifié
 
@@ -75,7 +75,7 @@
 | **v2.8** Banques et coffres : comptes, versements des clôtures, dépôts, retraits, virements, annulations, relevés, reçus | ✅ | Tests PHP (soldes, plafonds, annulations, droits) + Chromium |
 | **v2.8** Pressing : écran des dépôts en cours + affichage clients | ✅ | Tests PHP + Chromium (avancement, aucune donnée personnelle côté clients) |
 | **v2.8** Assistance automatique (agent sur chaque poste) | ✅ fonctionnel, ⚠️ à valider sur place | Agent exécuté par PowerShell 7 contre POS Marwa, RustDesk simulé (11/11 + coupure de sécurité). **Non exécuté sur un vrai Windows** |
-**Résultat de la suite de tests : 138 réussis, 0 échec** (`php tests/run.php`), plus 15 vérifications JavaScript du moteur de comptage (`node tests/js/track.test.js`).
+**Résultat de la suite de tests : 140 réussis, 0 échec** (`php tests/run.php`), plus 15 vérifications JavaScript du moteur de comptage (`node tests/js/track.test.js`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 

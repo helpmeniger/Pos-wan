@@ -56,6 +56,20 @@ Tableau de bord : reçus, en cours, prêts, **en retard** (date de retrait dépa
 
 Les tarifs fournis (FCFA) sont **indicatifs** : adaptez-les avant la mise en service.
 
+## Version 1.4.0 : express au choix, livraison à domicile
+- **Supplément express au choix** : quand EXPRESS est coché, le caissier choisit l'un des
+  pourcentages proposés (boutons, ex. 25 %, 50 %, 100 %) ; un autre pourcentage (ex. 37,5 %) est
+  réservé au responsable (droit « Tarifs, remises… »). Le pourcentage figure sur la fiche et le ticket.
+- **Réglages** (Pressing → Tarifs, en haut) : pourcentage express par défaut, choix proposés
+  (`25 ; 50 ; 100`), délais express et normal, frais de livraison par défaut.
+- **Livraison à domicile** : case au dépôt, adresse obligatoire, frais modifiables ajoutés au total ;
+  badge « LIVRAISON » dans les listes, adresse sur la fiche et le ticket.
+- **Écran des dépôts : colonne « Prêts à livrer »** (4ᵉ colonne) et compteur « à livrer ». Un dépôt
+  prêt avec livraison y apparaît (et non dans « Prêts à retirer ») avec l'adresse ; bouton
+  « Encaisser … puis livrer » tant qu'il reste à payer, puis « Livré ». L'affichage côté clients ne
+  montre pas les livraisons.
+- Migration `0004_express_livraison.sql` (pourcentage des dépôts express existants retrouvé).
+
 ## Version 1.3.2
 - Au dépôt, un clic dans une ligne n'ajoute plus de pièce ; la virgule n'est plus jamais
   ignorée : poids « 4,5 » accepté pour un article au kilo, message clair pour un article à la

@@ -16,4 +16,6 @@ return [
     'Poids' => 'Weight', 'par kg' => 'per kg', 'Poids en kg, ex. 4,5' => 'Weight in kg, e.g. 4.5', 'À la pièce' => 'Per item', 'Au kilo (kg)' => 'By weight (kg)',
     '1 000 kg au plus.' => '1,000 kg at most.', 'Quantité obligatoire.' => 'Quantity required.', 'Nombre de pièces invalide.' => 'Invalid number of items.', '200 pièces au plus.' => '200 items at most.',
     '« {a} » se compte à la pièce (nombre entier). Pour le peser, réglez son unité sur « Au kilo » dans Pressing → Tarifs.' => '“{a}” is counted per item (whole number). To weigh it, set its unit to “By weight (kg)” in Dry cleaning → Prices.',
+    'à livrer' => 'to deliver', 'Prêts à livrer' => 'Ready to deliver', 'Livré' => 'Delivered', 'Encaisser' => 'Collect', 'puis livrer' => 'then deliver', 'LIVRAISON' => 'DELIVERY', 'Livraison' => 'Delivery',
+    'Confirmer : le linge a été remis au client à domicile ?' => 'Confirm: the laundry was handed over at the customer\'s home?', 'Réglages du pressing enregistrés.' => 'Dry-cleaning settings saved.',
 ];

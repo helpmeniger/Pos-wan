@@ -11,7 +11,7 @@ body.pe { background: #0d1117; color: #e6edf3; min-height: 100vh; display: flex;
 .pe-clock { font-size: 1.2rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .pe-status { display: none; background: #8b1a1a; color: #fff; text-align: center; padding: 6px; font-weight: 600; }
 .pe-status.on { display: block; }
-.pe-board { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 12px; align-items: start; }
+.pe-board { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 12px; align-items: start; }
 .pe-col { background: #161b22; border-radius: 12px; padding: 8px; min-height: 60vh; }
 .pe-col h2 { font-size: 1.05rem; font-weight: 700; margin: 2px 4px 8px; display: flex; justify-content: space-between; }
 .pe-col.received h2 { color: #c9d1d9; } .pe-col.processing h2 { color: #58a6ff; } .pe-col.ready h2 { color: #4cd07d; }
@@ -42,3 +42,10 @@ body.pe { background: #0d1117; color: #e6edf3; min-height: 100vh; display: flex;
 .pe-ticket span { color: #a5d6b5; font-size: 1.1rem; }
 .pe-ticket .tag { display: inline-block; margin-top: 4px; font-size: .8rem; background: #d29922; color: #000; border-radius: 5px; padding: 1px 6px; }
 @media (max-width: 900px) { .pe-board { grid-template-columns: 1fr; } .pe-col { min-height: 0; } }
+
+/* Colonne « Prêts à livrer » (livraison à domicile) */
+.pe-col.delivery h2 { color: #79b8ff; } .pe-col.delivery .pe-card { border-left-color: #2f81f7; }
+.pe-card .addr { font-size: .85rem; color: #a5d6ff; margin: 2px 0; }
+.pe-card .acts a.pay { display: block; width: 100%; text-align: center; padding: 6px; border-radius: 6px; background: #9e6a03; color: #fff; text-decoration: none; font-weight: 600; }
+.pe-kpis .k.deliv b { color: #79b8ff; }
+@media (max-width: 1400px) and (min-width: 901px) { .pe-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

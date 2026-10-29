@@ -13,7 +13,7 @@
 <div class="card"><div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0 small"><thead><tr><th>N° dépôt</th><th>Client</th><th>Téléphone</th><th>Vêtements</th><th class="num">Qté</th><th>Dépôt</th><th>Livraison prévue</th><th class="num">Total</th><th class="num">Acompte / payé</th><th class="num">Reste</th><th>Statut</th><th class="num">Retard</th></tr></thead><tbody>
 <?php foreach ($rows as $o): $rest = round((float) $o['total'] - (float) $o['paid'], 2); $ld = PS::lateDays($o); ?>
   <tr class="<?= $ld ? 'table-danger' : '' ?>">
-    <td><a class="fw-semibold" href="<?= e(url('/pressing/' . $o['id'])) ?>"><?= e($o['number']) ?></a><?= (int) $o['express'] ? ' <span class="badge bg-danger">EXP</span>' : '' ?></td>
+    <td><a class="fw-semibold" href="<?= e(url('/pressing/' . $o['id'])) ?>"><?= e($o['number']) ?></a><?= (int) $o['express'] ? ' <span class="badge bg-danger">EXP</span>' : '' ?><?= (int) ($o['delivery'] ?? 0) ? ' <span class="badge bg-primary" title="Livraison à domicile"><i class="bi bi-truck"></i></span>' : '' ?></td>
     <td><a href="<?= e(url('/pressing/client', ['phone' => $o['phone']])) ?>"><?= e($o['customer_name']) ?></a></td>
     <td class="text-nowrap"><a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $o['phone'])) ?>"><?= e($o['phone']) ?></a></td>
     <td style="max-width:260px"><?= e($o['clothes'] ?? '') ?></td>

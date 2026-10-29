@@ -33,7 +33,7 @@ $tiles = [
 <div class="card"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>N°</th><th>Client</th><th class="num">Pièces</th><th>Retrait prévu</th><th class="num">Total</th><th class="num">Reste</th><th>Statut</th><th></th></tr></thead><tbody>
 <?php foreach ($p['rows'] as $o): $rest = round((float) $o['total'] - (float) $o['paid'], 2); $late = in_array($o['status'], ['received', 'processing'], true) && $o['due_date'] < $today; ?>
   <tr>
-    <td><a class="fw-semibold" href="<?= e(url('/pressing/' . $o['id'])) ?>"><?= e($o['number']) ?></a><?= (int) $o['express'] ? ' <span class="badge bg-danger">EXPRESS</span>' : '' ?><br><small class="text-secondary"><?= e(fdate($o['created_at'])) ?></small></td>
+    <td><a class="fw-semibold" href="<?= e(url('/pressing/' . $o['id'])) ?>"><?= e($o['number']) ?></a><?= (int) $o['express'] ? ' <span class="badge bg-danger">EXPRESS</span>' : '' ?><?= (int) ($o['delivery'] ?? 0) ? ' <span class="badge bg-primary"><i class="bi bi-truck"></i> LIVRAISON</span>' : '' ?><br><small class="text-secondary"><?= e(fdate($o['created_at'])) ?></small></td>
     <td><?= e($o['customer_name']) ?><br><a class="small" href="tel:<?= e(preg_replace('/[^0-9+]/', '', $o['phone'])) ?>"><?= e($o['phone']) ?></a></td>
     <td class="num"><?= (int) $o['pieces'] ?><?= (float) ($o['weight'] ?? 0) > 0 ? '<br><small class="text-secondary">' . e(PS::qty($o['weight'], 'kg')) . '</small>' : '' ?></td>
     <td class="<?= $late ? 'text-danger fw-semibold' : '' ?>"><?= e(fdate($o['due_date'], false)) ?><?= $late ? ' <i class="bi bi-alarm"></i>' : '' ?></td>

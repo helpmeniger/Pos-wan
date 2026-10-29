@@ -14,6 +14,8 @@ $router->get('/pressing/client', [P::class, 'client'], 'pressing.view');
 $router->get('/pressing/ecran', [P::class, 'ecran'], 'pressing.view');
 $router->get('/pressing/ecran/feed', [P::class, 'ecranFeed'], 'pressing.view');
 $router->post('/pressing/ecran/{id}/statut', [P::class, 'ecranStatus'], 'pressing.process');
+$router->post('/pressing/ecran/{id}/livrer', [P::class, 'ecranDeliver'], 'pressing.deposit');
+$router->post('/pressing/reglages', [P::class, 'reglages'], 'pressing.manage');
 $router->get('/pressing/find', [P::class, 'find'], 'pressing.view');
 $router->get('/pressing/{id}', [P::class, 'show'], 'pressing.view');
 $router->post('/pressing/{id}/status', [P::class, 'status'], 'pressing.process');

@@ -61,6 +61,17 @@
     if (kg) { const q = $('[data-q]', tr); q.focus(); }
   }
 
+  // Pourcentage express : un des choix proposés (boutons) ; saisie libre pour le responsable
+  function expressPct() {
+    const inp = $('[data-express-pct]');
+    const v = inp ? num(inp.value) : D.expressPct;
+    return v >= 0 && v <= 300 ? v : D.expressPct;
+  }
+  function markPct() {
+    const v = expressPct();
+    $$('[data-exp-pct]').forEach((b) => { const on = Math.abs(num(b.dataset.expPct) - v) < 0.001; b.classList.toggle('btn-danger', on); b.classList.toggle('btn-outline-danger', !on); });
+  }
+
   function totals() {
     let sub = 0; let pieces = 0; let weight = 0; let missing = 0;
     $$('tr[data-line]', tbody).forEach((tr) => {
@@ -83,14 +94,22 @@
       if (err || (kg && q <= 0)) missing++;
       if (kg) { weight += q; if (q > 0) pieces += 1; } else pieces += q;
     });
-    const exp = $('[data-express]').checked ? Math.round(sub * D.expressPct / 100) : 0;
-    const disc = Math.min(num($('[data-discount]').value), sub + exp);
-    return { sub, exp, pieces, weight: Math.round(weight * 1000) / 1000, missing, total: Math.max(0, sub + exp - disc) };
+    const pct = expressPct();
+    const exp = $('[data-express]').checked ? Math.round(sub * pct / 100) : 0;
+    const liv = $('[data-delivery]') && $('[data-delivery]').checked ? Math.max(0, num($('[data-delivery-fee]').value)) : 0;
+    const noAddr = !!($('[data-delivery]') && $('[data-delivery]').checked && $('[data-delivery-address]').value.trim().length < 3);
+    if (noAddr) missing++; // adresse obligatoire pour une livraison
+    if ($('[data-delivery-address]')) $('[data-delivery-address]').classList.toggle('is-invalid', noAddr);
+    const disc = Math.min(num($('[data-discount]').value), sub + exp + liv);
+    return { sub, exp, pct, liv, pieces, weight: Math.round(weight * 1000) / 1000, missing, total: Math.max(0, sub + exp + liv - disc) };
   }
 
   function recalc() {
     const t = totals();
     const set = (k, v) => { const el = $(`[data-t="${k}"]`); if (el) el.textContent = v; };
+    set('exp-pct', $('[data-express]').checked ? '(' + String(t.pct).replace('.', ',') + ' %)' : '');
+    set('liv', fmt(t.liv)); const lr = $('[data-liv-row]'); if (lr) lr.classList.toggle('d-none', !(t.liv > 0));
+    markPct();
     set('pieces', t.pieces); set('weight', String(t.weight).replace('.', ',') + ' kg');
     const wr = $('[data-weight-row]'); if (wr) wr.classList.toggle('d-none', t.weight <= 0 && !t.missing); set('sub', fmt(t.sub)); set('exp', fmt(t.exp)); set('total', fmt(t.total));
     const paid = num($('[data-pay-amount]').value);
@@ -108,7 +127,19 @@
     if (del) { del.closest('tr').remove(); if (!$('tr[data-line]', tbody)) tbody.innerHTML = `<tr class="empty"><td colspan="8" class="text-center text-secondary py-3">${esc(T('Aucun article.'))}</td></tr>`; recalc(); }
   });
   form.addEventListener('input', recalc);
+  form.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-exp-pct]'); if (!b) return;
+    $('[data-express-pct]').value = b.dataset.expPct.replace('.', ',');
+    recalc();
+  });
+  const dl = $('[data-delivery]');
+  if (dl) dl.addEventListener('change', () => {
+    $('[data-delivery-box]').classList.toggle('d-none', !dl.checked);
+    if (dl.checked) $('[data-delivery-address]').focus();
+    recalc();
+  });
   $('[data-express]').addEventListener('change', (e) => {
+    $('[data-express-box]').classList.toggle('d-none', !e.target.checked);
     const d = new Date(); d.setDate(d.getDate() + (e.target.checked ? D.delaiExpress : D.delai));
     $('[data-due]').value = d.toISOString().slice(0, 10);
     recalc();

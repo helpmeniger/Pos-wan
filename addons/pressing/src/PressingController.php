@@ -66,7 +66,8 @@ final class PressingController extends Controller
     public function store(): void
     {
         $r = $this->attempt(fn() => PressingService::create([
-            'customer_name' => Request::str('customer_name'), 'phone' => Request::str('phone'), 'express' => Request::input('express') === '1',
+            'customer_name' => Request::str('customer_name'), 'phone' => Request::str('phone'), 'express' => Request::input('express') === '1', 'express_pct' => Request::str('express_pct'),
+            'delivery' => Request::input('delivery') === '1', 'delivery_address' => Request::str('delivery_address'), 'delivery_fee' => Request::str('delivery_fee'),
             'due_date' => Request::str('due_date'), 'discount' => Request::str('discount'), 'note' => Request::str('note'),
             'lines' => $this->rowsFromForm('lines'),
             'deposit' => ['method' => Request::str('pay_method'), 'amount' => Request::str('pay_amount'), 'reference' => Request::str('pay_reference')],
@@ -257,13 +258,37 @@ final class PressingController extends Controller
     public function ecran(): void
     {
         view('pressing::ecran', ['u' => $this->user(), 'refresh' => 15, 'public' => (bool) Request::query('public'),
-            'canProcess' => can('pressing.process')], null);
+            'canProcess' => can('pressing.process'), 'canDeliver' => can('pressing.deposit')], null);
     }
 
     public function ecranFeed(): void
     {
         header('Cache-Control: no-store');
         json_response(['ok' => true] + PressingService::board((bool) Request::query('public')));
+    }
+
+    /** « Livré » depuis l'écran : remise au client à domicile ; refusée s'il reste à payer (encaisser d'abord). */
+    public function ecranDeliver(int $id): void
+    {
+        $o = $this->order($id);
+        $this->jsonAttempt(function () use ($id, $o) {
+            if ((int) $o['delivery'] !== 1) {
+                throw new \App\Core\BusinessException('Ce dépôt n\'est pas à livrer à domicile.');
+            }
+            PressingService::deliver($id);
+            return [];
+        });
+    }
+
+    /** Réglages : supplément express (par défaut et choix proposés), délais, frais de livraison. */
+    public function reglages(): void
+    {
+        $this->attempt(fn() => PressingService::saveSettings([
+            'express_pourcent' => Request::str('express_pourcent'), 'express_choix' => Request::str('express_choix'), 'express_delai' => Request::str('express_delai'),
+            'delai' => Request::str('delai'), 'livraison_frais' => Request::str('livraison_frais'),
+        ]), '/pressing/tarifs');
+        flash('success', t('Réglages du pressing enregistrés.'));
+        redirect('/pressing/tarifs');
     }
 
     /** Avancement depuis l'écran (reçu → en traitement → prêt). */

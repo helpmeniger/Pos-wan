@@ -26,6 +26,82 @@ final class PressingService
     /** Libellés courts (badges, listes). */
     public const SHORT = ['received' => 'Déposé', 'processing' => 'En traitement', 'ready' => 'Prêt', 'partial' => 'Retrait partiel', 'delivered' => 'Retiré', 'cancelled' => 'Annulé'];
 
+    /** Pourcentages express proposés au comptoir (réglage « 25,50,100 »), toujours avec le taux par défaut. */
+    public static function expressChoices(): array
+    {
+        $list = array_map(fn($v) => round((float) trim($v), 2), self::splitChoices((string) setting('pressing_express_choix', '25,50,100')));
+        $list[] = self::expressDefault();
+        $list = array_values(array_unique(array_filter($list, fn($v) => $v > 0 && $v <= 300)));
+        sort($list);
+        return $list;
+    }
+
+    /** « 25 ; 50 ; 100 » ou « 25, 50, 100 » → ['25', '50', '100'] (décimales avec un point : 12.5). */
+    private static function splitChoices(string $raw): array
+    {
+        $parts = preg_split(str_contains($raw, ';') ? '/;/' : '/[,\s]+/', $raw) ?: [];
+        return array_values(array_filter(array_map(fn($v) => str_replace([' ', '%'], '', trim($v)), $parts), fn($v) => $v !== ''));
+    }
+
+    public static function expressDefault(): float
+    {
+        return round(max(0.0, min(300.0, (float) str_replace(',', '.', (string) setting('pressing_express_pourcent', '50')))), 2);
+    }
+
+    /**
+     * Pourcentage express d'un dépôt : un des choix proposés, ou une autre valeur réservée au
+     * responsable (droit « Tarifs, remises… »). Vide : taux par défaut.
+     */
+    public static function expressPct(mixed $raw, bool $manage): float
+    {
+        $raw = trim(str_replace([' ', '%', ','], ['', '', '.'], (string) $raw));
+        if ($raw === '') {
+            return self::expressDefault();
+        }
+        if (!is_numeric($raw) || (float) $raw < 0 || (float) $raw > 300) {
+            throw new BusinessException('Pourcentage express invalide (0 à 300 %).');
+        }
+        $pct = round((float) $raw, 2);
+        if (!$manage && !in_array($pct, self::expressChoices(), true)) {
+            throw new BusinessException('Pourcentage express de ' . self::qty($pct) . ' % : seuls les choix proposés (' . implode(', ', array_map(fn($v) => self::qty($v) . ' %', self::expressChoices())) . ') sont permis sans le droit « Tarifs, remises… ».');
+        }
+        return $pct;
+    }
+
+    /** Réglages du pressing (page Tarifs, responsable). */
+    public static function saveSettings(array $d): void
+    {
+        $num = fn($k, $min, $max, $label) => (function () use ($d, $k, $min, $max, $label) {
+            $v = trim(str_replace([' ', '%', ','], ['', '', '.'], (string) ($d[$k] ?? '')));
+            if (!is_numeric($v) || (float) $v < $min || (float) $v > $max) {
+                throw new BusinessException($label . ' : valeur entre ' . $min . ' et ' . $max . '.');
+            }
+            return (float) $v;
+        })();
+        $pct = $num('express_pourcent', 0, 300, 'Supplément express par défaut (%)');
+        $choices = [];
+        foreach (self::splitChoices((string) ($d['express_choix'] ?? '')) as $c) {
+            if ($c === '') {
+                continue;
+            }
+            if (!is_numeric($c) || (float) $c <= 0 || (float) $c > 300) {
+                throw new BusinessException('Choix express : pourcentages entre 1 et 300, séparés par des points-virgules (ex. 25 ; 50 ; 100).');
+            }
+            $choices[] = (string) round((float) $c, 2);
+        }
+        $values = [
+            'pressing_express_pourcent' => (string) round($pct, 2),
+            'pressing_express_choix' => implode(';', array_unique($choices)),
+            'pressing_express_delai_jours' => (string) (int) $num('express_delai', 0, 30, 'Délai express (jours)'),
+            'pressing_delai_jours' => (string) (int) $num('delai', 0, 60, 'Délai normal (jours)'),
+            'pressing_livraison_frais' => (string) round($num('livraison_frais', 0, 1000000, 'Frais de livraison'), 2),
+        ];
+        foreach ($values as $k => $v) {
+            setting_set($k, $v);
+        }
+        Audit::log('pressing.settings', null, null, $values);
+    }
+
     /** Quantité saisie (virgule ou point décimal acceptés) ; null si illisible. */
     public static function parseQty(mixed $v): ?float
     {
@@ -185,15 +261,27 @@ final class PressingService
         }
         $subtotal = round($subtotal, 2);
         $express = !empty($d['express']);
-        $expressFee = $express ? round($subtotal * max(0.0, (float) setting('pressing_express_pourcent', '50')) / 100) : 0.0;
+        $expressPct = $express ? self::expressPct($d['express_pct'] ?? null, $manage) : null;
+        $expressFee = $express ? round($subtotal * $expressPct / 100, currency()['decimals']) : 0.0;
+        // Livraison à domicile : adresse obligatoire, frais modifiables (par défaut : réglage du pressing)
+        $delivery = !empty($d['delivery']);
+        $address = $delivery ? mb_substr(trim((string) ($d['delivery_address'] ?? '')), 0, 255) : '';
+        if ($delivery && mb_strlen($address) < 3) {
+            throw new BusinessException('Livraison à domicile : indiquez l\'adresse (quartier, rue, repère).');
+        }
+        $rawFee = trim(str_replace([' ', ','], ['', '.'], (string) ($d['delivery_fee'] ?? '')));
+        $deliveryFee = !$delivery ? 0.0 : ($rawFee === '' ? (float) setting('pressing_livraison_frais', '0') : (is_numeric($rawFee) ? round((float) $rawFee, 2) : -1.0));
+        if ($deliveryFee < 0 || $deliveryFee > 1000000) {
+            throw new BusinessException('Frais de livraison invalides.');
+        }
         $discount = round(max(0.0, (float) str_replace([' ', ','], ['', '.'], (string) ($d['discount'] ?? '0'))), 2);
         if ($discount > 0 && !$manage && !Auth::can('pos.discount')) {
             throw new BusinessException('Vous n\'êtes pas autorisé à accorder des remises.');
         }
-        if ($discount > $subtotal + $expressFee) {
+        if ($discount > $subtotal + $expressFee + $deliveryFee) {
             throw new BusinessException('Remise supérieure au montant du dépôt.');
         }
-        $total = round($subtotal + $expressFee - $discount, 2);
+        $total = round($subtotal + $expressFee + $deliveryFee - $discount, 2);
         $days = (int) setting($express ? 'pressing_express_delai_jours' : 'pressing_delai_jours', $express ? '1' : '3');
         $due = (string) ($d['due_date'] ?? '');
         if ($due === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $due)) {
@@ -212,11 +300,12 @@ final class PressingService
         }
         $customerId = DB::value("SELECT id FROM customers WHERE REPLACE(REPLACE(phone, ' ', ''), '+', '') LIKE ? LIMIT 1", ['%' . substr(self::digits($phone), -8)]);
 
-        return DB::transaction(function () use ($name, $phone, $express, $due, $subtotal, $expressFee, $discount, $total, $pieces, $weight, $lines, $d, $dep, $tendered, $customerId) {
+        return DB::transaction(function () use ($name, $phone, $express, $expressPct, $delivery, $address, $deliveryFee, $due, $subtotal, $expressFee, $discount, $total, $pieces, $weight, $lines, $d, $dep, $tendered, $customerId) {
             $number = Sequence::next('pressing');
             $id = DB::insert('pressing_orders', [
                 'number' => $number, 'customer_id' => $customerId ?: null, 'customer_name' => mb_substr($name, 0, 150), 'phone' => mb_substr($phone, 0, 50),
-                'express' => $express ? 1 : 0, 'due_date' => $due, 'subtotal' => $subtotal, 'express_fee' => $expressFee, 'discount' => $discount, 'total' => $total,
+                'express' => $express ? 1 : 0, 'due_date' => $due, 'subtotal' => $subtotal, 'express_fee' => $expressFee, 'express_pct' => $expressPct,
+                'delivery' => $delivery ? 1 : 0, 'delivery_address' => $address ?: null, 'delivery_fee' => $deliveryFee, 'discount' => $discount, 'total' => $total,
                 'pieces' => $pieces, 'weight' => round($weight, 3), 'note' => mb_substr(trim((string) ($d['note'] ?? '')), 0, 255) ?: null, 'user_id' => Auth::id(),
             ]);
             $short = ltrim(substr($number, -6), '0') ?: '0';
@@ -437,21 +526,25 @@ final class PressingService
      */
     public static function board(bool $public = false): array
     {
-        $rows = DB::all("SELECT o.id, o.number, o.customer_name, o.phone, o.status, o.express, o.due_date, o.pieces, o.weight, o.total, o.paid, o.created_at, o.ready_at, o.note,
+        $rows = DB::all("SELECT o.id, o.number, o.customer_name, o.phone, o.status, o.express, o.delivery, o.delivery_address, o.due_date, o.pieces, o.weight, o.total, o.paid, o.created_at, o.ready_at, o.note,
                 (SELECT " . self::CLOTHES_SQL . " FROM pressing_items i WHERE i.order_id = o.id) AS clothes
                 FROM pressing_orders o WHERE o.status IN ('received','processing','ready','partial')
                 ORDER BY o.express DESC, o.due_date, o.id LIMIT 600");
         $today = date('Y-m-d');
-        $cols = ['received' => [], 'processing' => [], 'ready' => []];
-        $t = ['open' => 0, 'late' => 0, 'today' => 0, 'ready' => 0, 'express' => 0, 'pieces' => 0, 'due' => 0.0];
+        $cols = ['received' => [], 'processing' => [], 'ready' => [], 'delivery' => []];
+        $t = ['open' => 0, 'late' => 0, 'today' => 0, 'ready' => 0, 'delivery' => 0, 'express' => 0, 'pieces' => 0, 'due' => 0.0];
         foreach ($rows as $o) {
             $late = self::lateDays($o);
             $col = $o['status'] === 'partial' ? 'ready' : $o['status'];
+            if ($col === 'ready' && (int) $o['delivery'] === 1) {
+                $col = 'delivery'; // prêt, à porter chez le client
+            }
             $rest = max(0, round((float) $o['total'] - (float) $o['paid'], 2));
             $t['open']++;
             $t['late'] += $late > 0 ? 1 : 0;
-            $t['today'] += $o['due_date'] === $today && $col !== 'ready' ? 1 : 0;
+            $t['today'] += $o['due_date'] === $today && !in_array($col, ['ready', 'delivery'], true) ? 1 : 0;
             $t['ready'] += $col === 'ready' ? 1 : 0;
+            $t['delivery'] += $col === 'delivery' ? 1 : 0;
             $t['express'] += (int) $o['express'];
             $t['pieces'] += (int) $o['pieces'];
             $t['due'] += $rest;
@@ -461,6 +554,7 @@ final class PressingService
                 'express' => (bool) $o['express'], 'due' => $o['due_date'], 'late' => $late, 'pieces' => (int) $o['pieces'], 'weight' => (float) $o['weight'],
                 'clothes' => mb_substr((string) $o['clothes'], 0, 160), 'rest' => $rest, 'note' => (string) $o['note'],
                 'since' => $o['ready_at'] ?: $o['created_at'], 'due_today' => $o['due_date'] === $today,
+                'delivery' => (int) $o['delivery'] === 1, 'address' => (string) ($o['delivery_address'] ?? ''),
             ];
         }
         if ($public) {

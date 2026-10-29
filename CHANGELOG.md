@@ -2,6 +2,15 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.12.0] — 2026-10-29
+
+### Ajouté
+- **Pressing 1.4.0** :
+  - pourcentage du supplément **EXPRESS au choix** au dépôt (choix proposés réglables ; valeur
+    libre réservée au responsable), réglages du pressing sur la page Tarifs ;
+  - **livraison à domicile** (adresse, frais) et colonne **« Prêts à livrer »** sur l'écran des
+    dépôts, avec « Encaisser puis livrer » et « Livré » (refusé tant qu'il reste à payer).
+
 ## [2.11.4] — 2026-10-28
 
 ### Corrigé
