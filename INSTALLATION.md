@@ -173,7 +173,7 @@ Autres rôles du personnel : `--role=ADMIN`, `--role=FINANCE_ADMIN`, `--role=MOD
 ## 10. Lancer les tests
 
 ```powershell
-vendor\bin\phpunit                       # tous les tests (≈ 80)
+vendor\bin\phpunit                       # tous les tests (108)
 vendor\bin\phpunit --testsuite Unit      # tests unitaires seuls (sans base)
 ```
 Les tests d'intégration **recréent entièrement** la base `job_niger_test` (jamais `job_niger`) : le nom de la base

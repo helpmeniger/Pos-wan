@@ -21,6 +21,7 @@ final class BasePathTest extends TestCase
             'localhost/job-niger/public/' => ['/job-niger/public/connexion', '/job-niger/public/index.php', '/job-niger/public'],
             'pas de faux préfixe' => ['/job-nigeria/x', '/job-niger/public/index.php', ''],
             'serveur PHP intégré' => ['/aide', '/index.php', ''],
+            'URL avec extension (php -S)' => ['/admin/finances/export.csv', '/admin/finances/export.csv', ''],
         ];
     }
 

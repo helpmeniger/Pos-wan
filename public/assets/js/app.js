@@ -15,6 +15,26 @@
     });
   });
 
+  // Impression (fiches de paie, contrats) sans script en ligne
+  document.querySelectorAll('[data-print]').forEach(function (b) { b.addEventListener('click', function () { window.print(); }); });
+  document.querySelectorAll('[data-back]').forEach(function (a) { a.addEventListener('click', function (e) { if (history.length > 1) { e.preventDefault(); history.back(); } }); });
+
+  // Champs affichés selon un choix (ex : entretien en ligne / en présentiel, Mobile Money / espèces)
+  document.querySelectorAll('[data-toggle-group]').forEach(function (group) {
+    var name = group.getAttribute('data-toggle-group');
+    function sync() {
+      var checked = document.querySelector('[name="' + name + '"]:checked') || document.querySelector('select[name="' + name + '"]');
+      var value = checked ? checked.value : '';
+      group.querySelectorAll('[data-when]').forEach(function (el) {
+        var show = el.getAttribute('data-when').split(',').indexOf(value) !== -1;
+        el.hidden = !show;
+        el.querySelectorAll('input, select, textarea').forEach(function (i) { i.disabled = !show; });
+      });
+    }
+    document.querySelectorAll('[name="' + name + '"]').forEach(function (i) { i.addEventListener('change', sync); });
+    sync();
+  });
+
   // Confirmation avant une action sensible : <form data-confirm="Message">
   document.querySelectorAll('form[data-confirm]').forEach(function (form) {
     form.addEventListener('submit', function (e) {

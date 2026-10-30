@@ -187,3 +187,46 @@ if (!function_exists('is_active_path')) {
         return str_starts_with($path, url($prefix)) ? ' active' : '';
     }
 }
+
+if (!function_exists('badge')) {
+    /** Pastille de statut colorée : success | warning | danger | info | secondary | primary */
+    function badge(string $label, string $tone = 'secondary'): string
+    {
+        $classes = [
+            'success' => 'text-bg-success', 'warning' => 'text-bg-warning', 'danger' => 'text-bg-danger',
+            'info' => 'text-bg-info', 'primary' => 'text-bg-primary', 'secondary' => 'text-bg-light border',
+        ];
+        return '<span class="badge ' . ($classes[$tone] ?? $classes['secondary']) . '">' . e($label) . '</span>';
+    }
+}
+
+if (!function_exists('status_tone')) {
+    function status_tone(string $status): string
+    {
+        return match ($status) {
+            'ACTIF', 'RECUE', 'ACCEPTEE', 'CONFIRME', 'CONCLUANT', 'APPROUVEE', 'CANDIDATURES_OUVERTES', 'PUBLIEE', 'ACTIVE', 'RESOLU' => 'success',
+            'EN_ATTENTE_ACCEPTATION', 'PAIEMENT_DEMANDE', 'PAYEE_DECLAREE', 'PROPOSE', 'REPORT_DEMANDE', 'SOUMISE', 'EN_MODERATION', 'PRESELECTIONNEE', 'EMISE', 'OUVERT', 'EN_COURS' => 'warning',
+            'CONTESTEE', 'REFUSEE', 'REFUSE', 'NON_CONCLUANT', 'SUSPENDED', 'BANNED', 'ANNULEE', 'ANNULE' => 'danger',
+            'VUE', 'ATTRIBUEE' => 'info',
+            default => 'secondary',
+        };
+    }
+}
+
+if (!function_exists('time_fr')) {
+    function time_fr(?string $time): string
+    {
+        return $time ? substr($time, 0, 5) : '';
+    }
+}
+
+if (!function_exists('query_with')) {
+    /** URL de la page courante avec des paramètres modifiés (pagination, filtres). */
+    function query_with(array $changes): string
+    {
+        $q = array_merge($_GET, $changes);
+        $q = array_filter($q, fn ($v) => $v !== null && $v !== '');
+        $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        return $path . ($q ? '?' . http_build_query($q) : '');
+    }
+}

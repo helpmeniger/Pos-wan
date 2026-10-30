@@ -63,7 +63,24 @@ tests/Unit (38) · tests/Integration (22) · tests/Feature (11) · tests/Securit
 - `Money` est livré dès la Phase 2 (utilisé pour l'exemple de commission de la page « Comment ça marche »).
 - `schema_migrations.version` élargi à 190 caractères dans `schema.sql` (aucune base n'était encore déployée).
 
-## Fichiers prévus en Phase 3 (fonctionnel)
+## Livré en Phase 3a-3c (recrutement, emploi, paie, administration)
+```
+database/migrations/2026_10_30_000001_recruitment_employment_payroll.sql   interviews, employments, payslips, payslip_events + 5 déclencheurs
+app/Support/References.php                         numéros de documents JN-<PRÉFIXE>-<ANNÉE>-<SÉQUENCE>
+app/Services/Files/FileStorageService.php          téléversements (finfo, liste blanche, ré-encodage GD, stockage privé)
+app/Services/Finance/LedgerService.php             écritures équilibrées, idempotentes
+app/Services/Jobs/{JobPostService,ApplicationService,InterviewService}.php
+app/Services/Employment/{EmploymentService,PayrollService,PayslipService}.php
+app/Services/Verification/VerificationService.php  documents d'identité / professionnels, décision admin
+app/Services/{Profile/ProfileService,Admin/AdminService}.php
+app/Controllers/Web/{Job,Candidate,Recruiter,Employment,Payslip,Archive,Profile,Verification,File}Controller.php
+app/Controllers/Admin/{User,Verification,Recruitment,Finance,System}Controller.php
+tests/Integration/{RecruitmentPayrollTest,VerificationUploadTest}.php, tests/Feature/RecruitmentJourneyTest.php
+```
+Tâche planifiée : `php bin/console schedule:run` (une fois par jour) génère les fiches de paie dues et termine les
+prestations arrivées à échéance ; l'opération est idempotente (une fiche par emploi et par période).
+
+## Reste prévu (fonctionnel)
 ```
 app/Services/Files/FileStorageService.php        téléversements (finfo, ré-encodage GD, stockage privé)
 app/Services/Profile/{WorkerProfileService,BusinessService}.php

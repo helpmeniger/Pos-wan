@@ -38,7 +38,8 @@ final class HttpClient
             CURLOPT_NOPROXY => '*',
         ]);
         if ($method !== 'GET') {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+            $multipart = (bool) array_filter($data, fn ($v) => $v instanceof \CURLFile);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $multipart ? $data : http_build_query($data));
         }
         $raw = (string) curl_exec($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);

@@ -7,9 +7,20 @@
     </button>
     <div class="collapse navbar-collapse" id="nav-main">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item"><a class="nav-link<?= is_active_path('/categories') ?>" href="<?= e(url('/categories')) ?>">Métiers</a></li>
-        <li class="nav-item"><a class="nav-link<?= is_active_path('/a-propos') ?>" href="<?= e(url('/a-propos')) ?>">Comment ça marche</a></li>
-        <li class="nav-item"><a class="nav-link<?= is_active_path('/aide') ?>" href="<?= e(url('/aide')) ?>">Aide</a></li>
+        <li class="nav-item"><a class="nav-link<?= is_active_path('/offres') ?>" href="<?= e(url('/offres')) ?>"><i class="bi bi-search" aria-hidden="true"></i> Offres</a></li>
+        <?php if ($user !== null && has_role('WORKER')): ?>
+          <li class="nav-item"><a class="nav-link<?= is_active_path('/candidatures') ?>" href="<?= e(url('/candidatures')) ?>">Mes candidatures</a></li>
+        <?php endif; ?>
+        <?php if ($user !== null && has_role('CLIENT')): ?>
+          <li class="nav-item"><a class="nav-link<?= is_active_path('/recruteur') ?>" href="<?= e(url('/recruteur/offres')) ?>">Mes offres</a></li>
+        <?php endif; ?>
+        <?php if ($user !== null && (has_role('WORKER') || has_role('CLIENT'))): ?>
+          <li class="nav-item"><a class="nav-link<?= is_active_path('/emplois') ?><?= is_active_path('/fiches-de-paie') ?>" href="<?= e(url('/emplois')) ?>">Emplois &amp; paie</a></li>
+        <?php endif; ?>
+        <?php if ($user === null): ?>
+          <li class="nav-item"><a class="nav-link<?= is_active_path('/categories') ?>" href="<?= e(url('/categories')) ?>">Métiers</a></li>
+          <li class="nav-item"><a class="nav-link<?= is_active_path('/a-propos') ?>" href="<?= e(url('/a-propos')) ?>">Comment ça marche</a></li>
+        <?php endif; ?>
       </ul>
       <?php if ($user === null): ?>
         <div class="d-flex flex-column flex-lg-row gap-2">
@@ -39,7 +50,10 @@
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
               <li><a class="dropdown-item" href="<?= e(url('/tableau-de-bord')) ?>">Mon tableau de bord</a></li>
-              <li><a class="dropdown-item" href="<?= e(url('/verifier-telephone')) ?>">Vérification du téléphone</a></li>
+              <li><a class="dropdown-item" href="<?= e(url('/profil')) ?>">Mon profil</a></li>
+              <li><a class="dropdown-item" href="<?= e(url('/verification')) ?>">Vérification (documents)</a></li>
+              <li><a class="dropdown-item" href="<?= e(url('/archives')) ?>">Mes archives</a></li>
+              <li><a class="dropdown-item" href="<?= e(url('/aide')) ?>">Aide</a></li>
               <li><a class="dropdown-item" href="<?= e(url('/mot-de-passe/changer')) ?>">Changer mon mot de passe</a></li>
               <li><hr class="dropdown-divider"></li>
               <li>

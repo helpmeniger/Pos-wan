@@ -148,6 +148,7 @@ final class Kernel
             $n = $db->query($sql)->rowCount();
             $this->line(sprintf('%-36s %d', $label, $n));
         }
+        $this->line(sprintf('%-36s %d', 'Fiches de paie générées', $this->container->get(\App\Services\Employment\PayrollService::class)->generateDue()));
         // Sessions PHP expirées (fichiers)
         $dir = $this->root . '/storage/sessions';
         $ttl = (int) $this->container->get(Config::class)->get('security.session.idle_minutes', 120) * 60;

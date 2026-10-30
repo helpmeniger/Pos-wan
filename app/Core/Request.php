@@ -68,6 +68,11 @@ final class Request
      */
     public static function detectBasePath(string $path, string $scriptName): string
     {
+        // Seul le contrôleur frontal (…/index.php) indique le dossier d'installation ; certains serveurs
+        // (php -S) renvoient l'URL demandée dans SCRIPT_NAME quand elle a une extension (ex : export.csv)
+        if (!str_ends_with($scriptName, '/index.php')) {
+            return '';
+        }
         $scriptDir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
         if ($scriptDir === '' || $scriptDir === '.') {
             return '';

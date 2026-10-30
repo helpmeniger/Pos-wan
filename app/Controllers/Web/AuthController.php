@@ -14,6 +14,7 @@ use App\Repositories\CityRepository;
 use App\Repositories\SettingRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Auth\RegistrationService;
+use App\Services\Verification\VerificationService;
 
 final class AuthController extends Controller
 {
@@ -24,6 +25,7 @@ final class AuthController extends Controller
         private readonly RegistrationService $registration,
         private readonly CityRepository $cities,
         private readonly SettingRepository $settings,
+        private readonly VerificationService $verification,
     ) {
         parent::__construct($view, $session);
     }
@@ -61,6 +63,7 @@ final class AuthController extends Controller
             'businessKinds' => RegistrationService::BUSINESS_KINDS,
             'selectedType' => array_key_exists(strtoupper($type), RegistrationService::ACCOUNT_TYPES) ? strtoupper($type) : 'WORKER',
             'emailRequired' => (bool) $this->settings->get('auth.email_required', false),
+            'docTypes' => VerificationService::DOC_TYPES,
         ]);
     }
 
@@ -74,11 +77,10 @@ final class AuthController extends Controller
             'phone' => 'required|phone',
             'email' => ($this->settings->get('auth.email_required', false) ? 'required' : 'nullable') . '|email',
             'city_id' => 'required|integer',
-            // Prestataires : date de naissance obligatoire (âge minimum, métiers à restriction d'âge)
-            'birth_date' => ($type === 'WORKER' ? 'required' : 'nullable') . '|date',
-            'password' => 'required|password|confirmed',
+            'birth_date' => 'nullable|date',
+            'password' => 'required|password',
             'accept_terms' => 'accepted',
-            'accept_privacy' => 'accepted',
+            'doc_type' => 'nullable|in:' . implode(',', array_keys(VerificationService::DOC_TYPES)),
         ];
         if ($type === 'BUSINESS') {
             $rules['business_name'] = 'required|string|min:2|max:160';
@@ -87,8 +89,8 @@ final class AuthController extends Controller
         $labels = [
             'account_type' => 'type de compte', 'first_name' => 'prénom', 'last_name' => 'nom', 'phone' => 'téléphone',
             'email' => 'e-mail', 'city_id' => 'ville', 'birth_date' => 'date de naissance', 'password' => 'mot de passe',
-            'accept_terms' => 'les conditions d\'utilisation', 'accept_privacy' => 'la politique de confidentialité',
-            'business_name' => 'nom de l\'organisation', 'business_kind' => 'type d\'organisation',
+            'accept_terms' => 'les conditions d\'utilisation', 'business_name' => 'nom de l\'organisation',
+            'business_kind' => 'type d\'organisation', 'doc_type' => 'type de document',
         ];
         $data = Validator::validate($request->all(), $rules, $labels);
         $data['account_type'] = $type;
@@ -97,8 +99,19 @@ final class AuthController extends Controller
         $userId = $this->registration->register($data, $request);
         $this->auth->loginById($userId);
 
+        // Document d'identité / professionnel facultatif dès l'inscription : vérifié ensuite par l'équipe
+        $upload = $request->file('document');
+        $message = 'Votre compte est créé. Bienvenue sur JOB NIGER !';
+        if ($upload !== null && ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            try {
+                $this->verification->submit($userId, (string) ($data['doc_type'] ?: ($type === 'BUSINESS' ? 'RCCM' : 'CNI')), $upload);
+                $message .= ' Votre document a été envoyé : l\'équipe le vérifie rapidement.';
+            } catch (\App\Core\ValidationException $e) {
+                $this->session->flash('warning', 'Compte créé, mais le document n\'a pas été accepté : ' . (array_values($e->errors())[0][0] ?? 'fichier invalide') . ' Vous pouvez le renvoyer depuis « Vérification ».');
+            }
+        }
         $next = $this->settings->get('auth.phone_otp_enabled', false) ? '/verifier-telephone' : $this->auth->homePath($userId);
-        return $this->redirect($next, 'Votre compte a été créé. Bienvenue sur JOB NIGER !');
+        return $this->redirect($next, $message);
     }
 
     public function logout(Request $request): Response

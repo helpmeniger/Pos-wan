@@ -17,7 +17,7 @@ final class SchemaIntegrityTest extends TestCase
         $this->assertGreaterThan(200, (int) $db->fetchValue('SELECT COUNT(*) FROM job_subcategories'));
         $this->assertSame(7, (int) $db->fetchValue('SELECT COUNT(*) FROM roles'));
         $this->assertSame('10.00', (string) $db->fetchValue("SELECT worker_rate FROM commission_rules WHERE scope = 'GLOBAL'"));
-        $this->assertSame(22, (int) $db->fetchValue('SELECT COUNT(*) FROM information_schema.triggers WHERE trigger_schema = DATABASE()'));
+        $this->assertSame(27, (int) $db->fetchValue('SELECT COUNT(*) FROM information_schema.triggers WHERE trigger_schema = DATABASE()'));
     }
 
     public function testNoIntegratedGatewayIsLiveWithoutContract(): void

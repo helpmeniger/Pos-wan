@@ -11,6 +11,7 @@
           <a class="btn btn-accent btn-lg" href="<?= e(url('/inscription?type=worker')) ?>"><i class="bi bi-person-workspace" aria-hidden="true"></i> Je cherche des missions</a>
           <a class="btn btn-light btn-lg" href="<?= e(url('/inscription?type=client')) ?>"><i class="bi bi-briefcase" aria-hidden="true"></i> Je recrute</a>
         </div>
+        <a class="d-inline-block mt-3 text-white" href="<?= e(url('/offres')) ?>"><i class="bi bi-search" aria-hidden="true"></i> Voir les offres d'emploi disponibles →</a>
       </div>
       <div class="col-lg-5">
         <div class="jn-hero-card p-4">
@@ -61,10 +62,10 @@
     <h2 class="h4 mb-4 text-center">Comment ça marche ?</h2>
     <div class="row g-4">
       <?php foreach ([
-        ['megaphone', 'Publier', 'Le demandeur décrit la mission : lieu, dates, horaires, rémunération, conditions.'],
-        ['people', 'Choisir', 'Les prestataires postulent ; le demandeur compare les profils, les avis et les vérifications.'],
-        ['file-earmark-check', 'S\'engager', 'Prix négocié, récapitulatif contractuel accepté par les deux parties, commission affichée.'],
-        ['star', 'Réaliser et évaluer', 'Mission confirmée, paiement suivi, reçus, puis évaluation réciproque.'],
+        ['person-plus', 'Créer son compte', 'En une minute avec son numéro de téléphone. Ajoutez votre pièce d\'identité pour obtenir le badge « vérifié ».'],
+        ['send', 'Postuler', 'Parcourez les offres et postulez en un clic. Le recruteur vous propose un entretien en ligne ou en présentiel.'],
+        ['file-earmark-check', 'Être embauché', 'Contrat clair dans l\'application : poste, horaires, salaire. Vous l\'acceptez et il reste archivé.'],
+        ['receipt', 'Être payé', 'Fiche de paie automatique chaque fin de mois ou de prestation ; paiement Mobile Money ou en main propre, confirmé dans l\'application.'],
       ] as $i => [$icon, $t, $d]): ?>
         <div class="col-sm-6 col-lg-3">
           <div class="d-flex gap-3">

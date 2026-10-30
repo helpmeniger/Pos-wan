@@ -16,15 +16,39 @@ Stack : PHP 8.3 (MVC), MySQL 8 / MariaDB 10.6+, Bootstrap 5, WampServer en déve
 |---|---|
 | 1 — Conception (architecture, règles métier, finance, schéma SQL) | ✅ |
 | 2 — Socle : comptes, connexion, rôles et permissions, sécurité, tableaux de bord de base | ✅ |
-| 3 — Annonces, candidatures, recherche, messagerie, négociation, missions, avis | à venir |
-| 4 — Paiements, commissions, grand livre, remboursements, versements, rapports | à venir |
-| 5 — Administration complète · 6 — Sécurité et qualité · 7 — Déploiement | à venir |
+| 3a — Recrutement : offres, candidatures, entretiens, embauche, emploi du temps, salaire | ✅ |
+| 3b — Fiches de paie automatiques, paiement direct confirmé, archives, vérification des documents | ✅ |
+| 3c — Administration : utilisateurs, vérifications, recrutements, finances, audit, paramètres, support | ✅ |
+| Messagerie, avis, négociation de missions ponctuelles, paiements intégrés (Mobile Money API) | à venir |
+| 6 — Sécurité et qualité (audit externe) · 7 — Déploiement | à venir |
 
 **Fonctionnel aujourd'hui :** site public (accueil, 21 domaines / 221 métiers, aide, contact → ticket, CGU et
 confidentialité en brouillon), inscription prestataire / particulier / organisation, connexion par téléphone ou e-mail,
 mot de passe oublié, vérification du téléphone par code SMS (pilote de développement), changement de mot de passe,
 rôles et permissions, verrouillage anti-force brute, tableaux de bord prestataire / demandeur / administration
 alimentés par la base, notifications internes, API JSON des référentiels, console d'exploitation.
+
+**Parcours de recrutement (nouveau) :**
+1. Inscription en une page (type de compte, nom, téléphone, ville, mot de passe) avec ajout facultatif d'un document
+   d'identité ou professionnel (CNI, passeport, RCCM, NIF, diplôme…), stocké en privé et **vérifié par un administrateur**.
+2. Le recruteur publie une offre (`/recruteur/offres`) ; le chercheur d'emploi parcourt `/offres` et postule en un clic.
+3. Le recruteur présélectionne, propose un **entretien en ligne** (lien https) **ou en présentiel** (lieu) ; le candidat
+   confirme ou demande un autre créneau ; le recruteur note le résultat.
+4. Embauche : poste, missions, jours et horaires de travail, heures par semaine, salaire, période (mensuelle ou fin de
+   prestation), mode de paiement (Mobile Money ou espèces). L'employé accepte les conditions, qui sont alors figées (empreinte SHA-256).
+5. **Fiche de paie générée automatiquement** le dernier jour du mois (ou à la fin de la prestation), au prorata si le
+   contrat commence ou finit en cours de période ; consultable et imprimable / enregistrable en PDF.
+6. L'employé demande son paiement (numéro Mobile Money ou en présentiel), l'employeur déclare l'avoir payé,
+   l'employé **confirme la réception** (ou conteste) : le paiement est alors inscrit au grand livre.
+7. Chacun garde ses **archives** (`/archives`) : candidatures, entretiens, contrats, fiches de paie.
+
+**Administration :** utilisateurs (suspension, vérification manuelle), file de vérification des documents,
+offres / candidatures / emplois, fiches de paie, supervision financière (commissions dues, encaissement, export CSV),
+journal d'audit et de sécurité, paramètres (taux de commission versionné, règles de vérification), tickets de support.
+
+**Important :** les salaires sont payés **directement** par l'employeur à l'employé ; la plateforme ne détient pas
+les fonds. La commission (10 % par défaut, modifiable) apparaît sur la fiche de paie et devient une créance de la
+plateforme sur l'employeur, encaissée et tracée par l'administration.
 
 **Installation sous WampServer :** décompressez le projet dans `C:\wamp64\www\job-niger`, ouvrez
 <http://localhost/job-niger/> : l'assistant d'installation fait le reste (base, tables, administrateur, configuration).
@@ -47,7 +71,8 @@ php bin/console key:generate
 php bin/console migrate         # schéma + données de référence + migrations
 php bin/console admin:create --phone="90 00 00 01" --first=Prénom --last=Nom
 php -S 127.0.0.1:8080 -t public public/index.php   # ou VirtualHost Apache (voir INSTALLATION.md)
-vendor/bin/phpunit              # 93 tests (base dédiée job_niger_test), validés sur MariaDB 10.11 et MySQL 8.0
+php bin/console schedule:run   # tâche quotidienne (cron / planificateur Windows) : génère les fiches de paie dues
+vendor/bin/phpunit              # 108 tests (base dédiée job_niger_test), validés sur MariaDB 10.11 et MySQL 8.0
 ```
 
 ## Avertissement

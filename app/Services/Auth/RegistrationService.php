@@ -23,9 +23,9 @@ class RegistrationService
     public const MIN_AGE = 16;
 
     public const ACCOUNT_TYPES = [
-        'WORKER' => 'Je cherche des missions (prestataire)',
-        'CLIENT' => 'Je recrute pour moi-même (particulier)',
-        'BUSINESS' => 'Je recrute pour une organisation (entreprise, commerce, ONG, école…)',
+        'WORKER' => 'Je cherche du travail',
+        'CLIENT' => 'Je recrute (particulier)',
+        'BUSINESS' => 'Je recrute pour une entreprise ou une organisation',
     ];
 
     public const BUSINESS_KINDS = [
@@ -59,7 +59,7 @@ class RegistrationService
         if ($this->users->phoneExists($data['phone'])) {
             $errors['phone'][] = 'Ce numéro de téléphone est déjà associé à un compte.';
         }
-        if (!empty($data['email']) && $this->users->emailExists($data['email'])) {
+        if (!empty($data['email'] ?? null) && $this->users->emailExists($data['email'])) {
             $errors['email'][] = 'Cette adresse e-mail est déjà associée à un compte.';
         }
         if (!$this->cities->exists((int) $data['city_id'])) {
@@ -88,10 +88,10 @@ class RegistrationService
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'],
                 'phone' => $data['phone'],
-                'email' => $data['email'] ?: null,
+                'email' => ($data['email'] ?? null) ?: null,
                 'password_hash' => $this->hasher->hash($data['password']),
                 'password_changed_at' => date('Y-m-d H:i:s'),
-                'birth_date' => $data['birth_date'] ?: null,
+                'birth_date' => ($data['birth_date'] ?? null) ?: null,
                 'city_id' => (int) $data['city_id'],
                 'status' => 'ACTIVE',
             ]);
@@ -118,7 +118,7 @@ class RegistrationService
                     'kind' => $data['business_kind'],
                     'city_id' => (int) $data['city_id'],
                     'phone' => $data['phone'],
-                    'email' => $data['email'] ?: null,
+                    'email' => ($data['email'] ?? null) ?: null,
                     'legal_rep_name' => $data['first_name'] . ' ' . $data['last_name'],
                 ]);
                 $db->insert('business_members', ['business_id' => $businessId, 'user_id' => $userId, 'member_role' => 'OWNER']);

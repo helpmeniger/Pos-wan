@@ -21,6 +21,7 @@ return [
         'password_reset' => [5, 3600],
         'otp_send' => [5, 3600],
         'contact' => [5, 3600],
+        'upload' => [20, 3600],
     ],
     'password_reset_minutes' => 30,
     'otp_minutes' => 10,

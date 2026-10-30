@@ -103,3 +103,28 @@ a { text-underline-offset: .15em; }
   .jn-kpi .value { font-size: 1.3rem; }
 }
 @media (prefers-reduced-motion: reduce) { .jn-card-link { transition: none; } }
+
+/* ---- Recrutement, emploi, paie, administration */
+.jn-admin-nav .nav-link { color: var(--jn-muted); }
+.jn-admin-nav .nav-link.active { color: var(--jn-green-dark); border-bottom-color: var(--jn-green); font-weight: 600; }
+.jn-job-card { border-left: 4px solid var(--jn-green); }
+.jn-job-card.sponsored { border-left-color: var(--jn-ochre); }
+.jn-steps { counter-reset: step; list-style: none; padding-left: 0; }
+.jn-steps li { position: relative; padding-left: 2.2rem; margin-bottom: .6rem; }
+.jn-steps li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0; width: 1.6rem; height: 1.6rem;
+  border-radius: 50%; background: var(--jn-green-soft); color: var(--jn-green-dark); font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: .85rem; }
+.jn-steps li.done::before { background: var(--jn-green); color: #fff; content: "✓"; }
+.jn-amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.table-jn th { font-size: .8rem; text-transform: uppercase; letter-spacing: .02em; color: var(--jn-muted); font-weight: 600; }
+.jn-terms { white-space: pre-wrap; background: var(--jn-bg); border-radius: .5rem; padding: 1rem; font-size: .9rem; }
+
+/* ---- Impression : fiche de paie, contrat */
+.jn-print { background: #fff; }
+.jn-print-sheet { max-width: 820px; }
+.jn-print-sheet .sheet-head { border-bottom: 3px solid var(--jn-green); padding-bottom: .75rem; margin-bottom: 1rem; }
+@media print {
+  .no-print, .jn-navbar, .jn-footer, .jn-admin-nav { display: none !important; }
+  body { background: #fff !important; }
+  .jn-print-sheet { max-width: none; padding: 0; }
+  a { text-decoration: none; color: inherit; }
+}

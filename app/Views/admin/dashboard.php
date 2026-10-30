@@ -3,7 +3,8 @@ $u = $data['users']; $f = $data['finance']; $p = $data['posts']; $m = $data['mis
 $sum = fn (array $set, array $keys) => array_sum(array_intersect_key($set, array_flip($keys)));
 $envLabels = ['INDISPONIBLE' => 'Indisponible', 'A_CONFIGURER' => 'En attente de configuration', 'TEST' => 'Mode test', 'PRODUCTION' => 'Activé en production'];
 ?>
-<div class="container py-4">
+<?= $this->partial('partials/admin-nav') ?>
+<div class="container pb-4">
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <h1 class="h3 mb-0">Tableau de bord d'administration</h1>
     <span class="small text-muted">Rôle(s) : <?= e(implode(', ', $roles)) ?> · données réelles (comptes de démonstration exclus)</span>
@@ -17,7 +18,22 @@ $envLabels = ['INDISPONIBLE' => 'Indisponible', 'A_CONFIGURER' => 'En attente de
     <div class="col-6 col-lg-3"><?= $this->partial('partials/kpi', ['label' => 'Organisations inscrites', 'value' => (string) $data['businesses'], 'icon' => 'building', 'hint' => (int) $u['suspended'] . ' compte(s) suspendu(s)']) ?></div>
   </div>
 
-  <h2 class="jn-section-title">Activité</h2>
+  <h2 class="jn-section-title">Recrutement et emploi</h2>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><a class="text-decoration-none text-reset" href="<?= e(url('/admin/offres')) ?>"><?= $this->partial('partials/kpi', ['label' => 'Offres ouvertes', 'value' => (string) (int) $kpi['open_posts'], 'icon' => 'megaphone', 'hint' => (int) $kpi['moderation_posts'] . ' à modérer']) ?></a></div>
+    <div class="col-6 col-lg-3"><a class="text-decoration-none text-reset" href="<?= e(url('/admin/candidatures')) ?>"><?= $this->partial('partials/kpi', ['label' => 'Candidatures', 'value' => (string) (int) $kpi['applications'], 'icon' => 'person-lines-fill', 'hint' => '+' . (int) $kpi['applications_7d'] . ' sur 7 jours · ' . (int) $kpi['upcoming_interviews'] . ' entretien(s) à venir']) ?></a></div>
+    <div class="col-6 col-lg-3"><a class="text-decoration-none text-reset" href="<?= e(url('/admin/emplois')) ?>"><?= $this->partial('partials/kpi', ['label' => 'Contrats actifs', 'value' => (string) (int) $kpi['active_employments'], 'icon' => 'briefcase', 'hint' => (int) $kpi['pending_employments'] . ' en attente d\'acceptation']) ?></a></div>
+    <div class="col-6 col-lg-3"><a class="text-decoration-none text-reset" href="<?= e(url('/admin/verifications')) ?>"><?= $this->partial('partials/kpi', ['label' => 'Documents à vérifier', 'value' => (string) (int) $kpi['pending_verifications'], 'icon' => 'patch-check']) ?></a></div>
+  </div>
+  <?php if ($canFinance): ?>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-4"><?= $this->partial('partials/kpi', ['label' => 'Salaires confirmés reçus', 'value' => money((string) $kpi['salaries_confirmed']), 'icon' => 'cash-stack']) ?></div>
+    <div class="col-6 col-lg-4"><?= $this->partial('partials/kpi', ['label' => 'Fiches de paie en cours', 'value' => (string) (int) $kpi['open_payslips'], 'icon' => 'receipt']) ?></div>
+    <div class="col-6 col-lg-4"><a class="text-decoration-none text-reset" href="<?= e(url('/admin/finances?status=CONTESTEE')) ?>"><?= $this->partial('partials/kpi', ['label' => 'Paiements contestés', 'value' => (string) (int) $kpi['disputed_payslips'], 'icon' => 'exclamation-triangle', 'hint' => 'À suivre en priorité']) ?></a></div>
+  </div>
+  <?php endif; ?>
+
+  <h2 class="jn-section-title">Activité (missions)</h2>
   <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3"><?= $this->partial('partials/kpi', ['label' => 'Missions publiées', 'value' => (string) $sum($p, ['PUBLIEE', 'CANDIDATURES_OUVERTES', 'EN_NEGOCIATION', 'ATTRIBUEE', 'EN_COURS', 'EN_ATTENTE_DE_VALIDATION', 'TERMINEE', 'EN_LITIGE']), 'icon' => 'megaphone', 'hint' => (int) ($p['EN_MODERATION'] ?? 0) . ' en modération']) ?></div>
     <div class="col-6 col-lg-3"><?= $this->partial('partials/kpi', ['label' => 'Missions en cours', 'value' => (string) $sum($m, ['ATTRIBUEE', 'EN_COURS', 'EN_ATTENTE_DE_VALIDATION']), 'icon' => 'hourglass-split']) ?></div>
@@ -71,5 +87,4 @@ $envLabels = ['INDISPONIBLE' => 'Indisponible', 'A_CONFIGURER' => 'En attente de
     </div>
     <?php endif; ?>
   </div>
-  <p class="small text-muted mt-3">Les modules de gestion (utilisateurs, annonces, transactions, litiges, paramètres…) sont livrés en Phase 5.</p>
 </div>

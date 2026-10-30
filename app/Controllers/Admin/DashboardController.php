@@ -31,6 +31,7 @@ final class DashboardController extends Controller
         return $this->render('admin/dashboard', [
             'title' => 'Administration',
             'data' => $this->dashboards->admin(),
+            'kpi' => app(\App\Services\Admin\AdminService::class)->recruitmentKpis(),
             'canFinance' => $this->permissions->allows($userId, 'finance.dashboard.view'),
             'canAudit' => $this->permissions->allows($userId, 'audit.view'),
             'roles' => $this->permissions->roles($userId),
