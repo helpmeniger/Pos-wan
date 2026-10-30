@@ -33,8 +33,10 @@ Tableau de bord : reçus, en cours, prêts, **en retard** (date de retrait dépa
 |---|---|
 | Voir les dépôts | Gérant, responsable, caissier, auditeur |
 | Dépôts, encaissements, retraits | Gérant, responsable, caissier |
-| Traitement (en cours, prêt) | Gérant, responsable, caissier |
+| Traitement (en cours, prêt) | Gérant, responsable, caissier, laveur, repasseur |
 | Tarifs, remises, prix modifiés, annulations, rapport | Gérant, responsable |
+| Clients pressing (voir, modifier) | Gérant, responsable, caissier |
+| Livraisons à domicile | Gérant, responsable, caissier, livreur |
 
 - Les prix viennent des **tarifs** (Pressing → Tarifs) ; un prix différent exige le droit
   « Tarifs, remises… ». Remise : même règle (ou droit de remise de la caisse).
@@ -55,6 +57,23 @@ Tableau de bord : reçus, en cours, prêts, **en retard** (date de retrait dépa
 | `pressing_conditions` | texte | Conditions imprimées sur le ticket |
 
 Les tarifs fournis (FCFA) sont **indicatifs** : adaptez-les avant la mise en service.
+
+## Version 1.5.0 : lavage seul, m², fichier clients, rôles de l'atelier
+- Service **Lavage seul**. Tarifs indicatifs créés à la mise à jour : prix « Lavage +
+  repassage » moins « Repassage seul » (ou le prix du lavage s'il n'y a pas de repassage).
+  **À vérifier dans Tarifs.**
+- Unité **Au mètre carré (m²)** : surface avec virgule (6,25 m²), prix au m² ; article fourni
+  « Tapis / moquette » (lavage seul, 1 500 F/m², indicatif). Un tapis = une étiquette.
+- **Clients pressing** : un client par numéro de téléphone (fiches créées à partir des
+  dépôts existants). Modification du nom, téléphone, adresse, note ; option pour mettre à
+  jour les dépôts non retirés ; regroupement de deux fiches de la même personne (case à
+  cocher, jamais automatique). Chaque modification est inscrite au journal d'audit.
+- Rôles créés une fois (modifiables ensuite) : **Laveur (pressing)**, **Repasseur
+  (pressing)** — voir les dépôts, faire avancer le traitement ; **Livreur (pressing)** —
+  livraisons à domicile et sa propre caisse, sans accès à la liste générale ni au fichier
+  des clients.
+- Données personnelles (noms, téléphones, adresses) : accès limité par les droits ; à
+  déclarer et protéger conformément à la loi nigérienne n° 2017-28.
 
 ## Version 1.4.0 : express au choix, livraison à domicile
 - **Supplément express au choix** : quand EXPRESS est coché, le caissier choisit l'un des

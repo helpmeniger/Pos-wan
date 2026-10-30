@@ -424,7 +424,8 @@ Module fourni (`addons/pressing/`) : à installer depuis Modules complémentaire
 `addons/pressing/README.md`.
 
 **Caisse pressing** : nouveau dépôt, et retrait par numéro, téléphone ou scan du ticket.
-Articles **au kilo** (ex. « Linge au kilo ») : toucher l'article puis saisir le poids avec une virgule (4,5) ; le prix est calculé au kilo. L'unité de chaque article se règle dans Pressing → Tarifs.
+Articles **au kilo** (ex. « Linge au kilo ») : toucher l'article puis saisir le poids avec une virgule (4,5) ; le prix est calculé au kilo. Articles **au m²** (ex. « Tapis / moquette ») : saisir la surface (6,25) ; le prix est calculé au mètre carré. L'unité de chaque article se règle dans Pressing → Tarifs.
+Services : Lavage + repassage, **Lavage seul**, Nettoyage à sec, Repassage seul, Teinture (un prix vide dans Tarifs = service non proposé pour l'article).
 **EXPRESS** : cocher la case puis choisir le pourcentage proposé (25 %, 50 %, 100 %… réglables dans Pressing → Tarifs). **Livraison à domicile** : cocher la case, saisir l'adresse (frais ajoutés au total) ; le dépôt prêt apparaît dans la colonne « Prêts à livrer » de l'écran des dépôts.
 
 **Suivi des vêtements** :
@@ -438,6 +439,20 @@ Articles **au kilo** (ex. « Linge au kilo ») : toucher l'article puis saisir l
 daté.
 
 **Historique d'un client** : lien depuis la fiche du dépôt.
+
+**Clients pressing** (droit « Clients pressing ») : liste de tous les clients (un par numéro de
+téléphone), recherche, nombre de dépôts et reste dû. **Modifier** ouvre la fiche : nom,
+téléphone, adresse de livraison, note. Cochez « Mettre aussi à jour… » pour que les dépôts
+pas encore retirés prennent les nouvelles informations ; les tickets déjà remis ne changent
+pas. Un numéro marqué « à corriger » (plus de 15 chiffres) a été saisi deux fois : corrigez-le ;
+si le bon numéro appartient déjà à la même personne, cochez « Regrouper les deux fiches ».
+
+**Rôles de l'atelier** (Utilisateurs → Rôles & permissions, modifiables) :
+- **Laveur** et **Repasseur** : écran des dépôts et suivi, passage « En traitement » / « Prêt » ;
+  ni encaissement, ni fichier des clients.
+- **Livreur** : page **Livraisons à domicile** (adresse, téléphone, articles, reste à payer),
+  bouton « Livré ». Pour encaisser un solde chez le client, le livreur ouvre sa propre caisse
+  (l'utilisateur doit être rattaché à une caisse) ; l'argent apparaît à sa clôture.
 
 ## Mise à jour du logiciel (Configuration → Mise à jour du logiciel)
 1. Décompressez le fichier ZIP de la nouvelle version reçu de l'auteur (dossier `pos-marwa`).

@@ -17,12 +17,19 @@ use App\Services\Sequence;
  */
 final class PressingService
 {
-    public const SERVICES = ['lavage' => 'Lavage + repassage', 'sec' => 'Nettoyage à sec', 'repassage' => 'Repassage seul', 'teinture' => 'Teinture'];
+    public const SERVICES = ['lavage' => 'Lavage + repassage', 'lavage_seul' => 'Lavage seul', 'sec' => 'Nettoyage à sec', 'repassage' => 'Repassage seul', 'teinture' => 'Teinture'];
     public const STATUSES = ['received' => 'Déposé — en attente de traitement', 'processing' => 'En cours de traitement', 'ready' => 'Prêt à être retiré', 'partial' => 'Partiellement retiré', 'delivered' => 'Retiré', 'cancelled' => 'Annulé'];
-    /** Unités de facturation d'un article : à la pièce, ou au poids (quantité décimale, ex. 4,5 kg). */
-    public const UNITS = ['piece' => 'À la pièce', 'kg' => 'Au kilo (kg)'];
-    /** Liste « 3 Chemise, 4,5 kg Linge au kilo » d'un dépôt (requêtes SQL ; alias de ligne : i). */
-    public const CLOTHES_SQL = "GROUP_CONCAT(CONCAT(REPLACE(TRIM(TRAILING '.' FROM TRIM(TRAILING '0' FROM i.quantity)), '.', ','), IF(i.unit = 'kg', ' kg', ''), ' ', i.article_name) ORDER BY i.line_no SEPARATOR ', ')";
+    /**
+     * Unités de facturation d'un article : à la pièce, au poids (ex. 4,5 kg) ou à la surface
+     * (ex. 6,25 m² pour un tapis). Le poids et la surface acceptent une virgule.
+     */
+    public const UNITS = ['piece' => 'À la pièce', 'kg' => 'Au kilo (kg)', 'm2' => 'Au mètre carré (m²)'];
+    /** Symbole affiché des unités mesurées (poids, surface). */
+    public const UNIT_SYMBOLS = ['kg' => 'kg', 'm2' => 'm²'];
+    /** Liste « 3 Chemise, 4,5 kg Linge au kilo, 6 m² Tapis » d'un dépôt (requêtes SQL ; alias de ligne : i). */
+    public const CLOTHES_SQL = "GROUP_CONCAT(CONCAT(REPLACE(TRIM(TRAILING '.' FROM TRIM(TRAILING '0' FROM i.quantity)), '.', ','), CASE i.unit WHEN 'kg' THEN ' kg' WHEN 'm2' THEN ' m²' ELSE '' END, ' ', i.article_name) ORDER BY i.line_no SEPARATOR ', ')";
+    /** Condition SQL « ligne mesurée » (poids ou surface) ; alias de ligne : i. */
+    public const MEASURED_SQL = "i.unit IN ('kg','m2')";
     /** Libellés courts (badges, listes). */
     public const SHORT = ['received' => 'Déposé', 'processing' => 'En traitement', 'ready' => 'Prêt', 'partial' => 'Retrait partiel', 'delivered' => 'Retiré', 'cancelled' => 'Annulé'];
 
@@ -109,12 +116,24 @@ final class PressingService
         return $raw !== '' && is_numeric($raw) ? round((float) $raw, 3) : null;
     }
 
-    /** Affichage d'une quantité : « 3 », « 4,5 kg », « 0,75 kg ». */
+    /** Affichage d'une quantité : « 3 », « 4,5 kg », « 6,25 m² ». */
     public static function qty(mixed $q, string $unit = 'piece'): string
     {
         $q = round((float) $q, 3);
         $txt = rtrim(rtrim(number_format($q, 3, ',', ' '), '0'), ',');
-        return $unit === 'kg' ? $txt . ' kg' : $txt;
+        return isset(self::UNIT_SYMBOLS[$unit]) ? $txt . ' ' . self::UNIT_SYMBOLS[$unit] : $txt;
+    }
+
+    /** Unité mesurée (poids ou surface : quantité décimale, une seule étiquette par ligne). */
+    public static function measured(?string $unit): bool
+    {
+        return isset(self::UNIT_SYMBOLS[(string) $unit]);
+    }
+
+    /** Unité connue, sinon « à la pièce ». */
+    public static function unit(?string $unit): string
+    {
+        return isset(self::UNITS[(string) $unit]) ? (string) $unit : 'piece';
     }
 
     /** Jours de retard : dépôt non prêt après la date prévue, ou prêt mais non retiré après cette date. */
@@ -133,7 +152,7 @@ final class PressingService
     {
         $out = [];
         foreach (DB::all('SELECT * FROM pressing_articles' . ($activeOnly ? ' WHERE active = 1' : '') . ' ORDER BY sort_order, name') as $a) {
-            $out[(int) $a['id']] = ['id' => (int) $a['id'], 'name' => $a['name'], 'category' => $a['category'], 'unit' => ($a['unit'] ?? 'piece') === 'kg' ? 'kg' : 'piece', 'active' => (int) $a['active'], 'prices' => []];
+            $out[(int) $a['id']] = ['id' => (int) $a['id'], 'name' => $a['name'], 'category' => $a['category'], 'unit' => self::unit($a['unit'] ?? null), 'active' => (int) $a['active'], 'prices' => []];
         }
         foreach (DB::all('SELECT * FROM pressing_prices') as $p) {
             if (isset($out[(int) $p['article_id']])) {
@@ -149,8 +168,87 @@ final class PressingService
      */
     public static function recentClients(): array
     {
-        $rows = DB::all('SELECT customer_name, phone FROM pressing_orders GROUP BY customer_name, phone ORDER BY MAX(id) DESC LIMIT 400');
+        $rows = DB::all('SELECT c.name AS customer_name, c.phone, c.address FROM pressing_clients c ORDER BY COALESCE(c.last_order_at, c.created_at) DESC, c.id DESC LIMIT 400');
         return array_slice(array_values(array_filter($rows, fn($r) => strlen(self::digits((string) $r['phone'])) <= 15)), 0, 300);
+    }
+
+    /** Clé d'un téléphone (chiffres seuls) : un client = un numéro. */
+    public static function phoneKey(string $phone): string
+    {
+        return mb_substr(self::digits($phone), 0, 50);
+    }
+
+    /**
+     * Fiche client du dépôt : retrouvée par le téléphone, créée sinon. Une fiche existante n'est
+     * pas renommée au comptoir (la correction se fait dans « Clients pressing ») ; l'adresse de
+     * livraison est retenue pour les prochaines fois.
+     */
+    private static function clientFor(string $name, string $phone, string $address): int
+    {
+        $key = self::phoneKey($phone);
+        $c = DB::one('SELECT id, address FROM pressing_clients WHERE phone_key = ? FOR UPDATE', [$key]);
+        if (!$c) {
+            return DB::insert('pressing_clients', ['phone_key' => $key, 'name' => mb_substr($name, 0, 150), 'phone' => mb_substr($phone, 0, 50), 'address' => $address !== '' ? mb_substr($address, 0, 255) : null, 'last_order_at' => date('Y-m-d H:i:s')]);
+        }
+        $upd = ['last_order_at' => date('Y-m-d H:i:s')];
+        if ($address !== '' && $address !== (string) $c['address']) {
+            $upd['address'] = mb_substr($address, 0, 255);
+        }
+        DB::update('pressing_clients', $upd, 'id = ?', [(int) $c['id']]);
+        return (int) $c['id'];
+    }
+
+    /**
+     * Modification d'une fiche client (nom, téléphone, adresse, note). Les tickets déjà remis
+     * ne changent pas ; avec $openToo, les dépôts non encore retirés reprennent le nouveau nom,
+     * le nouveau téléphone (écran de l'atelier, messages WhatsApp) et la nouvelle adresse de livraison.
+     */
+    public static function updateClient(int $id, array $d, bool $openToo = false): int
+    {
+        $name = trim((string) ($d['name'] ?? ''));
+        $phone = trim((string) ($d['phone'] ?? ''));
+        $n = strlen(self::digits($phone));
+        if ($name === '') {
+            throw new BusinessException('Le nom du client est obligatoire.');
+        }
+        if ($n < 8 || $n > 15) {
+            throw new BusinessException('Téléphone invalide : 8 à 15 chiffres (ici ' . $n . ').');
+        }
+        return DB::transaction(function () use ($id, $name, $phone, $d, $openToo) {
+            $c = DB::one('SELECT * FROM pressing_clients WHERE id = ? FOR UPDATE', [$id]);
+            if (!$c) {
+                throw new BusinessException('Client introuvable.');
+            }
+            $key = self::phoneKey($phone);
+            $twin = DB::one('SELECT * FROM pressing_clients WHERE phone_key = ? AND id <> ? FOR UPDATE', [$key, $id]);
+            if ($twin && empty($d['merge'])) {
+                throw new BusinessException('Ce numéro appartient déjà à « ' . $twin['name'] . ' » dans la liste. S\'il s\'agit de la même personne, cochez « Regrouper les deux fiches ».');
+            }
+            if ($twin) {
+                // Même personne enregistrée deux fois (ex. numéro saisi en double) : ses dépôts rejoignent
+                // la fiche qui porte déjà ce numéro, puis la fiche en double est retirée de la liste.
+                $moved = DB::run('UPDATE pressing_orders SET client_id = ? WHERE client_id = ?', [(int) $twin['id'], $id])->rowCount();
+                DB::run('DELETE FROM pressing_clients WHERE id = ?', [$id]);
+                Audit::log('pressing.client_merge', 'pressing_client', (int) $twin['id'], ['fiche_regroupee' => array_intersect_key($c, array_flip(['id', 'name', 'phone', 'address', 'note'])), 'depots' => $moved]);
+                $id = (int) $twin['id'];
+                $c = $twin;
+            }
+            $new = ['name' => mb_substr($name, 0, 150), 'phone' => mb_substr($phone, 0, 50), 'phone_key' => $key,
+                'address' => mb_substr(trim((string) ($d['address'] ?? '')), 0, 255) ?: null, 'note' => mb_substr(trim((string) ($d['note'] ?? '')), 0, 255) ?: null];
+            DB::update('pressing_clients', $new, 'id = ?', [$id]);
+            $open = 0;
+            if ($openToo) {
+                $open = DB::run("UPDATE pressing_orders SET customer_name = ?, phone = ? WHERE client_id = ? AND status IN ('received','processing','ready','partial')", [$new['name'], $new['phone'], $id])->rowCount();
+                if ($new['address'] !== null) {
+                    // Livraisons pas encore faites : elles partent à la nouvelle adresse
+                    DB::run("UPDATE pressing_orders SET delivery_address = ? WHERE client_id = ? AND delivery = 1 AND status IN ('received','processing','ready','partial')", [$new['address'], $id]);
+                }
+            }
+            $before = array_intersect_key($c, $new);
+            unset($before['phone_key'], $new['phone_key']);
+            Audit::log('pressing.client', 'pressing_client', $id, ['avant' => $before, 'apres' => $new, 'depots_en_cours' => $open]);
+            return $id;
+        });
     }
 
     private static function digits(string $phone): string
@@ -215,6 +313,7 @@ final class PressingService
         $subtotal = 0.0;
         $pieces = 0;
         $weight = 0.0;
+        $area = 0.0;
         $decimals = currency()['decimals'];
         foreach ((array) ($d['lines'] ?? []) as $l) {
             $aid = (int) ($l['article_id'] ?? 0);
@@ -234,8 +333,12 @@ final class PressingService
                 if ($q === null || $q < 0.001 || $q > 1000) {
                     throw new BusinessException('Poids invalide pour « ' . $tarifs[$aid]['name'] . ' » : indiquez les kilos, par exemple 4,5.');
                 }
+            } elseif ($unit === 'm2') {
+                if ($q === null || $q < 0.01 || $q > 1000) {
+                    throw new BusinessException('Surface invalide pour « ' . $tarifs[$aid]['name'] . ' » : indiquez les mètres carrés, par exemple 6,25.');
+                }
             } elseif ($q === null || $q < 1 || $q > 200 || abs($q - round($q)) > 0.0001) {
-                throw new BusinessException('Quantité invalide pour « ' . $tarifs[$aid]['name'] . ' » : nombre entier de pièces (seuls les articles au kilo acceptent une virgule).');
+                throw new BusinessException('Quantité invalide pour « ' . $tarifs[$aid]['name'] . ' » : nombre entier de pièces (seuls les articles au kilo ou au m² acceptent une virgule).');
             }
             $list = $tarifs[$aid]['prices'][$svc];
             $price = $list;
@@ -249,9 +352,10 @@ final class PressingService
                 'color' => mb_substr(trim((string) ($l['color'] ?? '')), 0, 60) ?: null, 'brand' => mb_substr(trim((string) ($l['brand'] ?? '')), 0, 80) ?: null,
                 'defects' => mb_substr(trim((string) ($l['defects'] ?? '')), 0, 255) ?: null];
             $subtotal += round($price * $q, $decimals);
-            // Un sac de linge pesé compte pour un colis (une étiquette)
-            $pieces += $unit === 'kg' ? 1 : (int) round($q);
+            // Un sac de linge pesé ou un tapis mesuré compte pour un colis (une étiquette)
+            $pieces += self::measured($unit) ? 1 : (int) round($q);
             $weight += $unit === 'kg' ? $q : 0.0;
+            $area += $unit === 'm2' ? $q : 0.0;
         }
         if (!$lines) {
             throw new BusinessException('Ajoutez au moins un article.');
@@ -300,13 +404,14 @@ final class PressingService
         }
         $customerId = DB::value("SELECT id FROM customers WHERE REPLACE(REPLACE(phone, ' ', ''), '+', '') LIKE ? LIMIT 1", ['%' . substr(self::digits($phone), -8)]);
 
-        return DB::transaction(function () use ($name, $phone, $express, $expressPct, $delivery, $address, $deliveryFee, $due, $subtotal, $expressFee, $discount, $total, $pieces, $weight, $lines, $d, $dep, $tendered, $customerId) {
+        return DB::transaction(function () use ($name, $phone, $express, $expressPct, $delivery, $address, $deliveryFee, $due, $subtotal, $expressFee, $discount, $total, $pieces, $weight, $area, $lines, $d, $dep, $tendered, $customerId) {
             $number = Sequence::next('pressing');
+            $clientId = self::clientFor($name, $phone, $delivery ? $address : '');
             $id = DB::insert('pressing_orders', [
-                'number' => $number, 'customer_id' => $customerId ?: null, 'customer_name' => mb_substr($name, 0, 150), 'phone' => mb_substr($phone, 0, 50),
+                'number' => $number, 'client_id' => $clientId, 'customer_id' => $customerId ?: null, 'customer_name' => mb_substr($name, 0, 150), 'phone' => mb_substr($phone, 0, 50),
                 'express' => $express ? 1 : 0, 'due_date' => $due, 'subtotal' => $subtotal, 'express_fee' => $expressFee, 'express_pct' => $expressPct,
                 'delivery' => $delivery ? 1 : 0, 'delivery_address' => $address ?: null, 'delivery_fee' => $deliveryFee, 'discount' => $discount, 'total' => $total,
-                'pieces' => $pieces, 'weight' => round($weight, 3), 'note' => mb_substr(trim((string) ($d['note'] ?? '')), 0, 255) ?: null, 'user_id' => Auth::id(),
+                'pieces' => $pieces, 'weight' => round($weight, 3), 'area' => round($area, 3), 'note' => mb_substr(trim((string) ($d['note'] ?? '')), 0, 255) ?: null, 'user_id' => Auth::id(),
             ]);
             $short = ltrim(substr($number, -6), '0') ?: '0';
             foreach ($lines as $i => $l) {
@@ -428,7 +533,7 @@ final class PressingService
             $taken = [];
             foreach ($items as $it) {
                 $q = self::parseQty($qtys[$it['id']] ?? '') ?? 0.0;
-                $unit = ($it['unit'] ?? 'piece') === 'kg' ? 'kg' : 'piece';
+                $unit = self::unit($it['unit'] ?? null);
                 $left = round((float) $it['quantity'] - (float) $it['picked_qty'], 3);
                 if ($q <= 0) {
                     continue;
@@ -437,15 +542,15 @@ final class PressingService
                     throw new BusinessException('« ' . $it['article_name'] . ' » : nombre entier de pièces.');
                 }
                 if ($q > $left + 0.0005) {
-                    throw new BusinessException('« ' . $it['article_name'] . ' » : seulement ' . ($unit === 'kg' ? self::qty($left, 'kg') : self::qty($left) . ' pièce(s)') . ' restante(s).');
+                    throw new BusinessException('« ' . $it['article_name'] . ' » : seulement ' . (self::measured($unit) ? self::qty($left, $unit) : self::qty($left) . ' pièce(s)') . ' restante(s).');
                 }
                 DB::run('UPDATE pressing_items SET picked_qty = picked_qty + ?, picked_at = NOW() WHERE id = ?', [$q, $it['id']]);
-                $taken[] = ($unit === 'kg' ? self::qty($q, 'kg') : self::qty($q) . ' ×') . ' ' . $it['article_name'] . ' [' . $it['tag'] . ']';
+                $taken[] = (self::measured($unit) ? self::qty($q, $unit) : self::qty($q) . ' ×') . ' ' . $it['article_name'] . ' [' . $it['tag'] . ']';
             }
             if (!$taken) {
                 throw new BusinessException('Indiquez les pièces remises au client.');
             }
-            $remaining = (int) DB::value("SELECT COALESCE(SUM(IF(unit = 'kg', IF(quantity - picked_qty > 0.0005, 1, 0), quantity - picked_qty)),0) FROM pressing_items WHERE order_id = ?", [$id]);
+            $remaining = (int) DB::value("SELECT COALESCE(SUM(IF(unit IN ('kg','m2'), IF(quantity - picked_qty > 0.0005, 1, 0), quantity - picked_qty)),0) FROM pressing_items WHERE order_id = ?", [$id]);
             if ($remaining <= 0) {
                 return self::deliver($id, $pay);
             }
@@ -526,7 +631,7 @@ final class PressingService
      */
     public static function board(bool $public = false): array
     {
-        $rows = DB::all("SELECT o.id, o.number, o.customer_name, o.phone, o.status, o.express, o.delivery, o.delivery_address, o.due_date, o.pieces, o.weight, o.total, o.paid, o.created_at, o.ready_at, o.note,
+        $rows = DB::all("SELECT o.id, o.number, o.customer_name, o.phone, o.status, o.express, o.delivery, o.delivery_address, o.due_date, o.pieces, o.weight, o.area, o.total, o.paid, o.created_at, o.ready_at, o.note,
                 (SELECT " . self::CLOTHES_SQL . " FROM pressing_items i WHERE i.order_id = o.id) AS clothes
                 FROM pressing_orders o WHERE o.status IN ('received','processing','ready','partial')
                 ORDER BY o.express DESC, o.due_date, o.id LIMIT 600");
@@ -551,7 +656,7 @@ final class PressingService
             $first = trim(explode(' ', trim((string) $o['customer_name']))[0] ?? '');
             $cols[$col][] = $public ? ['number' => $o['number'], 'name' => $first, 'status' => $o['status'], 'express' => (bool) $o['express']] : [
                 'id' => (int) $o['id'], 'number' => $o['number'], 'name' => $o['customer_name'], 'phone' => $o['phone'], 'status' => $o['status'],
-                'express' => (bool) $o['express'], 'due' => $o['due_date'], 'late' => $late, 'pieces' => (int) $o['pieces'], 'weight' => (float) $o['weight'],
+                'express' => (bool) $o['express'], 'due' => $o['due_date'], 'late' => $late, 'pieces' => (int) $o['pieces'], 'weight' => (float) $o['weight'], 'area' => (float) $o['area'],
                 'clothes' => mb_substr((string) $o['clothes'], 0, 160), 'rest' => $rest, 'note' => (string) $o['note'],
                 'since' => $o['ready_at'] ?: $o['created_at'], 'due_today' => $o['due_date'] === $today,
                 'delivery' => (int) $o['delivery'] === 1, 'address' => (string) ($o['delivery_address'] ?? ''),

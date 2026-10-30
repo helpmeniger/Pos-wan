@@ -30,26 +30,30 @@
   let idx = 0;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  // Unités mesurées (quantité avec virgule, une étiquette par ligne) : poids et surface
+  const MEASURE = { kg: { sym: 'kg', hint: T('Poids en kg, ex. 4,5'), per: T('par kg') }, m2: { sym: 'm²', hint: T('Surface en m², ex. 6,25'), per: T('par m²') } };
+
   function service() { const r = $('input[name="cur_service"]:checked'); return r ? r.value : 'lavage'; }
 
   function addLine(aid) {
     const a = byId[aid]; const svc = service();
     if (!a) return;
     if (a.prices[svc] === undefined) { alert(T('Service non proposé pour cet article.') + ' (' + a.name + ' — ' + D.services[svc] + ')'); return; }
-    const kg = a.unit === 'kg';
+    const m = MEASURE[a.unit];
+    const kg = !!m;
     const same = $$('tr[data-line]', tbody).find((tr) => tr.dataset.article === String(aid) && tr.dataset.service === svc && !$('[data-color]', tr).value && !$('[data-defects]', tr).value);
-    // Article au kilo : un nouveau toucher ramène à la saisie du poids (pas d'ajout d'1 kg)
+    // Article au kilo ou au m² : un nouveau toucher ramène à la saisie (pas d'ajout d'1 kg)
     if (same && kg) { const q = $('[data-q]', same); q.focus(); q.select(); return; }
     if (same) { const q = $('[data-q]', same); q.value = num(q.value) + 1; recalc(); return; }
     const i = idx++;
     const tr = document.createElement('tr');
-    tr.dataset.line = '1'; tr.dataset.article = String(aid); tr.dataset.service = svc; tr.dataset.unit = kg ? 'kg' : 'piece';
+    tr.dataset.line = '1'; tr.dataset.article = String(aid); tr.dataset.service = svc; tr.dataset.unit = kg ? a.unit : 'piece';
     tr.innerHTML = `<td><input type="hidden" name="lines[${i}][article_id]" value="${aid}"><input type="hidden" name="lines[${i}][service]" value="${esc(svc)}"><b>${esc(a.name)}</b><br><small class="text-secondary">${esc(D.services[svc])}</small></td>
       <td>${kg
-        ? `<div class="input-group input-group-sm"><input name="lines[${i}][quantity]" value="" inputmode="decimal" autocomplete="off" title="${esc(T('Poids en kg, ex. 4,5'))}" placeholder="4,5" class="form-control text-end" data-q><span class="input-group-text">kg</span></div>`
+        ? `<div class="input-group input-group-sm"><input name="lines[${i}][quantity]" value="" inputmode="decimal" autocomplete="off" title="${esc(m.hint)}" placeholder="${a.unit === 'm2' ? '6,25' : '4,5'}" class="form-control text-end" data-q><span class="input-group-text">${esc(m.sym)}</span></div>`
         : `<input name="lines[${i}][quantity]" value="1" inputmode="decimal" autocomplete="off" class="form-control form-control-sm text-end" data-q>`}
         <div class="small text-danger d-none" data-qmsg></div></td>
-      <td><input name="lines[${i}][unit_price]" value="${a.prices[svc]}" class="form-control form-control-sm text-end" inputmode="numeric" data-p ${D.canPrice ? '' : 'readonly'}>${kg ? `<small class="text-secondary">${esc(T('par kg'))}</small>` : ''}</td>
+      <td><input name="lines[${i}][unit_price]" value="${a.prices[svc]}" class="form-control form-control-sm text-end" inputmode="numeric" data-p ${D.canPrice ? '' : 'readonly'}>${kg ? `<small class="text-secondary">${esc(m.per)}</small>` : ''}</td>
       <td><input name="lines[${i}][color]" class="form-control form-control-sm" maxlength="60" placeholder="${esc(T('ex. bleu'))}" data-color></td>
       <td><input name="lines[${i}][brand]" class="form-control form-control-sm" maxlength="80"></td>
       <td><input name="lines[${i}][defects]" class="form-control form-control-sm" maxlength="255" placeholder="${esc(T('tache, trou…'))}" data-defects></td>
@@ -73,18 +77,19 @@
   }
 
   function totals() {
-    let sub = 0; let pieces = 0; let weight = 0; let missing = 0;
+    let sub = 0; let pieces = 0; let weight = 0; let area = 0; let missing = 0;
     $$('tr[data-line]', tbody).forEach((tr) => {
-      const kg = tr.dataset.unit === 'kg';
+      const m = MEASURE[tr.dataset.unit];
+      const kg = !!m;
       // Champ texte (jamais de virgule avalée par le navigateur) : au kilo 4,5 / 4.5 / ,5 ;
       // à la pièce, nombre entier — une virgule est signalée au lieu d'être ignorée.
       const inp = $('[data-q]', tr); const raw = inp.value.replace(/\s/g, '');
       const isNum = /^\d*(?:[.,]\d*)?$/.test(raw) && /\d/.test(raw);
       const v = isNum ? num(raw) : 0;
       let err = '';
-      if (kg) { if (raw !== '' && (!isNum || v <= 0)) err = T('Poids en kg, ex. 4,5'); else if (v > 1000) err = T('1 000 kg au plus.'); }
+      if (kg) { if (raw !== '' && (!isNum || v <= 0)) err = m.hint; else if (v > 1000) err = T('1 000 au plus.') + ' (' + m.sym + ')'; }
       else if (!isNum || v < 1) err = raw === '' ? T('Quantité obligatoire.') : T('Nombre de pièces invalide.');
-      else if (Math.round(v) !== v) err = T('« {a} » se compte à la pièce (nombre entier). Pour le peser, réglez son unité sur « Au kilo » dans Pressing → Tarifs.').replace('{a}', byId[tr.dataset.article] ? byId[tr.dataset.article].name : '');
+      else if (Math.round(v) !== v) err = T('« {a} » se compte à la pièce (nombre entier). Pour le peser ou le mesurer, réglez son unité sur « Au kilo » ou « Au m² » dans Pressing → Tarifs.').replace('{a}', byId[tr.dataset.article] ? byId[tr.dataset.article].name : '');
       else if (v > 200) err = T('200 pièces au plus.');
       inp.classList.toggle('is-invalid', !!err);
       const msg = $('[data-qmsg]', tr); msg.textContent = err; msg.classList.toggle('d-none', !err);
@@ -92,7 +97,7 @@
       const p = num($('[data-p]', tr).value);
       $('[data-lt]', tr).textContent = fmt(q * p); sub += q * p;
       if (err || (kg && q <= 0)) missing++;
-      if (kg) { weight += q; if (q > 0) pieces += 1; } else pieces += q;
+      if (kg) { if (tr.dataset.unit === 'm2') area += q; else weight += q; if (q > 0) pieces += 1; } else pieces += q;
     });
     const pct = expressPct();
     const exp = $('[data-express]').checked ? Math.round(sub * pct / 100) : 0;
@@ -101,7 +106,7 @@
     if (noAddr) missing++; // adresse obligatoire pour une livraison
     if ($('[data-delivery-address]')) $('[data-delivery-address]').classList.toggle('is-invalid', noAddr);
     const disc = Math.min(num($('[data-discount]').value), sub + exp + liv);
-    return { sub, exp, pct, liv, pieces, weight: Math.round(weight * 1000) / 1000, missing, total: Math.max(0, sub + exp + liv - disc) };
+    return { sub, exp, pct, liv, pieces, weight: Math.round(weight * 1000) / 1000, area: Math.round(area * 1000) / 1000, missing, total: Math.max(0, sub + exp + liv - disc) };
   }
 
   function recalc() {
@@ -111,7 +116,11 @@
     set('liv', fmt(t.liv)); const lr = $('[data-liv-row]'); if (lr) lr.classList.toggle('d-none', !(t.liv > 0));
     markPct();
     set('pieces', t.pieces); set('weight', String(t.weight).replace('.', ',') + ' kg');
-    const wr = $('[data-weight-row]'); if (wr) wr.classList.toggle('d-none', t.weight <= 0 && !t.missing); set('sub', fmt(t.sub)); set('exp', fmt(t.exp)); set('total', fmt(t.total));
+    set('area', String(t.area).replace('.', ',') + ' m²');
+    const hasM2 = $$('tr[data-line]', tbody).some((tr) => tr.dataset.unit === 'm2');
+    const hasKg = $$('tr[data-line]', tbody).some((tr) => tr.dataset.unit === 'kg');
+    const wr = $('[data-weight-row]'); if (wr) wr.classList.toggle('d-none', !(t.weight > 0 || hasKg));
+    const ar = $('[data-area-row]'); if (ar) ar.classList.toggle('d-none', !(t.area > 0 || hasM2)); set('sub', fmt(t.sub)); set('exp', fmt(t.exp)); set('total', fmt(t.total));
     const paid = num($('[data-pay-amount]').value);
     set('rest', fmt(Math.max(0, t.total - paid)));
     const ch = $('[data-t="change"]');
@@ -155,6 +164,8 @@
   let selectOnClick = false;
   const fillPhone = () => {
     const o = $$('#pClients option').find((x) => x.value === nameEl.value.trim());
+    const addr = $('[data-delivery-address]');
+    if (o && o.dataset.address && addr && addr.value.trim() === '') addr.value = o.dataset.address; // adresse connue du client
     if (!o || !(phoneEl.value === '' || phoneEl.value === autoPhone)) return;
     phoneEl.value = o.dataset.phone;
     autoPhone = o.dataset.phone;

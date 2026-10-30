@@ -1,32 +1,147 @@
 {
     "code": "pressing",
     "name": "Pressing",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "requires": "2.0.0",
     "author": "POS Marwa",
-    "description": "Gestion complète d'un pressing : tarifs par article et par service (à la pièce ou au kilo), dépôts avec étiquettes, express, acompte, suivi du traitement (reçu, en cours, prêt, retiré), retrait avec paiement du solde, relances des clients, rapport.",
+    "description": "Gestion complète d'un pressing : tarifs par article et par service (à la pièce, au kilo ou au m²), dépôts avec étiquettes, express, acompte, livraison, suivi du traitement (reçu, en cours, prêt, retiré), retrait avec paiement du solde, fichier des clients, relances, rapport.",
     "icon": "bi-basket2",
     "color": "#1f77b4",
     "permissions": {
         "pressing.view": "Voir les dépôts pressing",
         "pressing.deposit": "Enregistrer les dépôts, encaissements et retraits",
         "pressing.process": "Faire avancer le traitement (en cours, prêt)",
-        "pressing.manage": "Tarifs, remises, prix modifiés, annulations, rapport"
+        "pressing.manage": "Tarifs, remises, prix modifiés, annulations, rapport",
+        "pressing.clients": "Voir et modifier le fichier des clients pressing",
+        "pressing.deliver": "Livraisons à domicile : adresses, remise au client, encaissement du solde"
     },
     "roles": {
-        "owner": ["pressing.view", "pressing.deposit", "pressing.process", "pressing.manage"],
-        "store_manager": ["pressing.view", "pressing.deposit", "pressing.process", "pressing.manage"],
-        "cashier": ["pressing.view", "pressing.deposit", "pressing.process"],
-        "auditor": ["pressing.view"]
+        "owner": [
+            "pressing.view",
+            "pressing.deposit",
+            "pressing.process",
+            "pressing.manage",
+            "pressing.clients",
+            "pressing.deliver"
+        ],
+        "store_manager": [
+            "pressing.view",
+            "pressing.deposit",
+            "pressing.process",
+            "pressing.manage",
+            "pressing.clients",
+            "pressing.deliver"
+        ],
+        "cashier": [
+            "pressing.view",
+            "pressing.deposit",
+            "pressing.process",
+            "pressing.clients",
+            "pressing.deliver"
+        ],
+        "auditor": [
+            "pressing.view"
+        ]
+    },
+    "new_roles": {
+        "laveur": {
+            "name": "Laveur (pressing)",
+            "description": "Atelier : prend le linge déposé et le passe « En traitement » sur l'écran des dépôts",
+            "permissions": [
+                "pressing.view",
+                "pressing.process"
+            ]
+        },
+        "repasseur": {
+            "name": "Repasseur (pressing)",
+            "description": "Atelier : repassage et finition, passe le linge « Prêt »",
+            "permissions": [
+                "pressing.view",
+                "pressing.process"
+            ]
+        },
+        "livreur": {
+            "name": "Livreur (pressing)",
+            "description": "Livraisons à domicile : adresses à servir, remise au client, encaissement du solde dans sa propre caisse",
+            "permissions": [
+                "pressing.deliver",
+                "cash.open_close"
+            ]
+        }
     },
     "menu": [
-        { "group": "Pressing", "label": "Dépôts pressing", "icon": "bi-basket2", "url": "/pressing", "permission": "pressing.view", "color": "#1f77b4" },
-        { "group": "Pressing", "label": "Caisse pressing", "icon": "bi-cash-coin", "url": "/pressing/caisse", "permission": "pressing.deposit", "color": "#d62728" },
-        { "group": "Pressing", "label": "Écran des dépôts en cours", "icon": "bi-display", "url": "/pressing/ecran", "permission": "pressing.view", "color": "#0b5394" },
-        { "group": "Pressing", "label": "Suivi des vêtements", "icon": "bi-list-check", "url": "/pressing/suivi", "permission": "pressing.view", "color": "#ff7f0e" },
-        { "group": "Pressing", "label": "Nouveau dépôt", "icon": "bi-plus-circle", "url": "/pressing/create", "permission": "pressing.deposit", "color": "#2ca02c" },
-        { "group": "Pressing", "label": "Tarifs pressing", "icon": "bi-tags", "url": "/pressing/tarifs", "permission": "pressing.manage", "color": "#9467bd" },
-        { "group": "Pressing", "label": "Rapport pressing", "icon": "bi-bar-chart", "url": "/pressing/report", "permission": "pressing.manage", "color": "#d62728" }
+        {
+            "group": "Pressing",
+            "label": "Dépôts pressing",
+            "icon": "bi-basket2",
+            "url": "/pressing",
+            "permission": "pressing.view",
+            "color": "#1f77b4"
+        },
+        {
+            "group": "Pressing",
+            "label": "Caisse pressing",
+            "icon": "bi-cash-coin",
+            "url": "/pressing/caisse",
+            "permission": "pressing.deposit",
+            "color": "#d62728"
+        },
+        {
+            "group": "Pressing",
+            "label": "Écran des dépôts en cours",
+            "icon": "bi-display",
+            "url": "/pressing/ecran",
+            "permission": "pressing.view",
+            "color": "#0b5394"
+        },
+        {
+            "group": "Pressing",
+            "label": "Suivi des vêtements",
+            "icon": "bi-list-check",
+            "url": "/pressing/suivi",
+            "permission": "pressing.view",
+            "color": "#ff7f0e"
+        },
+        {
+            "group": "Pressing",
+            "label": "Livraisons à domicile",
+            "icon": "bi-truck",
+            "url": "/pressing/livraisons",
+            "permission": "pressing.deliver",
+            "color": "#17becf"
+        },
+        {
+            "group": "Pressing",
+            "label": "Clients pressing",
+            "icon": "bi-people",
+            "url": "/pressing/clients",
+            "permission": "pressing.clients",
+            "color": "#8c564b"
+        },
+        {
+            "group": "Pressing",
+            "label": "Nouveau dépôt",
+            "icon": "bi-plus-circle",
+            "url": "/pressing/create",
+            "permission": "pressing.deposit",
+            "color": "#2ca02c"
+        },
+        {
+            "group": "Pressing",
+            "label": "Tarifs pressing",
+            "icon": "bi-tags",
+            "url": "/pressing/tarifs",
+            "permission": "pressing.manage",
+            "color": "#9467bd"
+        },
+        {
+            "group": "Pressing",
+            "label": "Rapport pressing",
+            "icon": "bi-bar-chart",
+            "url": "/pressing/report",
+            "permission": "pressing.manage",
+            "color": "#d62728"
+        }
     ],
     "settings": {
         "pressing_delai_jours": "3",

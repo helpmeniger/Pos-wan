@@ -986,7 +986,7 @@ test('Module exemple « Livraisons » : installation, permissions, données, ré
 $PR = [];
 test('Module Pressing : dépôt express, acompte en caisse, étiquettes, prix protégés', function () use (&$PR) {
     actingAs('admin');
-    eq(['0001_pressing', '0002_suivi_retraits', '0003_articles_au_poids', '0004_express_livraison'], App\Core\Addons::install('pressing', false), 'installation');
+    eq(['0001_pressing', '0002_suivi_retraits', '0003_articles_au_poids', '0004_express_livraison', '0005_lavage_seul_m2_clients'], App\Core\Addons::install('pressing', false), 'installation');
     $PR['chemise'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Chemise'");
     $PR['boubou'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Boubou simple'");
     $PR['couverture'] = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Couverture'");
@@ -1515,10 +1515,12 @@ test('Pressing : articles au kilo, poids avec virgule, pièces entières, retrai
     throws(fn() => $P::create(['customer_name' => 'Kilo', 'phone' => '90 77 77 77', 'lines' => [['article_id' => $chem, 'service' => 'lavage', 'quantity' => '1,5']]]), 'nombre entier');
     throws(fn() => $P::create(['customer_name' => 'Kilo', 'phone' => '+227 90 77 77 77+227 90 77 77 77', 'lines' => [['article_id' => $chem, 'service' => 'lavage', 'quantity' => '1']]]), 'saisi deux fois');
     DB::insert('pressing_orders', ['number' => 'PR-TEST-DOUBLON', 'customer_name' => 'Doublon', 'phone' => '90 11 22 3390 11 22 33', 'due_date' => date('Y-m-d'), 'user_id' => Auth::id()]);
+    DB::insert('pressing_clients', ['phone_key' => '9011223390112233', 'name' => 'Doublon', 'phone' => '90 11 22 3390 11 22 33']);
     ok(!in_array('Doublon', array_column($P::recentClients(), 'customer_name'), true), 'numéro doublé jamais reproposé à la saisie');
     $js = (string) file_get_contents(BASE_PATH . '/addons/pressing/public/pressing.js');
     ok(str_contains($js, "closest('.pressing-tile[data-article]')") && !str_contains($js, 'type="number" min="1" max="200"'), 'saisie : un clic dans une ligne n\'ajoute pas de pièce ; virgule jamais avalée par un champ numérique');
     DB::run("DELETE FROM pressing_orders WHERE number = 'PR-TEST-DOUBLON'");
+    DB::run("DELETE FROM pressing_clients WHERE phone_key = '9011223390112233'");
     throws(fn() => $P::create(['customer_name' => 'Kilo', 'phone' => '90 77 77 77', 'lines' => [['article_id' => $kilo, 'service' => 'lavage', 'quantity' => '']]]), 'Poids invalide');
     throws(fn() => $P::create(['customer_name' => 'Kilo', 'phone' => '90 77 77 77', 'lines' => [['article_id' => $kilo, 'service' => 'lavage', 'quantity' => '0']]]), 'Poids invalide');
     $r = $P::create(['customer_name' => 'Kilo', 'phone' => '90 77 77 77', 'lines' => [
@@ -1539,6 +1541,71 @@ test('Pressing : articles au kilo, poids avec virgule, pièces entières, retrai
     $P::deliver($r['id']);
     eq('delivered', DB::value('SELECT status FROM pressing_orders WHERE id = ?', [$r['id']]));
     eq(4.5, (float) DB::value('SELECT picked_qty FROM pressing_items WHERE id = ?', [$sac]), 'tout le linge remis');
+});
+test('Pressing 1.5 : lavage seul, articles au m², fichier des clients, rôles laveur / repasseur / livreur', function () {
+    actingAs('caissier');
+    $P = Addons\Pressing\PressingService::class;
+    eq('Lavage seul', $P::SERVICES['lavage_seul'], 'service « Lavage seul »');
+    $chem = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Chemise'");
+    eq(250.0, (float) DB::value("SELECT price FROM pressing_prices WHERE article_id = ? AND service = 'lavage_seul'", [$chem]), 'tarif indicatif : 500 − 250 de repassage');
+    $couv = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Couverture'");
+    eq(2500.0, (float) DB::value("SELECT price FROM pressing_prices WHERE article_id = ? AND service = 'lavage_seul'", [$couv]), 'sans repassage : prix du lavage');
+    $tapis = (int) DB::value("SELECT id FROM pressing_articles WHERE name = 'Tapis / moquette'");
+    eq('m2', DB::value('SELECT unit FROM pressing_articles WHERE id = ?', [$tapis]), 'article fourni au m²');
+    eq('6,25 m²', $P::qty('6.250', 'm2'));
+    ok($P::measured('m2') && $P::measured('kg') && !$P::measured('piece'), 'unités mesurées');
+    throws(fn() => $P::create(['customer_name' => 'Surface', 'phone' => '90 66 66 66', 'lines' => [['article_id' => $tapis, 'service' => 'lavage_seul', 'quantity' => '0']]]), 'Surface invalide');
+    $r = $P::create(['customer_name' => 'Awa Surface', 'phone' => '+227 90 66 66 66', 'delivery' => true, 'delivery_address' => 'Plateau, rue 12', 'delivery_fee' => '0', 'lines' => [
+        ['article_id' => $tapis, 'service' => 'lavage_seul', 'quantity' => '6,25'], ['article_id' => $chem, 'service' => 'lavage_seul', 'quantity' => '2']]]);
+    $o = DB::one('SELECT * FROM pressing_orders WHERE id = ?', [$r['id']]);
+    eq(6.25 * 1500 + 2 * 250, (float) $o['total'], '6,25 m² × 1500 + 2 × 250');
+    eq(6.25, (float) $o['area'], 'surface du dépôt');
+    eq(0.0, (float) $o['weight'], 'aucun poids');
+    eq(3, (int) $o['pieces'], 'le tapis compte pour un colis');
+    ok(str_contains((string) DB::value('SELECT ' . $P::CLOTHES_SQL . ' FROM pressing_items i WHERE i.order_id = ?', [$r['id']]), '6,25 m² Tapis / moquette'), 'liste des vêtements : 6,25 m²');
+    // Fichier des clients : créé au dépôt, retrouvé par le téléphone quelle que soit sa présentation
+    $cid = (int) $o['client_id'];
+    ok($cid > 0, 'fiche client créée');
+    eq('Plateau, rue 12', DB::value('SELECT address FROM pressing_clients WHERE id = ?', [$cid]), 'adresse de livraison retenue');
+    $r2 = $P::create(['customer_name' => 'Awa S.', 'phone' => '22790666666', 'lines' => [['article_id' => $chem, 'service' => 'lavage', 'quantity' => '1']]]);
+    eq($cid, (int) DB::value('SELECT client_id FROM pressing_orders WHERE id = ?', [$r2['id']]), 'même client (même numéro)');
+    eq('Awa Surface', DB::value('SELECT name FROM pressing_clients WHERE id = ?', [$cid]), 'la fiche n\'est pas renommée au comptoir');
+    ok(in_array('Plateau, rue 12', array_column($P::recentClients(), 'address'), true), 'adresse proposée à la saisie');
+    throws(fn() => $P::updateClient($cid, ['name' => 'Awa', 'phone' => '1234']), 'Téléphone invalide');
+    $other = (int) DB::value("SELECT client_id FROM pressing_orders WHERE customer_name = 'Kilo' LIMIT 1");
+    $otherPhone = (string) DB::value('SELECT phone FROM pressing_clients WHERE id = ?', [$other]);
+    throws(fn() => $P::updateClient($cid, ['name' => 'Awa', 'phone' => $otherPhone]), 'appartient déjà');
+    $P::updateClient($cid, ['name' => 'Awa Moussa', 'phone' => '+227 91 66 66 66', 'address' => 'Plateau, rue 14', 'note' => 'appeler le soir'], true);
+    eq('Awa Moussa', DB::value('SELECT customer_name FROM pressing_orders WHERE id = ?', [$r['id']]), 'dépôt en cours mis à jour');
+    eq('+227 91 66 66 66', DB::value('SELECT phone FROM pressing_orders WHERE id = ?', [$r2['id']]));
+    eq('Plateau, rue 14', DB::value('SELECT delivery_address FROM pressing_orders WHERE id = ?', [$r['id']]), 'livraison en attente : nouvelle adresse');
+    eq('22791666666', DB::value('SELECT phone_key FROM pressing_clients WHERE id = ?', [$cid]));
+    ok((int) DB::value("SELECT COUNT(*) FROM audit_logs WHERE action = 'pressing.client' AND entity_id = ?", [$cid]) === 1, 'modification inscrite au journal d\'audit');
+    $old = DB::one("SELECT id, customer_name FROM pressing_orders WHERE status = 'delivered' AND client_id IS NOT NULL LIMIT 1");
+    $P::updateClient((int) DB::value('SELECT client_id FROM pressing_orders WHERE id = ?', [$old['id']]), ['name' => 'Nom corrigé', 'phone' => (string) DB::value('SELECT c.phone FROM pressing_clients c JOIN pressing_orders o ON o.client_id = c.id WHERE o.id = ?', [$old['id']])], true);
+    eq($old['customer_name'], DB::value('SELECT customer_name FROM pressing_orders WHERE id = ?', [$old['id']]), 'dépôt déjà retiré : informations d\'origine conservées');
+    // Même personne enregistrée deux fois (numéro saisi en double) : regroupement explicite
+    DB::insert('pressing_clients', ['phone_key' => '2279066666622790666666', 'name' => 'Awa doublon', 'phone' => '+227 90 66 66 66+227 90 66 66 66']);
+    $dup = (int) DB::value("SELECT id FROM pressing_clients WHERE name = 'Awa doublon'");
+    $od = DB::insert('pressing_orders', ['number' => 'PR-TEST-FUSION', 'client_id' => $dup, 'customer_name' => 'Awa doublon', 'phone' => '+227 90 66 66 66+227 90 66 66 66', 'due_date' => date('Y-m-d'), 'user_id' => Auth::id()]);
+    throws(fn() => $P::updateClient($dup, ['name' => 'Awa Moussa', 'phone' => '+227 91 66 66 66']), 'Regrouper');
+    eq($cid, $P::updateClient($dup, ['name' => 'Awa Moussa', 'phone' => '+227 91 66 66 66', 'merge' => true]), 'fiche conservée : celle qui porte déjà le numéro');
+    eq($cid, (int) DB::value('SELECT client_id FROM pressing_orders WHERE id = ?', [$od]), 'dépôt rattaché à la bonne fiche');
+    eq(null, DB::value('SELECT id FROM pressing_clients WHERE id = ?', [$dup]), 'fiche en double retirée');
+    DB::run("DELETE FROM pressing_orders WHERE number = 'PR-TEST-FUSION'");
+    // Rôles proposés par le module
+    foreach (['laveur' => 'laveur', 'repasseur' => 'repasseur', 'livreur' => 'livreur'] as $u => $role) {
+        $rid = (int) DB::value('SELECT id FROM roles WHERE code = ?', [$role]);
+        ok($rid > 0, "rôle $role créé");
+        DB::insert('users', ['username' => $u, 'full_name' => ucfirst($u), 'password_hash' => Auth::hash('Mot-de-passe-2026'), 'pin_hash' => Auth::hash('4826'), 'role_id' => $rid, 'store_id' => 1, 'register_id' => 1]);
+    }
+    actingAs('laveur');
+    ok(Auth::can('pressing.process') && Auth::can('pressing.view') && !Auth::can('pressing.deposit') && !Auth::can('pressing.clients'), 'laveur : atelier seulement');
+    actingAs('repasseur');
+    ok(Auth::can('pressing.process') && !Auth::can('pressing.deliver') && !Auth::can('pressing.manage'), 'repasseur : atelier seulement');
+    actingAs('livreur');
+    ok(Auth::can('pressing.deliver') && Auth::can('cash.open_close') && !Auth::can('pressing.view') && !Auth::can('pressing.clients'), 'livreur : livraisons et sa caisse');
+    $GLOBALS['PR_TAPIS'] = $r['id'];
 });
 test('Menu à droite par défaut ; numéros d\'assistance', function () {
     eq('right', setting('menu_position'));
@@ -2018,6 +2085,31 @@ test('Module Pressing (HTTP) : saisie, ticket QR, étiquettes, droits, tarifs, r
     eq(200, $a->req('GET', "$B/pressing/report")['code']);
     eq(200, $a->req('GET', "$B/pressing?f=late")['code']);
     eq(200, $a->req('GET', "$B/pressing?q=" . urlencode('1-1'))['code'], 'recherche par étiquette');
+    // 1.5 : fichier des clients, rôles de l'atelier, livraisons
+    $list = $c->req('GET', "$B/pressing/clients?q=" . urlencode('Awa'));
+    ok($list['code'] === 200 && str_contains($list['body'], 'Awa Moussa'), 'liste des clients (recherche)');
+    $cid = (int) DB::value("SELECT id FROM pressing_clients WHERE name = 'Awa Moussa'");
+    $tc = $c->token("$B/pressing/clients/$cid");
+    $c->req('POST', "$B/pressing/clients/$cid", http_build_query(['_csrf' => $tc, 'name' => 'Awa Moussa Issa', 'phone' => '+227 91 66 66 66', 'address' => 'Plateau, rue 14', 'note' => '', 'open_too' => '1']));
+    eq('Awa Moussa Issa', DB::value('SELECT name FROM pressing_clients WHERE id = ?', [$cid]), 'fiche modifiée par le caissier');
+    $lav = new Http();
+    $lav->login($B, 'laveur', 'Mot-de-passe-2026');
+    eq(200, $lav->req('GET', "$B/pressing/ecran")['code'], 'laveur : écran de l\'atelier');
+    eq(403, $lav->req('GET', "$B/pressing/clients")['code'], 'laveur : pas de fichier clients');
+    eq(403, $lav->req('GET', "$B/pressing/create")['code'], 'laveur : pas de dépôt');
+    $tid = (int) $GLOBALS['PR_TAPIS'];
+    DB::update('pressing_orders', ['status' => 'ready'], 'id = ?', [$tid]);
+    $liv = new Http();
+    $liv->login($B, 'livreur', 'Mot-de-passe-2026');
+    eq(403, $liv->req('GET', "$B/pressing")['code'], 'livreur : pas la liste générale');
+    $page = $liv->req('GET', "$B/pressing/livraisons");
+    ok($page['code'] === 200 && str_contains($page['body'], 'Plateau, rue 14') && str_contains($page['body'], '6,25 m²'), 'livreur : adresse et articles à livrer');
+    $tl = $liv->token("$B/pressing/livraisons");
+    $liv->req('POST', "$B/pressing/livraisons/$tid", http_build_query(['_csrf' => $tl, 'pay_method' => 'cash', 'pay_amount' => '0']));
+    eq('ready', DB::value('SELECT status FROM pressing_orders WHERE id = ?', [$tid]), 'solde impayé : livraison refusée');
+    DB::run('UPDATE pressing_orders SET paid = total WHERE id = ?', [$tid]);
+    $liv->req('POST', "$B/pressing/livraisons/$tid", http_build_query(['_csrf' => $tl, 'pay_method' => 'cash', 'pay_amount' => '']));
+    eq('delivered', DB::value('SELECT status FROM pressing_orders WHERE id = ?', [$tid]), 'livré par le livreur');
 });
 test('Module Clinique (HTTP) : confidentialité, supervision JSON, soin « Fait », ordonnance, délivrance', function () use ($B, &$CL) {
     $acc = new Http();

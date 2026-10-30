@@ -17,6 +17,11 @@ $router->post('/pressing/ecran/{id}/statut', [P::class, 'ecranStatus'], 'pressin
 $router->post('/pressing/ecran/{id}/livrer', [P::class, 'ecranDeliver'], 'pressing.deposit');
 $router->post('/pressing/reglages', [P::class, 'reglages'], 'pressing.manage');
 $router->get('/pressing/find', [P::class, 'find'], 'pressing.view');
+$router->get('/pressing/clients', [P::class, 'clients'], 'pressing.clients');
+$router->get('/pressing/clients/{id}', [P::class, 'clientEdit'], 'pressing.clients');
+$router->post('/pressing/clients/{id}', [P::class, 'clientSave'], 'pressing.clients');
+$router->get('/pressing/livraisons', [P::class, 'livraisons'], 'pressing.deliver');
+$router->post('/pressing/livraisons/{id}', [P::class, 'livraisonDone'], 'pressing.deliver');
 $router->get('/pressing/{id}', [P::class, 'show'], 'pressing.view');
 $router->post('/pressing/{id}/status', [P::class, 'status'], 'pressing.process');
 $router->post('/pressing/{id}/pay', [P::class, 'pay'], 'pressing.deposit');

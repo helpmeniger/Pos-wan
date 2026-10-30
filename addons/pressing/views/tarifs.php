@@ -11,7 +11,7 @@
     <div class="col-12 form-text">Au comptoir, le caissier choisit l'un des pourcentages proposés quand il coche EXPRESS ; un autre pourcentage est réservé au responsable (droit « Tarifs, remises… »).</div>
   </div>
 </form>
-<div class="alert alert-light border small">Prix en <?= e(currency()['symbol']) ?> par pièce, ou <b>par kilo</b> pour un article « Au kilo » (le poids se saisit au dépôt avec une virgule, ex. 4,5 kg). Laissez un prix vide si le service n'est pas proposé pour cet article. Décochez « Actif » pour retirer un article de la saisie (l'historique est conservé).</div>
+<div class="alert alert-light border small">Prix en <?= e(currency()['symbol']) ?> par pièce, <b>par kilo</b> pour un article « Au kilo » ou <b>par mètre carré</b> pour un article « Au m² » (tapis, moquette : le poids ou la surface se saisit au dépôt avec une virgule, ex. 4,5 kg ou 6,25 m²). Laissez un prix vide si le service n'est pas proposé pour cet article. Décochez « Actif » pour retirer un article de la saisie (l'historique est conservé).</div>
 <form method="post" action="<?= e(url('/pressing/tarifs')) ?>"><?= csrf_field() ?>
 <div class="card mb-3"><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Article</th><th>Catégorie</th><th style="width:130px">Unité</th><?php foreach (PS::SERVICES as $l): ?><th style="width:140px"><?= e($l) ?></th><?php endforeach; ?><th>Actif</th></tr></thead><tbody>
 <?php foreach ($tarifs as $a): ?>
@@ -22,7 +22,7 @@
 </tbody></table></div><div class="card-footer"><button class="btn btn-primary"><i class="bi bi-save"></i> Enregistrer les tarifs</button></div></div>
 </form>
 <form method="post" action="<?= e(url('/pressing/tarifs')) ?>" class="card"><div class="card-body row g-2 align-items-end"><?= csrf_field() ?>
-  <div class="col-md-4"><label class="form-label">Nouvel article</label><input name="new_name" class="form-control" maxlength="100" required placeholder="ex. Linge de maison, Sac, Chaussures…"></div>
+  <div class="col-md-4"><label class="form-label">Nouvel article</label><input name="new_name" class="form-control" maxlength="100" required placeholder="ex. Linge de maison, Tapis, Sac, Chaussures…"></div>
   <div class="col-md-2"><label class="form-label">Unité</label><select name="new_unit" class="form-select"><?php foreach (PS::UNITS as $uk => $ul): ?><option value="<?= e($uk) ?>"><?= e($ul) ?></option><?php endforeach; ?></select></div>
   <div class="col-md-3"><label class="form-label">Catégorie</label><input name="new_category" class="form-control" maxlength="50" list="pCats" value="Vêtements"><datalist id="pCats"><?php foreach (array_unique(array_column($tarifs, 'category')) as $c): ?><option value="<?= e($c) ?>"><?php endforeach; ?></datalist></div>
   <div class="col-md-3"><button class="btn btn-outline-primary w-100"><i class="bi bi-plus"></i> Ajouter</button></div>

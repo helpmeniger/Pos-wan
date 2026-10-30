@@ -25,7 +25,7 @@ $data['expressPct'] = PS::expressDefault();
       <div class="col-md-5"><label class="form-label required">Nom</label><input name="customer_name" class="form-control" maxlength="150" required list="pClients" data-client-name></div>
       <div class="col-md-4"><label class="form-label required">Téléphone</label><input name="phone" class="form-control" maxlength="50" required inputmode="tel" data-client-phone></div>
       <div class="col-md-3"><label class="form-label">Retrait prévu</label><input type="date" name="due_date" class="form-control" min="<?= e(date('Y-m-d')) ?>" value="<?= e(date('Y-m-d', strtotime('+' . $data['delai'] . ' days'))) ?>" data-due></div>
-      <datalist id="pClients"><?php foreach ($recent as $c): ?><option value="<?= e($c['customer_name']) ?>" data-phone="<?= e($c['phone']) ?>"><?= e($c['phone']) ?></option><?php endforeach; ?></datalist>
+      <datalist id="pClients"><?php foreach ($recent as $c): ?><option value="<?= e($c['customer_name']) ?>" data-phone="<?= e($c['phone']) ?>" data-address="<?= e($c['address'] ?? '') ?>"><?= e($c['phone']) ?></option><?php endforeach; ?></datalist>
     </div></div>
 
     <div class="card"><div class="card-header d-flex align-items-center"><span><i class="bi bi-basket2"></i> Articles déposés</span><span class="ms-auto small text-secondary">Touchez un article pour l'ajouter</span></div>
@@ -35,9 +35,9 @@ $data['expressPct'] = PS::expressDefault();
         </div>
         <?php foreach ($cats as $cat => $list): ?>
           <div class="small text-secondary text-uppercase mt-2 mb-1"><?= e($cat) ?></div>
-          <div class="pressing-tiles"><?php foreach ($list as $a): ?><button type="button" class="pressing-tile" data-article="<?= (int) $a['id'] ?>"><?= e($a['name']) ?><?php if ($a['unit'] === 'kg'): ?> <span class="badge bg-info text-dark">kg</span><?php endif; ?></button><?php endforeach; ?></div>
+          <div class="pressing-tiles"><?php foreach ($list as $a): ?><button type="button" class="pressing-tile" data-article="<?= (int) $a['id'] ?>"><?= e($a['name']) ?><?php if (PS::measured($a['unit'])): ?> <span class="badge bg-info text-dark"><?= e(PS::UNIT_SYMBOLS[$a['unit']]) ?></span><?php endif; ?></button><?php endforeach; ?></div>
         <?php endforeach; ?>
-        <div class="table-responsive mt-3"><table class="table table-sm align-middle"><thead><tr><th>Article / service</th><th style="width:120px">Qté / kg</th><th style="width:110px">Prix</th><th>Couleur</th><th>Marque</th><th>Défauts constatés</th><th class="num">Total</th><th></th></tr></thead>
+        <div class="table-responsive mt-3"><table class="table table-sm align-middle"><thead><tr><th>Article / service</th><th style="width:120px">Qté / kg / m²</th><th style="width:110px">Prix</th><th>Couleur</th><th>Marque</th><th>Défauts constatés</th><th class="num">Total</th><th></th></tr></thead>
           <tbody id="pLines"><tr class="empty"><td colspan="8" class="text-center text-secondary py-3">Aucun article.</td></tr></tbody></table></div>
       </div></div>
   </div>
@@ -59,6 +59,7 @@ $data['expressPct'] = PS::expressDefault();
       <table class="table table-sm mb-2">
         <tr><td>Pièces</td><td class="num" data-t="pieces">0</td></tr>
         <tr class="d-none" data-weight-row><td>Poids</td><td class="num" data-t="weight">0 kg</td></tr>
+        <tr class="d-none" data-area-row><td>Surface</td><td class="num" data-t="area">0 m²</td></tr>
         <tr><td>Sous-total</td><td class="num" data-t="sub"><?= e(money(0)) ?></td></tr>
         <tr><td>Supplément express <span data-t="exp-pct"></span></td><td class="num" data-t="exp"><?= e(money(0)) ?></td></tr>
         <tr class="d-none" data-liv-row><td>Livraison</td><td class="num" data-t="liv"><?= e(money(0)) ?></td></tr>

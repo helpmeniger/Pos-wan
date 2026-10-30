@@ -18,4 +18,9 @@ return [
     '« {a} » se compte à la pièce (nombre entier). Pour le peser, réglez son unité sur « Au kilo » dans Pressing → Tarifs.' => '“{a}” is counted per item (whole number). To weigh it, set its unit to “By weight (kg)” in Dry cleaning → Prices.',
     'à livrer' => 'to deliver', 'Prêts à livrer' => 'Ready to deliver', 'Livré' => 'Delivered', 'Encaisser' => 'Collect', 'puis livrer' => 'then deliver', 'LIVRAISON' => 'DELIVERY', 'Livraison' => 'Delivery',
     'Confirmer : le linge a été remis au client à domicile ?' => 'Confirm: the laundry was handed over at the customer\'s home?', 'Réglages du pressing enregistrés.' => 'Dry-cleaning settings saved.',
+    'Lavage seul' => 'Wash only', 'Au mètre carré (m²)' => 'Per square metre (m²)', 'Surface' => 'Area', 'par m²' => 'per m²', 'Surface en m², ex. 6,25' => 'Area in m², e.g. 6.25',
+    '1 000 au plus.' => '1,000 at most.', 'Clients pressing' => 'Dry-cleaning customers', 'Livraisons à domicile' => 'Home deliveries',
+    'Fiche client enregistrée.' => 'Customer record saved.', 'Dépôt %s livré.' => 'Order %s delivered.',
+    'Fiches regroupées : tous les dépôts sont sur la même fiche client.' => 'Records merged: all orders are now on the same customer record.',
+    '« {a} » se compte à la pièce (nombre entier). Pour le peser ou le mesurer, réglez son unité sur « Au kilo » ou « Au m² » dans Pressing → Tarifs.' => '“{a}” is counted per item (whole number). To weigh or measure it, set its unit to “By weight (kg)” or “Per square metre (m²)” in Dry cleaning → Prices.',
 ];

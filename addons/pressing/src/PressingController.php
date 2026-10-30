@@ -155,6 +155,80 @@ final class PressingController extends Controller
         view('pressing::client', ['title' => 'Historique client', 'phone' => $phone, 'orders' => $orders]);
     }
 
+    /** Fichier des clients pressing : recherche, nombre de dépôts, montants, reste dû. */
+    public function clients(): void
+    {
+        $q = trim((string) Request::query('q', ''));
+        $where = '1=1';
+        $params = [];
+        if ($q !== '') {
+            $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%';
+            $where = '(c.name LIKE ? OR c.phone LIKE ? OR c.address LIKE ?)';
+            array_push($params, $like, $like, $like);
+        }
+        $p = paginate('FROM pressing_clients c WHERE ' . $where, $params,
+            "c.*, (SELECT COUNT(*) FROM pressing_orders o WHERE o.client_id = c.id AND o.status <> 'cancelled') AS orders,
+             (SELECT COALESCE(SUM(o.total),0) FROM pressing_orders o WHERE o.client_id = c.id AND o.status <> 'cancelled') AS total,
+             (SELECT COALESCE(SUM(GREATEST(o.total - o.paid, 0)),0) FROM pressing_orders o WHERE o.client_id = c.id AND o.status <> 'cancelled') AS due",
+            'COALESCE(c.last_order_at, c.created_at) DESC, c.id DESC', 30);
+        view('pressing::clients', ['title' => 'Clients pressing', 'p' => $p, 'q' => $q, 'count' => (int) DB::value('SELECT COUNT(*) FROM pressing_clients')]);
+    }
+
+    private function pressingClient(int $id): array
+    {
+        $c = DB::one('SELECT * FROM pressing_clients WHERE id = ?', [$id]);
+        if (!$c) {
+            throw new HttpException(404);
+        }
+        return $c;
+    }
+
+    /** Fiche d'un client : modification et historique de ses dépôts. */
+    public function clientEdit(int $id): void
+    {
+        $c = $this->pressingClient($id);
+        $orders = DB::all("SELECT o.*, (SELECT " . PressingService::CLOTHES_SQL . " FROM pressing_items i WHERE i.order_id = o.id) AS clothes FROM pressing_orders o WHERE o.client_id = ? ORDER BY o.id DESC LIMIT 200", [$id]);
+        view('pressing::client_edit', ['title' => 'Client : ' . $c['name'], 'c' => $c, 'orders' => $orders]);
+    }
+
+    public function clientSave(int $id): void
+    {
+        $this->pressingClient($id);
+        $kept = $this->attempt(fn() => PressingService::updateClient($id, [
+            'name' => Request::str('name'), 'phone' => Request::str('phone'), 'address' => Request::str('address'), 'note' => Request::str('note'),
+            'merge' => Request::input('merge') === '1',
+        ], Request::input('open_too') === '1'), '/pressing/clients/' . $id);
+        flash('success', $kept !== $id ? t('Fiches regroupées : tous les dépôts sont sur la même fiche client.') : t('Fiche client enregistrée.'));
+        redirect('/pressing/clients/' . $kept);
+    }
+
+    /** Livraisons à domicile : dépôts prêts à porter chez le client (livreur). */
+    public function livraisons(): void
+    {
+        $sql = "SELECT o.id, o.number, o.customer_name, o.phone, o.delivery_address, o.status, o.express, o.due_date, o.pieces, o.weight, o.area, o.total, o.paid, o.note,
+                (SELECT " . PressingService::CLOTHES_SQL . " FROM pressing_items i WHERE i.order_id = o.id) AS clothes
+                FROM pressing_orders o WHERE o.delivery = 1 AND o.status IN %s ORDER BY o.express DESC, o.due_date, o.id LIMIT 300";
+        view('pressing::livraisons', ['title' => 'Livraisons à domicile',
+            'ready' => DB::all(sprintf($sql, "('ready','partial')")),
+            'coming' => DB::all(sprintf($sql, "('received','processing')")),
+            'done' => DB::all("SELECT o.id, o.number, o.customer_name, o.delivery_address, o.delivered_at FROM pressing_orders o WHERE o.delivery = 1 AND o.status = 'delivered' AND o.delivered_at >= CURDATE() ORDER BY o.delivered_at DESC LIMIT 100"),
+            'cashOpen' => (bool) \App\Services\CashService::currentSession($this->user())]);
+    }
+
+    /** « Livré » par le livreur : solde encaissé dans sa caisse s'il en reste, puis remise au client. */
+    public function livraisonDone(int $id): void
+    {
+        $o = $this->order($id);
+        $this->attempt(function () use ($id, $o) {
+            if ((int) $o['delivery'] !== 1) {
+                throw new \App\Core\BusinessException('Ce dépôt n\'est pas à livrer à domicile.');
+            }
+            return PressingService::deliver($id, $this->payData());
+        }, '/pressing/livraisons');
+        flash('success', sprintf(t('Dépôt %s livré.'), $o['number']));
+        redirect('/pressing/livraisons');
+    }
+
     /** Suivi des vêtements déposés : toutes les commandes, retards, soldes ; export CSV / PDF. */
     public function suivi(): void
     {
@@ -249,8 +323,8 @@ final class PressingController extends Controller
         view('pressing::report', [
             'title' => 'Rapport pressing', 'from' => $from, 'to' => $to, 'orders' => $orders,
             'payments' => DB::all('SELECT method, kind, SUM(amount) AS total, COUNT(*) AS n FROM pressing_payments WHERE created_at BETWEEN ? AND ? GROUP BY method, kind ORDER BY method', $range),
-            'services' => DB::all("SELECT i.service, SUM(IF(i.unit = 'kg', 0, i.quantity)) AS qty, SUM(IF(i.unit = 'kg', i.quantity, 0)) AS kg, SUM(i.line_total) AS total FROM pressing_items i JOIN pressing_orders o ON o.id = i.order_id WHERE o.status <> 'cancelled' AND o.created_at BETWEEN ? AND ? GROUP BY i.service ORDER BY total DESC", $range),
-            'articles' => DB::all("SELECT i.article_name, SUM(IF(i.unit = 'kg', 0, i.quantity)) AS qty, SUM(IF(i.unit = 'kg', i.quantity, 0)) AS kg, SUM(i.line_total) AS total FROM pressing_items i JOIN pressing_orders o ON o.id = i.order_id WHERE o.status <> 'cancelled' AND o.created_at BETWEEN ? AND ? GROUP BY i.article_name ORDER BY total DESC LIMIT 15", $range),
+            'services' => DB::all("SELECT i.service, SUM(IF(i.unit IN ('kg','m2'), 0, i.quantity)) AS qty, SUM(IF(i.unit = 'kg', i.quantity, 0)) AS kg, SUM(IF(i.unit = 'm2', i.quantity, 0)) AS m2, SUM(i.line_total) AS total FROM pressing_items i JOIN pressing_orders o ON o.id = i.order_id WHERE o.status <> 'cancelled' AND o.created_at BETWEEN ? AND ? GROUP BY i.service ORDER BY total DESC", $range),
+            'articles' => DB::all("SELECT i.article_name, SUM(IF(i.unit IN ('kg','m2'), 0, i.quantity)) AS qty, SUM(IF(i.unit = 'kg', i.quantity, 0)) AS kg, SUM(IF(i.unit = 'm2', i.quantity, 0)) AS m2, SUM(i.line_total) AS total FROM pressing_items i JOIN pressing_orders o ON o.id = i.order_id WHERE o.status <> 'cancelled' AND o.created_at BETWEEN ? AND ? GROUP BY i.article_name ORDER BY total DESC LIMIT 15", $range),
         ]);
     }
 

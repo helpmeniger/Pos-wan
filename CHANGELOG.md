@@ -2,6 +2,24 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.13.0] — 2026-10-30
+
+### Ajouté
+- **Pressing 1.5.0** :
+  - service **« Lavage seul »** (tarifs indicatifs créés : lavage + repassage moins le
+    repassage seul, à adapter dans Tarifs) ;
+  - unité **« Au mètre carré (m²) »** pour les tapis et moquettes : surface avec virgule
+    (6,25 m²), prix au m², surface totale sur le dépôt, le ticket, les étiquettes et le
+    rapport ; article fourni « Tapis / moquette » ;
+  - **fichier des clients pressing** (un client par numéro de téléphone, repris des dépôts
+    existants) : recherche, nombre de dépôts, reste dû ; **modification** du nom, du
+    téléphone, de l'adresse et d'une note, avec mise à jour au choix des dépôts non retirés,
+    regroupement explicite de deux fiches de la même personne, journal d'audit ; l'adresse
+    connue se remplit à la saisie d'une livraison ;
+  - nouveaux rôles **Laveur**, **Repasseur** (atelier) et **Livreur** (page « Livraisons à
+    domicile » : adresses, remise au client, encaissement du solde dans sa caisse) ;
+  - droits « Clients pressing » et « Livraisons à domicile ».
+
 ## [2.12.0] — 2026-10-29
 
 ### Ajouté
