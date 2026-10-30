@@ -37,3 +37,6 @@ bin-release/
 
 # Fichier de verrou d'anciennes versions
 /storage/installed.lock
+
+# Archive de livraison générée
+/job-niger.zip
