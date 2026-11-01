@@ -12,10 +12,10 @@ final class Upload
 {
     private const IMAGE_TYPES = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
 
-    public static function image(array $file, string $subdir): string
+    public static function image(array $file, string $subdir, int $maxDim = 800, ?int $maxBytes = null): string
     {
         self::checkError($file);
-        $max = (int) config('app.uploads.max_image_bytes');
+        $max = $maxBytes ?? (int) config('app.uploads.max_image_bytes');
         if ($file['size'] > $max) {
             throw new BusinessException('Image trop volumineuse (max ' . round($max / 1048576, 1) . ' Mo).');
         }
@@ -40,7 +40,6 @@ final class Upload
             }
             $w = imagesx($img);
             $h = imagesy($img);
-            $maxDim = 800;
             if ($w > $maxDim || $h > $maxDim) {
                 $ratio = min($maxDim / $w, $maxDim / $h);
                 $nw = (int) round($w * $ratio);
@@ -63,6 +62,39 @@ final class Upload
             throw new \RuntimeException('Échec de l\'enregistrement du fichier.');
         }
         return trim($subdir, '/') . '/' . $name . '.' . self::IMAGE_TYPES[$mime];
+    }
+
+    /**
+     * Vidéo MP4 ou WEBM (écran client) : extension, type réel et signature du fichier contrôlés,
+     * nom aléatoire. La vidéo n'est pas ré-encodée : elle est seulement lue par le navigateur.
+     */
+    public static function video(array $file, string $subdir, int $maxBytes): string
+    {
+        self::checkError($file);
+        if ($file['size'] > $maxBytes) {
+            throw new BusinessException('Vidéo trop volumineuse (max ' . round($maxBytes / 1048576) . ' Mo).');
+        }
+        $ext = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['mp4', 'webm'], true)) {
+            throw new BusinessException('Format vidéo non autorisé (MP4 ou WEBM).');
+        }
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']) ?: '';
+        $head = (string) file_get_contents($file['tmp_name'], false, null, 0, 16);
+        $isMp4 = substr($head, 4, 4) === 'ftyp';
+        $isWebm = str_starts_with($head, "\x1A\x45\xDF\xA3");
+        if (!($isMp4 && in_array($mime, ['video/mp4', 'video/quicktime', 'application/octet-stream'], true)) && !($isWebm && in_array($mime, ['video/webm', 'application/octet-stream', 'video/x-matroska'], true))) {
+            throw new BusinessException('Le fichier n\'est pas une vidéo MP4 ou WEBM valide.');
+        }
+        $dir = PUBLIC_PATH . '/uploads/' . trim($subdir, '/');
+        if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+            throw new \RuntimeException('Dossier de téléversement inaccessible.');
+        }
+        $name = bin2hex(random_bytes(16)) . '.' . ($isMp4 ? 'mp4' : 'webm');
+        $ok = PHP_SAPI === 'cli' ? copy($file['tmp_name'], $dir . '/' . $name) : move_uploaded_file($file['tmp_name'], $dir . '/' . $name);
+        if (!$ok) {
+            throw new \RuntimeException('Échec de l\'enregistrement du fichier.');
+        }
+        return trim($subdir, '/') . '/' . $name;
     }
 
     /** Fichier d'import CSV : renvoie le chemin temporaire validé. */

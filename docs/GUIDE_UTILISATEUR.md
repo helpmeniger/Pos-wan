@@ -419,6 +419,30 @@ Guide : `addons/marwa_voice/README.md`.
 Ce sont des indications à vérifier, pas des preuves. Informez le personnel et la clientèle de
 la présence de caméras.
 
+### Écran client et afficheur client
+**Configuration → Écran et afficheur client** (droit « Paramètres »).
+
+**Écran client** (POS double écran, ou second moniteur tourné vers le client) :
+1. Cochez « Activer l'écran client », réglez les messages d'accueil et de remerciement.
+2. Ajoutez des images (promotions, logo…) et des vidéos MP4 : elles passent en boucle quand
+   personne n'est en caisse. Ordre, durée par image et « Diffusé » se règlent sur chaque fichier.
+3. Dans la caisse, touchez l'icône d'écran (en haut, à côté du plein écran). Chrome / Edge demandent l'autorisation de
+   gérer les fenêtres sur tous vos écrans : acceptez, la fenêtre se place sur le second écran.
+   Sinon, faites-la glisser. Touchez l'écran client une fois pour le plein écran.
+4. Le client voit les articles, le total, le montant reçu et la monnaie, puis « Merci ».
+   L'écran client doit être ouvert **depuis la caisse, sur le même poste et le même
+   navigateur** ; il marche aussi sans Internet.
+
+**Afficheur client 2 lignes** (petit afficheur sur pied) :
+- **Branché sur le poste de caisse** (USB / série) : Chrome ou Edge, page en https (o2switch)
+  ou sur le PC serveur (localhost). Paramètres → « Connecter et tester l'afficheur » et
+  choisir le port une fois ; la caisse le reconnecte ensuite seule (icône verte).
+- **Relié au serveur** : port COM du PC serveur (ex. COM3) ou adresse réseau
+  (192.168.1.60:9100). Impossible depuis o2switch.
+- Choisissez le jeu de commandes indiqué dans la notice (ESC/POS pour la plupart, sinon
+  CD5220) et la vitesse (souvent 9600). Les accents sont retirés (les afficheurs ne les ont
+  pas tous).
+
 ### Pressing
 Module fourni (`addons/pressing/`) : à installer depuis Modules complémentaires. Guide :
 `addons/pressing/README.md`.

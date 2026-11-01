@@ -225,6 +225,14 @@ $router->post('/settings/currency', [C\SettingsController::class, 'currency'], '
 $router->post('/settings/mobile-money', [C\SettingsController::class, 'mobileMoney'], 'settings.manage');
 $router->post('/settings/logo', [C\SettingsController::class, 'logo'], 'settings.manage');
 $router->post('/settings/demo/archive', [C\SettingsController::class, 'archiveDemo'], 'settings.manage');
+$router->get('/settings/display', [C\CustomerDisplayController::class, 'settings'], 'settings.manage');
+$router->post('/settings/display', [C\CustomerDisplayController::class, 'save'], 'settings.manage');
+$router->post('/settings/display/media', [C\CustomerDisplayController::class, 'mediaAdd'], 'settings.manage');
+$router->post('/settings/display/media/{id}', [C\CustomerDisplayController::class, 'mediaUpdate'], 'settings.manage');
+$router->post('/settings/display/media/{id}/delete', [C\CustomerDisplayController::class, 'mediaDelete'], 'settings.manage');
+$router->post('/settings/display/vfd-test', [C\CustomerDisplayController::class, 'vfdTest'], 'settings.manage');
+$router->get('/afficheur', [C\CustomerDisplayController::class, 'screen'], 'pos.sell');
+$router->post('/afficheur/vfd', [C\CustomerDisplayController::class, 'vfd'], 'pos.sell');
 $router->get('/stores', [C\SettingsController::class, 'stores'], 'stores.manage');
 $router->post('/stores', [C\SettingsController::class, 'storeStore'], 'stores.manage');
 $router->post('/warehouses', [C\SettingsController::class, 'warehouseStore'], 'stores.manage');

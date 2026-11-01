@@ -145,7 +145,19 @@
     const t = totals().total;
     const tendered = num($('#tenderedInput').value);
     $('#changeOut').textContent = fmt(Math.max(0, tendered - t));
+    publishCart(tendered);
   }
+  // Écran client / afficheur client : le panier tel que le client doit le voir (aucune autre donnée)
+  function publishCart(tendered) {
+    try {
+      const t = totals();
+      document.dispatchEvent(new CustomEvent('pm:cart', { detail: {
+        lines: cart.lines.map((l) => { const up = unitPriceOf(l); return { name: l.name + (l.packName ? ' (' + l.packName + ')' : ''), qty: l.qty, price: up, total: up * l.qty - (l.discount || 0) }; }),
+        items: t.items, gross: t.gross, discount: t.discount, total: t.total, tendered: tendered || 0, change: Math.max(0, (tendered || 0) - t.total),
+      } }));
+    } catch (e) { /* écran client facultatif */ }
+  }
+  document.addEventListener('pm:cart-request', () => publishCart(num($('#tenderedInput').value)));
 
   // ------------------------------------------------------------------ ajout d'articles
   function addItem(p, packId = null, qty = null) {

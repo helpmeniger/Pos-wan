@@ -3,7 +3,7 @@ use App\Core\Env;
 
 return [
     'name' => 'POS Marwa',
-    'version' => '2.13.0',
+    'version' => '2.14.0',
     'env' => Env::get('APP_ENV', 'production'),
     'debug' => (bool) Env::get('APP_DEBUG', false),
     // Laisser vide pour une détection automatique du sous-dossier (ex. /pos-marwa/public)
@@ -26,5 +26,7 @@ return [
     'uploads' => [
         'max_image_bytes' => 2 * 1024 * 1024,
         'max_import_bytes' => 5 * 1024 * 1024,
+        'max_display_image_bytes' => 8 * 1024 * 1024,   // images de l'écran client
+        'max_display_video_bytes' => 100 * 1024 * 1024, // vidéos de l'écran client
     ],
 ];

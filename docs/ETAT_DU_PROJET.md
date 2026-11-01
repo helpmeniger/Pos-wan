@@ -1,4 +1,4 @@
-# État du projet — version 2.13.0 (POS Marwa)
+# État du projet — version 2.14.0 (POS Marwa)
 
 ## Terminé et vérifié
 
@@ -76,7 +76,8 @@
 | **v2.8** Pressing : écran des dépôts en cours + affichage clients | ✅ | Tests PHP + Chromium (avancement, aucune donnée personnelle côté clients) |
 | **v2.8** Assistance automatique (agent sur chaque poste) | ✅ fonctionnel, ⚠️ à valider sur place | Agent exécuté par PowerShell 7 contre POS Marwa, RustDesk simulé (11/11 + coupure de sécurité). **Non exécuté sur un vrai Windows** |
 | **v2.13** Pressing 1.5 : lavage seul, articles au m², fichier des clients modifiable (regroupement des doublons), rôles Laveur / Repasseur / Livreur, page des livraisons | ✅ | Tests PHP + HTTP (droits de chaque rôle, livraison refusée tant qu'il reste à payer) + Chromium 11/11 sur données de démonstration (mise à jour automatique, 16 clients repris). **Non essayé dans un vrai pressing** |
-**Résultat de la suite de tests : 141 réussis, 0 échec** (`php tests/run.php`), plus 15 vérifications JavaScript du moteur de comptage (`node tests/js/track.test.js`).
+| **v2.14** Écran client (second écran : panier, monnaie, images et vidéos au repos) et afficheur client 2 lignes (USB / série par le navigateur, COM ou réseau par le serveur) | ✅ fonctionnel, ⚠️ à valider sur place | Tests PHP + HTTP, test JavaScript (octets identiques navigateur / serveur pour les 3 jeux de commandes), Chromium 15/15 (deux fenêtres : caisse et écran client, vente réelle, monnaie exacte, faux afficheur réseau). **Aucun vrai afficheur ni vrai POS double écran essayé ; placement automatique sur le second écran non vérifié (navigateur sans écran) ; Web Serial non exercé sans matériel** |
+**Résultat de la suite de tests : 143 réussis, 0 échec** (`php tests/run.php`), plus 15 vérifications JavaScript du moteur de comptage (`node tests/js/track.test.js`) et 14 de l'afficheur client (`node tests/js/customer-display.test.js`).
 
 ## Limites connues / non implémenté (à ne pas présenter comme disponible)
 

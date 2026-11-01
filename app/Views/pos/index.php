@@ -83,6 +83,9 @@
       <div class="head-icons">
         <a href="<?= e(url('/menu')) ?>" title="Menu de gestion"><i class="bi bi-grid-3x3-gap-fill"></i></a>
         <button data-action="lock" title="Verrouiller / changer d'utilisateur"><i class="bi bi-person-lock"></i></button>
+<?php $cdCfg = App\Services\CustomerDisplay::clientConfig(); ?>
+        <?php if ($cdCfg['enabled']): ?><button type="button" data-cd-open title="Ouvrir l'écran client (second écran)"><i class="bi bi-display"></i></button><?php endif; ?>
+        <?php if ($cdCfg['vfd']['enabled'] && $cdCfg['vfd']['mode'] === 'browser'): ?><button type="button" data-cd-vfd class="d-none" title="Connecter l'afficheur client (USB / série)"><i class="bi bi-window-dock"></i></button><?php endif; ?>
         <button data-action="fullscreen" title="Plein écran"><i class="bi bi-fullscreen"></i></button>
         <form method="post" action="<?= e(url('/logout')) ?>" class="d-inline"><?= csrf_field() ?><button title="Déconnexion"><i class="bi bi-power"></i></button></form>
       </div>
@@ -262,6 +265,8 @@
 <script src="<?= e(asset('js/scanner.js')) ?>"></script>
 <?php foreach ($addonAssets['js'] as $s): ?><script src="<?= e(asset($s)) ?>"></script><?php endforeach; ?>
 <script src="<?= e(asset('js/pos.js')) ?>"></script>
+<?php if ($cdCfg['enabled'] || $cdCfg['vfd']['enabled']): ?><script type="application/json" id="pm-display-config"><?= json_encode($cdCfg, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?></script>
+<script src="<?= e(asset('js/customer-display-link.js')) ?>"></script><?php endif; ?>
 <script src="<?= e(asset('js/pwa.js')) ?>"></script>
 </body>
 </html>

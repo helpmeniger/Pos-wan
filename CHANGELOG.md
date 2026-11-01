@@ -2,6 +2,23 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.14.0] — 2026-11-01
+
+### Ajouté
+- **Écran client** (POS double écran ou second moniteur), dans Configuration → Écran et
+  afficheur client :
+  - bouton dans la caisse qui ouvre l'écran client, placé sur le second écran quand le
+    navigateur l'autorise (Chrome / Edge) ;
+  - panier en direct (articles, quantités, total), montant reçu et monnaie à rendre pendant
+    l'encaissement, puis « Merci » avec la monnaie rendue ;
+  - au repos : diffusion des **images** (JPG, PNG, WEBP, GIF) et **vidéos** (MP4, WEBM)
+    téléversées, dans l'ordre choisi, avec durée par image, son des vidéos au choix ;
+  - fonctionne sans Internet (liaison directe entre les fenêtres du même navigateur).
+- **Afficheur client 2 lignes** (« pole display ») : ESC/POS, CD5220 ou texte simple ;
+  branché sur le poste de caisse (USB / série, piloté par Chrome ou Edge) ou relié au serveur
+  (port COM, /dev/ttyUSB, ou adresse réseau locale) ; article ajouté, total, monnaie rendue,
+  message d'accueil ; bouton d'essai.
+
 ## [2.13.0] — 2026-10-30
 
 ### Ajouté

@@ -1607,6 +1607,62 @@ test('Pressing 1.5 : lavage seul, articles au m², fichier des clients, rôles l
     ok(Auth::can('pressing.deliver') && Auth::can('cash.open_close') && !Auth::can('pressing.view') && !Auth::can('pressing.clients'), 'livreur : livraisons et sa caisse');
     $GLOBALS['PR_TAPIS'] = $r['id'];
 });
+test('Écran client et afficheur client : réglages, images et vidéos, commandes de l\'afficheur', function () {
+    actingAs('admin');
+    $CD = App\Services\CustomerDisplay::class;
+    ok(in_array('0007_ecran_client', array_column(DB::all('SELECT version FROM schema_migrations'), 'version'), true), 'migration appliquée');
+    eq(false, $CD::clientConfig()['enabled'], 'désactivé par défaut');
+    eq('COM3', $CD::validateAddress('com3'));
+    eq('/dev/ttyUSB0', $CD::validateAddress('/dev/ttyUSB0'));
+    eq('192.168.1.60:9100', $CD::validateAddress('192.168.1.60'));
+    throws(fn() => $CD::validateAddress('8.8.8.8:9100'), 'réseau local');
+    throws(fn() => $CD::validateAddress('C:\\Windows\\win.ini'), 'invalide');
+    throws(fn() => $CD::validateAddress('/etc/passwd'), 'invalide');
+    eq('Cafe creme a 500 F', $CD::ascii('Café crème à 500 F'), 'accents retirés pour l\'afficheur');
+    eq('OEuf - 3 x 75 F ?', $CD::ascii('Œuf — 3 x 75 F ☺'), 'tiret long et caractère inconnu : un seul caractère chacun');
+    eq("\x1B\x40\x0C\x0B" . 'TOTAL         1 500 F' . "\x1F\x24\x01\x02" . 'RENDU           500 F', $CD::vfdBytes('TOTAL         1 500 F', 'RENDU           500 F', 'escpos', 21), 'ESC/POS : effacement, ligne 1, curseur ligne 2');
+    eq("\x1B\x40\x0C\x1BQA" . str_pad('Merci', 20) . "\r\x1BQB" . str_pad('A bientot', 20) . "\r", $CD::vfdBytes('Merci', 'À bientôt', 'cd5220', 20), 'CD5220');
+    eq(20 + 20 + 4, strlen($CD::vfdBytes(str_repeat('x', 50), 'y', 'text', 20)), 'lignes coupées à la largeur');
+    throws(fn() => $CD::saveSettings(['display_thanks_seconds' => '0', 'display_image_seconds' => '8', 'vfd_cols' => '20', 'vfd_baud' => '9600']), 'remerciement');
+    throws(fn() => $CD::saveSettings(['display_thanks_seconds' => '6', 'display_image_seconds' => '8', 'vfd_cols' => '20', 'vfd_baud' => '9600', 'vfd_enabled' => '1', 'vfd_mode' => 'server', 'vfd_address' => '../../etc']), 'Port de l\'afficheur invalide');
+    // Afficheur réseau : un vrai port TCP local reçoit les octets
+    $srv = stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
+    $port = (int) substr(strrchr(stream_socket_get_name($srv, false), ':'), 1);
+    $CD::saveSettings(['display_enabled' => '1', 'display_welcome' => 'Bienvenue chez Test', 'display_thanks' => 'Merci !', 'display_thanks_seconds' => '5', 'display_image_seconds' => '7', 'display_theme' => 'light', 'display_show_lines' => '1',
+        'vfd_enabled' => '1', 'vfd_mode' => 'server', 'vfd_protocol' => 'escpos', 'vfd_cols' => '20', 'vfd_baud' => '9600', 'vfd_address' => '127.0.0.1:' . $port, 'vfd_line1' => 'BIENVENUE', 'vfd_line2' => '']);
+    $c = $CD::clientConfig();
+    ok($c['enabled'] && $c['vfd']['enabled'] && $c['theme'] === 'light' && $c['thanksSeconds'] === 5, 'réglages enregistrés');
+    $CD::vfdSend('TOTAL 1 500 F', 'Merci');
+    $conn = stream_socket_accept($srv, 2);
+    $got = (string) fread($conn, 200);
+    fclose($conn); fclose($srv);
+    eq($CD::vfdBytes('TOTAL 1 500 F', 'Merci', 'escpos', 20), $got, 'afficheur réseau : octets reçus');
+    // Images et vidéos
+    $png = tempnam(sys_get_temp_dir(), 'cd'); $im = imagecreatetruecolor(2400, 1200); imagepng($im, $png); imagedestroy($im);
+    $id1 = $CD::addMedia(['name' => 'promo.png', 'tmp_name' => $png, 'size' => filesize($png), 'error' => UPLOAD_ERR_OK], 'Promotion');
+    $m1 = DB::one('SELECT * FROM display_media WHERE id = ?', [$id1]);
+    ok($m1['kind'] === 'image' && is_file(PUBLIC_PATH . '/uploads/' . $m1['path']), 'image enregistrée');
+    eq(1920, getimagesize(PUBLIC_PATH . '/uploads/' . $m1['path'])[0], 'image réduite à 1920 px');
+    $mp4 = tempnam(sys_get_temp_dir(), 'cd');
+    file_put_contents($mp4, "\x00\x00\x00\x20ftypisom\x00\x00\x02\x00isomiso2avc1mp41" . str_repeat("\x00", 64) . "\x00\x00\x00\x08free");
+    $id2 = $CD::addMedia(['name' => 'pub.mp4', 'tmp_name' => $mp4, 'size' => filesize($mp4), 'error' => UPLOAD_ERR_OK]);
+    eq('video', DB::value('SELECT kind FROM display_media WHERE id = ?', [$id2]), 'vidéo MP4 enregistrée');
+    $fake = tempnam(sys_get_temp_dir(), 'cd'); file_put_contents($fake, '<?php echo 1;');
+    throws(fn() => $CD::addMedia(['name' => 'piege.mp4', 'tmp_name' => $fake, 'size' => 14, 'error' => UPLOAD_ERR_OK]), 'pas une vidéo');
+    throws(fn() => $CD::addMedia(['name' => 'piege.php', 'tmp_name' => $fake, 'size' => 14, 'error' => UPLOAD_ERR_OK]), 'Format d\'image non autorisé');
+    $CD::move($id2, -1);
+    eq([$id2, $id1], array_map('intval', array_column($CD::media(), 'id')), 'ordre de diffusion modifié');
+    $CD::updateMedia($id1, ['title' => 'Promo', 'duration_s' => 12, 'active' => true]);
+    $pl = $CD::playlist();
+    ok(count($pl) === 2 && $pl[1]['seconds'] === 12 && str_ends_with($pl[0]['url'], '.mp4'), 'liste de diffusion');
+    $CD::updateMedia($id2, ['duration_s' => 8, 'active' => false]);
+    eq(1, count($CD::playlist()), 'fichier non diffusé retiré de la liste');
+    $path2 = PUBLIC_PATH . '/uploads/' . DB::value('SELECT path FROM display_media WHERE id = ?', [$id2]);
+    $CD::deleteMedia($id2);
+    ok(!is_file($path2) && !DB::value('SELECT 1 FROM display_media WHERE id = ?', [$id2]), 'suppression : fichier et ligne');
+    ok((int) DB::value("SELECT COUNT(*) FROM audit_logs WHERE action IN ('display.media_add','display.media_delete','settings.customer_display')") >= 4, 'journal d\'audit');
+    $GLOBALS['CD_MEDIA'] = $id1;
+});
 test('Menu à droite par défaut ; numéros d\'assistance', function () {
     eq('right', setting('menu_position'));
     $n = support_numbers();
@@ -2044,6 +2100,22 @@ test('v1.4 (HTTP) : page Modules, module actif / désactivé, connexion, menu', 
     eq(200, $c->req('GET', "$B/livraisons")['code'], 'réactivé');
     $a->req('POST', "$B/addons", http_build_query(['_csrf' => $ta, 'code' => '../../app', 'do' => 'install']));
     eq(null, DB::value("SELECT code FROM addons WHERE code LIKE '%app%'"), 'code de module malveillant refusé');
+});
+test('Écran client (HTTP) : paramètres, caisse, écran du second moniteur, droits', function () use ($B) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $pg = $a->req('GET', "$B/settings/display");
+    ok($pg['code'] === 200 && str_contains($pg['body'], 'Images et vidéos') && str_contains($pg['body'], 'data-cd-open'), 'page des paramètres');
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(403, $c->req('GET', "$B/settings/display")['code'], 'paramètres réservés');
+    $pos = $c->req('GET', "$B/pos");
+    ok(str_contains($pos['body'], 'data-cd-open') && str_contains($pos['body'], 'customer-display-link.js'), 'caisse : bouton de l\'écran client');
+    $scr = $c->req('GET', "$B/afficheur");
+    ok($scr['code'] === 200 && str_contains($scr['body'], 'Bienvenue chez Test') && str_contains($scr['body'], 'theme-light') && str_contains($scr['body'], '/uploads/display/'), 'écran client : accueil, thème, images');
+    $t = $c->token("$B/pos");
+    $r = $c->req('POST', "$B/afficheur/vfd", http_build_query(['_csrf' => $t, 'line1' => 'A', 'line2' => 'B']), ['Accept: application/json']);
+    ok($r['code'] === 422 && str_contains($r['body'], 'injoignable'), 'afficheur serveur absent : erreur claire, sans plantage');
 });
 test('Module Pressing (HTTP) : saisie, ticket QR, étiquettes, droits, tarifs, rapport PDF', function () use ($B, &$PR) {
     $c = new Http();

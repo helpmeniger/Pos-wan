@@ -164,3 +164,6 @@ a.btn-validate:hover { color: #fff; }
 .net-bar.off { background: #c0392b; color: #fff; }
 .net-bar.warn { background: #f5a623; color: #14213d; }
 .net-bar.sync { background: #1f6feb; color: #fff; }
+
+/* Écran / afficheur client : bouton vert quand l'afficheur est connecté */
+[data-cd-vfd].cd-on { color: #2ecc71; }

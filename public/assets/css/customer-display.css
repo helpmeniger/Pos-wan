@@ -1,0 +1,48 @@
+/* POS Marwa — écran client (second écran) */
+:root { --cd-bg: #0b1426; --cd-fg: #f5f7fb; --cd-muted: #9fb0cf; --cd-panel: rgba(13, 24, 46, .92); --cd-accent: #f5a623; --cd-line: rgba(255,255,255,.08); }
+.theme-light { --cd-bg: #f3f5f9; --cd-fg: #14213d; --cd-muted: #5b6b86; --cd-panel: rgba(255,255,255,.95); --cd-accent: #d98a00; --cd-line: rgba(20,33,61,.1); }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body.cd { background: var(--cd-bg); color: var(--cd-fg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; cursor: default; }
+.d-none { display: none !important; }
+
+.cd-media { position: fixed; inset: 0; background: #000; }
+.no-media .cd-media { background: var(--cd-bg); }
+.cd-item { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .6s ease; background: #000; }
+.cd-item.show { opacity: 1; }
+/* Panier en cours : médias à gauche, panier à droite */
+body[data-mode="cart"] .cd-media { right: 42vw; }
+
+.cd-welcome { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vh; text-align: center; padding: 4vw; }
+.cd-logo { max-width: 30vw; max-height: 30vh; object-fit: contain; }
+.cd-company { font-size: 5vw; font-weight: 800; letter-spacing: .02em; }
+.cd-welcome-text { font-size: 3vw; color: var(--cd-accent); }
+
+.cd-cart { position: fixed; top: 0; right: 0; bottom: 0; width: 42vw; background: var(--cd-panel); display: flex; flex-direction: column; padding: 2.2vh 2vw; box-shadow: -10px 0 30px rgba(0,0,0,.3); }
+.no-media .cd-cart { width: 100vw; padding: 3vh 8vw; }
+.cd-cart header { display: flex; align-items: center; gap: 1vw; font-size: 2.2vh; font-weight: 700; color: var(--cd-muted); margin-bottom: 1.5vh; }
+.cd-cart header img { height: 5vh; object-fit: contain; }
+.cd-lines { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+.cd-line { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "n t" "q t"; padding: 1.1vh 0; border-bottom: 1px solid var(--cd-line); font-size: 2.6vh; }
+.cd-line .n { grid-area: n; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cd-line .q { grid-area: q; color: var(--cd-muted); font-size: 2.1vh; }
+.cd-line .t { grid-area: t; align-self: center; font-weight: 700; padding-left: 1vw; white-space: nowrap; }
+.cd-line.last { color: var(--cd-accent); }
+.cd-sum { display: flex; justify-content: space-between; color: var(--cd-muted); font-size: 2.2vh; padding: 1.2vh 0; }
+.cd-total { display: flex; justify-content: space-between; align-items: baseline; border-top: 3px solid var(--cd-accent); padding-top: 1.5vh; }
+.cd-total span { font-size: 3.4vh; font-weight: 700; text-transform: uppercase; }
+.cd-total output { font-size: 7vh; font-weight: 800; color: var(--cd-accent); white-space: nowrap; }
+.cd-pay { display: flex; justify-content: space-between; font-size: 2.8vh; margin-top: 1.2vh; color: var(--cd-muted); }
+.cd-pay b { color: var(--cd-fg); }
+
+.cd-thanks { position: fixed; inset: 0; background: var(--cd-panel); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh; text-align: center; animation: cdIn .35s ease; }
+.cd-thanks > .bi { font-size: 14vh; color: #2ecc71; }
+.cd-thanks-text { font-size: 5vh; font-weight: 800; }
+.cd-thanks-grid { display: flex; gap: 5vw; }
+.cd-thanks-grid div { display: flex; flex-direction: column; gap: .5vh; }
+.cd-thanks-grid span { font-size: 2.6vh; color: var(--cd-muted); text-transform: uppercase; }
+.cd-thanks-grid b { font-size: 5vh; }
+.cd-thanks-grid .cd-change b { color: var(--cd-accent); font-size: 7vh; }
+@keyframes cdIn { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: none; } }
+
+.cd-fs { position: fixed; left: 2vw; top: 2vh; opacity: .85; border: 0; border-radius: 99px; padding: .7em 1.4em; background: rgba(0,0,0,.6); color: #fff; font-size: 16px; cursor: pointer; z-index: 10; }
