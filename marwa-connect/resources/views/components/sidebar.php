@@ -27,12 +27,6 @@ foreach ($menu as $item) {
         <?php foreach ($visible as $item): ?>
             <?php if (isset($item['section'])): ?>
                 <div class="mc-nav-section"><?= e($item['section']) ?></div>
-            <?php elseif (!empty($item['phase'])): ?>
-                <span class="mc-nav-link is-disabled" title="Disponible en phase <?= (int) $item['phase'] ?>">
-                    <i class="bi <?= e($item['icon']) ?>"></i>
-                    <span class="mc-nav-label"><?= e($item['label']) ?></span>
-                    <span class="mc-soon">Bientôt</span>
-                </span>
             <?php else: ?>
                 <a class="mc-nav-link <?= is_active_path($item['path']) ? 'active' : '' ?>" href="<?= e(url($item['path'])) ?>" title="<?= e($item['label']) ?>">
                     <i class="bi <?= e($item['icon']) ?>"></i>

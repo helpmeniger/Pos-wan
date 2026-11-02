@@ -4,8 +4,14 @@ use App\Core\View;
 $user = Auth::user();
 $theme = $user['theme'] ?? 'auto';
 $pageTitle = $title ?? 'Tableau de bord';
+$primary = (string) setting('appearance.primary_color', '#D7192A');
+$nav = (string) setting('appearance.nav_color', '#0B1A33');
+$brandStyle = (preg_match('/^#[0-9A-Fa-f]{6}$/', $primary) ? '--mc-red:' . $primary . ';' : '') . (preg_match('/^#[0-9A-Fa-f]{6}$/', $nav) ? '--mc-navy:' . $nav . ';' : '');
+if ($theme === 'auto') {
+    $theme = (string) setting('appearance.default_theme', 'auto') === 'dark' ? 'dark' : 'auto';
+}
 ?><!doctype html>
-<html lang="fr" data-bs-theme="<?= $theme === 'dark' ? 'dark' : 'light' ?>" data-theme-pref="<?= e($theme) ?>">
+<html lang="fr" data-bs-theme="<?= $theme === 'dark' ? 'dark' : 'light' ?>" data-theme-pref="<?= e($theme) ?>" style="<?= e($brandStyle) ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

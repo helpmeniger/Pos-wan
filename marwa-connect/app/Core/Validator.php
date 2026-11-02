@@ -25,7 +25,7 @@ final class Validator
     private function run(): void
     {
         foreach ($this->rules as $field => $ruleSet) {
-            $rules = is_array($ruleSet) ? $ruleSet : explode('|', $ruleSet);
+            $rules = is_array($ruleSet) ? $ruleSet : self::parseRules($ruleSet);
             $value = $this->data[$field] ?? null;
             $value = is_string($value) ? trim($value) : $value;
             $label = $this->labels[$field] ?? str_replace('_', ' ', $field);
@@ -43,6 +43,23 @@ final class Validator
                 }
             }
         }
+    }
+
+    /** Découpe « a|b|regex:/x|y/|c » en respectant les « | » internes aux expressions régulières. */
+    private static function parseRules(string $ruleSet): array
+    {
+        $parts = explode('|', $ruleSet);
+        $rules = [];
+        for ($i = 0, $n = count($parts); $i < $n; $i++) {
+            $rule = $parts[$i];
+            if (str_starts_with($rule, 'regex:')) {
+                while ($i + 1 < $n && @preg_match(substr($rule, 6), '') === false) {
+                    $rule .= '|' . $parts[++$i];
+                }
+            }
+            $rules[] = $rule;
+        }
+        return $rules;
     }
 
     private function check(string $name, ?string $param, mixed $value, string $field, string $label, bool $empty): ?string

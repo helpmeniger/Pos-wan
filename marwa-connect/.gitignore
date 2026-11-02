@@ -7,3 +7,6 @@
 /storage/cache/*
 /storage/sessions/*
 !/storage/*/.gitkeep
+/public/assets/uploads/*
+!/public/assets/uploads/.gitkeep
+/tests/__pycache__/

@@ -9,7 +9,8 @@ $initials = mb_strtoupper(implode('', array_map(static fn ($p) => mb_substr($p, 
 ?>
 <header class="mc-topbar">
     <a class="mc-brand" href="<?= e(url('/')) ?>">
-        <img src="<?= e(asset('images/logo.svg')) ?>" alt="" width="34" height="34">
+        <?php $logo = (string) setting('company.logo', ''); ?>
+        <img src="<?= e(asset($logo ?: 'images/logo.svg')) ?>" alt="" height="34" style="max-width:110px;object-fit:contain">
         <span class="mc-brand-text"><strong>MARWA</strong> CONNECT</span>
     </a>
 

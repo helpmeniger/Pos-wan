@@ -100,7 +100,7 @@ function money(int|float|string|null $amount, bool $withCurrency = true): string
     return $withCurrency ? $s . ' ' . config('app.currency', 'FCFA') : $s;
 }
 
-function bytes_human(int|float|null $bytes, int $precision = 1): string
+function bytes_human(int|float|string|null $bytes, int $precision = 1): string
 {
     $bytes = (float) $bytes;
     $units = ['o', 'Ko', 'Mo', 'Go', 'To'];
@@ -127,10 +127,67 @@ function date_fr(?string $datetime, string $format = 'd/m/Y H:i'): string
 function is_active_path(string $prefix): bool
 {
     $path = (string) ($GLOBALS['__marwa_path'] ?? '/');
-    return $prefix === '/' ? $path === '/' : str_starts_with($path, $prefix);
+    return $prefix === '/' ? $path === '/' : ($path === $prefix || str_starts_with($path, rtrim($prefix, '/') . '/'));
 }
 
 function setting(string $key, mixed $default = null): mixed
 {
     return \App\Services\SettingsService::get($key, $default);
+}
+
+function human_duration(int $seconds): string
+{
+    if ($seconds <= 0) {
+        return '0 s';
+    }
+    $parts = [];
+    foreach (['j' => 86400, 'h' => 3600, 'min' => 60, 's' => 1] as $u => $s) {
+        if ($seconds >= $s) {
+            $parts[] = intdiv($seconds, $s) . ' ' . $u;
+            $seconds %= $s;
+        }
+        if (count($parts) === 2) {
+            break;
+        }
+    }
+    return implode(' ', $parts);
+}
+
+/** Routeur sélectionné dans la barre supérieure (0 = tous). */
+function active_router_id(): int
+{
+    return (int) \App\Core\Session::get('active_router_id', 0);
+}
+
+/** Pagination Bootstrap conservant les filtres. */
+function pagination(int $page, int $pages, string $path, array $query = []): string
+{
+    if ($pages <= 1) {
+        return '';
+    }
+    $html = '<nav class="p-3 d-flex justify-content-between align-items-center"><small class="text-muted">Page ' . $page . ' / ' . $pages . '</small><div class="btn-group">';
+    $prev = url($path, array_merge($query, ['page' => $page - 1]));
+    $next = url($path, array_merge($query, ['page' => $page + 1]));
+    $html .= '<a class="btn btn-sm btn-outline-secondary' . ($page <= 1 ? ' disabled' : '') . '" href="' . e($prev) . '">Précédent</a>';
+    $html .= '<a class="btn btn-sm btn-outline-secondary' . ($page >= $pages ? ' disabled' : '') . '" href="' . e($next) . '">Suivant</a>';
+    return $html . '</div></nav>';
+}
+
+function status_badge(string $status): string
+{
+    $map = [
+        'available' => ['ok', 'Disponible'], 'sold' => ['warn', 'Vendu'], 'active' => ['ok', 'Actif'], 'used' => ['muted', 'Épuisé'],
+        'expired' => ['muted', 'Expiré'], 'suspended' => ['bad', 'Suspendu'], 'cancelled' => ['bad', 'Annulé'],
+        'online' => ['ok', 'En ligne'], 'offline' => ['bad', 'Hors ligne'], 'unknown' => ['muted', 'Inconnu'],
+        'completed' => ['ok', 'Terminée'], 'pending' => ['warn', 'En attente'], 'refunded' => ['muted', 'Remboursée'],
+        'paid' => ['ok', 'Payé'], 'failed' => ['bad', 'Échec'], 'partial' => ['warn', 'Partiel'], 'pushing' => ['warn', 'En cours'],
+        'inactive' => ['muted', 'Inactif'], 'archived' => ['muted', 'Archivé'], 'open' => ['ok', 'Ouverte'], 'closed' => ['muted', 'Clôturée'],
+        'confirmed' => ['ok', 'Confirmé'], 'awaiting_payment' => ['warn', 'Attente paiement'], 'delivered' => ['ok', 'Livrée'],
+        'created' => ['muted', 'Créée'], 'initiated' => ['warn', 'Initié'], 'partially_refunded' => ['warn', 'Remb. partiel'],
+    ];
+    [$cls, $label] = $map[$status] ?? ['muted', $status];
+    if ($status === 'cancelled' && func_num_args() > 1) {
+        $label = func_get_arg(1);
+    }
+    return '<span class="mc-status ' . $cls . '">' . e($label) . '</span>';
 }

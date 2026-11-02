@@ -106,7 +106,7 @@
             var msg = form.getAttribute('data-confirm');
             if (msg && !window.confirm(msg)) { e.preventDefault(); return; }
             var btn = form.querySelector('[type="submit"]');
-            if (btn && !form.hasAttribute('data-no-lock')) {
+            if (btn && !form.hasAttribute('data-no-lock') && !form.target && (form.method || '').toLowerCase() === 'post') {
                 // Évite les doubles soumissions (doubles ventes, doubles créations).
                 setTimeout(function () { btn.disabled = true; }, 0);
             }
@@ -180,6 +180,134 @@
         setInterval(ping, 30000);
         window.addEventListener('online', ping);
         window.addEventListener('offline', ping);
+
+        /* ---- Envoi automatique des filtres (data-autosubmit) ---- */
+        document.querySelectorAll('[data-autosubmit]').forEach(function (el) {
+            el.addEventListener('change', function () { if (el.form) { el.form.submit(); } });
+        });
+        document.querySelectorAll('[data-print]').forEach(function (b) { b.addEventListener('click', function () { window.print(); }); });
+
+        /* ---- Test de connexion RouterOS (formulaire routeur) ---- */
+        var testBtn = document.querySelector('[data-router-test]');
+        if (testBtn) {
+            testBtn.addEventListener('click', function () {
+                var form = testBtn.closest('form');
+                var out = document.getElementById('router-test-result');
+                var fd = new FormData(form);
+                var body = {};
+                ['host', 'api_port', 'api_ssl_port', 'api_username', 'api_password', 'router_id'].forEach(function (k) { body[k] = fd.get(k) || ''; });
+                body.use_ssl = fd.get('use_ssl') ? 1 : 0;
+                out.className = 'small mt-2 text-muted'; out.textContent = 'Connexion en cours…';
+                testBtn.disabled = true;
+                api.post('/routers/test', body).then(function (d) {
+                    out.className = 'small mt-2 text-success fw-semibold'; out.textContent = '✓ ' + d.message;
+                    var model = document.getElementById('model');
+                    if (model && !model.value && d.info && d.info.model) { model.value = d.info.model; }
+                }).catch(function (e) { out.className = 'small mt-2 text-danger fw-semibold'; out.textContent = '✗ ' + e.message; })
+                  .then(function () { testBtn.disabled = false; });
+            });
+        }
+
+        /* ---- Caisse ---- */
+        var pos = document.getElementById('pos-form');
+        if (pos) {
+            var offerInput = document.getElementById('pos-offer');
+            var qty = document.getElementById('quantity');
+            var disc = document.getElementById('discount');
+            var method = document.getElementById('payment_method_id');
+            var refWrap = document.getElementById('pos-ref-wrap');
+            var submit = document.getElementById('pos-submit');
+            var current = null;
+            var fmt = function (v) { return new Intl.NumberFormat('fr-FR').format(v) + ' FCFA'; };
+            var refresh = function () {
+                var isCash = method && method.selectedOptions[0] && method.selectedOptions[0].getAttribute('data-type') === 'cash';
+                if (refWrap) { refWrap.classList.toggle('d-none', !!isCash); }
+                if (!current) { submit.disabled = true; return; }
+                var q = Math.max(1, parseInt(qty.value, 10) || 1);
+                var stock = parseInt(current.getAttribute('data-stock'), 10);
+                var total = q * parseFloat(current.getAttribute('data-price')) - (disc ? (parseFloat(disc.value) || 0) : 0);
+                document.getElementById('pos-total').textContent = fmt(Math.max(0, total));
+                document.getElementById('pos-summary').textContent = q + ' × ' + current.getAttribute('data-name') + (q > stock ? ' — stock insuffisant (' + stock + ')' : '');
+                submit.disabled = q > stock || stock === 0;
+            };
+            document.querySelectorAll('[data-pos-offer]').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    document.querySelectorAll('[data-pos-offer]').forEach(function (x) { x.classList.remove('active'); });
+                    b.classList.add('active'); current = b; offerInput.value = b.getAttribute('data-pos-offer'); qty.value = 1; refresh();
+                });
+            });
+            document.querySelectorAll('[data-qty]').forEach(function (b) {
+                b.addEventListener('click', function () { qty.value = Math.max(1, (parseInt(qty.value, 10) || 1) + parseInt(b.getAttribute('data-qty'), 10)); refresh(); });
+            });
+            [qty, disc, method].forEach(function (el) { if (el) { el.addEventListener('input', refresh); el.addEventListener('change', refresh); } });
+            refresh();
+        }
+
+        /* ---- Espace revendeur : remise d'un ticket ---- */
+        var portalForm = document.getElementById('portal-sell-form');
+        document.querySelectorAll('[data-portal-sell]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                var phone = window.prompt('Ticket ' + b.getAttribute('data-label') + ' — numéro du client (facultatif) :', '');
+                if (phone === null) { return; }
+                portalForm.ticket_id.value = b.getAttribute('data-portal-sell');
+                portalForm.phone.value = phone;
+                portalForm.submit();
+            });
+        });
+
+        /* ---- Optimus IA ---- */
+        var ai = document.getElementById('mc-ai');
+        if (ai) {
+            var chat = document.getElementById('mc-chat');
+            var input = document.getElementById('mc-ai-input');
+            var confirmBase = ai.getAttribute('data-confirm-base').replace(BASE, '');
+            var addTable = function (box, table) {
+                if (!table || !table.rows || !table.rows.length) { return; }
+                var wrap = document.createElement('div'); wrap.className = 'table-responsive';
+                var t = document.createElement('table'); t.className = 'table table-sm table-bordered mb-0';
+                var tr = document.createElement('tr');
+                table.head.forEach(function (h) { var th = document.createElement('th'); th.textContent = h; tr.appendChild(th); });
+                var thead = document.createElement('thead'); thead.appendChild(tr); t.appendChild(thead);
+                var tb = document.createElement('tbody');
+                table.rows.forEach(function (row) {
+                    var r = document.createElement('tr');
+                    row.forEach(function (c) { var td = document.createElement('td'); td.textContent = c === null ? '—' : String(c); r.appendChild(td); });
+                    tb.appendChild(r);
+                });
+                t.appendChild(tb); wrap.appendChild(t); box.appendChild(wrap);
+            };
+            var addActions = function (box, id) {
+                var bar = document.createElement('div'); bar.className = 'd-flex gap-2 mt-2';
+                [['confirm', 'Confirmer et exécuter', 'btn-primary'], ['reject', 'Annuler', 'btn-outline-secondary']].forEach(function (a) {
+                    var b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-sm ' + a[2]; b.textContent = a[1];
+                    b.addEventListener('click', function () {
+                        bar.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
+                        if (a[0] === 'confirm') { b.textContent = 'Exécution…'; }
+                        api.post(confirmBase + '/' + id, { decision: a[0] }).then(function (d) { add('assistant', d.text); bar.remove(); })
+                            .catch(function (e) { add('assistant', e.message); bar.remove(); });
+                    });
+                    bar.appendChild(b);
+                });
+                box.appendChild(bar);
+            };
+            var add = function (role, text, extra) {
+                var m = document.createElement('div'); m.className = 'mc-msg ' + role; m.textContent = text;
+                if (extra) { addTable(m, extra.table); if (extra.action_id) { addActions(m, extra.action_id); } if (extra.engine && extra.engine !== 'local') { var meta = document.createElement('div'); meta.className = 'mc-msg-meta'; meta.textContent = 'Modèle : ' + extra.engine; m.appendChild(meta); } }
+                chat.appendChild(m); chat.scrollTop = chat.scrollHeight; return m;
+            };
+            chat.querySelectorAll('[data-json]').forEach(function (m) { try { addTable(m, JSON.parse(m.getAttribute('data-json')).table); } catch (e) { /* ignore */ } });
+            chat.querySelectorAll('[data-pending]').forEach(function (m) { addActions(m, m.getAttribute('data-pending')); });
+            chat.scrollTop = chat.scrollHeight;
+            var send = function (q) {
+                if (!q) { return; }
+                add('user', q); input.value = '';
+                var wait = add('assistant', '…');
+                api.post(ai.getAttribute('data-ask').replace(BASE, ''), { question: q }).then(function (d) { wait.remove(); add('assistant', d.text, d); })
+                    .catch(function (e) { wait.textContent = e.message; });
+            };
+            document.getElementById('mc-ai-form').addEventListener('submit', function (e) { e.preventDefault(); send(input.value.trim()); });
+            document.querySelectorAll('[data-suggest]').forEach(function (b) { b.addEventListener('click', function () { send(b.getAttribute('data-suggest')); }); });
+        }
 
         /* ---- Notifications ---- */
         var notifCount = document.getElementById('mc-notif-count');

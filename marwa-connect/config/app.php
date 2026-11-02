@@ -2,7 +2,7 @@
 return [
     'name' => 'MARWA CONNECT',
     'tagline' => 'Smart Wi-Fi Management & Ticketing System',
-    'version' => '0.1.0',
+    'version' => '1.0.0',
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => env('APP_URL', ''),

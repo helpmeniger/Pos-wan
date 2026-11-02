@@ -1,6 +1,6 @@
 # MARWA CONNECT — Dossier d'architecture
 
-*Smart Wi-Fi Management & Ticketing System* · version 0.1.0 (Phase 1)
+*Smart Wi-Fi Management & Ticketing System* · version 1.0.0
 
 Ce document répond à la « première mission » du cahier des charges :
 architecture technique, modules, schéma de base de données, connexion RouterOS,
@@ -69,15 +69,15 @@ Navigateur ─► Apache (.htaccess) ─► public/index.php ─► bootstrap/ap
 | Module | Phase | Dépend de | Fournit à |
 |---|---|---|---|
 | Installation, Auth, Rôles, Audit, Profil | 1 ✅ | — | tous |
-| Tableau de bord, navigation, Paramètres | 2 | Auth | — |
-| Routeurs MikroTik (connecteur, sync) | 3 | Auth, Crypto | Offres, Tickets, Monitoring |
-| Offres & profils Hotspot | 4 | Routeurs | Tickets, Ventes, Paiement en ligne |
-| Tickets (génération, impression) | 5 | Offres, Routeurs | Ventes, Revendeurs |
-| Caisse, ventes, paiements | 6 | Tickets | Revendeurs, Rapports |
-| Revendeurs | 7 | Tickets, Ventes | Rapports |
-| Clients connectés, Monitoring | 8 | Routeurs | Alertes, IA |
-| Notifications, Optimus IA | 9 | tous (lecture) | — |
-| Sécurité, tests, sauvegardes, doc | 10 | tous | — |
+| Tableau de bord, navigation, Paramètres | 2 ✅ | Auth | — |
+| Routeurs MikroTik (connecteur, sync) | 3 ✅ | Auth, Crypto | Offres, Tickets, Monitoring |
+| Offres & profils Hotspot | 4 ✅ | Routeurs | Tickets, Ventes, Paiement en ligne |
+| Tickets (génération, impression) | 5 ✅ | Offres, Routeurs | Ventes, Revendeurs |
+| Caisse, ventes, paiements | 6 ✅ | Tickets | Revendeurs, Rapports |
+| Revendeurs | 7 ✅ | Tickets, Ventes | Rapports |
+| Clients connectés, Monitoring | 8 ✅ | Routeurs | Alertes, IA |
+| Notifications, Optimus IA | 9 ✅ | tous (lecture) | — |
+| Sécurité, tests, sauvegardes, doc | 10 ✅ | tous | — |
 
 ---
 
@@ -194,7 +194,7 @@ restructurer des tables contenant déjà des données.
 
 ### 4.4 Synchronisation multi-routeurs
 
-* `cli/scheduler.php` (phase 3), lancé chaque minute par le Planificateur Windows, sélectionne les routeurs dont l'intervalle est échu, les interroge (timeout court, plusieurs routeurs traités successivement sans bloquer l'interface), puis écrit `router_status_logs`, `router_sync_logs`, `wifi_sessions`.
+* `cli/scheduler.php`, lancé chaque minute par le Planificateur Windows, sélectionne les routeurs dont l'intervalle est échu, les interroge (timeout court, plusieurs routeurs traités successivement sans bloquer l'interface), puis écrit `router_status_logs`, `router_sync_logs`, `wifi_sessions`.
 * En cas d'échec : `consecutive_failures++`, passage `offline` au-delà du seuil, notification `router_offline` (dédupliquée), **nouvel essai** au cycle suivant avec recul progressif.
 * Réconciliation des tickets : comparaison `/ip/hotspot/user/print` (uptime, bytes) ↔ table `tickets` pour détecter première utilisation, consommation et expiration ; un ticket observé utilisé sur le routeur n'est jamais remis « disponible ».
 
@@ -225,6 +225,7 @@ marwa-connect/
 │   ├── Services/        Audit, Settings, Installer, Backup, LoginThrottle, RateLimiter
 │   │                    (+ MikroTik, Tickets, Sales… dans les phases suivantes)
 │   ├── Models/          Modèles métier (à partir de la phase 3)
+│   ├── Services/MikroTik/  RouterOSClient (protocole binaire), RouterService
 │   └── Helpers/         functions.php : e(), url(), asset(), money(), can()…
 ├── bootstrap/app.php    Autoloader PSR-4, .env, config, gestion d'erreurs
 ├── config/              app, database, security, mikrotik, permissions, menu
@@ -237,7 +238,8 @@ marwa-connect/
 ├── resources/views/     layouts/, components/, et une vue par module
 ├── routes/              web.php, api.php, install.php
 ├── storage/             logs/, backups/, exports/, cache/, sessions/ (non versionnés)
-├── cli/                 migrate.php, backup.php (+ scheduler.php en phase 3)
+├── cli/                 migrate.php, backup.php, scheduler.php
+├── tests/               simulateur RouterOS + parcours de bout en bout (test uniquement)
 └── docs/                Ce dossier
 ```
 
@@ -254,16 +256,16 @@ marwa-connect/
 | Rôles & permissions | Matrice par module, rôles personnalisés | 1 ✅ |
 | Journal d'audit | Actions et connexions, filtres, détail avant/après | 1 ✅ |
 | Mon profil | Coordonnées, thème, mot de passe, dernières connexions | 1 ✅ |
-| Tableau de bord complet | KPI commerciaux/réseau, graphiques, filtres de période | 2 |
-| Paramètres | Entreprise, logo, couleurs, préfixes, sécurité, sauvegardes | 2 |
-| Routeurs | Liste, fiche technique, test de connexion, interfaces, sessions, journaux, redémarrage | 3 |
-| Offres | CRUD, association routeurs/profils | 4 |
-| Tickets | Générateur, lots, stock, impression (7 formats), PDF | 5 |
-| Caisse | Vente rapide, paiement, reçu, ouverture/clôture | 6 |
-| Revendeurs / espace revendeur | Stocks, commissions, soldes | 7 |
-| Clients Wi-Fi / Monitoring | Sessions actives, déconnexion, graphiques temps réel | 8 |
-| Notifications / Optimus IA | Centre d'alertes, assistant conversationnel | 9 |
-| Page publique d'achat | Choix du forfait, paiement, remise des identifiants | 6 |
+| Tableau de bord complet | KPI commerciaux/réseau, graphiques, filtres de période | 2 ✅ |
+| Paramètres | Entreprise, logo, couleurs, préfixes, sécurité, sauvegardes | 2 ✅ |
+| Routeurs | Liste, fiche technique, test de connexion, interfaces, sessions, journaux, redémarrage | 3 ✅ |
+| Offres | CRUD, association routeurs/profils | 4 ✅ |
+| Tickets | Générateur, lots, stock, impression (7 formats), PDF | 5 ✅ |
+| Caisse | Vente rapide, paiement, reçu, ouverture/clôture | 6 ✅ |
+| Revendeurs / espace revendeur | Stocks, commissions, soldes | 7 ✅ |
+| Clients Wi-Fi / Monitoring | Sessions actives, déconnexion, graphiques temps réel | 8 ✅ |
+| Notifications / Optimus IA | Centre d'alertes, assistant conversationnel | 9 ✅ |
+| Page publique d'achat | Choix du forfait, paiement, remise des identifiants | 6 ✅ |
 
 ---
 
