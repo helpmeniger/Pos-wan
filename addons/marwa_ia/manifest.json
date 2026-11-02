@@ -1,0 +1,30 @@
+{
+    "code": "marwa_ia",
+    "name": "MARWA IA — assistant intelligent",
+    "version": "1.0.0",
+    "requires": "2.14.0",
+    "author": "Mahamadou Hamidou (Mohamed) — POS Marwa",
+    "description": "Assistant intégré : posez vos questions en français (« rapport du client Moussa en PDF », « ventes d'hier », « que dois-je commander ? », « comment vendre au carton ? »). Il prépare les rapports (aperçu, PDF, Excel), fait le bilan avec conseils, prévoit le mois, propose le réapprovisionnement et répond sur l'utilisation de tout le logiciel. Fonctionne en local, sans Internet ; modèle de langage local (Ollama) facultatif.",
+    "icon": "bi-stars",
+    "color": "#6f42c1",
+    "permissions": {
+        "ia.use": "Utiliser l'assistant MARWA IA (les rapports restent soumis aux droits de chacun)",
+        "ia.manage": "Régler MARWA IA (bulle d'assistance, modèle de langage local)"
+    },
+    "roles": {
+        "owner": ["ia.use", "ia.manage"],
+        "store_manager": ["ia.use", "ia.manage"],
+        "cashier": ["ia.use"],
+        "stock_manager": ["ia.use"],
+        "buyer": ["ia.use"],
+        "accountant": ["ia.use"],
+        "pharmacist": ["ia.use"],
+        "auditor": ["ia.use"]
+    },
+    "menu": [
+        { "group": "Assistant", "label": "MARWA IA", "icon": "bi-stars", "url": "/ia", "permission": "ia.use", "color": "#6f42c1" },
+        { "group": "Assistant", "label": "Réglages de MARWA IA", "icon": "bi-sliders", "url": "/ia/reglages", "permission": "ia.manage", "color": "#6f42c1" }
+    ],
+    "assets": { "js": ["marwa-ia.js"], "css": ["marwa-ia.css"] },
+    "settings": { "ia_bubble": "1", "ia_llm_url": "", "ia_llm_model": "" }
+}

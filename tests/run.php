@@ -1663,6 +1663,95 @@ test('Écran client et afficheur client : réglages, images et vidéos, commande
     ok((int) DB::value("SELECT COUNT(*) FROM audit_logs WHERE action IN ('display.media_add','display.media_delete','settings.customer_display')") >= 4, 'journal d\'audit');
     $GLOBALS['CD_MEDIA'] = $id1;
 });
+test('MARWA IA : compréhension du français (périodes, intentions, noms), rapports, droits, aide, modèle local', function () {
+    actingAs('admin');
+    eq(['0001_marwa_ia'], App\Core\Addons::install('marwa_ia', false), 'installation');
+    App\Core\Addons::registerAutoload();
+    $T = Addons\MarwaIa\Text::class;
+    $E = Addons\MarwaIa\Engine::class;
+    $now = strtotime('2026-11-02 10:00:00');
+    eq(['2026-11-01', '2026-11-01'], array_values(array_slice($T::period('ventes d\'hier', $now), 0, 2)), 'hier');
+    eq(['2026-10-01', '2026-10-31'], array_values(array_slice($T::period('le mois dernier', $now), 0, 2)), 'mois dernier');
+    eq(['2026-10-26', '2026-11-01'], array_values(array_slice($T::period('la semaine dernière', $now), 0, 2)), 'semaine dernière');
+    eq(['2026-10-01', '2026-10-15'], array_values(array_slice($T::period('ventes du 1er au 15 octobre', $now), 0, 2)), 'du 1er au 15 octobre');
+    eq(['2026-09-01', '2026-09-30'], array_values(array_slice($T::period('rapport de septembre', $now), 0, 2)), 'septembre');
+    eq(['2025-03-01', '2025-03-31'], array_values(array_slice($T::period('en mars 2025', $now), 0, 2)), 'mars 2025');
+    eq(['2026-10-04', '2026-11-02'], array_values(array_slice($T::period('les 30 derniers jours', $now), 0, 2)), '30 derniers jours');
+    eq(['2026-10-10', '2026-10-20'], array_values(array_slice($T::period('du 10/10 au 20/10', $now), 0, 2)), 'du 10/10 au 20/10');
+    eq('2000-01-01', $T::period('depuis le début', $now)['from'], 'depuis le début');
+    eq(null, $T::period('rapport du client Moussa', $now), 'pas de période inventée');
+    eq('pdf', $T::format('donne moi le rapport en PDF'));
+    eq('csv', $T::format('en excel'));
+    eq('que sais tu faire', $T::norm('Que sais-tu faire ?'), 'trait d\'union et ponctuation');
+    // Données de test : un client, un fournisseur, un article
+    $cid = DB::insert('customers', ['name' => 'Moussa Garba', 'phone' => '+227 90 12 34 56', 'credit_limit' => 50000]);
+    DB::insert('customers', ['name' => 'Moussa Abdou', 'phone' => '+227 91 00 00 01']);
+    $sid = DB::insert('suppliers', ['name' => 'Sahel Distribution IA']);
+    eq('client', $E::understand('Donne moi le rapport du client Moussa Garba')['kind'], 'rapport du client');
+    eq($cid, (int) $E::understand('relevé du client mousa garba')['id'], 'faute de frappe : mousa garba');
+    eq($cid, (int) $E::understand('combien me doit le 90 12 34 56')['id'], 'client retrouvé par téléphone');
+    eq('fournisseur', $E::understand('combien je dois au fournisseur sahel distribution ia')['kind'], 'fournisseur');
+    $u = $E::understand('donne moi le rapport en pdf de toutes les transactions');
+    ok($u['kind'] === 'ventes' && $u['format'] === 'pdf' && $u['period']['from'] === '2000-01-01', 'toutes les transactions en PDF');
+    $u = $E::understand('ventes payées en mobile money cette semaine');
+    ok($u['kind'] === 'ventes' && $u['filters']['method'] === 'mobile_money', 'filtre mobile money');
+    foreach (['que dois-je commander ?' => 'commande', 'comment va ma boutique ?' => 'bilan', 'qui me doit de l\'argent' => 'creances', 'meilleures ventes du mois' => 'top',
+        'articles sous le seuil' => 'rupture', 'produits qui périment' => 'peremption', 'bénéfice du mois' => 'benefice', 'dépenses du mois' => 'depenses',
+        'écarts de caisse' => 'caisse', 'prévision du mois' => 'prevision', 'heure de pointe' => 'heures', 'meilleurs clients' => 'meilleurs_clients', 'articles qui ne se vendent pas' => 'dormants'] as $q => $k) {
+        eq($k, $E::understand($q)['kind'] ?? null, $q);
+    }
+    eq(null, $E::understand('comment vendre au carton ?'), 'question d\'aide');
+    // Suite de conversation
+    $ctx = $E::understand('rapport du client Moussa Garba');
+    $f = $E::understand('et en pdf', $ctx);
+    ok($f['kind'] === 'client' && $f['format'] === 'pdf' && (int) $f['id'] === $cid, '« et en PDF ? » reprend le rapport précédent');
+    $f = $E::understand('et le mois dernier ?', $ctx);
+    ok($f['kind'] === 'client' && $f['period']['label'] === 'le mois dernier', '« et le mois dernier ? »');
+    // Rapports : chiffres exacts sur une vraie vente à crédit
+    actingAs('gerant');
+    $prod = (int) DB::value("SELECT id FROM products WHERE status = 'active' AND track_stock = 1 AND sold_by_weight = 0 AND sale_price > 0 ORDER BY id LIMIT 1");
+    $price = (float) DB::value('SELECT sale_price FROM products WHERE id = ?', [$prod]);
+    App\Services\SaleService::create(['client_uuid' => '0b1a7f2e-9a1c-4c0e-8f00-0000000000a1', 'customer_id' => $cid, 'items' => [['product_id' => $prod, 'quantity' => 2]], 'payments' => []]);
+    actingAs('admin');
+    $r = $E::answer('rapport du client Moussa Garba');
+    ok($r['type'] === 'report' && str_contains($r['html'], money(2 * $price)) && $r['table'] !== null, 'relevé : montant du crédit');
+    ok((bool) array_filter($r['actions'], fn($a) => $a['kind'] === 'view' && str_contains($a['url'], 'k=client') && str_contains($a['url'], 'id=' . $cid)), 'bouton « Voir le PDF »');
+    $r = $E::answer('qui me doit de l\'argent ?');
+    ok(str_contains(strip_tags($r['html']), 'Moussa Garba'), 'créances : le client débiteur apparaît');
+    $r = $E::answer('rapport du client Jean Inconnu');
+    ok(str_contains($r['html'], 'aucun client'), 'client introuvable : réponse claire');
+    $r = $E::answer('Comment vendre au carton ?');
+    ok($r['type'] === 'help' && str_contains($r['html'], 'Conditionnements'), 'aide : vendre au carton');
+    $r = $E::answer('comment faire un inventaire');
+    ok(str_contains($r['html'], 'Démarrer'), 'aide : inventaire');
+    $r = $E::answer('Bonjour');
+    ok(str_contains($r['html'], 'MARWA IA'), 'salutation');
+    // Droits : un caissier n'obtient pas le bénéfice ni le relevé d'un fournisseur
+    actingAs('caissier');
+    $r = $E::answer('bénéfice du mois');
+    ok($r['type'] === 'error' && str_contains($r['html'], 'rôle'), 'caissier : bénéfice refusé');
+    $r = $E::answer('ventes d\'aujourd\'hui');
+    ok($r['type'] === 'report', 'caissier : ses ventes du jour');
+    actingAs('admin');
+    // Modèle local : adresses Internet refusées, vrai échange avec un faux serveur Ollama local
+    $L = Addons\MarwaIa\Llm::class;
+    throws(fn() => $L::validateUrl('https://api.openai.com'), 'réseau local');
+    eq('http://127.0.0.1:11434', $L::validateUrl('http://127.0.0.1:11434/'));
+    eq('http://192.168.1.20:11434', $L::validateUrl('http://192.168.1.20:11434'));
+    $stub = tempnam(sys_get_temp_dir(), 'oll') . '.php';
+    file_put_contents($stub, '<?php $in = json_decode(file_get_contents("php://input"), true); header("Content-Type: application/json"); echo json_encode(["message" => ["role" => "assistant", "content" => "Réponse locale (" . $in["model"] . ") : " . (str_contains($in["messages"][1]["content"], "Conditionnements") ? "contexte reçu" : "sans contexte")]]);');
+    $port = 18000 + random_int(0, 900);
+    $proc = proc_open([PHP_BINARY, '-S', '127.0.0.1:' . $port, $stub], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+    usleep(400000);
+    setting_set('ia_llm_url', 'http://127.0.0.1:' . $port);
+    setting_set('ia_llm_model', 'modele-test');
+    $r = $E::answer('Comment vendre au carton ?');
+    proc_terminate($proc);
+    setting_set('ia_llm_url', '');
+    setting_set('ia_llm_model', '');
+    ok(str_contains($r['html'], 'Réponse locale (modele-test) : contexte reçu'), 'modèle local : réponse rédigée à partir de la documentation');
+    $GLOBALS['IA_CLIENT'] = $cid;
+});
 test('Menu à droite par défaut ; numéros d\'assistance', function () {
     eq('right', setting('menu_position'));
     $n = support_numbers();
@@ -2100,6 +2189,36 @@ test('v1.4 (HTTP) : page Modules, module actif / désactivé, connexion, menu', 
     eq(200, $c->req('GET', "$B/livraisons")['code'], 'réactivé');
     $a->req('POST', "$B/addons", http_build_query(['_csrf' => $ta, 'code' => '../../app', 'do' => 'install']));
     eq(null, DB::value("SELECT code FROM addons WHERE code LIKE '%app%'"), 'code de module malveillant refusé');
+});
+test('MARWA IA (HTTP) : questions, PDF affiché, PDF et Excel téléchargés, droits, réglages', function () use ($B) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $pg = $a->req('GET', "$B/ia");
+    ok($pg['code'] === 200 && str_contains($pg['body'], 'data-mia-full') && str_contains($pg['body'], 'data-no-lock'), 'page de l\'assistant');
+    $t = $a->token("$B/ia");
+    $ask = fn(Http $c, string $tok, string $q) => json_decode($c->req('POST', "$B/ia/ask", json_encode(['q' => $q]), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $tok])['body'], true);
+    $r = $ask($a, $t, 'rapport du client Moussa Garba');
+    ok(($r['type'] ?? '') === 'report' && str_contains($r['title'] ?? '', 'Moussa Garba'), 'question → relevé du client');
+    $r2 = $ask($a, $t, 'et en pdf');
+    ok(str_contains((string) ($r2['open'] ?? ''), 'export=pdf') && str_contains($r2['open'], 'view=1'), 'suite « et en PDF ? » gardée en session');
+    $pdf = $a->req('GET', $B . $r2['open']);
+    ok(str_starts_with($pdf['body'], '%PDF') && str_contains($pdf['headers'], 'inline'), 'PDF affiché dans le navigateur');
+    $dl = $a->req('GET', "$B/ia/rapport?k=ventes&from=2000-01-01&to=" . date('Y-m-d') . '&export=pdf');
+    ok(str_starts_with($dl['body'], '%PDF') && str_contains($dl['headers'], 'attachment'), 'PDF de toutes les transactions téléchargé');
+    $csv = $a->req('GET', "$B/ia/rapport?k=client&id=" . (int) $GLOBALS['IA_CLIENT'] . '&export=csv');
+    ok(str_contains($csv['body'], 'Opération') && str_contains($csv['headers'], 'text/csv'), 'Excel (CSV)');
+    eq(1, (int) DB::value("SELECT COUNT(*) FROM ia_history WHERE question = 'et en pdf'"), 'historique des questions');
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    $tc = $c->token("$B/ia");
+    $rc = $ask($c, $tc, 'bénéfice du mois en pdf');
+    ok(($rc['type'] ?? '') === 'error', 'caissier : rapport financier refusé');
+    $f = $c->req('GET', "$B/ia/rapport?k=benefice&export=pdf");
+    ok(!str_starts_with($f['body'], '%PDF'), 'caissier : PDF financier refusé même par l\'adresse');
+    eq(403, $c->req('GET', "$B/ia/reglages")['code'], 'réglages réservés');
+    $tr = $a->token("$B/ia/reglages");
+    $a->req('POST', "$B/ia/reglages", http_build_query(['_csrf' => $tr, 'llm_url' => 'https://serveur.example.com', 'llm_model' => 'x', 'bubble' => '1']));
+    eq('', (string) setting('ia_llm_url', ''), 'modèle sur Internet refusé');
 });
 test('Écran client (HTTP) : paramètres, caisse, écran du second moniteur, droits', function () use ($B) {
     $a = new Http();

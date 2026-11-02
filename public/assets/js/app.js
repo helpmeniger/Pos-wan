@@ -105,6 +105,7 @@
   // Empêche la double soumission des formulaires
   $$('form').forEach((f) => f.addEventListener('submit', (ev) => {
     if (ev.defaultPrevented) return; // envoi suspendu (confirmation, validation) : boutons laissés actifs
+    if (f.hasAttribute('data-no-lock')) return; // formulaire traité en JavaScript sans rechargement (ex. MARWA IA)
     setTimeout(() => $$('button[type="submit"], button:not([type])', f).forEach((b) => { b.disabled = true; }), 0);
   }));
 

@@ -2,6 +2,29 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.15.0] — 2026-11-02
+
+### Ajouté
+- **Module MARWA IA 1.0.0** (assistant intelligent, local, sans Internet) :
+  - conversation en français dans une page dédiée et une bulle présente sur toutes les pages
+    (sauf l'écran de caisse) ;
+  - rapports à la demande avec aperçu, **PDF affiché ou téléchargé** et Excel : relevé client et
+    fournisseur, ventes / transactions (période, vendeur, client, mode de paiement), article,
+    meilleures ventes, articles dormants, stock, seuil, péremptions, créances et dettes,
+    meilleurs clients, bénéfice, dépenses, écarts de caisse, ventes par vendeur / heure /
+    paiement / catégorie, détail d'une vente ;
+  - bilan avec comparaison, alertes et conseils ; réapprovisionnement conseillé ; prévision du
+    mois ;
+  - compréhension des périodes, des noms (fautes de frappe, téléphone) et de la suite de la
+    conversation ; aide sur tout le logiciel (questions fréquentes + documentation) ;
+  - droits de chaque rôle respectés, historique des questions (90 jours) ;
+  - modèle de langage local Ollama facultatif (adresses locales uniquement).
+- Catégorie de menu **Assistant**.
+
+### Corrigé
+- Un formulaire traité en JavaScript sans rechargement de page (attribut `data-no-lock`) n'est
+  plus bloqué par la protection contre le double envoi.
+
 ## [2.14.0] — 2026-11-01
 
 ### Ajouté

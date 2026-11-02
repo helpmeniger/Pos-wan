@@ -419,6 +419,17 @@ Guide : `addons/marwa_voice/README.md`.
 Ce sont des indications à vérifier, pas des preuves. Informez le personnel et la clientèle de
 la présence de caméras.
 
+### MARWA IA (assistant)
+Module `addons/marwa_ia/`, à installer dans Modules complémentaires. Menu **Assistant → MARWA IA**,
+ou la bulle « MARWA IA » en bas à gauche des pages.
+- Écrivez votre demande comme vous la diriez : « rapport du client Moussa en PDF », « ventes
+  d'hier », « toutes les transactions du mois en PDF », « que dois-je commander ? », « comment va
+  ma boutique ? », « comment vendre au carton ? ».
+- La réponse montre les chiffres clés, un aperçu du tableau et les boutons **Voir le PDF**,
+  **Télécharger le PDF**, **Excel (CSV)**. Demandé « en PDF », le PDF s'ouvre directement.
+- Enchaînez : « et le mois dernier ? », « et en PDF ? ».
+- Chaque rapport respecte les droits de votre rôle. Guide : `addons/marwa_ia/README.md`.
+
 ### Écran client et afficheur client
 **Configuration → Écran et afficheur client** (droit « Paramètres »).
 
