@@ -117,6 +117,17 @@ final class Trainer
             ['Une dépense a été saisie deux fois. Que faire ?', ['La contre-passer', 'Supprimer la base', 'Laisser tel quel'], 0, 'La contre-passation garde la trace de la correction.'],
             ['Le carburant du livreur payé en espèces de la caisse doit être…', ['Saisi en dépense avant la clôture', 'Oublié', 'Ajouté aux ventes'], 0, 'Sinon la caisse paraîtra en manque.'],
         ], null],
+        'marketing' => ['Marketing : vendre plus et être visible', null, 'marketing publicite pub campagne reseaux sociaux facebook tiktok whatsapp visible visibilite promotion attirer clients', [
+            ['<b>Qui, quoi, où</b> : votre client idéal, ce qui vous distingue, et là où il regarde (enseigne, Google Maps, WhatsApp, Facebook, TikTok).', null],
+            ['<b>WhatsApp Business</b> : profil complet, catalogue des meilleurs articles, un statut par jour, listes de diffusion.', null],
+            ['<b>Publier régulièrement</b> : vraies photos, prix lisible, et toujours un appel à l\'action (« Écrivez-nous sur WhatsApp »).', null],
+            ['<b>Campagne payante</b> : un objectif, une cible (ville / rayon), un petit budget test de 5 à 7 jours, puis on mesure.', null],
+            ['<b>Mesurer</b> : ventes avant / après, messages reçus, « comment nous avez-vous connu ? ». Demandez-moi « mon plan marketing en PDF ».', '/ia'],
+        ], [
+            ['Avant de payer une publicité, il faut d\'abord…', ['Fixer un objectif et une cible', 'Dépenser tout le budget le premier jour', 'Copier la publicité d\'un concurrent'], 0, 'Sans objectif ni cible, on ne peut pas savoir si la publicité a rapporté.'],
+            ['Quelle publication fait le plus agir le client ?', ['Une photo floue sans prix', 'Une vraie photo, le prix et « Écrivez-nous sur WhatsApp »', 'Un long texte sans image'], 1, 'Photo réelle + prix + appel à l\'action : le client sait quoi faire.'],
+            ['Comment savoir si une campagne a marché ?', ['Au nombre de « j\'aime » seulement', 'C\'est impossible', 'Comparer les ventes avant / après et demander comment le client nous a connus'], 2, 'Les « j\'aime » ne paient pas les factures : regardez les ventes et les nouveaux clients.'],
+        ], null],
         'pressing' => ['Le module Pressing', 'pressing.view', 'pressing linge vetement vetements depot depots lavage repassage retrait', [
             ['<b>Caisse pressing</b> : client, articles (chemise, costume, m² de tapis…), service (lavage, repassage, lavage seul), date promise.', '/pressing/caisse'],
             ['Notez les <b>défauts</b> au dépôt et imprimez le ticket avec ses étiquettes.', null],

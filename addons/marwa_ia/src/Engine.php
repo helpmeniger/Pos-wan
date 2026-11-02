@@ -56,14 +56,24 @@ final class Engine
         if (($ctx['kind'] ?? null) === 'quiz' && ($graded = Trainer::grade($q, $ctx))) {
             return $graded;
         }
+        // « Un autre texte » après une publication générée
+        if (($ctx['kind'] ?? null) === 'mk_gen' && preg_match('/^(un |une |d |des )?(autre|autres|encore|nouveau|nouvelle|une autre version|refais)\b/', $n)) {
+            return Marketing::generate((string) ($ctx['q'] ?? ''), ((int) ($ctx['seed'] ?? 0)) + 1);
+        }
         if ($ctx !== null && !isset(Reports::KINDS[$ctx['kind'] ?? ''])) {
             $ctx = null; // la suite de conversation ne vaut que pour un rapport
         }
         if ($small = self::smallTalk($n)) {
             return $small;
         }
+        if ($r = Scope::guard($n)) {
+            return $r;
+        }
         if ($r = Tools::calc($q)) {
             return $r;
+        }
+        if (Marketing::isMarketing($n) && !Trainer::isTraining($n) && !Checkup::isCheckup($n) && !preg_match('/\b(rapport|ventes? (d|du|de)|excel|csv)\b/', $n)) {
+            return Marketing::answer($q);
         }
         if ($r = Tools::define($q)) {
             return $r;

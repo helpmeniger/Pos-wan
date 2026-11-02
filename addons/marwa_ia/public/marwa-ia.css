@@ -66,3 +66,12 @@
 [data-bs-theme="dark"] .mia-welcome { background: #1b2130 !important; }
 @media (prefers-reduced-motion: reduce) { .mia-msg.bot > .mia-a { animation: none; } }
 .mia-html .mia-quiz { display: none; } /* les choix sont les boutons ; la liste reste pour la lecture à voix haute */
+/* MARWA IA 1.2 : marketing */
+.mia-tip { margin: 8px 0; padding: 8px 12px; border-radius: 10px; background: #eef6ff; border: 1px solid #cfe1fb; font-size: .9rem; }
+.mia-tip ul { margin: 4px 0 0 16px !important; }
+.mia-copy { margin: 8px 0; border: 1px solid #ddd6fe; border-radius: 10px; overflow: hidden; }
+.mia-copy-h { display: flex; align-items: center; gap: 8px; padding: 5px 10px; background: #f4f2ff; font-size: .85rem; }
+.mia-copy-h b { flex: 1; color: #4c1d95; }
+.mia-copy-h button { border: 1px solid #6f42c1; background: #6f42c1; color: #fff; border-radius: 14px; padding: 1px 12px; font-size: .78rem; }
+.mia-copy pre { margin: 0; padding: 9px 12px; white-space: pre-wrap; word-break: break-word; font-family: inherit; font-size: .88rem; background: #fff; color: #1f2937; }
+[data-bs-theme="dark"] .mia-tip { background: #1d2a40; border-color: #2c3e5c; } [data-bs-theme="dark"] .mia-copy-h { background: #2a2346; } [data-bs-theme="dark"] .mia-copy pre { background: #1b2130; color: #e8ecf5; }

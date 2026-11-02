@@ -2,6 +2,26 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.17.0] — 2026-11-02
+
+### Ajouté
+- **MARWA IA 1.2.0 — coach marketing** :
+  - conseils adaptés à l'**activité réelle** du commerce (14 profils : alimentation, boutique,
+    quincaillerie, boissons, cosmétique, informatique, papeterie, pièces détachées, restaurant,
+    pharmacie, clinique, pressing, hôtel, établissement scolaire) : clientèle, canaux prioritaires,
+    idées de publications, offres qui marchent, règles particulières (santé, alcool, élèves) ;
+  - 15 sujets : bases du marketing, méthodes d'aujourd'hui, réseaux sociaux, WhatsApp Business,
+    Facebook, TikTok / vidéos courtes, Instagram, Google Maps, campagnes publicitaires, contenu,
+    promotions, fidélité, visibilité dans le quartier, influenceurs, mesure des résultats ;
+  - **plan marketing personnalisé en PDF** (environ 9 pages) : situation chiffrée, méthodes, réseaux,
+    publicité et budget indicatif, plan d'action sur 30 jours, calendrier de publication, textes
+    prêts à publier, slogans, tableau de suivi, lexique ;
+  - **textes prêts à publier** avec le vrai article et son prix (statut WhatsApp, publication
+    Facebook, script TikTok, SMS) et bouton **Copier**, « un autre texte », slogans ;
+  - **garde-fou de domaine** : les sujets sans rapport avec l'activité reçoivent un recadrage poli ;
+    aucun avis médical personnel ;
+  - leçon et quiz « Marketing », 5 notions ajoutées au lexique.
+
 ## [2.16.0] — 2026-11-02
 
 ### Ajouté

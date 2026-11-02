@@ -49,6 +49,21 @@ final class IaController extends Controller
         json_response($r);
     }
 
+    /** Plan marketing personnalisé (PDF affiché avec view=1, sinon téléchargé). */
+    public function marketing(): void
+    {
+        $pdf = Marketing::pdf();
+        Audit::log('ia.marketing', null, null, ['activity' => Marketing::activity()]);
+        $name = 'plan_marketing_' . date('Ymd') . '.pdf';
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: ' . (Request::query('view') === '1' ? 'inline' : 'attachment') . '; filename="' . $name . '"');
+        header('Content-Length: ' . strlen($pdf));
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: private, no-store');
+        echo $pdf;
+        exit;
+    }
+
     /** Rapport complet : PDF affiché (view=1), PDF téléchargé ou CSV. */
     public function rapport(): void
     {
@@ -115,6 +130,8 @@ final class IaController extends Controller
     public static function examples(): array
     {
         $all = [
+            'Marketing et visibilité' => [['Mon plan marketing en PDF', null], ['Comment marche le marketing ?', null], ['Comment être visible sur les réseaux sociaux ?', null], ['Comment lancer une campagne publicitaire ?', null],
+                ['Comment être trouvé sur Google Maps ?', null], ['Écris un post pour mon article vedette', null], ['Propose-moi un slogan', null]],
             'Conseils et idées' => [['Mon point du jour', null], ['Comment augmenter mes ventes ?', 'benefice'], ['Idées pour fidéliser mes clients', null], ['Comment réduire les pertes et les vols ?', null], ['Conseils pour ma trésorerie', null]],
             'Formation' => [['Ma formation', null], ['Forme-moi à la caisse', null], ['Quiz : clôturer la caisse', null], ['Vérifie ma configuration', null]],
             'Calculs et lexique' => [['Prix de vente pour un achat à 2 500 F avec 30 % de marge', null], ['Acheté 1 000, vendu 1 250 : quelle marge ?', null], ['10 000 F HT en TTC', null], ['Seuil de rentabilité avec 300 000 F de charges', null], ['C\'est quoi le CMP ?', null], ['Un proverbe africain', null]],

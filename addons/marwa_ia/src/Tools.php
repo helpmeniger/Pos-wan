@@ -185,6 +185,11 @@ final class Tools
         'Devis et bon de livraison' => ['devis|bon de livraison|proforma|pro forma|facture proforma', 'Le devis (ou proforma) propose un prix au client avant la vente ; le bon de livraison accompagne la marchandise remise. Les deux se transforment en vente dans POS Marwa.'],
         'SYSCOHADA' => ['syscohada|ohada|plan comptable', 'Le système comptable des pays de l\'espace OHADA, dont le Niger. Le module Comptabilité de POS Marwa en suit le plan de comptes.'],
         'NIF et RCCM' => ['nif|rccm|registre du commerce', 'NIF : numéro d\'identification fiscale. RCCM : registre du commerce. Ils s\'impriment sur vos factures (Paramètres).'],
+        'Marketing' => ['marketing|mercatique', 'Tout ce qui fait connaître votre commerce, donne envie d\'y acheter et fait revenir les clients : l\'offre, le prix, la visibilité, la communication et la fidélisation. Demandez-moi « mon plan marketing en PDF ».'],
+        'Appel à l\'action' => ['appel a l action|call to action|cta', 'La phrase qui dit au client quoi faire maintenant : « Écrivez-nous sur WhatsApp », « Passez avant samedi ». Sans elle, beaucoup regardent et peu achètent.'],
+        'Ciblage' => ['ciblage|cibler|cible|audience', 'Choisir qui verra votre publicité : ville ou rayon autour de la boutique, âge, centres d\'intérêt. Une bonne cible coûte moins cher et vend plus.'],
+        'Taux de conversion' => ['taux de conversion|conversion', 'La part des personnes intéressées qui achètent vraiment. 100 messages reçus et 20 ventes = 20 % de conversion.'],
+        'Portée et engagement' => ['portee|engagement|impressions|vues', 'La portée est le nombre de personnes qui ont vu votre publication ; l\'engagement, celles qui ont réagi (j\'aime, commentaire, partage, message). Les ventes restent le vrai résultat.'],
         'Mobile money' => ['mobile money|momo', 'Le paiement par téléphone (Airtel Money, Moov Money, Zamani Cash…). En caisse : fenêtre d\'encaissement → Mobile money → opérateur et référence.'],
     ];
 

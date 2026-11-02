@@ -1820,6 +1820,58 @@ test('MARWA IA 1.1 : conseils chiffrés, contrôle de configuration, formation e
         ok(str_contains($E::answer('taux d\'occupation de l\'hôtel')['html'], 'pas activé'), 'module non activé : réponse claire');
     }
 });
+test('MARWA IA 1.2 : coach marketing selon l\'activité, textes prêts à publier, plan marketing PDF, domaine respecté', function () {
+    actingAs('admin');
+    App\Core\Addons::registerAutoload();
+    $E = Addons\MarwaIa\Engine::class;
+    $M = Addons\MarwaIa\Marketing::class;
+    $mode = setting('business_mode');
+    $type = setting('business_type');
+    setting_set('business_mode', 'commerce');
+    setting_set('business_type', 'alimentation');
+    try {
+        $r = $E::answer('Comment marche le marketing ?');
+        ok($r['type'] === 'marketing' && str_contains($r['html'], 'Comment marche le marketing') && str_contains($r['html'], 'alimentation'), 'les bases, adaptées à l\'activité');
+        foreach (['comment être visible sur les réseaux sociaux ?' => 'réseaux sociaux', 'comment lancer une campagne publicitaire sur facebook' => 'campagne publicitaire',
+            'comment utiliser whatsapp business' => 'WhatsApp Business', 'comment être trouvé sur google maps' => 'Google Maps', 'quelles méthodes marketing de nos jours ?' => 'méthodes qui marchent',
+            'comment faire une promotion pour la tabaski' => 'promotion', 'comment mesurer si ma pub marche' => 'Mesurer'] as $q => $want) {
+            ok(str_contains($E::answer($q)['html'], $want), $q);
+        }
+        $g = $E::answer('écris un post pour mon article vedette');
+        $sub = $M::subject('');
+        ok($g['type'] === 'marketing' && substr_count($g['html'], 'data-mia-copy') === 4 && str_contains($g['html'], e($sub['name'])) && ($sub['price'] === null || str_contains($g['html'], e(money($sub['price'])))), 'textes prêts à publier avec le vrai article et son prix');
+        $g2 = $E::answer('un autre texte', $g['spec']);
+        ok($g2['type'] === 'marketing' && $g2['html'] !== $g['html'], '« un autre texte » donne une autre version');
+        $sms = $M::texts($M::subject('riz'), 0);
+        ok(mb_strlen(end($sms)) <= 160, 'SMS de 160 caractères au plus');
+        ok(str_contains($E::answer('propose-moi un slogan')['html'], 'slogans'), 'slogans');
+        $p = $E::answer('mon plan marketing en pdf');
+        ok(str_contains((string) $p['open'], '/ia/marketing') && str_contains($p['open'], 'view=1'), 'plan marketing : PDF ouvert directement');
+        $pdf = $M::pdf();
+        ok(str_starts_with($pdf, '%PDF') && preg_match('/\/Count (\d+)/', $pdf, $m) && (int) $m[1] >= 7, 'plan marketing PDF de ' . ($m[1] ?? 0) . ' pages');
+        // Garde-fou : les réponses restent dans le domaine
+        eq('scope', $E::answer('qui va gagner le match ce soir ?')['type'], 'sport : hors domaine');
+        eq('scope', $E::answer('parle moi de politique')['type'], 'politique : hors domaine');
+        ok(str_contains($E::answer('quel médicament pour le paludisme ?')['html'], 'pharmacien'), 'santé : renvoi vers un professionnel');
+        eq('report', $E::answer('ventes d\'aujourd\'hui')['type'], 'une question de gestion reste traitée');
+        // Autre activité : pharmacie, règles rappelées et textes sans promotion de médicament
+        setting_set('business_mode', 'pharmacie');
+        setting_set('business_type', 'pharmacie');
+        $r = $E::answer('comment faire de la publicité pour ma pharmacie');
+        ok(str_contains($r['html'], 'pour votre pharmacie') && str_contains($r['html'], 'strictement encadrée'), 'pharmacie : règle de la publicité rappelée en premier');
+        $g = $E::answer('écris un post facebook');
+        ok(str_contains($g['html'], 'pharmacie') && !str_contains($g['html'], 'Quantités limitées'), 'pharmacie : publication sur les services');
+        setting_set('business_mode', 'pressing');
+        ok(str_contains($E::answer('propose-moi un slogan')['html'], 'vêtements') || str_contains($E::answer('propose-moi un slogan')['html'], 'Propre'), 'pressing : slogans du pressing');
+        ok(str_contains($M::pdf(), 'pressing'), 'pressing : plan PDF adapté');
+        // Formation et lexique
+        ok(str_contains($E::answer('quiz marketing')['html'], 'Avant de payer une publicité'), 'quiz marketing');
+        ok(str_contains($E::answer('c\'est quoi le ciblage ?')['html'], 'verra votre publicité'), 'lexique : ciblage');
+    } finally {
+        setting_set('business_mode', $mode);
+        setting_set('business_type', $type);
+    }
+});
 test('Menu à droite par défaut ; numéros d\'assistance', function () {
     eq('right', setting('menu_position'));
     $n = support_numbers();
@@ -2283,6 +2335,9 @@ test('MARWA IA (HTTP) : questions, PDF affiché, PDF et Excel téléchargés, dr
     ok(($rc['type'] ?? '') === 'error', 'caissier : rapport financier refusé');
     $f = $c->req('GET', "$B/ia/rapport?k=benefice&export=pdf");
     ok(!str_starts_with($f['body'], '%PDF'), 'caissier : PDF financier refusé même par l\'adresse');
+    $mk = $c->req('GET', "$B/ia/marketing?export=pdf&view=1");
+    ok(str_starts_with($mk['body'], '%PDF') && str_contains($mk['headers'], 'inline'), 'plan marketing PDF (caissier, sans chiffres financiers)');
+    ok(str_contains($a->req('GET', "$B/ia/marketing?export=pdf")['headers'], 'attachment'), 'plan marketing téléchargé');
     eq(403, $c->req('GET', "$B/ia/reglages")['code'], 'réglages réservés');
     $tr = $a->token("$B/ia/reglages");
     $a->req('POST', "$B/ia/reglages", http_build_query(['_csrf' => $tr, 'llm_url' => 'https://serveur.example.com', 'llm_model' => 'x', 'bubble' => '1']));

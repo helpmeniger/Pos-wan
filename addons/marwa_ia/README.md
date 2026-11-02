@@ -76,6 +76,31 @@ sources, il est présenté comme « proverbe africain ».
 l'état des modules et le nombre de points de configuration à revoir. Le bouton **Écouter** lit
 la réponse avec la voix française de l'ordinateur (selon les voix installées).
 
+**Coach marketing** (1.2) : MARWA IA adapte ses réponses à l'activité déclarée dans les
+Paramètres (mode de fonctionnement et type d'activité) : alimentation, boutique, quincaillerie,
+boissons, cosmétique, informatique, papeterie, pièces détachées, restaurant, pharmacie, clinique,
+pressing, hôtel, établissement scolaire.
+- Sujets : « comment marche le marketing ? », « quelles méthodes de nos jours ? », « comment être
+  visible sur les réseaux sociaux ? », WhatsApp Business, Facebook, TikTok, Instagram, Google Maps,
+  « comment lancer une campagne publicitaire ? », « que publier ? », promotions (Tabaski, rentrée…),
+  fidélité et bouche-à-oreille, flyers / enseigne / radio, influenceurs, « comment mesurer si ma pub
+  marche ? ». Chaque réponse ajoute « Dans votre activité » et ce que vos chiffres montrent
+  (articles vedettes, heure calme, articles qui dorment, clients avec téléphone).
+- « **Mon plan marketing en PDF** » : guide personnalisé d'environ 9 pages (adresse `/ia/marketing`)
+  — situation, méthodes, réseaux, publicité et budget indicatif, plan sur 30 jours, calendrier,
+  textes prêts à publier, slogans, tableau de suivi, lexique.
+- « **Écris un post** pour [article] », « écris un statut WhatsApp », « script TikTok », « propose-moi
+  un slogan » : textes avec le nom de la boutique, le vrai prix (et la promotion en cours), le
+  téléphone et l'adresse des Paramètres ; bouton **Copier** ; « un autre texte ».
+- Activités réglementées : pharmacie et clinique (pas de promotion de médicaments, pas de
+  promesse de guérison, secret médical), établissement scolaire (photos d'élèves avec accord
+  écrit des parents), boissons (publicité de l'alcool encadrée). Ces rappels ne remplacent pas un
+  avis juridique.
+
+**Rester dans son domaine** (1.2) : les questions sans rapport avec la gestion de l'activité
+(politique, religion, sport, jeux d'argent…) reçoivent un recadrage poli ; MARWA IA ne donne
+jamais d'avis médical personnel et renvoie vers un médecin ou un pharmacien.
+
 ## Comment il comprend
 - Périodes : aujourd'hui, hier, cette semaine, la semaine dernière, ce mois, le mois dernier,
   en mars (2025), cette année, les 30 derniers jours, du 1er au 15 octobre, du 10/10 au 20/10,

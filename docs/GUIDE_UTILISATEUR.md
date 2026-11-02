@@ -435,6 +435,11 @@ ou la bulle « MARWA IA » en bas à gauche des pages.
 - **Vérifier ce qui a été oublié** : « vérifie ma configuration » (score et liens « Corriger »).
 - **Calculer** : « prix de vente pour un achat à 2 500 F avec 30 % de marge », « 10 000 F HT en
   TTC », « seuil de rentabilité avec 300 000 F de charges » ; **définir** : « c'est quoi le CMP ? ».
+- **Marketing** : « comment être visible sur les réseaux sociaux ? », « comment lancer une campagne
+  publicitaire ? », « comment être trouvé sur Google Maps ? » — réponses adaptées à votre activité.
+  « **Mon plan marketing en PDF** » prépare un guide personnalisé avec plan d'action sur 30 jours ;
+  « **écris un post** pour [article] » rédige statut WhatsApp, publication Facebook, script TikTok et
+  SMS avec le vrai prix (bouton Copier).
 - « Bonjour » donne le **point du jour** avec une citation africaine ; le bouton **Écouter** lit
   la réponse à voix haute (voix française de l'ordinateur, si elle est installée).
 

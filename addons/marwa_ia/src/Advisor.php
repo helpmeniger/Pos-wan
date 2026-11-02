@@ -149,7 +149,11 @@ final class Advisor
         $actions = array_map(fn($l) => ['label' => $l[0], 'url' => url($l[1]), 'kind' => 'link'], array_slice($t[3], 0, 3));
         $others = array_values(array_filter(['ventes' => 'Comment augmenter mes ventes ?', 'fidelite' => 'Idées pour fidéliser mes clients', 'pertes' => 'Comment réduire les pertes et les vols ?',
             'tresorerie' => 'Conseils pour ma trésorerie', 'prix' => 'Comment fixer mes prix ?', 'stock' => 'Conseils pour mon stock'], fn($v, $k) => $k !== $best, ARRAY_FILTER_USE_BOTH));
-        return ['ok' => true, 'type' => 'advice', 'title' => 'Conseils de gestion', 'html' => $html, 'actions' => $actions, 'suggestions' => array_slice($others, 0, 3), 'spec' => null];
+        $sugg = array_slice($others, 0, 3);
+        if (in_array($best, ['ventes', 'fidelite', 'prix'], true)) {
+            array_unshift($sugg, 'Mon plan marketing en PDF');
+        }
+        return ['ok' => true, 'type' => 'advice', 'title' => 'Conseils de gestion', 'html' => $html, 'actions' => $actions, 'suggestions' => $sugg, 'spec' => null];
     }
 
     /** Constats chiffrés liés au thème (seulement ce que le rôle peut voir). */

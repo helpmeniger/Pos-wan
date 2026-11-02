@@ -29,6 +29,24 @@
     synth.speak(u);
   }
   document.addEventListener('click', (e) => { const b = e.target.closest('[data-mia-say]'); if (b) { e.preventDefault(); speak(b.closest('.mia-a')); } });
+  // Copier un texte prêt à publier (publication, statut, SMS)
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-mia-copy]');
+    if (!b) return;
+    e.preventDefault();
+    const pre = b.closest('.mia-copy').querySelector('pre');
+    const text = pre.textContent;
+    let done = false;
+    try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); done = true; } } catch (err) { done = false; }
+    if (!done) {
+      const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select();
+      try { done = document.execCommand('copy'); } catch (err) { done = false; }
+      t.remove();
+    }
+    b.textContent = done ? 'Copié ✓' : 'Sélectionnez le texte';
+    if (!done) { const r = document.createRange(); r.selectNodeContents(pre); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+    setTimeout(() => { b.textContent = 'Copier'; }, 2000);
+  });
 
   function renderAnswer(r) {
     let h = '<div class="mia-a">';
@@ -63,8 +81,8 @@
     const scroll = () => { logEl.scrollTop = logEl.scrollHeight; };
     function draw() {
       if (!log.length) {
-        const chips = ['Mon point du jour', 'Bilan de la journée', 'Comment augmenter mes ventes ?', 'Ma formation', 'Vérifie ma configuration', 'Que sais-tu faire ?'];
-        logEl.innerHTML = '<div class="mia-msg bot"><div class="mia-a mia-welcome"><div class="mia-html"><p class="h"><i class="bi bi-stars"></i> Bonjour ! Je suis MARWA IA.</p><p>Je prépare vos <b>rapports</b> (« ventes d\'hier en PDF », « rapport du client Moussa »), je vous donne des <b>idées</b> pour mieux gérer, je vous <b>forme</b> pas à pas, je vérifie ce qui a été <b>oublié</b> dans la configuration et je fais vos <b>calculs</b> de prix et de marge.</p></div>'
+        const chips = ['Mon point du jour', 'Bilan de la journée', 'Mon plan marketing en PDF', 'Comment augmenter mes ventes ?', 'Ma formation', 'Vérifie ma configuration', 'Que sais-tu faire ?'];
+        logEl.innerHTML = '<div class="mia-msg bot"><div class="mia-a mia-welcome"><div class="mia-html"><p class="h"><i class="bi bi-stars"></i> Bonjour ! Je suis MARWA IA.</p><p>Je prépare vos <b>rapports</b> (« ventes d\'hier en PDF », « rapport du client Moussa »), je vous donne des <b>idées</b> pour mieux gérer, je vous <b>forme</b> pas à pas, je vous coache en <b>marketing</b> (réseaux sociaux, publicité, plan en PDF, textes prêts à publier), je vérifie ce qui a été <b>oublié</b> dans la configuration et je fais vos <b>calculs</b> de prix et de marge.</p></div>'
           + '<div class="mia-sug">' + chips.map((c) => `<button type="button" data-mia-ask="${esc(c)}">${esc(c)}</button>`).join('') + '</div></div></div>';
         return;
       }
