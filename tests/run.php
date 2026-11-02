@@ -1665,7 +1665,7 @@ test('Écran client et afficheur client : réglages, images et vidéos, commande
 });
 test('MARWA IA : compréhension du français (périodes, intentions, noms), rapports, droits, aide, modèle local', function () {
     actingAs('admin');
-    eq(['0001_marwa_ia'], App\Core\Addons::install('marwa_ia', false), 'installation');
+    eq(['0001_marwa_ia', '0002_formation'], App\Core\Addons::install('marwa_ia', false), 'installation');
     App\Core\Addons::registerAutoload();
     $T = Addons\MarwaIa\Text::class;
     $E = Addons\MarwaIa\Engine::class;
@@ -1725,7 +1725,7 @@ test('MARWA IA : compréhension du français (périodes, intentions, noms), rapp
     $r = $E::answer('comment faire un inventaire');
     ok(str_contains($r['html'], 'Démarrer'), 'aide : inventaire');
     $r = $E::answer('Bonjour');
-    ok(str_contains($r['html'], 'MARWA IA'), 'salutation');
+    ok($r['type'] === 'briefing' && str_contains($r['html'], 'mia-proverbe'), 'salutation : point du jour avec une citation');
     // Droits : un caissier n'obtient pas le bénéfice ni le relevé d'un fournisseur
     actingAs('caissier');
     $r = $E::answer('bénéfice du mois');
@@ -1751,6 +1751,74 @@ test('MARWA IA : compréhension du français (périodes, intentions, noms), rapp
     setting_set('ia_llm_model', '');
     ok(str_contains($r['html'], 'Réponse locale (modele-test) : contexte reçu'), 'modèle local : réponse rédigée à partir de la documentation');
     $GLOBALS['IA_CLIENT'] = $cid;
+});
+test('MARWA IA 1.1 : conseils chiffrés, contrôle de configuration, formation et quiz, calculs, lexique, modules, citations', function () {
+    actingAs('admin');
+    App\Core\Addons::registerAutoload();
+    $E = Addons\MarwaIa\Engine::class;
+    $C = Addons\MarwaIa\Tools::class;
+    // Conseils : idées + constats calculés + citation, sans détourner les demandes de rapport
+    $r = $E::answer('Comment augmenter mes ventes ?');
+    ok($r['type'] === 'advice' && str_contains($r['html'], 'Augmenter les ventes') && str_contains($r['html'], '30 derniers jours') && str_contains($r['html'], 'mia-proverbe'), 'conseils ventes avec constats et citation');
+    eq('advice', $E::answer('idées pour réduire les vols')['type'], 'conseils pertes');
+    ok(str_contains($E::answer('aide moi à fidéliser mes clients')['html'], 'Fidéliser'), 'aide moi à fidéliser');
+    eq('report', $E::answer('bénéfice du mois en pdf')['type'], 'un rapport reste un rapport');
+    // Contrôle de configuration : ce qui manque est signalé avec le lien pour corriger
+    $pid = (int) DB::value("SELECT id FROM products WHERE status = 'active' ORDER BY id LIMIT 1");
+    $old = DB::one('SELECT cost_price, sale_price FROM products WHERE id = ?', [$pid]);
+    DB::run('UPDATE products SET cost_price = 900, sale_price = 500 WHERE id = ?', [$pid]);
+    $logo = setting('company_logo');
+    setting_set('company_logo', '');
+    $r = $E::answer('Qu\'ai-je oublié dans la configuration ?');
+    ok($r['type'] === 'checkup' && $r['score'] > 0 && $r['score'] < 100, 'contrôle : score');
+    ok(str_contains($r['html'], 'vendus en dessous du prix d\'achat') && str_contains($r['html'], 'logo'), 'contrôle : vente à perte et logo signalés');
+    ok(str_contains($r['html'], url('/settings')), 'contrôle : lien pour corriger');
+    DB::run('UPDATE products SET cost_price = ?, sale_price = ? WHERE id = ?', [$old['cost_price'], $old['sale_price'], $pid]);
+    setting_set('company_logo', $logo);
+    actingAs('caissier');
+    ok(!str_contains($E::answer('vérifie ma configuration')['html'], 'logo'), 'caissier : pas de contrôle des paramètres');
+    // Formation : leçon, quiz corrigé, progression enregistrée
+    $r = $E::answer('forme-moi à la caisse');
+    ok($r['type'] === 'training' && str_contains($r['html'], 'Vendre à la caisse'), 'leçon caisse');
+    $q = $E::answer('quiz caisse');
+    eq('quiz', $q['spec']['kind'], 'quiz démarré');
+    $a1 = $E::answer('A', $q['spec']);
+    ok(str_contains($a1['html'], 'Bonne réponse') && $a1['spec']['score'] === 1, 'bonne réponse A');
+    $a2 = $E::answer('A', $a1['spec']);
+    ok(str_contains($a2['html'], 'Pas tout à fait') && str_contains($a2['html'], 'F8'), 'mauvaise réponse corrigée et expliquée');
+    $a3 = $E::answer('fenêtre espèces F10 puis mobile money et l\'opérateur', $a2['spec']);
+    ok(str_contains($a3['html'], '2 / 3') && $a3['spec']['kind'] === 'fin', 'réponse écrite reconnue, résultat 2/3');
+    eq(2, (int) DB::value("SELECT score FROM ia_training WHERE user_id = ? AND lesson = 'caisse'", [App\Core\Auth::id()]), 'progression enregistrée');
+    ok(str_contains($E::answer('ma formation')['html'], '2/3'), 'progression affichée');
+    eq('chat', $E::answer('stop', ['kind' => 'quiz', 'lesson' => 'caisse', 'i' => 1, 'score' => 0])['type'], 'quiz arrêté');
+    ok(!str_contains($E::answer('formation')['html'], 'Lire ses rapports'), 'caissier : pas de leçon rapports');
+    actingAs('admin');
+    // Calculs
+    $r = $C::calc('prix de vente pour un achat à 2 500 F avec 30 % de marge');
+    ok(str_contains($r['html'], money(3250)) && str_contains($r['html'], money(3571)), 'prix de vente : sur le coût et sur la vente');
+    $r = $C::calc('acheté 1 000 vendu 1 250');
+    ok(str_contains($r['html'], money(250)) && str_contains($r['html'], '25 %') && str_contains($r['html'], '20 %') && str_contains($r['html'], '1,25'), 'marge, taux de marge, taux de marque, coefficient');
+    ok(str_contains($C::calc('acheté 1000 vendu 800')['html'], 'à perte'), 'vente à perte signalée');
+    ok(str_contains($C::calc('10 000 HT en TTC à 19 %')['html'], money(11900)), 'HT vers TTC');
+    ok(str_contains($C::calc('11 900 TTC en HT à 19%')['html'], money(10000)), 'TTC vers HT');
+    ok(str_contains($C::calc('remise de 15% sur 20 000')['html'], money(17000)), 'remise');
+    ok(str_contains($C::calc('seuil de rentabilité avec 300 000 F de charges et 25 % de marge')['html'], money(1200000)), 'seuil de rentabilité');
+    eq(null, $C::calc('marge du mois de mars 2026'), 'une période n\'est pas un calcul');
+    eq([50000.0, 1500000.0], array_column($C::numbers('50 mille et 1,5 million'), 'v'), 'nombres en lettres');
+    // Lexique, citations, modules
+    ok(str_contains($E::answer('c\'est quoi le CMP ?')['html'], 'coût moyen'), 'lexique : CMP');
+    ok(str_contains($E::answer('que veut dire FEFO')['html'], 'Premier périmé'), 'lexique : FEFO');
+    $r = $E::answer('donne moi un proverbe');
+    ok($r['type'] === 'wisdom' && preg_match('/<cite>[^<]+<\/cite>/', $r['html']), 'citation avec son origine');
+    foreach (Addons\MarwaIa\Wisdom::QUOTES as $w) {
+        ok($w[0] !== '' && $w[1] !== '' && $w[2], 'citation complète');
+    }
+    ok(App\Core\Addons::isActive('pressing'), 'pressing installé plus haut');
+    $r = $E::answer('état du pressing');
+    ok($r['type'] === 'module' && str_contains($r['html'], 'prêt(s) à remettre'), 'état du module pressing');
+    if (!App\Core\Addons::isActive('hotel')) {
+        ok(str_contains($E::answer('taux d\'occupation de l\'hôtel')['html'], 'pas activé'), 'module non activé : réponse claire');
+    }
 });
 test('Menu à droite par défaut ; numéros d\'assistance', function () {
     eq('right', setting('menu_position'));

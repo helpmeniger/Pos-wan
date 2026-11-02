@@ -31,3 +31,38 @@
 [data-bs-theme="dark"] .mia-t, [data-bs-theme="dark"] .mia-html .h, [data-bs-theme="dark"] .mia-kpis b { color: #e8ecf5; } [data-bs-theme="dark"] .mia-kpis div { background: #242b3b; }
 @media print { .mia-bubble, .mia-panel { display: none !important; } }
 .mia-pdf { width: 100%; height: 460px; border: 1px solid #e3e6ee; border-radius: 8px; margin-top: 8px; background: #fff; }
+/* MARWA IA 1.1 : sagesse, constats, contrôle, quiz, calculs */
+.mia-msg.bot > .mia-a { animation: miaIn .35s ease-out; }
+@keyframes miaIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.mia-proverbe { margin: 10px 0 4px; padding: 10px 14px 9px 16px; border-left: 4px solid #c2410c; border-radius: 0 10px 10px 0; background: linear-gradient(90deg, #fff4e6, #fffaf3); color: #5a2e0c; }
+.mia-proverbe span { display: block; font-style: italic; font-size: .95rem; line-height: 1.35; }
+.mia-proverbe cite { display: block; margin-top: 3px; font-style: normal; font-size: .76rem; font-weight: 700; color: #9a3412; letter-spacing: .02em; text-transform: uppercase; }
+.mia-facts { list-style: none; margin: 4px 0 8px !important; padding: 0 !important; }
+.mia-facts li { position: relative; padding: 4px 0 4px 18px; border-bottom: 1px dashed #e3e6ee; } .mia-facts li:last-child { border-bottom: 0; }
+.mia-facts li::before { content: ''; position: absolute; left: 3px; top: 11px; width: 7px; height: 7px; border-radius: 50%; background: #6f42c1; }
+.mia-score { display: flex; align-items: center; gap: 12px; margin: 6px 0 10px; }
+.mia-score b { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; font-size: 1.05rem; color: #14213d;
+  background: radial-gradient(closest-side, #fff 76%, transparent 78%), conic-gradient(#15803d calc(var(--s) * 1%), #e5e7eb 0); }
+.mia-score span { color: #6b7487; font-size: .88rem; }
+.mia-check { list-style: none; margin: 0 0 8px !important; padding: 0 !important; }
+.mia-check li { padding: 6px 8px; margin-bottom: 5px; border-radius: 8px; background: #f8fafc; border-left: 4px solid #94a3b8; font-size: .9rem; }
+.mia-check li.urgent { border-color: #c62828; background: #fef2f2; } .mia-check li.important { border-color: #d97706; background: #fffbeb; } .mia-check li.conseil { border-color: #2563eb; background: #eff6ff; }
+.mia-check .lvl { display: inline-block; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; margin-right: 4px; color: #475569; }
+.mia-check a { font-weight: 600; white-space: nowrap; }
+.mia-steps li { margin-bottom: 4px; } .mia-steps a, .mia-html .mia-lessons .ok { font-size: .82rem; }
+.mia-lessons .ok { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 10px; background: #dcfce7; color: #15803d; font-weight: 700; }
+.mia-quiz { list-style: none; margin: 4px 0 6px !important; padding: 0 !important; } .mia-quiz li { padding: 4px 0; }
+.mia-choices { flex-direction: column; align-items: stretch; } .mia-choices button { text-align: left; border-radius: 10px; padding: 6px 12px; font-size: .88rem; }
+.mia-choices button:hover { background: #ede9fe; }
+.mia-good { padding: 6px 10px; border-radius: 8px; background: #ecfdf5; color: #166534; } .mia-bad { padding: 6px 10px; border-radius: 8px; background: #fef2f2; color: #991b1b; }
+.mia-calcs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; }
+.mia-calc { margin: 6px 0; padding: 8px 12px; border-radius: 10px; background: linear-gradient(135deg, #f4f2ff, #eef6ff); border: 1px solid #ddd6fe; }
+.mia-calc span { display: block; font-size: .78rem; color: #6b7487; } .mia-calc b { display: block; font-size: 1.25rem; color: #14213d; } .mia-calc small { color: #6b7487; }
+.mia-html .small { font-size: .8rem; color: #6b7487; }
+.mia-say { margin-top: 6px; border: 0; background: none; padding: 0; font-size: .78rem; color: #6f42c1; }
+.mia-welcome { background: linear-gradient(135deg, #fff, #f7f3ff) !important; } .mia-welcome .bi-stars { color: #d97706; }
+[data-bs-theme="dark"] .mia-proverbe { background: #2a1d12; color: #fcd9b6; } [data-bs-theme="dark"] .mia-proverbe cite { color: #fdba74; }
+[data-bs-theme="dark"] .mia-check li, [data-bs-theme="dark"] .mia-calc { background: #242b3b; border-color: #3b4560; } [data-bs-theme="dark"] .mia-calc b, [data-bs-theme="dark"] .mia-score b { color: #e8ecf5; }
+[data-bs-theme="dark"] .mia-welcome { background: #1b2130 !important; }
+@media (prefers-reduced-motion: reduce) { .mia-msg.bot > .mia-a { animation: none; } }
+.mia-html .mia-quiz { display: none; } /* les choix sont les boutons ; la liste reste pour la lecture à voix haute */

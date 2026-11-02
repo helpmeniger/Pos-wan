@@ -1,7 +1,7 @@
 {
     "code": "marwa_ia",
     "name": "MARWA IA — assistant intelligent",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "requires": "2.14.0",
     "author": "Mahamadou Hamidou (Mohamed) — POS Marwa",
     "description": "Assistant intégré : posez vos questions en français (« rapport du client Moussa en PDF », « ventes d'hier », « que dois-je commander ? », « comment vendre au carton ? »). Il prépare les rapports (aperçu, PDF, Excel), fait le bilan avec conseils, prévoit le mois, propose le réapprovisionnement et répond sur l'utilisation de tout le logiciel. Fonctionne en local, sans Internet ; modèle de langage local (Ollama) facultatif.",

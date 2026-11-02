@@ -12,6 +12,24 @@
   const load = () => { try { return JSON.parse(sessionStorage.getItem(KEY) || '[]'); } catch (e) { return []; } };
   const save = (log) => { try { sessionStorage.setItem(KEY, JSON.stringify(log.slice(-24))); } catch (e) { /* stockage plein */ } };
 
+  // Lecture à voix haute (voix française du système, si le navigateur en propose une)
+  const TTS = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  function speak(el) {
+    if (!TTS) return;
+    const synth = window.speechSynthesis;
+    if (synth.speaking) { synth.cancel(); return; }
+    const box = el.cloneNode(true);
+    box.querySelectorAll('.mia-sug, .mia-act, .mia-say, table, iframe, details').forEach((x) => x.remove());
+    const text = box.textContent.replace(/\bPOS\b/g, 'Pose').replace(/\s+/g, ' ').trim().slice(0, 1800);
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'fr-FR';
+    const v = synth.getVoices().find((x) => /^fr/i.test(x.lang));
+    if (v) u.voice = v;
+    u.rate = 1;
+    synth.speak(u);
+  }
+  document.addEventListener('click', (e) => { const b = e.target.closest('[data-mia-say]'); if (b) { e.preventDefault(); speak(b.closest('.mia-a')); } });
+
   function renderAnswer(r) {
     let h = '<div class="mia-a">';
     if (r.title) h += `<div class="mia-t">${esc(r.title)}${r.subtitle ? `<span>${esc(r.subtitle)}</span>` : ''}</div>`;
@@ -31,7 +49,8 @@
         return `<a class="btn btn-sm ${cls}" href="${esc(a.url)}"${tgt}><i class="bi ${ic}"></i> ${esc(a.label)}</a>`;
       }).join('') + '</div>';
     }
-    if (r.suggestions && r.suggestions.length) h += '<div class="mia-sug">' + r.suggestions.map((s) => `<button type="button" data-mia-ask="${esc(s)}">${esc(s)}</button>`).join('') + '</div>';
+    if (TTS) h += '<button type="button" class="mia-say" data-mia-say title="Écouter la réponse"><i class="bi bi-volume-up"></i> Écouter</button>';
+    if (r.suggestions && r.suggestions.length) h += '<div class="mia-sug' + (r.quiz ? ' mia-choices' : '') + '">' + r.suggestions.map((s) => `<button type="button" data-mia-ask="${esc(s)}">${esc(s)}</button>`).join('') + '</div>';
     return h + '</div>';
   }
 
@@ -44,8 +63,9 @@
     const scroll = () => { logEl.scrollTop = logEl.scrollHeight; };
     function draw() {
       if (!log.length) {
-        logEl.innerHTML = '<div class="mia-msg bot"><div class="mia-a"><div class="mia-html"><p>Bonjour ! Je suis <b>MARWA IA</b>. Demandez-moi un rapport (« ventes d\'hier en PDF », « rapport du client Moussa »), une analyse (« bilan de la semaine », « que dois-je commander ? ») ou une aide (« comment vendre au carton ? »).</p></div>'
-          + '<div class="mia-sug"><button type="button" data-mia-ask="Bilan de la journée">Bilan de la journée</button><button type="button" data-mia-ask="Ventes d\'aujourd\'hui">Ventes d\'aujourd\'hui</button><button type="button" data-mia-ask="Que sais-tu faire ?">Que sais-tu faire ?</button></div></div></div>';
+        const chips = ['Mon point du jour', 'Bilan de la journée', 'Comment augmenter mes ventes ?', 'Ma formation', 'Vérifie ma configuration', 'Que sais-tu faire ?'];
+        logEl.innerHTML = '<div class="mia-msg bot"><div class="mia-a mia-welcome"><div class="mia-html"><p class="h"><i class="bi bi-stars"></i> Bonjour ! Je suis MARWA IA.</p><p>Je prépare vos <b>rapports</b> (« ventes d\'hier en PDF », « rapport du client Moussa »), je vous donne des <b>idées</b> pour mieux gérer, je vous <b>forme</b> pas à pas, je vérifie ce qui a été <b>oublié</b> dans la configuration et je fais vos <b>calculs</b> de prix et de marge.</p></div>'
+          + '<div class="mia-sug">' + chips.map((c) => `<button type="button" data-mia-ask="${esc(c)}">${esc(c)}</button>`).join('') + '</div></div></div>';
         return;
       }
       logEl.innerHTML = log.map((m) => m.u !== undefined ? `<div class="mia-msg me"><div>${esc(m.u)}</div></div>` : `<div class="mia-msg bot">${renderAnswer(m.r)}</div>`).join('');

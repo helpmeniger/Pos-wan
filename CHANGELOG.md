@@ -2,6 +2,28 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [2.16.0] — 2026-11-02
+
+### Ajouté
+- **MARWA IA 1.1.0** :
+  - **conseils et idées de gestion** par thème (ventes, fidélisation, pertes et vols, stock,
+    prix et marge, trésorerie, dépenses, personnel, et selon les modules : restaurant, pharmacie,
+    hôtel, établissement, pressing), accompagnés de **constats calculés sur les vrais chiffres**
+    de la boutique et des écrans pour agir ;
+  - **formation** des utilisateurs : leçons pas à pas selon le rôle et les modules actifs, mini-quiz
+    de 3 questions corrigé et expliqué, progression enregistrée (table `ia_training`) ;
+  - **contrôle de configuration** (« qu'ai-je oublié ? ») : identité de l'entreprise, moyens de
+    paiement, imprimantes, sauvegardes, licence, comptes, articles sans prix d'achat ou vendus à
+    perte, codes-barres, seuils, stocks négatifs, inventaires non validés, lots périmés, caisses
+    non clôturées, plafonds de crédit dépassés, catégories de dépenses ; score et liens « Corriger » ;
+  - **état des modules** : restaurant, hôtel (occupation, arrivées, départs), établissement
+    (impayés), clinique, banques, pressing ;
+  - **calculs** : prix de vente selon la marge, marge / taux de marge / taux de marque /
+    coefficient, HT ↔ TTC, remise, seuil de rentabilité ;
+  - **lexique** de gestion (CMP, FEFO, trésorerie, créance…) ;
+  - **citations et proverbes africains** (point du jour, conseils, fin de quiz) ;
+  - **point du jour** à la salutation, bouton **Écouter** (voix du navigateur), nouvel accueil.
+
 ## [2.15.0] — 2026-11-02
 
 ### Ajouté

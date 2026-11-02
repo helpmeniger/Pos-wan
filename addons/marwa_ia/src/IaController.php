@@ -115,6 +115,9 @@ final class IaController extends Controller
     public static function examples(): array
     {
         $all = [
+            'Conseils et idées' => [['Mon point du jour', null], ['Comment augmenter mes ventes ?', 'benefice'], ['Idées pour fidéliser mes clients', null], ['Comment réduire les pertes et les vols ?', null], ['Conseils pour ma trésorerie', null]],
+            'Formation' => [['Ma formation', null], ['Forme-moi à la caisse', null], ['Quiz : clôturer la caisse', null], ['Vérifie ma configuration', null]],
+            'Calculs et lexique' => [['Prix de vente pour un achat à 2 500 F avec 30 % de marge', null], ['Acheté 1 000, vendu 1 250 : quelle marge ?', null], ['10 000 F HT en TTC', null], ['Seuil de rentabilité avec 300 000 F de charges', null], ['C\'est quoi le CMP ?', null], ['Un proverbe africain', null]],
             'Rapports' => [['Bilan de la journée', 'bilan'], ['Ventes d\'hier en PDF', 'ventes'], ['Toutes les transactions du mois en PDF', 'ventes'], ['Ventes payées en mobile money cette semaine', 'ventes'],
                 ['Bénéfice du mois dernier', 'benefice'], ['Dépenses du mois', 'depenses'], ['Écarts de caisse de la semaine', 'caisse']],
             'Clients et fournisseurs' => [['Qui me doit de l\'argent ?', 'creances'], ['Meilleurs clients de l\'année', 'meilleurs_clients'], ['Rapport du client … en PDF', 'client'], ['Combien je dois au fournisseur … ?', 'fournisseur']],

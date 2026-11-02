@@ -36,6 +36,46 @@ PDF** ou **Excel (CSV)** :
 de POS Marwa et de tous ses modules (« comment vendre au carton ? », « que faire en cas de
 coupure d'Internet ? »), avec les liens vers les bonnes pages.
 
+**Conseils et idées de gestion** (1.1) : « comment augmenter mes ventes ? », « idées pour
+fidéliser mes clients », « comment réduire les pertes et les vols ? », « conseils pour mon stock »,
+« comment fixer mes prix ? », « conseils pour ma trésorerie », « comment motiver mon personnel ? »,
+et selon les modules : restaurant, pharmacie, hôtel, établissement, pressing. Chaque réponse donne
+d'abord **ce que MARWA IA voit dans vos chiffres** (30 derniers jours, locomotives, heure calme,
+articles dormants, ruptures, créances, manques de caisse…, selon les droits du rôle), puis des
+idées concrètes et les écrans pour passer à l'action.
+
+**Formation** (1.1) : « ma formation » affiche le programme adapté au rôle et aux modules actifs
+(prise en main, caisse, articles et cartons, achats, stock et inventaire, clients et crédit,
+clôture, rapports, dépenses, pressing, hôtel, établissement). Chaque leçon explique pas à pas avec
+les liens vers les écrans ; le **quiz** de 3 questions (réponse A, B, C ou avec ses mots) est
+corrigé et expliqué. La progression est enregistrée par utilisateur.
+
+**Contrôle de configuration** (1.1) : « vérifie ma configuration » / « qu'ai-je oublié ? » —
+identité de l'entreprise (nom, téléphone, adresse, logo, NIF), moyens de paiement et opérateurs
+mobile money, imprimantes, dernière sauvegarde, licence, compte admin, caissiers sans caisse,
+articles sans prix d'achat ou vendus à perte, codes-barres, stocks minimum, stocks négatifs,
+inventaires non validés, lots périmés, caisses non clôturées, clients au-delà du plafond,
+catégories de dépenses. Score, priorités (à faire tout de suite / important / conseillé) et lien
+« Corriger » pour chaque point. Seuls les points que le rôle peut corriger sont affichés.
+
+**État des modules** (1.1) : « état du pressing », « taux d'occupation de l'hôtel », « comment va
+la clinique ? », « impayés de l'école », « solde des banques ».
+
+**Calculs** (1.1) : prix de vente selon la marge (sur le coût et sur le prix de vente), marge /
+taux de marge / taux de marque / coefficient, HT ↔ TTC (taux des paramètres ou « à 5 % »),
+remise, seuil de rentabilité (taux de marge de la boutique si non précisé).
+
+**Lexique** (1.1) : « c'est quoi le CMP ? », « que veut dire FEFO ? » — 27 notions de gestion.
+
+**Sagesse africaine** (1.1) : un proverbe ou une citation (Amadou Hampâté Bâ, Nelson Mandela,
+proverbes haoussa, éthiopien et africains) accompagne le point du jour, les conseils et la fin des
+quiz ; « un proverbe », « motive-moi ». Quand l'origine précise d'un proverbe varie selon les
+sources, il est présenté comme « proverbe africain ».
+
+**Point du jour** : « bonjour » donne la citation du jour, les ventes du jour, les ruptures,
+l'état des modules et le nombre de points de configuration à revoir. Le bouton **Écouter** lit
+la réponse avec la voix française de l'ordinateur (selon les voix installées).
+
 ## Comment il comprend
 - Périodes : aujourd'hui, hier, cette semaine, la semaine dernière, ce mois, le mois dernier,
   en mars (2025), cette année, les 30 derniers jours, du 1er au 15 octobre, du 10/10 au 20/10,

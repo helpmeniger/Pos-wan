@@ -52,8 +52,36 @@ final class Engine
             return self::reply('Posez-moi une question, par exemple « rapport du client Moussa en PDF ».');
         }
         $n = Text::norm($q);
+        // Quiz de formation en cours : la réponse A / B / C est corrigée
+        if (($ctx['kind'] ?? null) === 'quiz' && ($graded = Trainer::grade($q, $ctx))) {
+            return $graded;
+        }
+        if ($ctx !== null && !isset(Reports::KINDS[$ctx['kind'] ?? ''])) {
+            $ctx = null; // la suite de conversation ne vaut que pour un rapport
+        }
         if ($small = self::smallTalk($n)) {
             return $small;
+        }
+        if ($r = Tools::calc($q)) {
+            return $r;
+        }
+        if ($r = Tools::define($q)) {
+            return $r;
+        }
+        if (Checkup::isCheckup($n)) {
+            return Checkup::answer();
+        }
+        if (Trainer::isTraining($n)) {
+            return Trainer::answer($q);
+        }
+        if (preg_match('/\b(proverbes?|citations?|sagesse|pensee du jour|motivation|motive moi|encourage moi|parole de sage|dicton)\b/', $n)) {
+            return self::wisdom($n);
+        }
+        if (Advisor::isAdvice($n) && !preg_match('/\b(rapport|pdf|excel|csv|imprime\w*)\b/', $n)) {
+            return Advisor::answer($q);
+        }
+        if ($m = Modules::detect($n)) {
+            return Modules::answer($m);
         }
         $spec = self::understand($q, $ctx);
         if ($spec === null) {
@@ -341,6 +369,9 @@ final class Engine
         $rows = $r['rows'];
         $preview = array_map(fn($row) => array_map([self::class, 'cell'], array_values($row)), array_slice($rows, 0, 12));
         $html = $r['html'] ?? '<p>' . ($r['text'] ?? '') . '</p>';
+        if (in_array($s['kind'], ['bilan', 'benefice', 'prevision'], true)) {
+            $html .= Wisdom::html(Wisdom::forTheme($s['kind'] === 'benefice' ? 'tresorerie' : 'croissance'));
+        }
         $actions = [['label' => 'Voir le PDF', 'url' => $pdfView, 'kind' => 'view'], ['label' => 'Télécharger le PDF', 'url' => $pdf, 'kind' => 'pdf'], ['label' => 'Excel (CSV)', 'url' => $csv, 'kind' => 'csv']];
         foreach ($r['links'] ?? [] as [$label, $u]) {
             $actions[] = ['label' => $label, 'url' => $u, 'kind' => 'link'];
@@ -411,6 +442,9 @@ final class Engine
         if ($llm) {
             $html = '<div class="llm">' . nl2br(e($llm)) . '</div>' . ($html !== '' ? '<details><summary>Source dans la documentation</summary>' . $html . '</details>' : '');
         }
+        if ($html === '' && preg_match('/\b(comment|pourquoi|que faire|aide)\b/', Text::norm($q)) && preg_match('/\b(vente|ventes|client|clients|stock|prix|argent|benefice|marge|perte|pertes|vol|depenses?|caisse|tresorerie|employes?|personnel)\b/', Text::norm($q))) {
+            return Advisor::answer($q);
+        }
         if ($html === '') {
             $html = '<p>Je n\'ai pas trouvé de réponse sûre à cette question dans la documentation de POS Marwa.</p><p>Essayez avec d\'autres mots, par exemple « comment vendre au carton », « rapport du client Moussa », « ventes d\'hier en PDF », « que dois-je commander ». '
                 . 'Pour un problème technique : Configuration → Assistance à distance, ou le <b>+227 92 08 12 82</b>.</p>';
@@ -439,13 +473,15 @@ final class Engine
     {
         $name = explode(' ', (string) (Auth::user()['full_name'] ?? ''))[0];
         if (preg_match('/^(bonjour|bonsoir|salut|salam|salamalekoum|assalamou alaykoum|hello|coucou|bjr|slt)\b/', $n) && str_word_count($n) <= 4) {
-            $h = (int) date('G');
-            return self::reply('<p>' . ($h >= 18 ? 'Bonsoir' : 'Bonjour') . ($name ? ' ' . e($name) : '') . ' ! Je suis <b>MARWA IA</b>, votre assistant. Je prépare vos rapports en un instant et je réponds à toutes vos questions sur POS Marwa.</p><p>Par exemple : « bilan de la journée », « rapport du client Moussa en PDF », « que dois-je commander ? ».</p>', ['suggestions' => ['Bilan de la journée', 'Ventes d\'aujourd\'hui', 'Que sais-tu faire ?']]);
+            return self::briefing($name);
+        }
+        if (preg_match('/\b(briefing|point du jour|mon point|resume du jour|quoi de neuf aujourd hui)\b/', $n)) {
+            return self::briefing($name);
         }
         if (preg_match('/^(merci|merci beaucoup|thanks|ok merci|super|parfait|top|genial|bravo)\b/', $n) && str_word_count($n) <= 4) {
             return self::reply('Avec plaisir' . ($name ? ', ' . e($name) : '') . ' ! Je reste à votre disposition.');
         }
-        if (preg_match('/\b(qui es tu|tu es qui|ton nom|presente toi|que sais tu faire|que peux tu faire|tu sais faire quoi|aide$|^aide|capacites|fonctionnalites de marwa ia)\b/', $n)) {
+        if (preg_match('/\b(qui es tu|tu es qui|ton nom|presente toi|que sais tu faire|que peux tu faire|tu sais faire quoi|^aide( moi)?$|capacites|fonctionnalites de marwa ia)\b/', $n)) {
             $can = [];
             foreach (Reports::KINDS as $k => [$perm, $label]) {
                 if (Auth::can($perm)) {
@@ -455,9 +491,65 @@ final class Engine
             return self::reply('<p>Je suis <b>MARWA IA</b>, l\'assistant intégré à POS Marwa. Je fonctionne <b>sur le serveur de votre boutique</b>, sans Internet : vos données ne sortent pas.</p>'
                 . '<p><b>Je prépare vos rapports</b> (aperçu, PDF ou Excel) : ' . e(implode(', ', $can)) . '.</p>'
                 . '<p><b>Je comprends</b> les périodes (« hier », « la semaine dernière », « en mars », « du 1er au 15 octobre »), les noms de vos clients, articles, fournisseurs et vendeurs, même avec une faute de frappe, et la suite de la conversation (« et en PDF ? », « et le mois dernier ? »).</p>'
-                . '<p><b>Je réponds</b> à vos questions sur l\'utilisation du logiciel et de tous ses modules, et je vous donne des conseils de gestion.</p>', ['suggestions' => ['Bilan de la semaine', 'Que dois-je commander ?', 'Comment clôturer la caisse ?']]);
+                . '<p><b>Je réponds</b> à vos questions sur l\'utilisation du logiciel et de tous ses modules (« comment vendre au carton ? »).</p>'
+                . '<p><b>Je vous forme</b> pas à pas, leçon par leçon, avec un petit quiz (« forme-moi à la caisse »).</p>'
+                . '<p><b>Je vérifie</b> ce qui a été oublié dans la configuration (« vérifie ma configuration »).</p>'
+                . '<p><b>Je vous conseille</b> avec des idées concrètes basées sur vos chiffres (« comment augmenter mes ventes ? », « idées pour réduire les vols »), je fais vos <b>calculs</b> (prix de vente, marge, TVA, remise, seuil de rentabilité) et j\'explique les mots de la gestion (« c\'est quoi le CMP ? »).</p>'
+                . '<p>Et chaque jour, une <b>sagesse africaine</b> pour bien travailler.</p>' . Wisdom::html(Wisdom::ofDay()), ['suggestions' => ['Bilan de la semaine', 'Comment augmenter mes ventes ?', 'Ma formation', 'Vérifie ma configuration']]);
         }
         return null;
+    }
+
+    /** Citation ou proverbe africain, choisi selon le thème demandé. */
+    private static function wisdom(string $n): array
+    {
+        $themes = ['equipe' => 'equipe|personnel|employe|ensemble', 'patience' => 'patience|courage|difficile|dur|fatigue|decourage', 'formation' => 'apprendre|savoir|formation|etude',
+            'clients' => 'client|clients|fidelite', 'tresorerie' => 'argent|epargne|tresorerie', 'croissance' => 'reussite|reussir|succes|grandir|croissance|motivation|motive'];
+        $q = Wisdom::ofDay();
+        foreach ($themes as $t => $re) {
+            if (preg_match('/\b(' . $re . ')/', $n)) {
+                $q = Wisdom::forTheme($t);
+                break;
+            }
+        }
+        if (preg_match('/\b(autre|encore|un autre|une autre)\b/', $n)) {
+            $q = Wisdom::QUOTES[random_int(0, count(Wisdom::QUOTES) - 1)];
+        }
+        return self::reply(Wisdom::html($q) . '<p class="small">Une sagesse d\'Afrique pour bien travailler aujourd\'hui.</p>', ['type' => 'wisdom', 'suggestions' => ['Une autre citation', 'Un proverbe sur le travail en équipe', 'Comment augmenter mes ventes ?']]);
+    }
+
+    /** Briefing du jour : citation, chiffres clés, points de configuration, modules. */
+    public static function briefing(string $name): array
+    {
+        $h = (int) date('G');
+        $html = '<p class="h">' . ($h >= 18 ? 'Bonsoir' : 'Bonjour') . ($name ? ' ' . e($name) : '') . ' ! Voici votre point du jour.</p>';
+        $html .= Wisdom::html(Wisdom::ofDay());
+        $items = [];
+        try {
+            if (Auth::can('reports.view')) {
+                $s = \App\Services\ReportService::summary(date('Y-m-d'), date('Y-m-d'));
+                $items[] = $s['tickets'] > 0 ? 'Aujourd\'hui : <b>' . money($s['net']) . '</b> pour ' . (int) $s['tickets'] . ' vente(s).' : 'Pas encore de vente aujourd\'hui : la journée commence !';
+            }
+            if (Auth::can('stock.view')) {
+                $out = count(array_filter(\App\Services\ReportService::lowStock(200), fn($r) => (float) $r['qty'] <= 0));
+                if ($out) {
+                    $items[] = '<b>' . $out . ' article(s) en rupture</b> : demandez-moi « que dois-je commander ? ».';
+                }
+            }
+            $items = array_merge($items, Modules::briefing());
+            $todo = Checkup::count();
+            if ($todo) {
+                $items[] = '<b>' . $todo . ' point(s) de configuration</b> à revoir : demandez-moi « vérifie ma configuration ».';
+            }
+        } catch (\Throwable) {
+            // le briefing ne doit jamais bloquer la salutation
+        }
+        if ($items) {
+            $html .= '<ul class="mia-facts">' . implode('', array_map(fn($i) => '<li>' . $i . '</li>', $items)) . '</ul>';
+        }
+        $html .= '<p>Je peux préparer vos rapports, vous <b>former</b> pas à pas, vérifier ce qui a été <b>oublié</b> dans la configuration et vous donner des <b>idées</b> pour mieux gérer.</p>';
+        $sugg = Auth::can('reports.view') ? ['Bilan de la journée', 'Comment augmenter mes ventes ?', 'Vérifie ma configuration', 'Ma formation'] : ['Ma formation', 'Comment vendre au carton ?', 'Comment clôturer la caisse ?'];
+        return self::reply($html, ['type' => 'briefing', 'suggestions' => $sugg]);
     }
 
     private static function reply(string $html, array $extra = []): array

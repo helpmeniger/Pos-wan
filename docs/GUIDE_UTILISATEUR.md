@@ -429,6 +429,14 @@ ou la bulle « MARWA IA » en bas à gauche des pages.
   **Télécharger le PDF**, **Excel (CSV)**. Demandé « en PDF », le PDF s'ouvre directement.
 - Enchaînez : « et le mois dernier ? », « et en PDF ? ».
 - Chaque rapport respecte les droits de votre rôle. Guide : `addons/marwa_ia/README.md`.
+- **Idées de gestion** : « comment augmenter mes ventes ? », « idées pour réduire les vols »,
+  « conseils pour ma trésorerie » : des idées concrètes, appuyées sur vos chiffres.
+- **Se former** : « ma formation », « forme-moi à la caisse », puis le **quiz** de 3 questions.
+- **Vérifier ce qui a été oublié** : « vérifie ma configuration » (score et liens « Corriger »).
+- **Calculer** : « prix de vente pour un achat à 2 500 F avec 30 % de marge », « 10 000 F HT en
+  TTC », « seuil de rentabilité avec 300 000 F de charges » ; **définir** : « c'est quoi le CMP ? ».
+- « Bonjour » donne le **point du jour** avec une citation africaine ; le bouton **Écouter** lit
+  la réponse à voix haute (voix française de l'ordinateur, si elle est installée).
 
 ### Écran client et afficheur client
 **Configuration → Écran et afficheur client** (droit « Paramètres »).
