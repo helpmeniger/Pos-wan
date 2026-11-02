@@ -1,0 +1,128 @@
+<?php
+/**
+ * Réseau : sites, routeurs MikroTik, interfaces, relevés d'état, profils Hotspot, journaux de synchronisation.
+ */
+$opts = 'ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
+return ['up' => [
+"CREATE TABLE IF NOT EXISTS sites (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    address VARCHAR(255) NULL,
+    city VARCHAR(100) NULL,
+    contact_name VARCHAR(150) NULL,
+    contact_phone VARCHAR(30) NULL,
+    latitude DECIMAL(10,7) NULL,
+    longitude DECIMAL(10,7) NULL,
+    status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) $opts",
+
+"CREATE TABLE IF NOT EXISTS routers (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    site_id INT UNSIGNED NULL,
+    name VARCHAR(120) NOT NULL,
+    host VARCHAR(253) NOT NULL,
+    api_port SMALLINT UNSIGNED NOT NULL DEFAULT 8728,
+    api_ssl_port SMALLINT UNSIGNED NOT NULL DEFAULT 8729,
+    use_ssl TINYINT(1) NOT NULL DEFAULT 0,
+    api_username VARCHAR(100) NOT NULL,
+    api_password_enc TEXT NOT NULL COMMENT 'Chiffré (Crypto::encrypt), jamais en clair',
+    model VARCHAR(100) NULL,
+    routeros_version VARCHAR(50) NULL,
+    board_name VARCHAR(100) NULL,
+    serial_number VARCHAR(100) NULL,
+    identity VARCHAR(120) NULL,
+    location VARCHAR(255) NULL,
+    connection_type ENUM('lan','public_ip','vpn','cloud','other') NOT NULL DEFAULT 'lan',
+    hotspot_server VARCHAR(100) NULL,
+    hotspot_dns_name VARCHAR(190) NULL,
+    wifi_ssid VARCHAR(100) NULL,
+    is_default TINYINT(1) NOT NULL DEFAULT 0,
+    status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+    connection_state ENUM('online','offline','unknown') NOT NULL DEFAULT 'unknown',
+    last_seen_at DATETIME NULL,
+    last_checked_at DATETIME NULL,
+    last_error VARCHAR(500) NULL,
+    consecutive_failures INT UNSIGNED NOT NULL DEFAULT 0,
+    sync_enabled TINYINT(1) NOT NULL DEFAULT 1,
+    sync_interval_minutes SMALLINT UNSIGNED NOT NULL DEFAULT 5,
+    last_sync_at DATETIME NULL,
+    created_by INT UNSIGNED NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL,
+    INDEX idx_router_endpoint (host, api_port),
+    INDEX idx_routers_state (status, connection_state),
+    CONSTRAINT fk_routers_site FOREIGN KEY (site_id) REFERENCES sites(id) ON DELETE SET NULL
+) $opts",
+
+"CREATE TABLE IF NOT EXISTS router_interfaces (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    router_id INT UNSIGNED NOT NULL,
+    ros_id VARCHAR(20) NOT NULL COMMENT 'Identifiant interne RouterOS (.id)',
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(50) NULL,
+    mac_address VARCHAR(17) NULL,
+    mtu INT NULL,
+    running TINYINT(1) NOT NULL DEFAULT 0,
+    disabled TINYINT(1) NOT NULL DEFAULT 0,
+    rx_byte BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    tx_byte BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    comment VARCHAR(255) NULL,
+    synced_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_iface (router_id, ros_id),
+    CONSTRAINT fk_iface_router FOREIGN KEY (router_id) REFERENCES routers(id) ON DELETE CASCADE
+) $opts",
+
+"CREATE TABLE IF NOT EXISTS router_status_logs (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    router_id INT UNSIGNED NOT NULL,
+    online TINYINT(1) NOT NULL,
+    latency_ms INT UNSIGNED NULL,
+    cpu_load TINYINT UNSIGNED NULL,
+    free_memory BIGINT UNSIGNED NULL,
+    total_memory BIGINT UNSIGNED NULL,
+    free_hdd BIGINT UNSIGNED NULL,
+    uptime_seconds BIGINT UNSIGNED NULL,
+    active_users INT UNSIGNED NULL,
+    rx_bps BIGINT UNSIGNED NULL,
+    tx_bps BIGINT UNSIGNED NULL,
+    error VARCHAR(500) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_rsl_router_time (router_id, created_at),
+    CONSTRAINT fk_rsl_router FOREIGN KEY (router_id) REFERENCES routers(id) ON DELETE CASCADE
+) $opts",
+
+"CREATE TABLE IF NOT EXISTS hotspot_profiles (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    router_id INT UNSIGNED NOT NULL,
+    ros_id VARCHAR(20) NULL,
+    name VARCHAR(100) NOT NULL,
+    rate_limit VARCHAR(100) NULL COMMENT 'Format RouterOS rx/tx, ex. 2M/5M',
+    shared_users SMALLINT UNSIGNED NULL,
+    session_timeout VARCHAR(30) NULL,
+    idle_timeout VARCHAR(30) NULL,
+    keepalive_timeout VARCHAR(30) NULL,
+    address_pool VARCHAR(100) NULL,
+    managed_by_app TINYINT(1) NOT NULL DEFAULT 0,
+    synced_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_hsp (router_id, name),
+    CONSTRAINT fk_hsp_router FOREIGN KEY (router_id) REFERENCES routers(id) ON DELETE CASCADE
+) $opts",
+
+"CREATE TABLE IF NOT EXISTS router_sync_logs (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    router_id INT UNSIGNED NOT NULL,
+    type VARCHAR(50) NOT NULL COMMENT 'status, interfaces, profiles, users, sessions, push_tickets…',
+    status ENUM('success','partial','failed') NOT NULL,
+    items_processed INT UNSIGNED NOT NULL DEFAULT 0,
+    message VARCHAR(1000) NULL,
+    duration_ms INT UNSIGNED NULL,
+    triggered_by INT UNSIGNED NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_rsync_router (router_id, created_at),
+    CONSTRAINT fk_rsync_router FOREIGN KEY (router_id) REFERENCES routers(id) ON DELETE CASCADE
+) $opts",
+]];

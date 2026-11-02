@@ -1,0 +1,9 @@
+.env
+/vendor/
+/storage/installed.lock
+/storage/logs/*
+/storage/backups/*
+/storage/exports/*
+/storage/cache/*
+/storage/sessions/*
+!/storage/*/.gitkeep

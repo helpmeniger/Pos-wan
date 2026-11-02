@@ -1,0 +1,19 @@
+# MARWA CONNECT — racine du projet (WampServer : http://localhost/marwa-connect/)
+# Seul le dossier public/ est exposé ; tout le reste (app, config, .env, storage) est protégé.
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(\.env|\.git|composer\.(json|lock)) - [F,L]
+    RewriteCond %{REQUEST_URI} !/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+    # Sans mod_rewrite : index.php racine redirige vers public/index.php
+    DirectoryIndex index.php
+</IfModule>
+
+<FilesMatch "^\.env|\.(log|sql|gz|lock|md)$">
+    Require all denied
+</FilesMatch>
