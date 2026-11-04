@@ -19,7 +19,8 @@
   const CSRF = () => meta('csrf-token') || (($('input[name="_csrf"]') || {}).value || '');
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const cfgEl = $('#ecole-pointage-data');
-  if (!cfgEl || !window.EcoleVisage) return;
+  // Reconnaissance désactivée : la page n'affiche que l'avertissement, sans caméra ni canevas
+  if (!cfgEl || !window.EcoleVisage || !$('#ptOverlay')) return;
   const CFG = JSON.parse(cfgEl.textContent);
   const SEUIL = CFG.reglages.seuil || 0.5, MARGE = CFG.reglages.marge || 0.05;
   // Un visage est « oublié » s'il manque sur 2 images analysées de suite (ou 10 s) : le suivi reste

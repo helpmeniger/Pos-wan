@@ -28,9 +28,9 @@ $recu = (int) ($_GET['recu'] ?? 0);
     <div class="bq-accounts mb-3">
       <?php foreach ($accounts as $a): ?>
       <a class="card bq-acc text-decoration-none <?= (int) $a['active'] ? '' : 'opacity-50' ?> kind-<?= e($a['kind']) ?>" href="<?= e(url('/banques/comptes/' . $a['id'])) ?>"><div class="card-body py-2">
-        <div class="d-flex align-items-center gap-2"><i class="bi <?= e(BS::KIND_ICONS[$a['kind']]) ?> fs-4"></i><div class="flex-grow-1"><div class="fw-semibold text-body"><?= e($a['name']) ?></div>
+        <div class="d-flex align-items-center gap-2"><i class="bi <?= e(BS::KIND_ICONS[$a['kind']]) ?> fs-4"></i><div class="flex-grow-1" style="min-width:0"><div class="fw-semibold text-body"><?= e($a['name']) ?></div>
         <div class="small text-secondary"><?= e(t(BS::KINDS[$a['kind']])) ?><?= $a['bank_name'] ? ' · ' . e($a['bank_name']) : '' ?><?= $a['account_number'] ? ' · ' . e($a['account_number']) : '' ?><?= (int) $a['active'] ? '' : ' · ' . e(t('désactivé')) ?></div></div>
-        <div class="fs-5 fw-bold <?= (float) $a['balance'] < 0 ? 'text-danger' : 'text-body' ?>"><?= money($a['balance']) ?></div></div>
+        <div class="fs-5 fw-bold text-nowrap <?= (float) $a['balance'] < 0 ? 'text-danger' : 'text-body' ?>"><?= money($a['balance']) ?></div></div>
       </div></a>
       <?php endforeach; ?>
       <?php if (!$accounts): ?><div class="card"><div class="card-body text-secondary"><?= e(t('Aucun compte. Créez d\'abord vos comptes : banque, coffre, argent gardé par le propriétaire…')) ?><?= can('banques.manage') ? ' <a href="' . e(url('/banques', ['op' => 'compte'])) . '">' . e(t('Nouveau compte')) . '</a>' : '' ?></div></div><?php endif; ?>
