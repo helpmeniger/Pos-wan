@@ -2,6 +2,40 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.0.0] — 2026-11-05
+
+### Ajouté
+- **POS Marwa en ligne (mode SaaS)**, activé par `SAAS_MODE=true` (voir SAAS.md) :
+  - **une base de données par client**, choisie d'après le sous-domaine (`<espace>.domaine`) ; en
+    mode `create`, un **utilisateur MySQL dédié** limité à sa base ; sessions, journaux, sauvegardes
+    (`storage/tenants/<espace>`) et photos (`public/uploads/t/<espace>`) séparés ; clé secrète
+    propre à chaque espace ;
+  - **site public** : offres, inscription avec **essai gratuit**, page de bienvenue, « se connecter à
+    mon espace », conditions du service et données personnelles (loi n° 2017-28) ;
+  - **création automatique de l'espace** à la première visite (schéma, boutique, caisse, compte
+    administrateur avec le mot de passe choisi) ; mode **réserve de bases** pour l'hébergement
+    mutualisé (o2switch) ;
+  - **abonnement** : essai, actif, expiré (lecture seule, données conservées), suspendu ;
+    **Mon abonnement** dans chaque espace (offre, utilisation des limites, instructions de paiement,
+    déclaration d'un paiement mobile money / virement, historique, factures PDF) ;
+  - **limites des offres** : utilisateurs actifs, boutiques, caisses, modules complémentaires ;
+  - **console de l'exploitant** (`/console`) : tableau de bord (revenu mensuel récurrent, encaissé du
+    mois, échéances), clients, vérification et validation des paiements, factures numérotées,
+    prolongation motivée, suspension, offres, réserve de bases, paramètres, journal ; aucun compte
+    par défaut, verrouillage après 5 échecs ;
+  - **`bin/saas.php`** : clé, initialisation, compte console, liste des espaces, migration et
+    sauvegarde de tous les espaces, échéances à relancer, ajout de bases à la réserve ;
+  - **29 tests** (`tests/saas.php`) : isolement des données, des sessions et des droits MySQL entre
+    deux clients, inscription, limites, paiements, factures, lecture seule, suspension, réserve.
+
+### Modifié
+- Les verrous MySQL de migration sont propres à chaque base (deux espaces ne s'attendent plus).
+- Sauvegarde : pas d'archive des photos quand il n'y en a aucune (espace neuf).
+
+### Limites connues
+- Pas de paiement automatique (passerelle mobile money ou carte : contrat et clés d'API d'un
+  opérateur nécessaires) ; pas d'envoi automatique de SMS ou d'e-mails de relance.
+
 ## [2.17.0] — 2026-11-02
 
 ### Ajouté

@@ -244,6 +244,9 @@ final class SettingsController extends Controller
 
     public function storeStore(): void
     {
+        if ($err = \App\Saas\Subscription::limitError('stores')) {
+            $this->fail($err, '/stores');
+        }
         $name = Request::str('name');
         $code = strtoupper(Request::str('code'));
         if ($name === '' || !preg_match('/^[A-Z0-9_-]{1,20}$/', $code) || DB::value('SELECT 1 FROM stores WHERE code = ?', [$code])) {
@@ -270,6 +273,9 @@ final class SettingsController extends Controller
 
     public function registerStore(): void
     {
+        if ($err = \App\Saas\Subscription::limitError('registers')) {
+            $this->fail($err, '/stores');
+        }
         $name = Request::str('name');
         $storeId = Request::int('store_id');
         $whId = Request::int('warehouse_id');

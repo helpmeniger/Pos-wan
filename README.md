@@ -129,6 +129,7 @@ sont choisis pendant l'installation.
 |---|---|
 | [INSTALLATION_WAMPSERVER.md](INSTALLATION_WAMPSERVER.md) | Installation, matériel, sécurisation, sauvegarde, restauration, mise à jour, dépannage |
 | [SECURITE.md](SECURITE.md) | Mesures de sécurité, vérifications réalisées, risques résiduels |
+| [SAAS.md](SAAS.md) | **POS Marwa en ligne** : service multi-clients (une base par client), abonnements, console de l'exploitant |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Structure du code, modèle de données, règles métier (CMP, FEFO, caisse, crédit) |
 | [docs/GUIDE_UTILISATEUR.md](docs/GUIDE_UTILISATEUR.md) | Utilisation de la caisse et des modules |
 | [docs/ETAT_DU_PROJET.md](docs/ETAT_DU_PROJET.md) | Ce qui est terminé, testé, et ce qui reste à faire |

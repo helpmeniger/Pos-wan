@@ -18,6 +18,10 @@ final class AddonController extends Controller
             flash('info', $note);
         }
         $mods = Addons::discover(true);
+        if (\App\Saas\Saas::isTenant()) {
+            // En ligne : modules exclus du service masqués (assistance à distance, caméras IP)
+            $mods = array_diff_key($mods, array_flip((array) config('saas.excluded_addons')));
+        }
         // Modules installés dont le dossier a été retiré
         foreach (Addons::installed() as $code => $row) {
             $mods[$code] ??= ['code' => $code, 'name' => $row['name'], 'version' => $row['version'], 'errors' => ['Dossier addons/' . $code . ' introuvable : le module est inactif (ses données sont conservées).']];

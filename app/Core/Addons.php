@@ -153,7 +153,8 @@ final class Addons
         $out = [];
         foreach (self::installed() as $code => $row) {
             $m = self::discover()[$code] ?? null;
-            if ((int) $row['active'] === 1 && $m && !$m['errors']) {
+            // Mode SaaS : un module hors de l'offre du client (ou exclu du service) reste inactif
+            if ((int) $row['active'] === 1 && $m && !$m['errors'] && \App\Saas\Subscription::addonAllowed($code)) {
                 $out[$code] = $m;
             }
         }
@@ -208,11 +209,11 @@ final class Addons
         // Modules fournis marqués « auto_install » et jamais installés : installés et activés d'office
         // (un module désactivé par l'utilisateur garde sa ligne en base : il n'est jamais réactivé).
         foreach (self::discover() as $code => $m) {
-            if (!empty($m['auto_install']) && !$m['errors'] && !isset(self::installed()[$code])) {
+            if (!empty($m['auto_install']) && !$m['errors'] && !isset(self::installed()[$code]) && \App\Saas\Subscription::addonAllowed($code)) {
                 $todo[] = $code;
             }
         }
-        if (!$todo || (int) DB::value("SELECT GET_LOCK('poswan_addon_upgrade', 30)") !== 1) {
+        if (!$todo || (int) DB::value("SELECT GET_LOCK(CONCAT('poswan_addon_upgrade:', DATABASE()), 30)") !== 1) {
             return [];
         }
         $done = [];
@@ -238,7 +239,7 @@ final class Addons
                 self::reset();
             }
         } finally {
-            DB::value("SELECT RELEASE_LOCK('poswan_addon_upgrade')");
+            DB::value("SELECT RELEASE_LOCK(CONCAT('poswan_addon_upgrade:', DATABASE()))");
         }
         return $done;
     }
@@ -401,6 +402,9 @@ final class Addons
     /** Installe ou met à jour un module : sauvegarde, migrations, paramètres, permissions, fichiers publics. */
     public static function install(string $code, bool $backup = true): array
     {
+        if (!\App\Saas\Subscription::addonAllowed($code)) {
+            throw new BusinessException('Ce module n\'est pas inclus dans votre offre. Voir « Mon abonnement ».');
+        }
         @set_time_limit(600);
         $m = self::manifestOrFail($code);
         if ($backup) {
@@ -506,6 +510,9 @@ final class Addons
             throw new BusinessException('Module non installé.');
         }
         if ($active) {
+            if (!\App\Saas\Subscription::addonAllowed($code)) {
+                throw new BusinessException('Ce module n\'est pas inclus dans votre offre. Voir « Mon abonnement ».');
+            }
             self::manifestOrFail($code);
         }
         DB::update('addons', ['active' => $active ? 1 : 0], 'code = ?', [$code]);

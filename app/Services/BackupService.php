@@ -71,7 +71,7 @@ final class BackupService
             $zipFile = self::dir() . '/' . $base . '_fichiers.zip';
             $zip = new \ZipArchive();
             if ($zip->open($zipFile, \ZipArchive::CREATE) === true) {
-                $root = PUBLIC_PATH . '/uploads';
+                $root = UPLOADS_PATH;
                 $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS));
                 foreach ($it as $f) {
                     if ($f->isFile()) {
@@ -79,7 +79,11 @@ final class BackupService
                     }
                 }
                 $zip->close();
-                file_put_contents($zipFile . '.sha256', hash_file('sha256', $zipFile));
+                if (is_file($zipFile)) {
+                    file_put_contents($zipFile . '.sha256', hash_file('sha256', $zipFile));
+                } else {
+                    $zipFile = null; // aucune photo à archiver (espace neuf) : pas d'archive vide
+                }
             }
         }
         self::rotate();

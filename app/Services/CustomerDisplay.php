@@ -209,7 +209,7 @@ final class CustomerDisplay
             : Upload::image($file, 'display', 1920, (int) config('app.uploads.max_display_image_bytes'));
         $id = DB::insert('display_media', [
             'kind' => $video ? 'video' : 'image', 'path' => $path, 'title' => mb_substr(trim($title), 0, 150) ?: null,
-            'duration_s' => (int) setting('display_image_seconds', '8'), 'size_bytes' => (int) @filesize(PUBLIC_PATH . '/uploads/' . $path),
+            'duration_s' => (int) setting('display_image_seconds', '8'), 'size_bytes' => (int) @filesize(UPLOADS_PATH . '/' . $path),
             'sort_order' => (int) DB::value('SELECT COALESCE(MAX(sort_order),0)+1 FROM display_media'), 'created_by' => Auth::id(),
         ]);
         Audit::log('display.media_add', 'display_media', $id, ['kind' => $video ? 'video' : 'image']);

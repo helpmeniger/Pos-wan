@@ -236,6 +236,19 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
 
 ---
 
+### Mode SaaS (POS Marwa en ligne, version 3.0.0)
+- Une base MySQL par client ; en mode `create`, un utilisateur MySQL par client, sans droit sur les
+  autres bases ni sur la base centrale (vérifié par `tests/saas.php`).
+- Sessions, journaux, sauvegardes et photos dans des dossiers propres à chaque espace ; cookie de
+  session limité au sous-domaine ; un identifiant de session d'un espace ne vaut rien dans un autre.
+- Mots de passe des bases clients chiffrés (XSalsa20-Poly1305, clé `SAAS_KEY` du `.env`).
+- Mise à jour par dépôt de fichiers, saisie de licence et installation désactivées dans les espaces ;
+  modules exécutant des programmes locaux ou appelant le réseau du client exclus du service.
+- Console de l'exploitant : comptes distincts, aucun compte par défaut, verrouillage après 5 échecs,
+  limitation par IP, déconnexion après 30 minutes, journal de toutes les opérations.
+- Inscription : CSRF, champ piège, 5 inscriptions par heure et par IP, politique de mot de passe.
+- Détail et limites : SAAS.md.
+
 ## 2. Vérifications effectuées
 
 Exécutées réellement dans l'environnement de développement (PHP 8.3, MariaDB 10.11) :

@@ -53,7 +53,7 @@ final class LicenceService
     }
 
     /** Chemins accessibles même en lecture seule (activation, sauvegardes, déconnexion…). */
-    public const ALWAYS_ALLOWED = ['/login', '/logout', '/licence', '/about', '/backups', '/session/ping', '/account/password', '/update'];
+    public const ALWAYS_ALLOWED = ['/login', '/logout', '/licence', '/about', '/backups', '/session/ping', '/account/password', '/update', '/abonnement'];
 
     public static function installId(): string
     {
@@ -149,6 +149,9 @@ final class LicenceService
     {
         if (self::$status !== null) {
             return self::$status;
+        }
+        if (\App\Saas\Saas::isTenant()) {
+            return self::$status = \App\Saas\Subscription::licenceStatus(); // abonnement en ligne
         }
         $base = ['install_id' => self::installId(), 'client' => null, 'expires' => null, 'days_left' => null, 'number' => null, 'error' => null];
         $key = (string) setting('licence_key', '');

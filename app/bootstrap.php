@@ -8,7 +8,6 @@ declare(strict_types=1);
 
 define('BASE_PATH', dirname(__DIR__));
 define('APP_PATH', BASE_PATH . '/app');
-define('STORAGE_PATH', BASE_PATH . '/storage');
 define('PUBLIC_PATH', BASE_PATH . '/public');
 
 spl_autoload_register(static function (string $class): void {
@@ -27,8 +26,11 @@ App\Core\Addons::registerAutoload(); // modules du dossier addons/
 
 App\Core\Env::load(BASE_PATH . '/.env');
 App\Core\Config::load(BASE_PATH . '/config');
-
 date_default_timezone_set((string) config('app.timezone', 'Africa/Niamey'));
+// Dossiers de données (STORAGE_PATH, UPLOADS_PATH) et base : ceux de l'installation, ou en
+// mode SaaS ceux de l'espace client désigné par le sous-domaine (voir SAAS.md)
+App\Saas\Saas::boot();
+
 mb_internal_encoding('UTF-8');
 
 App\Core\ErrorHandler::register((bool) config('app.debug', false));

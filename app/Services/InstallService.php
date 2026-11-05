@@ -48,7 +48,7 @@ final class InstallService
         if (is_file($flag) && filemtime($flag) > time() - 600) {
             return [];
         }
-        if ((int) DB::value("SELECT GET_LOCK('poswan_migrate', 30)") !== 1) {
+        if ((int) DB::value("SELECT GET_LOCK(CONCAT('poswan_migrate:', DATABASE()), 30)") !== 1) {
             return [];
         }
         try {
@@ -66,7 +66,7 @@ final class InstallService
             @file_put_contents($flag, $e->getMessage());
             return [];
         } finally {
-            DB::value("SELECT RELEASE_LOCK('poswan_migrate')");
+            DB::value("SELECT RELEASE_LOCK(CONCAT('poswan_migrate:', DATABASE()))");
         }
     }
 

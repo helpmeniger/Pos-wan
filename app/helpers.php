@@ -51,7 +51,7 @@ function asset(string $path): string
 
 function upload_url(?string $path): ?string
 {
-    return $path ? base_path_prefix() . '/uploads/' . ltrim($path, '/') : null;
+    return $path ? base_path_prefix() . '/' . UPLOADS_URL . '/' . ltrim($path, '/') : null;
 }
 
 function redirect(string $path, array $query = []): never

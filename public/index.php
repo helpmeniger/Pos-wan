@@ -22,6 +22,14 @@ header_remove('X-Powered-By');
 Session::start();
 
 $path = Request::path();
+// Mode SaaS : site public et console de l'exploitant (domaine principal)…
+if (App\Saas\Saas::isCentral()) {
+    App\Saas\Gate::central($path);
+}
+// … ou espace d'un client : suspension, création de l'espace à la première visite, pages réservées
+if (App\Saas\Saas::isTenant()) {
+    App\Saas\Gate::tenant($path);
+}
 if (!InstallService::isInstalled() && !str_starts_with($path, '/install')) {
     redirect('/install');
 }

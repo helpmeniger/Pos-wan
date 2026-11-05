@@ -111,6 +111,11 @@ final class Menu
             $ib = array_search($b, $known, true);
             return ($ia === false ? $cfg - 0.5 : $ia) <=> ($ib === false ? $cfg - 0.5 : $ib);
         });
+        // Mode SaaS : mise à jour et licence gérées par le service, remplacées par « Mon abonnement »
+        if (\App\Saas\Saas::isTenant()) {
+            $groups['Système & maintenance'] = array_values(array_filter($groups['Système & maintenance'] ?? [], fn($i) => !in_array($i[2], ['/update', '/licence'], true)));
+            $groups['Système & maintenance'][] = ['Mon abonnement', 'bi-credit-card-2-front', '/abonnement', null, '#b7950b'];
+        }
         foreach ($groups as $g => $items) {
             $f = array_values(array_filter($items, fn($i) => ($i[3] === null || can($i[3])) && (!isset($i[5]) || feature($i[5])) && !BusinessMode::hides($i[2])));
             if ($f) {

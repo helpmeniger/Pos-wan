@@ -96,6 +96,9 @@ final class UserController extends Controller
 
     public function store(): void
     {
+        if ($err = \App\Saas\Subscription::limitError('users')) {
+            $this->fail($err, '/users');
+        }
         $d = $this->data(null);
         $id = DB::insert('users', $d);
         Audit::log('user.create', 'user', $id, ['username' => $d['username'], 'role' => $d['role_id']]);
@@ -137,6 +140,9 @@ final class UserController extends Controller
         $adminRole = (int) DB::value("SELECT id FROM roles WHERE code = 'admin'");
         if ((int) $x['active'] === 1 && (int) $x['role_id'] === $adminRole && (int) DB::value('SELECT COUNT(*) FROM users WHERE role_id = ? AND active = 1', [$adminRole]) <= 1) {
             $this->fail('Impossible de désactiver le dernier administrateur.', '/users');
+        }
+        if ((int) $x['active'] === 0 && ($err = \App\Saas\Subscription::limitError('users'))) {
+            $this->fail($err, '/users');
         }
         DB::update('users', ['active' => (int) $x['active'] === 1 ? 0 : 1], 'id = ?', [$id]);
         Audit::log((int) $x['active'] === 1 ? 'user.disable' : 'user.enable', 'user', $id);

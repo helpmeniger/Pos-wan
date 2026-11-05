@@ -24,7 +24,8 @@ $badges = ['active' => ['success', 'Actif'], 'inactive' => ['secondary', 'Désac
       <form method="post" action="<?= e(url('/addons')) ?>" class="d-flex gap-2 mt-auto" <?= in_array($st, ['available', 'upgrade'], true) ? 'data-confirm="' . e(($st === 'upgrade' ? 'Mettre à jour' : 'Installer') . ' le module « ' . ($m['name'] ?? $code) . ' » ? Une sauvegarde sera faite avant.') . '"' : '' ?>>
         <?= csrf_field() ?><input type="hidden" name="code" value="<?= e($code) ?>">
         <?php $act = ['available' => 'install', 'upgrade' => 'upgrade', 'active' => 'disable', 'inactive' => 'enable'][$st] ?? ''; ?><?php if ($act): ?><input type="hidden" name="do" value="<?= e($act) ?>"><?php endif; ?>
-        <?php if ($st === 'available'): ?><button name="do" value="install" class="btn btn-sm btn-primary"><i class="bi bi-download"></i> Installer</button><?php endif; ?>
+        <?php if ($st === 'available' && !App\Saas\Subscription::addonAllowed($code)): ?><a href="<?= e(url('/abonnement')) ?>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-lock"></i> Non inclus dans votre offre</a>
+        <?php elseif ($st === 'available'): ?><button name="do" value="install" class="btn btn-sm btn-primary"><i class="bi bi-download"></i> Installer</button><?php endif; ?>
         <?php if ($st === 'upgrade'): ?><button name="do" value="upgrade" class="btn btn-sm btn-warning"><i class="bi bi-arrow-up-circle"></i> Mettre à jour</button><?php endif; ?>
         <?php if ($st === 'active'): ?><button name="do" value="disable" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pause-circle"></i> Désactiver</button><?php endif; ?>
         <?php if ($st === 'inactive'): ?><button name="do" value="enable" class="btn btn-sm btn-success"><i class="bi bi-play-circle"></i> Activer</button><?php endif; ?>

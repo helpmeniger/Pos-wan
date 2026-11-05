@@ -27,7 +27,7 @@ final class Upload
         if (!isset(self::IMAGE_TYPES[$mime]) || @getimagesize($file['tmp_name']) === false) {
             throw new BusinessException('Le fichier n\'est pas une image valide.');
         }
-        $dir = PUBLIC_PATH . '/uploads/' . trim($subdir, '/');
+        $dir = UPLOADS_PATH . '/' . trim($subdir, '/');
         if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
             throw new \RuntimeException('Dossier de téléversement inaccessible.');
         }
@@ -85,7 +85,7 @@ final class Upload
         if (!($isMp4 && in_array($mime, ['video/mp4', 'video/quicktime', 'application/octet-stream'], true)) && !($isWebm && in_array($mime, ['video/webm', 'application/octet-stream', 'video/x-matroska'], true))) {
             throw new BusinessException('Le fichier n\'est pas une vidéo MP4 ou WEBM valide.');
         }
-        $dir = PUBLIC_PATH . '/uploads/' . trim($subdir, '/');
+        $dir = UPLOADS_PATH . '/' . trim($subdir, '/');
         if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
             throw new \RuntimeException('Dossier de téléversement inaccessible.');
         }
@@ -133,7 +133,7 @@ final class Upload
         if (!$relative || str_contains($relative, '..')) {
             return;
         }
-        $path = PUBLIC_PATH . '/uploads/' . $relative;
+        $path = UPLOADS_PATH . '/' . $relative;
         if (is_file($path)) {
             @unlink($path);
         }

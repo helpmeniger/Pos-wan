@@ -282,3 +282,10 @@ $router->post('/kitchen/tickets/{id}', [C\RestaurantController::class, 'ticketSt
 $router->get('/kitchen/tickets/{id}/print', [C\RestaurantController::class, 'ticketPrint']);
 $router->post('/kitchen/tickets/{id}/print', [C\RestaurantController::class, 'ticketPrintNow']);
 $router->post('/restaurant/orders/{id}/print-kitchen', [C\RestaurantController::class, 'printKitchen'], 'restaurant.order');
+
+// Mode SaaS : abonnement de l'espace client (offre, échéance, paiements, factures)
+if (App\Saas\Saas::isTenant()) {
+    $router->get('/abonnement', [C\Saas\SubscriptionController::class, 'index']);
+    $router->post('/abonnement/declarer', [C\Saas\SubscriptionController::class, 'declare'], 'settings.manage');
+    $router->get('/abonnement/facture/{id}', [C\Saas\SubscriptionController::class, 'invoice'], 'settings.manage');
+}

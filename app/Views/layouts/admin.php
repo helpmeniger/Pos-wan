@@ -107,6 +107,7 @@ $notes = $u ? Notifications::get() : [];
           <div class="dropdown-menu dropdown-menu-end">
             <div class="px-3 py-1 small text-secondary"><?= e($u['role_name'] ?? '') ?></div>
             <a class="dropdown-item" href="<?= e(url('/account/password')) ?>"><i class="bi bi-key me-2"></i>Mot de passe / PIN</a>
+            <?php if (App\Saas\Saas::isTenant()): ?><a class="dropdown-item" href="<?= e(url('/abonnement')) ?>"><i class="bi bi-credit-card-2-front me-2"></i>Mon abonnement</a><?php endif; ?>
             <div class="dropdown-divider"></div>
             <form method="post" action="<?= e(url('/logout')) ?>"><?= csrf_field() ?><button class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Déconnexion</button></form>
           </div>
@@ -115,7 +116,13 @@ $notes = $u ? Notifications::get() : [];
     </header>
     <main class="content">
       <?php $lic = App\Services\LicenceService::status(); ?>
-      <?php if ($lic['state'] === 'expired'): ?>
+      <?php if (App\Saas\Saas::isTenant()): ?>
+        <?php if ($lic['state'] === 'expired'): ?>
+          <div class="alert alert-danger py-2 small d-print-none"><i class="bi bi-lock-fill"></i> <b>Abonnement expiré : lecture seule.</b> Ventes et modifications suspendues (vos données sont conservées). <a href="<?= e(url('/abonnement')) ?>">Renouveler mon abonnement</a></div>
+        <?php elseif ($lic['days_left'] <= 7): ?>
+          <div class="alert alert-warning py-2 small d-print-none"><i class="bi bi-hourglass-split"></i> <?= $lic['state'] === 'trial' ? 'Essai gratuit' : 'Abonnement' ?> : <b><?= (int) $lic['days_left'] ?> jour(s)</b> restant(s). <a href="<?= e(url('/abonnement')) ?>">Mon abonnement</a></div>
+        <?php endif; ?>
+      <?php elseif ($lic['state'] === 'expired'): ?>
         <div class="alert alert-danger py-2 small d-print-none"><i class="bi bi-lock-fill"></i> <b>Licence non activée : lecture seule.</b> Ventes et modifications suspendues (vos données sont conservées). <a href="<?= e(url('/licence')) ?>">Activer la licence</a> · <?= e(implode(' / ', (array) config('licence.author.phones'))) ?></div>
       <?php elseif ($lic['state'] === 'trial' && ($lic['days_left'] <= 7 || can('licence.manage'))): ?>
         <div class="alert alert-warning py-2 small d-print-none"><i class="bi bi-hourglass-split"></i> Version d'essai : <b><?= (int) $lic['days_left'] ?> jour(s)</b> restant(s). <a href="<?= e(url('/licence')) ?>">Activer la licence</a></div>
