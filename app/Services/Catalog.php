@@ -166,5 +166,6 @@ final class Catalog
         'reception' => 'Réception', 'adjustment' => 'Ajustement', 'loss' => 'Perte / casse', 'expired' => 'Périmé',
         'transfer_in' => 'Transfert entrant', 'transfer_out' => 'Transfert sortant', 'inventory' => 'Inventaire',
         'supplier_return' => 'Retour fournisseur', 'recall' => 'Rappel de lot', 'kitchen_waste' => 'Perte cuisine (plat annulé)',
+        'quick_entry' => 'Ajout rapide', 'import' => 'Import Excel / CSV',
     ];
 }

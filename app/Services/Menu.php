@@ -32,6 +32,8 @@ final class Menu
                 ['Catégories, marques, unités', 'bi-tags', '/categories', 'categories.manage', '#7f8c8d'],
                 ['État des stocks', 'bi-boxes', '/stock', 'stock.view', '#1e3a8a'],
                 ['Mouvements de stock', 'bi-arrow-left-right', '/stock/movements', 'stock.view', '#2d6a4f'],
+                ['Ajout de stock rapide', 'bi-plus-square-fill', '/stock/quick', 'stock.adjust', '#16a34a'],
+                ['Import du stock (Excel)', 'bi-file-earmark-excel', '/stock/import', 'stock.adjust', '#1d6f42'],
                 ['Ajustement / pertes', 'bi-sliders', '/stock/adjust', 'stock.adjust', '#c0392b'],
                 ['Inventaires', 'bi-clipboard-check', '/inventories', 'stock.inventory', '#d4ac0d'],
                 ['Transferts', 'bi-truck', '/stock/transfers', 'stock.view', '#2874a6'],

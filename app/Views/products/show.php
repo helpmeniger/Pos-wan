@@ -5,7 +5,7 @@
     <a class="btn btn-primary" href="<?= e(url('/products/' . $p['id'] . '/edit')) ?>"><i class="bi bi-pencil"></i> Modifier</a>
     <a class="btn btn-outline-primary" href="<?= e(url('/products/create', ['duplicate' => $p['id']])) ?>"><i class="bi bi-copy"></i> Dupliquer<?= feature('variants') ? ' / variante' : '' ?></a>
   <?php endif; ?>
-  <?php if (can('stock.adjust')): ?><a class="btn btn-outline-warning" href="<?= e(url('/stock/adjust', ['product' => $p['id']])) ?>"><i class="bi bi-sliders"></i> Ajuster le stock</a><?php endif; ?>
+  <?php if (can('stock.adjust')): ?><a class="btn btn-success" href="<?= e(url('/stock/quick', ['product' => $p['id']])) ?>"><i class="bi bi-plus-square"></i> Ajout de stock rapide</a><a class="btn btn-outline-warning" href="<?= e(url('/stock/adjust', ['product' => $p['id']])) ?>"><i class="bi bi-sliders"></i> Ajuster le stock</a><?php endif; ?>
   <a class="btn btn-outline-secondary" href="<?= e(url('/products/labels', ['ids' => [$p['id']], 'copies' => 6])) ?>"><i class="bi bi-upc"></i> Étiquettes</a>
   <?php if (can('products.manage')): ?>
     <?php if ($p['status'] === 'active'): ?>

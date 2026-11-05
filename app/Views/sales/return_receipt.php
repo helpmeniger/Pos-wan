@@ -1,5 +1,5 @@
 <div class="ticket">
-  <div class="c"><div class="big"><?= e(setting('company_name')) ?></div><div><?= e(setting('company_address')) ?></div></div>
+  <div class="c"><div class="t-company"><?= e(setting('company_name')) ?></div><div><?= e(setting('company_address')) ?></div></div>
   <hr><div class="c b">REÇU DE REMBOURSEMENT</div><hr>
   <div>N° : <b><?= e($r['number']) ?></b></div><div>Date : <?= e(fdate($r['created_at'])) ?></div><div>Vente d'origine : <?= e($r['sale_number']) ?></div>
   <?php if ($r['customer']): ?><div>Client : <?= e($r['customer']) ?></div><?php endif; ?>

@@ -133,9 +133,18 @@ final class PrintService
 
     // ------------------------------------------------------------------ documents
 
+    /** Taille ESC/POS [largeur, hauteur] correspondant aux réglages « Normale / Grande / Très grande ». */
+    public static function escSize(float $em, bool $total = false): array
+    {
+        return $total ? ($em >= 2 ? [2, 3] : ($em >= 1.6 ? [2, 2] : [1, 2])) : ($em >= 2 ? [3, 3] : ($em >= 1.6 ? [2, 3] : [2, 2]));
+    }
+
     public static function header(EscPos $d): void
     {
-        $d->align('center')->bold()->size(2, 2)->wrap(mb_strtoupper((string) setting('company_name')), (int) ($d->cols / 2))->size()->bold(false);
+        $l = Documents::ticketLook();
+        $d->look($l['size'] >= 14, $l['dark']);
+        [$w, $h] = self::escSize($l['title']);
+        $d->align('center')->bold($l['titleBold'])->size($w, $h)->wrap(mb_strtoupper((string) setting('company_name')), (int) ($d->cols / $w))->size()->bold(false);
         foreach (['company_address', 'company_phone'] as $k) {
             if ($v = setting($k)) {
                 $d->wrap(($k === 'company_phone' ? 'Tel : ' : '') . $v);
@@ -158,20 +167,22 @@ final class PrintService
         if ($duplicate) {
             $d->align('center')->bold()->line('*** DUPLICATA ***')->bold(false)->align('left');
         }
-        $d->line(t('Ticket') . ' : ' . $s['number'])->line(fdate($s['created_at']) . ' - ' . ($s['register'] ?? ''))->line(t('Caissier') . ' : ' . $s['cashier']);
+        $l = Documents::ticketLook();
+        $d->bold($l['subBold'])->line(t('Ticket') . ' : ' . $s['number'])->line(fdate($s['created_at']) . ' - ' . ($s['register'] ?? ''))->line(t('Caissier') . ' : ' . $s['cashier']);
         if ($s['customer']) {
             $d->line(t('Client') . ' : ' . $s['customer']);
         }
-        $d->sep();
+        $d->bold(false)->sep();
         foreach ($items as $i) {
-            $d->wrap($i['product_name']);
+            $d->bold($l['itemsBold'])->wrap($i['product_name'])->bold(false);
             $d->pair('  ' . qty($i['quantity']) . ' x ' . money($i['unit_price'], false) . ((float) $i['discount'] > 0 ? ' -' . money($i['discount'], false) : ''), money($i['line_total'], false));
         }
         $d->sep();
         if ((float) $s['discount_total'] > 0) {
             $d->pair(t('Sous-total'), money($s['subtotal']))->pair(t('Remise'), '-' . money($s['discount_total']));
         }
-        $d->bold()->size(1, 2)->pair('TOTAL', money($s['total']))->size()->bold(false);
+        [$tw, $th] = self::escSize($l['total'], true);
+        $d->bold()->size($tw, $th)->pair('TOTAL', money($s['total']), (int) ($d->cols / $tw))->size()->bold(false);
         foreach (Documents::vatBreakdown($items) as $v) {
             $d->pair(t('dont') . ' ' . Tax::rateLabel($v['rate']), money($v['tax']));
         }

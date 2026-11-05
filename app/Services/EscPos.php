@@ -13,6 +13,18 @@ final class EscPos
 {
     private string $buf = '';
     public readonly int $cols;
+    /** Impression foncée : le gras reste actif tout le long du ticket. */
+    private bool $forceBold = false;
+    /** Grande taille de texte : hauteur doublée pour tout le texte (le nombre de colonnes ne change pas). */
+    private int $baseH = 1;
+
+    /** Lisibilité choisie dans les paramètres (taille du texte, impression foncée). */
+    public function look(bool $tall, bool $dark): self
+    {
+        $this->baseH = $tall ? 2 : 1;
+        $this->forceBold = $dark;
+        return $this->size()->bold($dark);
+    }
 
     public function __construct(string $paper = '80')
     {
@@ -53,12 +65,13 @@ final class EscPos
 
     public function bold(bool $on = true): self
     {
-        return $this->raw("\x1B\x45" . chr($on ? 1 : 0));
+        return $this->raw("\x1B\x45" . chr($on || $this->forceBold ? 1 : 0));
     }
 
     /** Taille : 1 = normale, 2 = double hauteur et largeur. */
     public function size(int $w = 1, int $h = 1): self
     {
+        $h = max($h, $this->baseH);
         return $this->raw("\x1D\x21" . chr((($w - 1) << 4) | ($h - 1)));
     }
 

@@ -116,6 +116,15 @@ $router->post('/units', [C\CategoryController::class, 'storeUnit'], 'categories.
 // --- Stocks ---
 $router->get('/stock', [C\StockController::class, 'levels'], 'stock.view');
 $router->get('/stock/movements', [C\StockController::class, 'movements'], 'stock.view');
+$router->get('/stock/quick', [C\StockEntryController::class, 'quick'], 'stock.adjust');
+$router->post('/stock/quick', [C\StockEntryController::class, 'quickStore'], 'stock.adjust');
+$router->get('/stock/quick/product/{id}', [C\StockEntryController::class, 'card'], 'stock.adjust');
+$router->get('/stock/import', [C\StockEntryController::class, 'importForm'], 'stock.adjust');
+$router->post('/stock/import/preview', [C\StockEntryController::class, 'importPreview'], 'stock.adjust');
+$router->post('/stock/import/apply', [C\StockEntryController::class, 'importApply'], 'stock.adjust');
+$router->get('/stock/import/template', [C\StockEntryController::class, 'template'], 'stock.adjust');
+$router->get('/stock/imports/{id}', [C\StockEntryController::class, 'importShow'], 'stock.view');
+$router->get('/stock/imports/{id}/file', [C\StockEntryController::class, 'importFile'], 'stock.adjust');
 $router->get('/stock/adjust', [C\StockController::class, 'adjustForm'], 'stock.adjust');
 $router->post('/stock/adjust', [C\StockController::class, 'adjust'], 'stock.adjust');
 $router->get('/stock/transfers', [C\StockController::class, 'transfers'], 'stock.view');

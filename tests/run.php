@@ -1961,6 +1961,135 @@ test('Sauvegarde vérifiée, altération détectée, restauration fidèle', func
 });
 
 // ------------------------------------------------------------------ tests HTTP
+echo "\n== Lisibilité du ticket, ajout de stock rapide, import Excel ==\n";
+test('Ticket : taille du texte, titres et sous-titres en gras, impression foncée (navigateur et ESC/POS)', function () {
+    actingAs('admin');
+    $D = S\Documents::class;
+    $css = $D::ticketCss();
+    ok(str_contains($css, '.ticket{font-size:12px}') && str_contains($css, 'font-weight:800') && !str_contains($css, '!important'), 'réglages par défaut : texte normal, titre en gras');
+    foreach (['ticket_font_size' => '16', 'ticket_font' => 'sans', 'ticket_title_size' => '2.1', 'ticket_total_size' => '1.7', 'ticket_subtitle_bold' => '1', 'ticket_items_bold' => '1', 'ticket_dark' => '0'] as $k => $v) {
+        setting_set($k, $v);
+    }
+    setting('__reset');
+    $css = $D::ticketCss();
+    ok(str_contains($css, '.ticket{font-size:16px}') && str_contains($css, 'Arial') && str_contains($css, '.t-company,.ticket .head-inv .big{font-size:2.10em;font-weight:800')
+        && str_contains($css, '.ticket .t-sub') && str_contains($css, '.ticket .t-item{font-weight:800}') && str_contains($css, '.ticket .big,.ticket .total-box{font-size:1.70em}'), 'CSS générée : ' . $css);
+    setting_set('ticket_font_size', '99'); setting('__reset');
+    eq(12, $D::ticketLook()['size'], 'valeur hors liste → taille normale');
+    setting_set('ticket_font_size', '14'); setting('__reset');
+    // Les trois modèles portent les repères de mise en forme
+    foreach (['1', '2', '3'] as $n) {
+        [$sale, $items, $pays] = $D::sample();
+        $html = App\Core\View::partial($D::ticketTemplate($n), ['doc' => $D::saleTicket($sale, $items, $pays, false)]);
+        ok(str_contains($html, 't-company') && str_contains($html, 't-item') && str_contains($html, 't-sub'), "modèle $n : titre, sous-titres, articles repérés");
+    }
+    // Impression directe ESC/POS
+    $sale = (int) DB::value('SELECT id FROM sales ORDER BY id LIMIT 1');
+    $item = (string) DB::value('SELECT product_name FROM sale_items WHERE sale_id = ? LIMIT 1', [$sale]);
+    $bytes = S\PrintService::receipt($sale, ['paper' => '80', 'open_drawer' => 0]);
+    ok(str_contains($bytes, "\x1B\x45\x01" . S\EscPos::encode($item)), 'article en gras');
+    ok(str_contains($bytes, "\x1D\x21" . chr((3 - 1) << 4 | (3 - 1))), 'titre très grand (3 × 3)');
+    ok(str_contains($bytes, "\x1D\x21\x01"), 'grande taille de texte : hauteur doublée');
+    setting_set('ticket_dark', '1'); setting('__reset');
+    $dark = S\PrintService::receipt($sale, ['paper' => '80', 'open_drawer' => 0]);
+    ok(!str_contains($dark, "\x1B\x45\x00"), 'impression foncée : le gras n\'est jamais coupé');
+    ok(str_contains($D::ticketCss(), 'font-weight:700!important'), 'impression foncée (navigateur)');
+    foreach (['ticket_font_size' => '12', 'ticket_font' => 'mono', 'ticket_title_size' => '1.35', 'ticket_total_size' => '1.35', 'ticket_subtitle_bold' => '0', 'ticket_items_bold' => '0', 'ticket_dark' => '0'] as $k => $v) {
+        setting_set($k, $v);
+    }
+    setting('__reset');
+});
+$QS = [];
+test('Ajout de stock rapide : stock par entrepôt, quantité, auteur, historique, coût moyen, refus', function () use (&$QS) {
+    $u = actingAs('admin');
+    $pid = S\ProductService::create(S\ProductService::validate(['name' => 'Ciment test 50 kg', 'reference' => 'CIM-TEST', 'barcode' => '6001234500019', 'sale_price' => 5500, 'cost_price' => 4000, 'track_stock' => 1]));
+    $wh2 = (int) DB::value('SELECT id FROM warehouses WHERE id <> 1 AND active = 1 LIMIT 1') ?: DB::insert('warehouses', ['store_id' => 1, 'name' => 'Dépôt test', 'code' => 'DTEST']);
+    $QS = ['pid' => $pid, 'wh2' => $wh2];
+    $card = S\StockEntry::productCard($pid);
+    ok(count($card['levels']) >= 2 && $card['total'] == 0, 'fiche : stock par entrepôt');
+    $r = S\StockEntry::quickAdd($pid, 1, 20, null, null, null, 'Livraison Dangote');
+    eq([0.0, 20.0], [$r['before'], $r['after']]);
+    $m = DB::one("SELECT * FROM stock_movements WHERE product_id = ? AND type = 'quick_entry' ORDER BY id DESC LIMIT 1", [$pid]);
+    ok($m && (int) $m['user_id'] === (int) $u['id'] && $m['reason'] === 'Livraison Dangote' && (float) $m['balance_after'] === 20.0, 'mouvement signé et motivé');
+    eq(4000.0, (float) DB::value('SELECT cost_price FROM products WHERE id = ?', [$pid]), 'sans prix saisi : coût inchangé');
+    S\StockEntry::quickAdd($pid, 1, 20, 5000, null, null, '');
+    eq(4500.0, (float) DB::value('SELECT cost_price FROM products WHERE id = ?', [$pid]), 'prix saisi : coût moyen pondéré (20 × 4000 + 20 × 5000) / 40');
+    S\StockEntry::quickAdd($pid, $wh2, 5, null, null, null, '');
+    eq(45.0, S\StockEntry::productCard($pid)['total'], 'total tous entrepôts');
+    throws(fn() => S\StockEntry::quickAdd($pid, 1, 0, null, null, null, ''), 'supérieure à zéro');
+    throws(fn() => S\StockEntry::quickAdd($pid, 1, 2.5, null, null, null, ''), 'à l\'unité');
+    throws(fn() => S\StockEntry::quickAdd($pid, 999999, 1, null, null, null, ''), 'Entrepôt invalide');
+    $lotP = S\ProductService::create(S\ProductService::validate(['name' => 'Lait test lot', 'sale_price' => 800, 'cost_price' => 500, 'track_lots' => 1, 'track_stock' => 1]));
+    throws(fn() => S\StockEntry::quickAdd($lotP, 1, 10, null, null, null, ''), 'numéro de lot');
+    S\StockEntry::quickAdd($lotP, 1, 10, null, 'L-QS-1', '2027-03-31', '');
+    eq(10.0, (float) DB::value("SELECT quantity FROM stock_lots WHERE product_id = ? AND lot_number = 'L-QS-1'", [$lotP]), 'lot créé avec sa péremption');
+    $h = S\StockEntry::quickHistory(['user' => $u['id']]);
+    ok(count($h) >= 4 && $h[0]['user_name'] === $u['full_name'], 'historique avec le nom de l\'auteur');
+    ok((int) DB::value("SELECT COUNT(*) FROM audit_logs WHERE action = 'stock.quick_entry'") >= 4, 'journal d\'audit');
+    ok(abs(S\StockService::level($pid, 1) - (float) DB::value('SELECT SUM(quantity) FROM stock_movements WHERE product_id = ? AND warehouse_id = 1', [$pid])) < 0.001, 'stock = somme des mouvements');
+});
+test('Classeur Excel : écriture puis relecture (textes, nombres, dates, cellules vides)', function () {
+    $bin = App\Core\Xlsx::build('Stock', ['reference', 'quantite', 'nom'], [['A-1', 12.5, 'Riz « parfumé » & co'], ['=1+1', '', 'Formule neutralisée']]);
+    $f = tempnam(sys_get_temp_dir(), 'x') . '.xlsx';
+    file_put_contents($f, $bin);
+    $rows = App\Core\Xlsx::read($f);
+    eq(['reference', 'quantite', 'nom'], $rows[0]);
+    eq(['A-1', '12.5', 'Riz « parfumé » & co'], $rows[1]);
+    eq("'=1+1", $rows[2][0], 'formule désamorcée à l\'export');
+    eq('Z', App\Core\Xlsx::colName(25));
+    eq(27, App\Core\Xlsx::colIndex('AB'));
+});
+test('Import du stock : aperçu sans modification, ajout, stock compté, erreurs, traces conservées', function () use (&$QS) {
+    actingAs('admin');
+    $pid = $QS['pid'];
+    $whName = (string) DB::value('SELECT name FROM warehouses WHERE id = ?', [$QS['wh2']]);
+    $before = S\StockService::level($pid, 1);
+    $mk = function (array $rows) {
+        $f = tempnam(sys_get_temp_dir(), 'imp') . '.xlsx';
+        file_put_contents($f, App\Core\Xlsx::build('Stock', ['Référence', 'Code-barres', 'Nom', 'Entrepôt', 'Quantité', 'Prix achat', 'Motif'], $rows));
+        return $f;
+    };
+    $f = $mk([
+        ['CIM-TEST', '', 'Ciment', '', 10, '', 'Arrivage'],
+        ['', '6001234500019', 'Ciment (code-barres)', $whName, 3, '', ''],
+        ['INCONNU-9', '', 'Fantôme', '', 4, '', ''],
+        ['CIM-TEST', '', 'Doublon', '', 1, '', ''],
+        ['CIM-TEST', '', 'Vide', $whName, '', '', ''],
+    ]);
+    $lines = S\StockEntry::analyze(S\StockEntry::readFile($f, 'stock.xlsx'), 'add', 1);
+    eq(['ok', 'ok', 'error', 'error', 'skip'], array_column($lines, 'status'));
+    ok(str_contains($lines[2]['message'], 'introuvable') && str_contains($lines[3]['message'], 'déjà présent'), 'messages clairs');
+    eq($before, S\StockService::level($pid, 1), 'aperçu : aucune modification');
+    $r = S\StockEntry::apply($f, 'stock.xlsx', 'add', 1, 'Test import');
+    eq(2, $r['applied']);
+    eq($before + 10, S\StockService::level($pid, 1));
+    $imp = DB::one('SELECT * FROM stock_imports WHERE id = ?', [$r['id']]);
+    ok($imp && $imp['sha256'] === hash_file('sha256', $f) && is_file(STORAGE_PATH . '/imports/' . $imp['stored_file']), 'fichier d\'origine conservé avec son empreinte');
+    eq(5, (int) DB::value('SELECT COUNT(*) FROM stock_import_rows WHERE import_id = ?', [$r['id']]), 'toutes les lignes tracées');
+    $mv = DB::all("SELECT * FROM stock_movements WHERE ref_type = 'stock_import' AND ref_id = ?", [$r['id']]);
+    ok(count($mv) === 2 && $mv[0]['type'] === 'import' && str_contains((string) $mv[0]['reason'], 'Import n° ' . $r['id']) && (int) $mv[0]['user_id'] > 0, 'mouvements rattachés à l\'import, signés');
+    // Mode « stock compté » : l'écart est calculé (hausse et baisse)
+    $cur = S\StockService::level($pid, 1);
+    $f2 = $mk([['CIM-TEST', '', '', '', $cur - 7, '', 'Inventaire tournant']]);
+    $r2 = S\StockEntry::apply($f2, 'compte.xlsx', 'set', 1);
+    eq(1, $r2['applied']);
+    eq($cur - 7, S\StockService::level($pid, 1), 'stock remplacé par le stock compté');
+    eq(-7.0, (float) DB::value('SELECT qty_change FROM stock_import_rows WHERE import_id = ?', [$r2['id']]), 'écart enregistré');
+    // CSV accepté aussi ; ancien .xls refusé avec explication
+    $csv = tempnam(sys_get_temp_dir(), 'c') . '.csv';
+    file_put_contents($csv, "reference;quantite\nCIM-TEST;2,5\n");
+    eq('error', S\StockEntry::analyze(S\StockEntry::readFile($csv, 'stock.csv'), 'add', 1)[0]['status'], 'CSV lu (2,5 refusé pour un article à l\'unité)');
+    throws(fn() => S\StockEntry::readFile($csv, 'vieux.xls'), 'Enregistrer sous');
+    $bad = tempnam(sys_get_temp_dir(), 'c') . '.csv';
+    file_put_contents($bad, "article;prix\nx;1\n");
+    throws(fn() => S\StockEntry::readFile($bad, 'x.csv'), 'Colonnes introuvables');
+    // Modèle pré-rempli
+    $tpl = tempnam(sys_get_temp_dir(), 't') . '.xlsx';
+    file_put_contents($tpl, S\StockEntry::template(1));
+    $rows = App\Core\Xlsx::read($tpl);
+    ok($rows[0][0] === 'reference' && in_array('CIM-TEST', array_column($rows, 0), true), 'modèle : articles et stock actuel');
+});
+
 echo "\n== HTTP & sécurité (serveur PHP intégré) ==\n";
 $port = (int) (getenv('TEST_PORT') ?: 8099);
 if ($busy = @fsockopen('127.0.0.1', $port, $errno, $errstr, 0.5)) {
@@ -2415,6 +2544,35 @@ test('Écran client (HTTP) : paramètres, caisse, écran du second moniteur, dro
     $pl = json_decode($c->req('GET', "$B/afficheur/playlist", null, ['Accept: application/json'])['body'], true);
     ok(($pl['ok'] ?? false) && is_array($pl['playlist']) && isset($pl['cfg']['transition']), 'liste de diffusion relue par l\'écran (JSON)');
     ok(str_contains($pg['body'], 'data-display-upload') && str_contains($pg['body'], 'display-media-upload.js') && str_contains($pg['body'], 'name="display_transition"'), 'paramètres : préparation des images, choix de l\'effet');
+    // Ajout de stock rapide et import (HTTP)
+    $pid = (int) DB::value("SELECT id FROM products WHERE reference = 'CIM-TEST'");
+    $q = $a->req('GET', "$B/stock/quick?product=$pid");
+    ok($q['code'] === 200 && str_contains($q['body'], 'stock-quick.js') && str_contains($q['body'], 'Historique des ajouts rapides'), 'page d\'ajout rapide');
+    $card = json_decode($a->req('GET', "$B/stock/quick/product/$pid", null, ['Accept: application/json'])['body'], true);
+    ok(($card['ok'] ?? false) && $card['product']['reference'] === 'CIM-TEST' && isset($card['product']['levels'][0]['quantity']), 'fiche JSON');
+    $t = $a->token("$B/stock/quick");
+    $before = S\StockService::level($pid, 1);
+    $r = json_decode($a->req('POST', "$B/stock/quick", json_encode(['product_id' => $pid, 'warehouse_id' => 1, 'quantity' => '4', 'reason' => 'Ajout HTTP']), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $t])['body'], true);
+    ok(($r['ok'] ?? false) && (float) $r['after'] === $before + 4 && $r['user'] !== '', 'ajout rapide JSON : ' . json_encode($r));
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(403, $c->req('GET', "$B/stock/quick")['code'], 'ajout rapide réservé (droit d\'ajuster le stock)');
+    $tpl = $a->req('GET', "$B/stock/import/template?warehouse_id=1");
+    ok($tpl['code'] === 200 && str_starts_with($tpl['body'], 'PK'), 'modèle Excel téléchargé');
+    $f = tempnam(sys_get_temp_dir(), 'h') . '.xlsx';
+    file_put_contents($f, App\Core\Xlsx::build('Stock', ['reference', 'quantite'], [['CIM-TEST', 6]]));
+    $t = $a->token("$B/stock/import");
+    $pv = $a->req('POST', "$B/stock/import/preview", ['_csrf' => $t, 'mode' => 'add', 'warehouse_id' => '1', 'file' => new CURLFile($f, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'arrivage.xlsx')]);
+    ok($pv['code'] === 200 && str_contains($pv['body'], '1 ligne(s) à appliquer') && preg_match('/name="token" value="([a-f0-9]{32})"/', $pv['body'], $mm), 'aperçu de l\'import');
+    eq($before + 4, S\StockService::level($pid, 1), 'aperçu : stock inchangé');
+    $ap = $a->req('POST', "$B/stock/import/apply", http_build_query(['_csrf' => $a->token("$B/stock/import"), 'token' => $mm[1], 'note' => 'HTTP']));
+    ok($ap['code'] === 302 && preg_match('#/stock/imports/(\d+)#', $ap['headers'], $im), 'import appliqué');
+    eq($before + 10, S\StockService::level($pid, 1));
+    $show = $a->req('GET', "$B/stock/imports/" . $im[1]);
+    ok($show['code'] === 200 && str_contains($show['body'], 'arrivage.xlsx') && str_contains($show['body'], 'Appliquée'), 'détail de l\'import');
+    ok(str_starts_with($a->req('GET', "$B/stock/imports/" . $im[1] . '/file')['body'], 'PK'), 'fichier d\'origine téléchargeable');
+    $replay = $a->req('POST', "$B/stock/import/apply", http_build_query(['_csrf' => $a->token("$B/stock/import"), 'token' => $mm[1]]));
+    eq($before + 10, S\StockService::level($pid, 1), 'aperçu déjà utilisé : pas de double import');
     $t = $c->token("$B/pos");
     $r = $c->req('POST', "$B/afficheur/vfd", http_build_query(['_csrf' => $t, 'line1' => 'A', 'line2' => 'B']), ['Accept: application/json']);
     ok($r['code'] === 422 && str_contains($r['body'], 'injoignable'), 'afficheur serveur absent : erreur claire, sans plantage');

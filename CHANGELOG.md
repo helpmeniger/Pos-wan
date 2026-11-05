@@ -2,6 +2,41 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.2.0] — 2026-11-05
+
+### Ajouté
+- **Lisibilité du ticket de caisse** (Paramètres → « Ticket : … », bouton « aperçu ») :
+  - taille du texte : petite, normale, grande, très grande ;
+  - police Courier ou Arial (plus nette sur les imprimantes thermiques) ;
+  - taille du **titre principal** (nom de l'entreprise) et du **total à payer** : normale, grande, très grande ;
+  - **titre principal en gras**, **sous-titres en gras** (n° du ticket, date, caissier, rubriques),
+    **nom des articles en gras** ;
+  - **impression foncée** : tout le texte en gras, pour une imprimante thermique pâle ;
+  - s'applique aux trois modèles de ticket et aux autres tickets (retour, acompte, addition
+    restaurant, clinique, pressing) ; en impression directe ESC/POS : gras, double hauteur,
+    titre et total agrandis.
+- **Ajout de stock rapide** (Gestion des articles → Ajout de stock rapide, ou bouton sur la fiche
+  article) :
+  - recherche par nom, référence ou **scan du code-barres** ;
+  - stock de l'article dans **chaque entrepôt** ;
+  - choix de l'entrepôt, quantité, Entrée, puis retour à la recherche pour l'article suivant ;
+  - prix d'achat facultatif (met à jour le coût moyen pondéré) ; lot et péremption pour les
+    articles suivis par lot ; motif ;
+  - **historique** filtrable par utilisateur et par période, avec le **nom de l'auteur** de chaque
+    ajout ; chaque ajout est un mouvement de stock « Ajout rapide » daté et signé, plus le journal
+    d'audit.
+- **Import du stock depuis Excel (.xlsx) ou CSV** (Gestion des articles → Import du stock) :
+  - **modèle Excel** pré-rempli avec les articles et leur stock actuel ;
+  - deux modes : ajouter les quantités, ou remplacer par le stock compté (l'écart est calculé) ;
+  - **vérification ligne par ligne avant toute modification** (article introuvable, doublon,
+    entrepôt inconnu, quantité décimale, lot manquant, stock qui deviendrait négatif) ;
+  - chaque ligne appliquée devient un mouvement « Import » à votre nom, rattaché à l'import n° ;
+  - **traces conservées** : fichier d'origine (empreinte SHA-256, téléchargeable), auteur, date,
+    commentaire, détail des lignes appliquées et refusées (stock avant / variation / après) ;
+  - lecteur Excel intégré, sans bibliothèque externe : textes, nombres, dates, ligne de titre
+    au-dessus des en-têtes, colonnes reconnues sous plusieurs noms (Référence, Code-barres,
+    Quantité, Entrepôt, Prix achat, Lot, Péremption, Motif).
+
 ## [3.1.0] — 2026-11-05
 
 ### Corrigé — écran client

@@ -14,6 +14,44 @@ final class Documents
     public const TICKET_TEMPLATES = ['1' => 'Classique', '2' => 'Compact', '3' => 'Moderne'];
     public const A4_TEMPLATES = ['1' => 'Classique', '2' => 'Moderne (bandeau)', '3' => 'Épuré'];
 
+    /** Réglages de lisibilité des tickets (Paramètres → Ticket : …). */
+    public static function ticketLook(): array
+    {
+        $pick = fn(string $k, array $allowed, string $d) => in_array((string) setting($k, $d), $allowed, true) ? (string) setting($k, $d) : $d;
+        return [
+            'size' => (int) $pick('ticket_font_size', ['11', '12', '14', '16'], '12'),
+            'font' => $pick('ticket_font', ['mono', 'sans'], 'mono'),
+            'title' => (float) $pick('ticket_title_size', ['1.35', '1.7', '2.1'], '1.35'),
+            'total' => (float) $pick('ticket_total_size', ['1.35', '1.7', '2.1'], '1.35'),
+            'titleBold' => setting('ticket_title_bold', '1') === '1',
+            'subBold' => setting('ticket_subtitle_bold', '0') === '1',
+            'itemsBold' => setting('ticket_items_bold', '0') === '1',
+            'dark' => setting('ticket_dark', '0') === '1',
+        ];
+    }
+
+    /** Feuille de style ajoutée aux pages d'impression : s'applique à tous les tickets du logiciel. */
+    public static function ticketCss(?array $l = null): string
+    {
+        $l ??= self::ticketLook();
+        $css = sprintf('.ticket{font-size:%dpx}body.t58 .ticket{font-size:%.1fpx}', $l['size'], $l['size'] * 0.88);
+        if ($l['font'] === 'sans') {
+            $css .= '.ticket{font-family:Arial,Helvetica,sans-serif}';
+        }
+        $css .= sprintf('.ticket .t-company,.ticket .head-inv .big{font-size:%.2fem;font-weight:%s;line-height:1.15}', $l['title'], $l['titleBold'] ? '800' : '400');
+        $css .= sprintf('.ticket .big,.ticket .total-box{font-size:%.2fem}', $l['total']);
+        if ($l['subBold']) {
+            $css .= '.ticket .t-sub,.ticket .doc-title,.ticket th,.ticket .dup{font-weight:800}';
+        }
+        if ($l['itemsBold']) {
+            $css .= '.ticket .t-item{font-weight:800}';
+        }
+        if ($l['dark']) {
+            $css .= '.ticket,.ticket *{font-weight:700!important;color:#000!important}.ticket hr{border-top-width:2px}';
+        }
+        return $css;
+    }
+
     public static function ticketTemplate(?string $n = null): string
     {
         $n ??= (string) setting('ticket_template', '1');

@@ -4,11 +4,11 @@
   <?php if ($doc['dup']): ?><div class="dup"><?= e(t('DUPLICATA')) ?></div><?php endif; ?>
   <?php if ($doc['banner']): ?><div class="dup"><?= e($doc['banner']) ?></div><?php endif; ?>
   <hr>
-  <div><?= e($doc['title']) ?> : <b><?= e($doc['number']) ?></b></div>
-  <?php foreach ($doc['meta'] as [$k, $v]): ?><div><?= e($k) ?> : <?= e($v) ?></div><?php endforeach; ?>
+  <div class="t-sub"><?= e($doc['title']) ?> : <b><?= e($doc['number']) ?></b></div>
+  <?php foreach ($doc['meta'] as [$k, $v]): ?><div><span class="t-sub"><?= e($k) ?></span> : <?= e($v) ?></div><?php endforeach; ?>
   <hr>
   <table><?php foreach ($doc['items'] as $i): ?>
-    <tr><td colspan="2"><?= e($i['name']) ?></td></tr>
+    <tr><td colspan="2" class="t-item"><?= e($i['name']) ?></td></tr>
     <tr><td><?= qty($i['qty']) ?> x <?= money($i['price'], false) ?><?= $i['discount'] > 0 ? ' -' . money($i['discount'], false) : '' ?></td><td class="num"><?= money($i['total'], false) ?></td></tr>
   <?php endforeach; ?></table>
   <hr>

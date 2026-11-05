@@ -35,3 +35,4 @@ storage/imagerie/
 # Mode SaaS : données propres à chaque client et à la console
 storage/tenants/
 storage/saas/
+storage/imports/*

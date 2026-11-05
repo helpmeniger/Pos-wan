@@ -4,7 +4,7 @@
 <div class="ticket">
   <div class="c">
     <?php if ($logo = setting('company_logo')): ?><img class="logo" src="<?= e(upload_url($logo)) ?>" alt=""><br><?php endif; ?>
-    <div class="big"><?= e(setting('company_name')) ?></div>
+    <div class="t-company"><?= e(setting('company_name')) ?></div>
     <div><?= e(setting('company_address')) ?></div>
     <?php if (setting('company_phone')): ?><div><?= e(t('Tél')) ?> : <?= e(setting('company_phone')) ?></div><?php endif; ?>
   </div>
