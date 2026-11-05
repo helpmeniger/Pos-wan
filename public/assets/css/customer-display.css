@@ -6,13 +6,59 @@ html, body { margin: 0; height: 100%; overflow: hidden; }
 body.cd { background: var(--cd-bg); color: var(--cd-fg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; cursor: default; }
 .d-none { display: none !important; }
 
-.cd-media { position: fixed; inset: 0; background: #000; }
+/* ------------------------------------------------------------------ diffusion
+   Chaque image est une « diapositive » (.cd-slide) chargée avant d'entrer ; la nouvelle passe
+   au-dessus de l'ancienne, qui reste visible dessous jusqu'à la fin de l'effet (jamais de noir). */
+.cd-media { position: fixed; inset: 0; background: var(--cd-bg); overflow: hidden; }
 .no-media .cd-media { background: var(--cd-bg); }
-.cd-item { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .6s ease; background: #000; }
-.cd-item.show { opacity: 1; }
+.cd-slide { position: absolute; inset: 0; overflow: hidden; background: var(--cd-bg); opacity: 0; will-change: opacity, transform; z-index: 1; }
+.cd-slide.in { z-index: 2; }
+.cd-slide.out { z-index: 1; }
+.cd-item { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.fill-cover .cd-item { object-fit: cover; }
+.cd-bg { position: absolute; inset: -6%; width: 112%; height: 112%; object-fit: cover; filter: blur(38px) saturate(1.25) brightness(.55); transform: scale(1.08); }
+
+/* Fondu enchaîné */
+.fx-fade { transition: opacity 1.2s ease; }
+.fx-fade.in, .fx-fade.out { opacity: 1; }
+/* Ken Burns : fondu + lent zoom et déplacement pendant toute la durée de l'image */
+.fx-kenburns { transition: opacity 1.4s ease; }
+.fx-kenburns.in, .fx-kenburns.out { opacity: 1; }
+.fx-kenburns .cd-item { animation: cdKen var(--dur, 8s) linear forwards; transform-origin: 50% 50%; }
+.fx-kenburns.alone .cd-item { animation: cdKen 14s ease-in-out infinite alternate; }
+@keyframes cdKen { from { transform: scale(1.02) translate(0, 0); } to { transform: scale(1.13) translate(var(--kx, -2%), var(--ky, -1.5%)); } }
+/* Glissement */
+.fx-slide { opacity: 1; transform: translateX(100%); transition: transform 1.05s cubic-bezier(.77, 0, .18, 1); }
+.fx-slide.in { transform: none; }
+.fx-slide.out { transform: translateX(-28%); filter: brightness(.6); transition: transform 1.05s cubic-bezier(.77, 0, .18, 1), filter 1.05s ease; }
+/* Zoom avant */
+.fx-zoom { transform: scale(1.18); transition: opacity 1s ease, transform 1.2s cubic-bezier(.2, .8, .2, 1); }
+.fx-zoom.in { opacity: 1; transform: none; }
+.fx-zoom.out { opacity: 0; transform: scale(.94); }
+/* Fondu avec flou */
+.fx-blur { filter: blur(28px); transform: scale(1.04); transition: opacity 1.2s ease, filter 1.3s ease, transform 1.3s ease; }
+.fx-blur.in { opacity: 1; filter: none; transform: none; }
+.fx-blur.out { opacity: 0; filter: blur(18px); }
+/* Volet */
+.fx-wipe { opacity: 1; clip-path: inset(0 0 0 100%); transition: clip-path 1.1s cubic-bezier(.77, 0, .18, 1); }
+.fx-wipe.in { clip-path: inset(0 0 0 0); }
+.fx-wipe.out { clip-path: inset(0 0 0 0); }
+
+/* Titre de l'image */
+.cd-caption { position: absolute; left: 4vw; bottom: 6vh; max-width: 70%; padding: 1.4vh 2.2vw; border-radius: 14px; font-size: 3.4vh; font-weight: 700; color: #fff;
+  background: rgba(10, 18, 36, .55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-left: 5px solid var(--cd-accent);
+  opacity: 0; transform: translateY(2vh); transition: opacity .8s ease .5s, transform .8s cubic-bezier(.2, .8, .2, 1) .5s; z-index: 3; }
+.cd-slide.in .cd-caption { opacity: 1; transform: none; }
+/* Progression et repères */
+.cd-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--cd-accent); transform: scaleX(0); transform-origin: 0 50%; z-index: 5; opacity: .9; }
+.cd-dots { position: absolute; right: 2.4vw; bottom: 2.4vh; display: flex; gap: 8px; z-index: 5; }
+.cd-dots i { width: 9px; height: 9px; border-radius: 99px; background: rgba(255, 255, 255, .45); transition: width .4s ease, background .4s ease; }
+.cd-dots i.on { width: 26px; background: var(--cd-accent); }
+@media (prefers-reduced-motion: reduce) { .cd-slide, .cd-slide * { animation: none !important; transition: opacity .6s ease !important; } }
 /* Panier en cours : médias à gauche, panier à droite */
 body[data-mode="cart"] .cd-media { right: 42vw; }
 
+.cd-welcome { background: radial-gradient(circle at 30% 30%, rgba(245, 166, 35, .12), transparent 55%), radial-gradient(circle at 75% 70%, rgba(111, 66, 193, .18), transparent 55%), var(--cd-bg); animation: cdIn .6s ease; }
 .cd-welcome { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vh; text-align: center; padding: 4vw; }
 .cd-logo { max-width: 30vw; max-height: 30vh; object-fit: contain; }
 .cd-company { font-size: 5vw; font-weight: 800; letter-spacing: .02em; }

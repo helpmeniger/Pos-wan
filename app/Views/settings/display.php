@@ -19,6 +19,16 @@ $mb = fn($b) => round($b / 1048576) . ' Mo';
           <div class="form-check"><input class="form-check-input" type="checkbox" name="display_video_sound" value="1" id="dSound" <?= $chk('display_video_sound') ?>><label class="form-check-label" for="dSound">Son des vidéos</label></div>
         </div>
       </div>
+      <div class="card-header border-top"><i class="bi bi-collection-play"></i> Diffusion des images et vidéos</div>
+      <div class="card-body row g-2">
+        <div class="col-md-6"><label class="form-label">Effet de transition</label><select name="display_transition" class="form-select"><?php foreach (CD::TRANSITIONS as $k => $l): ?><option value="<?= e($k) ?>" <?= $s['display_transition'] === $k ? 'selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
+        <div class="col-md-6"><label class="form-label">Autour des images</label><select name="display_fill" class="form-select"><?php foreach (CD::FILLS as $k => $l): ?><option value="<?= e($k) ?>" <?= $s['display_fill'] === $k ? 'selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
+        <div class="col-12 d-flex flex-wrap gap-4">
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="display_captions" value="1" id="dCap" <?= $chk('display_captions') ?>><label class="form-check-label" for="dCap">Afficher le titre des images</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="display_progress" value="1" id="dProg" <?= $chk('display_progress') ?>><label class="form-check-label" for="dProg">Barre de progression et repères</label></div>
+        </div>
+        <div class="col-12 form-text">Chaque image est chargée entièrement avant d'apparaître ; une image manquante ou illisible est sautée. Les fichiers ajoutés ici passent sur l'écran client en moins de 2 minutes, sans le rouvrir.</div>
+      </div>
       <div class="card-header border-top"><i class="bi bi-window-dock"></i> Afficheur client (2 lignes, « pole display »)</div>
       <div class="card-body row g-2">
         <div class="col-12 form-check form-switch ms-2"><input class="form-check-input" type="checkbox" name="vfd_enabled" value="1" id="vEn" <?= $chk('vfd_enabled') ?>><label class="form-check-label fw-semibold" for="vEn">Activer l'afficheur client</label></div>
@@ -51,10 +61,10 @@ $mb = fn($b) => round($b / 1048576) . ' Mo';
   <div class="col-xl-5">
     <div class="card mb-3"><div class="card-header"><i class="bi bi-collection-play"></i> Images et vidéos diffusées au repos</div>
       <form method="post" action="<?= e(url('/settings/display/media')) ?>" enctype="multipart/form-data" class="card-body row g-2 border-bottom"><?= csrf_field() ?>
-        <div class="col-12"><input type="file" name="media" class="form-control" required accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"></div>
+        <div class="col-12"><input type="file" name="media" class="form-control" required accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" data-display-upload data-php-max="<?= (int) $limits['php_bytes'] ?>" data-max-image="<?= (int) $limits['image'] ?>" data-max-video="<?= (int) $limits['video'] ?>"><div class="form-text" data-upload-info></div></div>
         <div class="col-8"><input name="title" class="form-control" maxlength="150" placeholder="Titre (facultatif) : promotion, nouveauté…"></div>
         <div class="col-4"><button class="btn btn-success w-100"><i class="bi bi-upload"></i> Ajouter</button></div>
-        <div class="col-12 form-text">Images JPG, PNG, WEBP, GIF (<?= e($mb($limits['image'])) ?> au plus, réduites à 1920 px) ; vidéos MP4 (H.264) ou WEBM (<?= e($mb($limits['video'])) ?> au plus). Limite de ce serveur PHP : <?= e($limits['php_upload']) ?> par fichier, <?= e($limits['php_post']) ?> par envoi.</div>
+        <div class="col-12 form-text">Images JPG, PNG, WEBP, GIF (<?= e($mb($limits['image'])) ?> au plus ; les photos sont réduites à 1920 px <b>dans le navigateur avant l'envoi</b>, une photo de téléphone passe donc même avec une petite limite PHP) ; vidéos MP4 (H.264) ou WEBM (<?= e($mb($limits['video'])) ?> au plus). Limite de ce serveur PHP : <?= e($limits['php_upload']) ?> par fichier, <?= e($limits['php_post']) ?> par envoi.</div>
       </form>
       <ul class="list-group list-group-flush">
       <?php foreach ($media as $i => $m): $url = upload_url($m['path']); ?>
@@ -64,6 +74,7 @@ $mb = fn($b) => round($b / 1048576) . ' Mo';
               <?php if ($m['kind'] === 'video'): ?><video src="<?= e($url) ?>#t=0.5" muted preload="metadata" style="width:100%;height:100%;object-fit:cover"></video><?php else: ?><img src="<?= e($url) ?>" alt="" style="width:100%;height:100%;object-fit:cover"><?php endif; ?>
             </div>
             <form method="post" action="<?= e(url('/settings/display/media/' . $m['id'])) ?>" class="flex-grow-1 row g-1 align-items-center"><?= csrf_field() ?>
+              <?php if (!CD::fileExists($m)): ?><div class="col-12"><span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> Fichier introuvable sur le serveur : il n'est pas diffusé. Supprimez cette ligne et ajoutez de nouveau le fichier.</span></div><?php endif; ?>
               <div class="col-12"><input name="title" class="form-control form-control-sm" maxlength="150" value="<?= e($m['title'] ?? '') ?>" placeholder="<?= $m['kind'] === 'video' ? 'Vidéo' : 'Image' ?> <?= $i + 1 ?>"></div>
               <div class="col-5"><?php if ($m['kind'] === 'image'): ?><div class="input-group input-group-sm"><input name="duration_s" type="number" min="3" max="300" class="form-control" value="<?= (int) $m['duration_s'] ?>"><span class="input-group-text">s</span></div><?php else: ?><input type="hidden" name="duration_s" value="<?= (int) $m['duration_s'] ?>"><span class="badge bg-dark"><i class="bi bi-film"></i> vidéo entière</span><?php endif; ?></div>
               <div class="col-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="active" value="1" id="ma<?= (int) $m['id'] ?>" <?= (int) $m['active'] ? 'checked' : '' ?>><label class="form-check-label small" for="ma<?= (int) $m['id'] ?>">Diffusé</label></div></div>

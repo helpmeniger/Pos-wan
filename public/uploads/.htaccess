@@ -14,6 +14,10 @@ RemoveType .php .phtml .phar
 <FilesMatch "(?i)\.(php\d?|phtml|phar|pl|py|cgi|asp|aspx|sh|htaccess|svg)$">
     Require all denied
 </FilesMatch>
-<FilesMatch "(?i)\.(png|jpe?g|gif|webp)$">
-    Header set Content-Security-Policy "default-src 'none'"
-</FilesMatch>
+# mod_headers absent (certaines installations WampServer) : sans ce garde-fou, Apache répondrait
+# « erreur 500 » à chaque image et l'écran client resterait noir
+<IfModule mod_headers.c>
+    <FilesMatch "(?i)\.(png|jpe?g|gif|webp)$">
+        Header set Content-Security-Policy "default-src 'none'"
+    </FilesMatch>
+</IfModule>

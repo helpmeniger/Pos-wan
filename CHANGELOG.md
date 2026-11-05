@@ -2,6 +2,36 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.1.0] — 2026-11-05
+
+### Corrigé — écran client
+- **Écran noir avec des images téléversées** :
+  - chaque image est maintenant **entièrement chargée avant d'apparaître** ; avant, elle
+    s'affichait pendant son téléchargement et l'image précédente disparaissait (noir avec des
+    fichiers lourds ou un réseau lent) ;
+  - une image illisible ou **absente du disque** (par exemple après une réinstallation sans le
+    dossier `public/uploads`) est sautée et signalée dans les paramètres (« Fichier introuvable ») ;
+    sans aucune image lisible, l'écran d'accueil (logo, nom, message) s'affiche au lieu du noir ;
+  - les images sans fond (PNG transparent) ne sont plus posées sur du noir ;
+  - `public/uploads/.htaccess` : la directive `Header` est protégée par `<IfModule mod_headers.c>`
+    (sans ce module, Apache répondait « erreur 500 » à chaque image).
+- **Photos de téléphone refusées** (« Erreur lors de l'envoi du fichier ») : elles sont réduites à
+  1920 px **dans le navigateur avant l'envoi**, ce qui évite la limite PHP de 2 Mo par défaut ;
+  limites relevées par `public/.user.ini` et `public/.htaccess` lorsque l'hébergement le permet ;
+  messages d'erreur précis (limite PHP, envoi interrompu…).
+- **Fichiers 10 fois plus légers** : une photo JPEG reste en JPEG (elle était convertie en PNG de
+  4 à 5 Mo) ; WEBP reste en WEBP ; le sens de prise de vue (EXIF) est appliqué.
+
+### Ajouté — écran client
+- **Effets de transition** au choix : Ken Burns (fondu + zoom lent, par défaut), fondu enchaîné,
+  glissement, zoom avant, fondu avec flou, volet, ou aléatoire.
+- **Fond flouté de l'image** autour des images qui n'ont pas le format de l'écran (plus de bandes
+  noires), ou image recadrée plein écran, ou couleur du thème.
+- **Titre des images** en surimpression, **barre de progression** et **repères** de position.
+- Liste de diffusion **relue toutes les 90 secondes** : un fichier ajouté ou retiré dans les
+  paramètres passe sur l'écran client sans le rouvrir.
+- Mouvements réduits automatiquement si Windows demande de limiter les animations.
+
 ## [3.0.0] — 2026-11-05
 
 ### Ajouté

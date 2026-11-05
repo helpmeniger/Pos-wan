@@ -11,7 +11,10 @@
 <link rel="stylesheet" href="<?= e(asset('css/customer-display.css')) ?>">
 </head>
 <body class="cd theme-<?= e($cfg['theme']) ?>">
-<div class="cd-media" id="cdMedia" aria-hidden="true"></div>
+<div class="cd-media" id="cdMedia" aria-hidden="true">
+  <div class="cd-progress d-none" id="cdProgress"></div>
+  <div class="cd-dots d-none" id="cdDots"></div>
+</div>
 <div class="cd-welcome" id="cdWelcome">
   <?php if ($logo): ?><img src="<?= e($logo) ?>" alt="" class="cd-logo"><?php endif; ?>
   <div class="cd-company"><?= e($company) ?></div>

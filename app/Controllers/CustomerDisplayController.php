@@ -20,8 +20,9 @@ final class CustomerDisplayController extends Controller
                 'video' => (int) config('app.uploads.max_display_video_bytes'),
                 'php_upload' => (string) ini_get('upload_max_filesize'),
                 'php_post' => (string) ini_get('post_max_size'),
+                'php_bytes' => \App\Core\Upload::phpMaxBytes(),
             ],
-            'scripts' => ['js/customer-display-link.js'],
+            'scripts' => ['js/customer-display-link.js', 'js/display-media-upload.js'],
             'displayConfig' => CustomerDisplay::clientConfig(),
         ]);
     }
@@ -78,6 +79,12 @@ final class CustomerDisplayController extends Controller
     {
         view('display/screen', ['cfg' => CustomerDisplay::clientConfig(), 'playlist' => CustomerDisplay::playlist(),
             'company' => (string) setting('company_name', 'POS Marwa'), 'logo' => upload_url(setting('company_logo'))], null);
+    }
+
+    /** Liste de diffusion à jour : l'écran client la relit, les nouveaux fichiers passent sans le rouvrir. */
+    public function playlist(): void
+    {
+        json_response(['ok' => true, 'playlist' => CustomerDisplay::playlist(), 'cfg' => CustomerDisplay::clientConfig()]);
     }
 
     /** Afficheur relié au serveur : deux lignes envoyées par la caisse. */

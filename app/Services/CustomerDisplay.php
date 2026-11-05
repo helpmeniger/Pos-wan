@@ -22,6 +22,23 @@ use App\Core\Upload;
  */
 final class CustomerDisplay
 {
+    /** Effets de passage d'une image à l'autre. */
+    public const TRANSITIONS = [
+        'kenburns' => 'Ken Burns : fondu et zoom lent (recommandé)',
+        'fade' => 'Fondu enchaîné',
+        'slide' => 'Glissement',
+        'zoom' => 'Zoom avant',
+        'blur' => 'Fondu avec flou',
+        'wipe' => 'Volet',
+        'random' => 'Aléatoire (un effet différent à chaque image)',
+    ];
+    /** Remplissage autour d'une image qui n'a pas les proportions de l'écran. */
+    public const FILLS = [
+        'blur' => 'Fond flouté de l\'image (aucune bande noire)',
+        'cover' => 'Image recadrée plein écran',
+        'theme' => 'Couleur du thème',
+    ];
+
     public const DEFAULTS = [
         'display_enabled' => '0',
         'display_welcome' => 'Bienvenue',
@@ -31,6 +48,10 @@ final class CustomerDisplay
         'display_theme' => 'dark',
         'display_show_lines' => '1',
         'display_video_sound' => '0',
+        'display_transition' => 'kenburns',
+        'display_fill' => 'blur',
+        'display_captions' => '1',
+        'display_progress' => '1',
         'vfd_enabled' => '0',
         'vfd_mode' => 'browser',
         'vfd_protocol' => 'escpos',
@@ -95,6 +116,10 @@ final class CustomerDisplay
             'display_theme' => ($d['display_theme'] ?? '') === 'light' ? 'light' : 'dark',
             'display_show_lines' => !empty($d['display_show_lines']) ? '1' : '0',
             'display_video_sound' => !empty($d['display_video_sound']) ? '1' : '0',
+            'display_transition' => isset(self::TRANSITIONS[$d['display_transition'] ?? '']) ? (string) $d['display_transition'] : 'kenburns',
+            'display_fill' => isset(self::FILLS[$d['display_fill'] ?? '']) ? (string) $d['display_fill'] : 'blur',
+            'display_captions' => !empty($d['display_captions']) ? '1' : '0',
+            'display_progress' => !empty($d['display_progress']) ? '1' : '0',
             'vfd_enabled' => $vfdOn ? '1' : '0',
             'vfd_mode' => $mode,
             'vfd_protocol' => $protocol,
@@ -191,10 +216,28 @@ final class CustomerDisplay
     }
 
     /** Liste publiée sur l'écran client (adresses des fichiers, durées). */
+    /** Fichier encore présent sur le disque (absent après une réinstallation sans le dossier uploads). */
+    public static function fileExists(array $m): bool
+    {
+        return !str_contains((string) $m['path'], '..') && is_file(UPLOADS_PATH . '/' . $m['path']);
+    }
+
+    /**
+     * Liste diffusée : seulement les fichiers actifs ET présents (un fichier manquant donnait un
+     * écran noir). L'adresse porte la date du fichier : un fichier remplacé n'est pas pris en cache.
+     */
     public static function playlist(): array
     {
         $default = (int) setting('display_image_seconds', '8');
-        return array_map(fn($m) => ['kind' => $m['kind'], 'url' => upload_url($m['path']), 'seconds' => (int) $m['duration_s'] ?: $default, 'title' => (string) $m['title']], self::media(true));
+        $out = [];
+        foreach (self::media(true) as $m) {
+            if (!self::fileExists($m)) {
+                continue;
+            }
+            $out[] = ['id' => (int) $m['id'], 'kind' => $m['kind'], 'url' => upload_url($m['path']) . '?v=' . (int) @filemtime(UPLOADS_PATH . '/' . $m['path']),
+                'seconds' => (int) $m['duration_s'] ?: $default, 'title' => (string) $m['title']];
+        }
+        return $out;
     }
 
     public static function addMedia(array $file, string $title = ''): int
@@ -264,6 +307,8 @@ final class CustomerDisplay
             'welcome' => $s['display_welcome'], 'thanks' => $s['display_thanks'],
             'thanksSeconds' => (int) $s['display_thanks_seconds'], 'theme' => $s['display_theme'],
             'showLines' => $s['display_show_lines'] === '1', 'sound' => $s['display_video_sound'] === '1',
+            'transition' => $s['display_transition'], 'fill' => $s['display_fill'],
+            'captions' => $s['display_captions'] === '1', 'progress' => $s['display_progress'] === '1',
             'vfd' => ['enabled' => $s['vfd_enabled'] === '1', 'mode' => $s['vfd_mode'], 'protocol' => $s['vfd_protocol'], 'cols' => (int) $s['vfd_cols'],
                 'baud' => (int) $s['vfd_baud'], 'line1' => $s['vfd_line1'], 'line2' => $s['vfd_line2'] !== '' ? $s['vfd_line2'] : (string) setting('company_name', '')],
         ];

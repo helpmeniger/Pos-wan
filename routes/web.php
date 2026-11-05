@@ -232,6 +232,7 @@ $router->post('/settings/display/media/{id}', [C\CustomerDisplayController::clas
 $router->post('/settings/display/media/{id}/delete', [C\CustomerDisplayController::class, 'mediaDelete'], 'settings.manage');
 $router->post('/settings/display/vfd-test', [C\CustomerDisplayController::class, 'vfdTest'], 'settings.manage');
 $router->get('/afficheur', [C\CustomerDisplayController::class, 'screen'], 'pos.sell');
+$router->get('/afficheur/playlist', [C\CustomerDisplayController::class, 'playlist'], 'pos.sell');
 $router->post('/afficheur/vfd', [C\CustomerDisplayController::class, 'vfd'], 'pos.sell');
 $router->get('/stores', [C\SettingsController::class, 'stores'], 'stores.manage');
 $router->post('/stores', [C\SettingsController::class, 'storeStore'], 'stores.manage');

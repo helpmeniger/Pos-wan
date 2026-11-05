@@ -1654,7 +1654,7 @@ test('Écran client et afficheur client : réglages, images et vidéos, commande
     eq([$id2, $id1], array_map('intval', array_column($CD::media(), 'id')), 'ordre de diffusion modifié');
     $CD::updateMedia($id1, ['title' => 'Promo', 'duration_s' => 12, 'active' => true]);
     $pl = $CD::playlist();
-    ok(count($pl) === 2 && $pl[1]['seconds'] === 12 && str_ends_with($pl[0]['url'], '.mp4'), 'liste de diffusion');
+    ok(count($pl) === 2 && $pl[1]['seconds'] === 12 && str_ends_with(strtok($pl[0]['url'], '?'), '.mp4'), 'liste de diffusion');
     $CD::updateMedia($id2, ['duration_s' => 8, 'active' => false]);
     eq(1, count($CD::playlist()), 'fichier non diffusé retiré de la liste');
     $path2 = PUBLIC_PATH . '/uploads/' . DB::value('SELECT path FROM display_media WHERE id = ?', [$id2]);
@@ -1662,6 +1662,62 @@ test('Écran client et afficheur client : réglages, images et vidéos, commande
     ok(!is_file($path2) && !DB::value('SELECT 1 FROM display_media WHERE id = ?', [$id2]), 'suppression : fichier et ligne');
     ok((int) DB::value("SELECT COUNT(*) FROM audit_logs WHERE action IN ('display.media_add','display.media_delete','settings.customer_display')") >= 4, 'journal d\'audit');
     $GLOBALS['CD_MEDIA'] = $id1;
+});
+test('Écran client 3.1 : photos JPEG légères, sens EXIF, transparence, fichiers manquants, transitions', function () {
+    actingAs('admin');
+    $CD = App\Services\CustomerDisplay::class;
+    $file = fn(string $path, string $name) => ['name' => $name, 'tmp_name' => $path, 'size' => filesize($path), 'error' => UPLOAD_ERR_OK];
+    // Photo de téléphone 4032 × 3024 : reste en JPEG (léger), réduite à 1920 px
+    $jpg = tempnam(sys_get_temp_dir(), 'cd');
+    $im = imagecreatetruecolor(4032, 3024);
+    for ($y = 0; $y < 3024; $y += 24) { imagefilledrectangle($im, 0, $y, 4031, $y + 23, (int) imagecolorallocate($im, intdiv($y, 12) % 255, 120, 200 - intdiv($y, 16) % 200)); }
+    imagejpeg($im, $jpg, 92); imagedestroy($im);
+    $m = DB::one('SELECT * FROM display_media WHERE id = ?', [$CD::addMedia($file($jpg, 'photo.jpg'), 'Photo')]);
+    ok(str_ends_with($m['path'], '.jpg'), 'format JPEG conservé (avant : PNG 10 fois plus lourd)');
+    $info = getimagesize(UPLOADS_PATH . '/' . $m['path']);
+    eq([1920, 1440, 'image/jpeg'], [$info[0], $info[1], $info['mime']]);
+    ok(filesize(UPLOADS_PATH . '/' . $m['path']) < 1500000, 'fichier léger : ' . filesize(UPLOADS_PATH . '/' . $m['path']));
+    // Sens de prise de vue (EXIF Orientation = 6 : appareil tourné) appliqué
+    if (function_exists('exif_read_data')) {
+        $im = imagecreatetruecolor(400, 200); ob_start(); imagejpeg($im); $raw = (string) ob_get_clean(); imagedestroy($im);
+        $tiff = "MM\x00\x2A\x00\x00\x00\x08\x00\x01\x01\x12\x00\x03\x00\x00\x00\x01\x00\x06\x00\x00\x00\x00\x00\x00";
+        $app1 = "\xFF\xE1" . pack('n', strlen($tiff) + 8) . "Exif\x00\x00" . $tiff;
+        $rot = tempnam(sys_get_temp_dir(), 'cd');
+        file_put_contents($rot, substr($raw, 0, 2) . $app1 . substr($raw, 2));
+        $mr = DB::one('SELECT * FROM display_media WHERE id = ?', [$CD::addMedia($file($rot, 'portrait.jpg'))]);
+        eq([200, 400], array_slice(getimagesize(UPLOADS_PATH . '/' . $mr['path']), 0, 2), 'photo en portrait remise droite');
+    }
+    // Image avec transparence : reste en PNG, transparence conservée
+    $png = tempnam(sys_get_temp_dir(), 'cd');
+    $im = imagecreatetruecolor(300, 200); imagesavealpha($im, true); imagealphablending($im, false);
+    imagefill($im, 0, 0, (int) imagecolorallocatealpha($im, 0, 0, 0, 127)); imagefilledellipse($im, 150, 100, 200, 120, (int) imagecolorallocate($im, 245, 166, 35));
+    imagepng($im, $png); imagedestroy($im);
+    $mp = DB::one('SELECT * FROM display_media WHERE id = ?', [$CD::addMedia($file($png, 'logo.png'))]);
+    $out = imagecreatefrompng(UPLOADS_PATH . '/' . $mp['path']);
+    ok(str_ends_with($mp['path'], '.png') && ((imagecolorat($out, 2, 2) >> 24) & 0x7F) === 127, 'coin transparent conservé');
+    // Fichier disparu du disque (réinstallation sans le dossier uploads) : sauté, plus d'écran noir
+    $before = count($CD::playlist());
+    @unlink(UPLOADS_PATH . '/' . $mp['path']);
+    eq($before - 1, count($CD::playlist()), 'fichier manquant retiré de la diffusion');
+    ok(!$CD::fileExists($mp) && $CD::fileExists($m), 'détection du fichier manquant');
+    ok(str_contains($CD::playlist()[0]['url'], '?v='), 'adresse versionnée (pas d\'ancienne image en cache)');
+    // Réglages de diffusion
+    $base = ['display_enabled' => '1', 'display_welcome' => 'Bienvenue chez Test', 'display_thanks' => 'Merci !', 'display_thanks_seconds' => '5', 'display_image_seconds' => '7', 'display_theme' => 'light', 'display_show_lines' => '1',
+        'vfd_enabled' => '1', 'vfd_mode' => 'server', 'vfd_protocol' => 'escpos', 'vfd_cols' => '20', 'vfd_baud' => '9600', 'vfd_address' => (string) setting('vfd_address'), 'vfd_line1' => 'BIENVENUE', 'vfd_line2' => ''];
+    $CD::saveSettings($base + ['display_transition' => 'slide', 'display_fill' => 'cover', 'display_captions' => '1']);
+    $c = $CD::clientConfig();
+    ok($c['transition'] === 'slide' && $c['fill'] === 'cover' && $c['captions'] && !$c['progress'], 'transition, remplissage, titres, progression');
+    $CD::saveSettings($base + ['display_transition' => '<script>', 'display_fill' => 'x', 'display_progress' => '1']);
+    $c = $CD::clientConfig();
+    ok($c['transition'] === 'kenburns' && $c['fill'] === 'blur' && $c['progress'], 'valeurs inconnues → valeurs par défaut');
+    foreach (array_keys($CD::TRANSITIONS) as $fx) {
+        ok($fx === 'random' || str_contains((string) file_get_contents(PUBLIC_PATH . '/assets/css/customer-display.css'), '.fx-' . $fx . ' '), "effet $fx défini");
+    }
+    // Message clair quand le fichier dépasse la limite de PHP
+    throws(fn() => $CD::addMedia(['name' => 'gros.jpg', 'tmp_name' => '', 'size' => 0, 'error' => UPLOAD_ERR_INI_SIZE]), 'limite PHP');
+    foreach ([$m, $mp, $mr ?? null] as $x) {
+        if ($x) { $CD::deleteMedia((int) $x['id']); }
+    }
 });
 test('MARWA IA : compréhension du français (périodes, intentions, noms), rapports, droits, aide, modèle local', function () {
     actingAs('admin');
@@ -2355,6 +2411,10 @@ test('Écran client (HTTP) : paramètres, caisse, écran du second moniteur, dro
     ok(str_contains($pos['body'], 'data-cd-open') && str_contains($pos['body'], 'customer-display-link.js'), 'caisse : bouton de l\'écran client');
     $scr = $c->req('GET', "$B/afficheur");
     ok($scr['code'] === 200 && str_contains($scr['body'], 'Bienvenue chez Test') && str_contains($scr['body'], 'theme-light') && str_contains($scr['body'], '/uploads/display/'), 'écran client : accueil, thème, images');
+    ok(str_contains($scr['body'], 'id="cdProgress"') && str_contains($scr['body'], 'id="cdDots"'), 'écran client : progression et repères');
+    $pl = json_decode($c->req('GET', "$B/afficheur/playlist", null, ['Accept: application/json'])['body'], true);
+    ok(($pl['ok'] ?? false) && is_array($pl['playlist']) && isset($pl['cfg']['transition']), 'liste de diffusion relue par l\'écran (JSON)');
+    ok(str_contains($pg['body'], 'data-display-upload') && str_contains($pg['body'], 'display-media-upload.js') && str_contains($pg['body'], 'name="display_transition"'), 'paramètres : préparation des images, choix de l\'effet');
     $t = $c->token("$B/pos");
     $r = $c->req('POST', "$B/afficheur/vfd", http_build_query(['_csrf' => $t, 'line1' => 'A', 'line2' => 'B']), ['Accept: application/json']);
     ok($r['code'] === 422 && str_contains($r['body'], 'injoignable'), 'afficheur serveur absent : erreur claire, sans plantage');

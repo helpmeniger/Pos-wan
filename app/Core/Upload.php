@@ -32,30 +32,48 @@ final class Upload
             throw new \RuntimeException('Dossier de téléversement inaccessible.');
         }
         $name = bin2hex(random_bytes(16));
-        // Ré-encodage avec GD lorsqu'il est disponible (neutralise les fichiers polyglottes)
+        // Ré-encodage avec GD lorsqu'il est disponible (neutralise les fichiers polyglottes).
+        // Format conservé : JPEG → JPEG (photos légères), WEBP → WEBP, PNG / GIF → PNG (transparence).
         if (function_exists('imagecreatefromstring')) {
+            [$sw, $sh] = @getimagesize($file['tmp_name']) ?: [0, 0];
+            self::ensureMemory((int) $sw, (int) $sh);
             $img = @imagecreatefromstring((string) file_get_contents($file['tmp_name']));
             if ($img === false) {
                 throw new BusinessException('Image illisible.');
+            }
+            if ($mime === 'image/jpeg') {
+                $img = self::orient($img, $file['tmp_name']); // photo de téléphone : sens réel
             }
             $w = imagesx($img);
             $h = imagesy($img);
             if ($w > $maxDim || $h > $maxDim) {
                 $ratio = min($maxDim / $w, $maxDim / $h);
-                $nw = (int) round($w * $ratio);
-                $nh = (int) round($h * $ratio);
+                $nw = max(1, (int) round($w * $ratio));
+                $nh = max(1, (int) round($h * $ratio));
                 $dst = imagecreatetruecolor($nw, $nh);
                 imagealphablending($dst, false);
                 imagesavealpha($dst, true);
+                imagefill($dst, 0, 0, (int) imagecolorallocatealpha($dst, 0, 0, 0, 127));
                 imagecopyresampled($dst, $img, 0, 0, 0, 0, $nw, $nh, $w, $h);
                 imagedestroy($img);
                 $img = $dst;
             }
-            imagesavealpha($img, true);
-            $target = $dir . '/' . $name . '.png';
-            imagepng($img, $target, 7);
+            $ext = match (true) {
+                $mime === 'image/jpeg' => 'jpg',
+                $mime === 'image/webp' && function_exists('imagewebp') => 'webp',
+                default => 'png',
+            };
+            $target = $dir . '/' . $name . '.' . $ext;
+            $ok = match ($ext) {
+                'jpg' => imagejpeg($img, $target, 86),
+                'webp' => imagewebp($img, $target, 85),
+                default => (imagesavealpha($img, true) && imagepng($img, $target, 6)),
+            };
             imagedestroy($img);
-            return trim($subdir, '/') . '/' . $name . '.png';
+            if (!$ok || !is_file($target)) {
+                throw new \RuntimeException('Échec de l\'enregistrement de l\'image.');
+            }
+            return trim($subdir, '/') . '/' . $name . '.' . $ext;
         }
         $target = $dir . '/' . $name . '.' . self::IMAGE_TYPES[$mime];
         if (!move_uploaded_file($file['tmp_name'], $target)) {
@@ -115,13 +133,59 @@ final class Upload
         return $file['tmp_name'];
     }
 
+    /** Mémoire suffisante pour décoder une grande photo (≈ 5 octets par pixel avec la copie). */
+    private static function ensureMemory(int $w, int $h): void
+    {
+        $need = (int) ($w * $h * 5 + 32 * 1048576);
+        $limit = (string) ini_get('memory_limit');
+        if ($limit === '-1' || $need <= 0) {
+            return;
+        }
+        $bytes = (int) $limit * match (strtolower(substr($limit, -1))) { 'g' => 1073741824, 'm' => 1048576, 'k' => 1024, default => 1 };
+        if ($bytes < $need) {
+            @ini_set('memory_limit', (string) (int) ceil($need / 1048576) . 'M');
+        }
+    }
+
+    /** Applique l'orientation EXIF d'une photo JPEG (prise de vue en portrait au téléphone). */
+    private static function orient(\GdImage $img, string $path): \GdImage
+    {
+        if (!function_exists('exif_read_data')) {
+            return $img;
+        }
+        $o = (int) (@exif_read_data($path)['Orientation'] ?? 1);
+        $r = match ($o) { 3 => imagerotate($img, 180, 0), 6 => imagerotate($img, -90, 0), 8 => imagerotate($img, 90, 0), default => false };
+        if ($r instanceof \GdImage) {
+            imagedestroy($img);
+            return $r;
+        }
+        return $img;
+    }
+
+    /** Taille maximale d'un envoi acceptée par PHP (upload_max_filesize et post_max_size), en octets. */
+    public static function phpMaxBytes(): int
+    {
+        $b = function (string $v): int {
+            $v = trim($v);
+            return $v === '' ? 0 : (int) $v * match (strtolower(substr($v, -1))) { 'g' => 1073741824, 'm' => 1048576, 'k' => 1024, default => 1 };
+        };
+        $vals = array_filter([$b((string) ini_get('upload_max_filesize')), $b((string) ini_get('post_max_size'))]);
+        return $vals ? min($vals) : 0;
+    }
+
     private static function checkError(array $file): void
     {
         if (!isset($file['error']) || is_array($file['error'])) {
             throw new BusinessException('Fichier invalide.');
         }
         if ($file['error'] !== UPLOAD_ERR_OK) {
-            throw new BusinessException($file['error'] === UPLOAD_ERR_NO_FILE ? 'Aucun fichier envoyé.' : 'Erreur lors de l\'envoi du fichier.');
+            throw new BusinessException(match ((int) $file['error']) {
+                UPLOAD_ERR_NO_FILE => 'Aucun fichier envoyé.',
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'Fichier trop volumineux pour ce serveur (limite PHP : ' . ini_get('upload_max_filesize') . ' par fichier). Réduisez l\'image ou augmentez « upload_max_filesize » dans php.ini (WampServer : icône → PHP → Réglages PHP).',
+                UPLOAD_ERR_PARTIAL => 'Envoi interrompu avant la fin : réessayez.',
+                UPLOAD_ERR_NO_TMP_DIR, UPLOAD_ERR_CANT_WRITE => 'Le serveur ne peut pas enregistrer le fichier temporaire (dossier temporaire de PHP absent ou plein).',
+                default => 'Erreur lors de l\'envoi du fichier (code ' . (int) $file['error'] . ').',
+            });
         }
         if (!is_uploaded_file($file['tmp_name']) && PHP_SAPI !== 'cli') {
             throw new BusinessException('Fichier invalide.');
