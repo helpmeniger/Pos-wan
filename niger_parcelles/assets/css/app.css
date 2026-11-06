@@ -173,3 +173,10 @@ body.page-map.crosshair-on .map-panel ~ .map-crosshair { right: 400px; }
 .candidate-item { border-left: 4px solid #e05206; padding: .35rem .5rem; margin-bottom: .35rem; background: var(--np-gray-50); border-radius: .25rem; }
 .candidate-item.low { border-left-color: #c62828; }
 .gps-marker { background: #1565c0; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px #1565c0, 0 0 8px rgba(21,101,192,.8); }
+
+.map-legend summary { cursor: pointer; list-style-position: inside; }
+.map-legend details:not([open]) summary { margin: 0; }
+@media (max-width: 767.98px) {
+    .map-status .st-extra { display: none; }
+    .map-status { max-width: 55vw; }
+}

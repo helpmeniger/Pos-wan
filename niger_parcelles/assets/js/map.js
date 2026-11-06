@@ -108,12 +108,13 @@
     const legend = L.control({ position: 'bottomright' });
     legend.onAdd = () => {
         const div = L.DomUtil.create('div', 'map-legend');
-        div.innerHTML = '<strong>Légende</strong><br>' + Object.entries(STATUS_STYLE).map(([k, s]) =>
+        // Légende repliable, fermée par défaut sur téléphone pour libérer la carte
+        div.innerHTML = '<details' + (window.innerWidth < 768 ? '' : ' open') + '><summary><strong>Légende</strong></summary>' + Object.entries(STATUS_STYLE).map(([k, s]) =>
             '<span class="sw" style="border-color:' + s.color + ';background:' + s.fillColor + '55"></span>' + NP.esc(C.labels.verification_status[k])).join('<br>')
             + '<br><span class="sw" style="border-color:#c62828;border-style:dashed;background:transparent"></span>Chevauchement à vérifier'
             + '<br><span class="sw" style="border-color:#5c3d99;border-style:dashed;background:transparent"></span>Limite administrative'
             + '<br><span class="sw" style="border-color:#e05206;border-style:dashed;background:#e0520622"></span>Parcelle en cours de saisie'
-            + '<br><span class="sw" style="border-color:#ff6d00;border-style:dashed;background:#ffab4055"></span>Proposition de l\'assistant';
+            + '<br><span class="sw" style="border-color:#ff6d00;border-style:dashed;background:#ffab4055"></span>Proposition de l\'assistant</details>';
         L.DomEvent.disableClickPropagation(div);
         return div;
     };

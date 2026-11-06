@@ -128,7 +128,7 @@ require __DIR__ . '/includes/header.php';
     </div>
 
     <div class="map-loading" id="mapLoading" hidden><span class="badge text-bg-dark"><span class="spinner-border spinner-border-sm"></span> Chargement…</span></div>
-    <div class="map-status" id="mapStatus"><span class="tile-indicator" id="tileIndicator"></span><span id="tileText">Fond de carte</span> · <span id="zoomInfo">—</span> · <span id="cursorCoords">—</span></div>
+    <div class="map-status" id="mapStatus"><span class="tile-indicator" id="tileIndicator"></span><span id="tileText">Fond de carte</span><span class="st-extra"> · <span id="zoomInfo">—</span> · <span id="cursorCoords">—</span></span></div>
 
     <aside class="map-panel" id="mapPanel" hidden aria-live="polite">
         <div class="panel-head">
