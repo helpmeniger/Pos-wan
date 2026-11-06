@@ -9,6 +9,7 @@ $menu = [
     ['parcelles', 'parcelles.php', 'bounding-box', 'Parcelles', 'parcel.view'],
     ['proprietaires', 'proprietaires.php', 'people', 'Propriétaires', 'owner.view_personal'],
     ['documents', 'documents.php', 'folder2-open', 'Documents', 'document.view'],
+    ['controle', 'controle.php', 'shield-check', 'Contrôle', 'parcel.verify'],
     ['importation', 'importation.php', 'cloud-upload', 'Importation', 'import.run'],
     ['rapports', 'rapports.php', 'file-earmark-bar-graph', 'Rapports', 'report.view'],
     ['utilisateurs', 'utilisateurs.php', 'person-gear', 'Utilisateurs', 'user.manage'],

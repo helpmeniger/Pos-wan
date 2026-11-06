@@ -159,6 +159,14 @@
         form.addEventListener('submit', () => { try { localStorage.removeItem(key); } catch (e) { /* ignore */ } });
     });
 
+    // --- Déconnecté : les pages mises en cache (données) sont effacées de l'appareil
+    if (!config.user && navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'clear-private' });
+    }
+
+    // --- Listes qui envoient leur formulaire dès qu'on les change -------------
+    document.querySelectorAll('[data-autosubmit]').forEach((el) => el.addEventListener('change', () => el.form && el.form.submit()));
+
     // --- Boutons d'impression -------------------------------------------------
     document.querySelectorAll('[data-print]').forEach((b) => b.addEventListener('click', () => window.print()));
 })();

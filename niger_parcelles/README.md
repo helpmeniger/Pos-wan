@@ -217,6 +217,13 @@ jamais de base de données : c'est vous qui la créez.
 Un mot de passe MySQL vide est refusé. L'utilisation du compte `root` est possible mais
 signalée par un avertissement.
 
+### Mise à jour d'une installation existante
+
+Remplacez les fichiers de l'application en **conservant** `config/database.local.php` et le
+dossier `storage/` (documents, sauvegardes, clé `secret.key`, verrou d'installation). À la
+première page ouverte, la base est mise à jour automatiquement (nouvelles tables et colonnes,
+aucune donnée supprimée ; version visible dans Paramètres › Système).
+
 ### 5.5 Configuration (facultatif)
 
 * `config/database.php` : valeurs par défaut (aucun mot de passe réel) ; les vôtres vont dans
@@ -287,6 +294,46 @@ l'écran, au survol pour les autres. L'affichage est journalisé.
 un serveur de secours (OpenStreetMap France, puis CARTO, puis Esri) ; l'état du fond est affiché
 en bas à gauche.
 
+**Fiches authentifiables (QR code)** : chaque fiche PDF porte un QR code et un code court
+(ex. `A0CF-B9C4-B6E5`). N'importe qui, **sans compte**, scanne le code ou le saisit sur la page
+`verifier.php` : elle indique si la fiche est **authentique et à jour**, **périmée** (limites,
+propriétaires, statut ou titre modifiés depuis), **révoquée** ou **inconnue / falsifiée**, sans
+publier aucune donnée personnelle. Chaque fiche est signée (HMAC-SHA256, clé `storage/secret.key`
+créée automatiquement) ; les fiches émises et révocables sont listées dans l'onglet Historique de
+la parcelle. Renseignez « Adresse publique » (Paramètres) pour que les QR codes pointent vers
+l'adresse réelle du serveur et pas vers `localhost`.
+
+**Centre de contrôle (menu « Contrôle », vérificateurs)** :
+* *Dossiers à risque* : score de 0 à 100 calculé par 13 règles explicables (ventes successives
+  rapprochées, doublon ou chevauchement non résolu, chevauchement entre propriétaires différents,
+  droit contesté, titre sans référence, titre déclaré sur limites indicatives, validation sans
+  pièce, validation par l'auteur du dossier, limites modifiées après validation, quotes-parts
+  incomplètes, fiches émises à répétition…). Le score **priorise** les contrôles ; ce n'est pas
+  une preuve de fraude. Il est aussi affiché sur la fiche de la parcelle.
+* *Qualité des limites* : repère les petits vides et empiètements (jusqu'à 60 cm, réglable) le
+  long des limites communes entre voisins, et les recolle exactement en un clic (nouvelle version
+  historisée) ; un écart réel (ruelle, mur épais) peut être accepté avec un motif.
+* *Délais de traitement* : dossiers soumis sans décision depuis plus de 15 jours (réglable).
+
+**Travail sans réseau (menu « Hors ligne »)** : l'application s'installe sur téléphone ou
+tablette (« Ajouter à l'écran d'accueil »). Avant de partir sur le terrain, « Préparer cette
+zone » copie les parcelles du secteur sur l'appareil. Sans réseau, la carte s'ouvre, les parcelles
+préparées s'affichent et les nouvelles parcelles dessinées sont **conservées sur l'appareil** ;
+elles sont envoyées automatiquement au retour du réseau (référence attribuée à ce moment-là,
+jamais de doublon même si la connexion coupe pendant l'envoi ; un chevauchement est soumis à
+confirmation). Les noms des propriétaires ne sont pas copiés sur l'appareil. Seules les tuiles de
+fond de carte **déjà affichées** sont disponibles hors ligne (aucun téléchargement en masse,
+conformément aux conditions d'OpenStreetMap et d'Esri).
+> Le mode installable / hors ligne exige une connexion **HTTPS** ou l'adresse `localhost`
+> (règle des navigateurs). Pour les téléphones qui accèdent au serveur WampServer par le réseau
+> local (`http://192.168.x.x/…`), activez HTTPS sur Apache (module `ssl`, certificat du service
+> informatique) ; sans HTTPS, tout fonctionne sauf la saisie hors connexion.
+
+**Détection en série** : « Assistant › Détecter toutes les concessions visibles » analyse
+l'image satellite de la vue (zoom 18 ou plus) dans un fil d'exécution séparé, avec une barre
+de progression, et propose toutes les concessions murées nettes, sans re-détecter les parcelles
+déjà enregistrées.
+
 **Modifier des limites** : fiche ou panneau de la carte › « Modifier les limites » ; un motif
 est demandé ; une nouvelle version est créée, l'ancienne reste consultable.
 
@@ -353,7 +400,13 @@ restreindre l'accès Apache (pare-feu, `Require ip`), tenir PHP/Apache/MySQL à 
 * **Dans l'application** (Paramètres › Sauvegardes) : sauvegarde SQL complète générée en PHP
   (sans mysqldump) et archive ZIP des documents, téléchargeables ; restauration d'un fichier
   `.sql` Niger Parcelles (confirmation « RESTAURER », sauvegarde de sécurité automatique avant).
-* **Manuellement** : phpMyAdmin › Exporter (SQL) + copie du dossier `storage/documents/`.
+* **Manuellement** : phpMyAdmin › Exporter (SQL) + copie du dossier `storage/documents/` et du
+  fichier `storage/secret.key` (clé d'authentification des fiches).
+* **Automatiquement chaque nuit** : `tools\sauvegarde_auto.bat` (base + documents + clé, 30 jours
+  conservés). Windows : Planificateur de tâches › Créer une tâche de base › « Niger Parcelles -
+  sauvegarde » › Tous les jours, 2 h › Démarrer un programme ›
+  `C:\wamp64\www\niger_parcelles\tools\sauvegarde_auto.bat` › cocher « Exécuter même si
+  l'utilisateur n'est pas connecté ». Le journal est dans `storage/logs/sauvegardes.log`.
 * Conseil : sauvegarde quotidienne copiée sur un support externe chiffré, test de restauration
   mensuel sur une base distincte.
 
@@ -376,11 +429,12 @@ C:\wamp64\bin\php\php8.3.x\php.exe tests\run_tests.php
 
 | Fichier | Contenu | Exécution |
 |---|---|---|
-| `tests/run_tests.php` | 21 tests unitaires + 27 tests d'intégration MySQL | `php tests\run_tests.php` |
+| `tests/run_tests.php` | 23 tests unitaires + 37 tests d'intégration MySQL (dont migrations, fiches à QR code, risques, qualité des limites, saisie hors ligne) | `php tests\run_tests.php` |
 | `tests/http_test.php` | 19 tests HTTP « boîte noire » (auth, CSRF, rôles, XSS, injection SQL, documents privés, accès direct, blocage des connexions) | `set NP_TEST_ADMIN_PASS=...` puis `php tests\http_test.php` (extension curl) |
 | `tests/e2e/map_e2e.js` | 11 tests navigateur (carte, dessin, superficie, enregistrement, rechargement, modification, mesure, recherche, mobile) | facultatif, nécessite Node.js + Playwright (outil de développement uniquement) |
 | `tests/e2e/assist_e2e.js` | 13 tests navigateur : Referer OSM, fond de secours, zoom 25, position exacte au clic, GPS moyenné, détection, gabarit, enregistrement groupé, saisie UTM, longueurs des côtés, noms des propriétaires | facultatif (Node.js + Playwright) ; tuiles simulées, fonctionne hors ligne |
-| `tests/js/assist_test.js` | 11 tests du moteur de précision (Mercator, UTM, rectangles, gabarits, lots, détection sur image synthétique, référence Karney) | `node tests/js/assist_test.js` (facultatif) |
+| `tests/e2e/terrain_e2e.js` | 9 tests navigateur : application installable, zone préparée, saisie sans réseau puis synchronisation, détection en série, centre de contrôle, QR code et vérification publique | facultatif (Node.js + Playwright) |
+| `tests/js/assist_test.js` | 12 tests du moteur de précision (Mercator, UTM, rectangles, gabarits, lots, détection sur image synthétique, référence Karney) | `node tests/js/assist_test.js` (facultatif) |
 
 > Les tests HTTP vérifient le blocage anti force brute : chaque exécution enregistre environ
 > 8 échecs de connexion pour votre adresse IP. Au-delà de 6 exécutions en 15 minutes, l'IP est
@@ -389,8 +443,8 @@ C:\wamp64\bin\php\php8.3.x\php.exe tests\run_tests.php
 
 Résultats obtenus lors du développement (Linux, Apache 2.4 + PHP 8.3), sur **MySQL 8.0**
 (mode strict, `ONLY_FULL_GROUP_BY`, configuration par défaut de WampServer) et sur
-**MariaDB 10.11** : 50/50 (unitaires + intégration), 19/19 (HTTP), 11/11 + 13/13 (navigateur),
-11/11 (moteur JavaScript), ainsi que
+**MariaDB 10.11** : 60/60 (unitaires + intégration), 20/20 (HTTP), 11/11 + 13/13 + 9/9
+(navigateur), 12/12 (moteur JavaScript), ainsi que
 l'installateur web sur une base et un utilisateur créés manuellement. L'exécution sur votre
 installation WampServer reste à faire : lancez les commandes ci-dessus après installation.
 
@@ -456,19 +510,23 @@ niger_parcelles/
 ├── parcelle_print.php            carte de situation imprimable
 ├── proprietaires.php, proprietaire_details.php
 ├── documents.php, importation.php, rapports.php, utilisateurs.php, parametres.php
+├── controle.php                  centre de contrôle (risques, limites, délais)
+├── verifier.php                  vérification publique des fiches (QR code)
+├── manifest.webmanifest, sw.js, offline.html   application installable / hors ligne
 ├── api/        parcelles, geometries, proprietaires, recherche, statistiques,
 │               import, export, documents, admin_areas (JSON)
 ├── config/     app.php, database.php, database.local.example.php
 ├── includes/   bootstrap, functions, auth, permissions, csrf, header, sidebar, footer
-│   ├── lib/        Geo, Crs, SimplePdf, XlsxWriter, ShapefileReader, SqlRunner
+│   ├── lib/        Geo, Crs, SimplePdf, QrCode, XlsxWriter, ShapefileReader, SqlRunner
 │   └── services/   ParcelService, ParcelQuery, OwnerService, DocumentService,
-│                   ImportService, ReportService, PdfService, StatsService, BackupService
+│                   ImportService, ReportService, PdfService, StatsService, BackupService,
+│                   MigrationService, IssuedDocumentService, RiskService, QualityService
 ├── assets/     css/app.css, js/(app, map, parcel-assist, dashboard, parcel-details, import).js,
 │               img/logo.svg (drapeau du Niger), vendor/ (Leaflet, Geoman, Bootstrap, Icons, Chart.js, Turf)
 ├── database/   schema.sql, demo_data.sql (fictif)
 ├── storage/    documents/, exports/, imports/, logs/, backups/ (privés)
 ├── tests/      run_tests.php, unit_test.php, integration_test.php, http_test.php, e2e/
-├── tools/      generate_demo_data.php
+├── tools/      generate_demo_data.php, sauvegarde_auto.php, sauvegarde_auto.bat
 ├── .htaccess, .gitignore, README.md
 ```
 

@@ -275,3 +275,45 @@ test('schema.sql n\'utilise aucun mot réservé de MySQL 8 comme nom de colonne'
     $bad = array_values(array_intersect(array_map('strtolower', $m[1]), $reserved));
     assert_same([], $bad, 'colonnes portant un mot réservé');
 });
+
+suite('QR code');
+
+test('QR code : taille de version, motifs de repérage, déterminisme, refus au-delà de 213 octets', function () {
+    $m = QrCode::matrix('http://localhost/niger_parcelles/verifier.php?t=0123456789abcdef0123456789abcdef');
+    $n = count($m);
+    assert_same(37, $n, 'version 5');
+    foreach ([[0, 0], [$n - 7, 0], [0, $n - 7]] as [$x, $y]) {
+        assert_true($m[$y][$x] && $m[$y + 6][$x + 6] && $m[$y + 3][$x + 3] && !$m[$y + 1][$x + 1], "motif de repérage $x,$y");
+    }
+    assert_same($m, QrCode::matrix('http://localhost/niger_parcelles/verifier.php?t=0123456789abcdef0123456789abcdef'));
+    assert_contains('<svg', QrCode::svg('test'));
+    assert_throws(fn () => QrCode::matrix(str_repeat('a', 214)), InvalidArgumentException::class);
+});
+
+test('QR code lisible par un lecteur standard (zbarimg, si installé)', function () {
+    $zbar = trim((string) @shell_exec('command -v zbarimg 2>/dev/null'));
+    if ($zbar === '' || !function_exists('imagepng')) {
+        echo "      (zbarimg absent : test de lecture ignoré)\n";
+        return;
+    }
+    foreach ([12, 80, 111, 150, 213] as $len) {
+        $txt = substr(str_repeat('https://cadastre.exemple.ne/np/verifier.php?t=0a1b2c3d4e5f', 10), 0, $len);
+        $mx = QrCode::matrix($txt);
+        $n = count($mx);
+        $im = imagecreate(($n + 8) * 4, ($n + 8) * 4);
+        imagecolorallocate($im, 255, 255, 255);
+        $black = imagecolorallocate($im, 0, 0, 0);
+        foreach ($mx as $y => $row) {
+            foreach ($row as $x => $on) {
+                if ($on) {
+                    imagefilledrectangle($im, ($x + 4) * 4, ($y + 4) * 4, ($x + 5) * 4 - 1, ($y + 5) * 4 - 1, $black);
+                }
+            }
+        }
+        $f = tempnam(sys_get_temp_dir(), 'qr') . '.png';
+        imagepng($im, $f);
+        $out = trim((string) shell_exec(escapeshellarg($zbar) . ' -q --raw ' . escapeshellarg($f) . ' 2>/dev/null'));
+        @unlink($f);
+        assert_same($txt, $out, "lecture de $len octets");
+    }
+});

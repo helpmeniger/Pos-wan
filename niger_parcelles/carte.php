@@ -50,6 +50,7 @@ require __DIR__ . '/includes/header.php';
                 <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" id="btnAssist" title="Assistant d'identification des parcelles"><i class="bi bi-magic"></i> Assistant</button>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="#" id="asDetect"><i class="bi bi-bullseye"></i> Détecter une parcelle (clic sur l'image satellite)</a></li>
+                    <li><a class="dropdown-item" href="#" id="asDetectAll"><i class="bi bi-grid-3x3-gap"></i> Détecter toutes les concessions visibles</a></li>
                     <li><a class="dropdown-item" href="#" id="asTemplate"><i class="bi bi-square"></i> Gabarit 400 m² (20 × 20 m) et autres formats</a></li>
                     <li><a class="dropdown-item" href="#" id="asSubdivide"><i class="bi bi-grid-3x3"></i> Découper un îlot en lots</a></li>
                 </ul>
@@ -76,6 +77,15 @@ require __DIR__ . '/includes/header.php';
         <?php if (can('owner.view_personal')): ?>
             <button class="btn btn-sm btn-light" id="btnOwners" title="Afficher les noms des propriétaires sur les parcelles"><i class="bi bi-person-vcard"></i><span class="d-none d-xl-inline"> Propriétaires</span></button>
         <?php endif; ?>
+        <div class="btn-group">
+            <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" id="btnOffline" title="Travail sans réseau"><i class="bi bi-wifi-off"></i>
+                <span class="badge text-bg-warning" id="offBadge" hidden>0</span></button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" id="offPrepare"><i class="bi bi-download"></i> Préparer cette zone pour le terrain</a></li>
+                <li><a class="dropdown-item" href="#" id="offQueue"><i class="bi bi-cloud-upload"></i> Saisies en attente / synchroniser</a></li>
+                <li><a class="dropdown-item" href="#" id="offClear"><i class="bi bi-trash"></i> Effacer la zone préparée</a></li>
+            </ul>
+        </div>
         <button class="btn btn-sm btn-light" id="btnFilters" title="Filtrer les parcelles"><i class="bi bi-funnel"></i></button>
         <button class="btn btn-sm btn-light" id="btnLocate" title="Suivre ma position GPS"><i class="bi bi-geo-alt"></i></button>
         <button class="btn btn-sm btn-light" id="btnNiger" title="Vue d'ensemble du Niger"><i class="bi bi-globe-europe-africa"></i></button>

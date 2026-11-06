@@ -7,6 +7,7 @@ $user = require_login();
 require_permission('parcel.view');
 
 $stats = StatsService::compute($_GET);
+$highRisk = can('parcel.verify') ? count(array_filter(RiskService::compute(), static fn ($r) => $r['level'] === 'eleve')) : null;
 $k = $stats['kpi'];
 $areas = admin_area_options();
 
@@ -62,6 +63,7 @@ $card = static function (string $label, string $value, string $icon, string $cls
     <?= $card('Chevauchements à vérifier', fmt_number($k['overlaps']), 'intersect', 'kpi-red', url('rapports.php', ['report' => 'chevauchements'])) ?>
     <?= $card('Superficie cartographiée', fmt_number($k['total_area_m2'] / 10000, 2) . ' ha', 'rulers', 'kpi-green') ?>
     <?= $card('Propriétaires enregistrés', fmt_number($k['owners']), 'people', '', can('owner.view_personal') ? url('proprietaires.php') : null) ?>
+    <?php if ($highRisk !== null): ?><?= $card('Dossiers à risque élevé', fmt_number($highRisk), 'shield-exclamation', 'kpi-red', url('controle.php', ['level' => 'eleve'])) ?><?php endif; ?>
 </div>
 
 <div class="row g-3">

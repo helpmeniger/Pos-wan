@@ -73,7 +73,12 @@ final class BackupService
                 }
             }
         }
-        $zip->addFromString('LISEZMOI.txt', "Documents Niger Parcelles - copiez le dossier documents/ dans storage/ pour restaurer.\n");
+        if (is_file(MigrationService::secretPath())) {
+            // clé de signature des fiches (QR codes) : sans elle, les fiches déjà émises ne seraient plus authentifiables
+            $zip->addFile(MigrationService::secretPath(), 'secret.key');
+        }
+        $zip->addFromString('LISEZMOI.txt', "Documents Niger Parcelles - copiez le dossier documents/ dans storage/ pour restaurer.\n"
+            . "Copiez aussi secret.key dans storage/ : c'est la clé qui authentifie les fiches PDF (QR codes). Gardez cette archive en lieu sûr.\n");
         $zip->close();
         audit_log('sauvegarde_documents', null, null, ['fichier' => $name]);
         return $name;

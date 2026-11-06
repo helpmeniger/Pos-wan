@@ -217,10 +217,18 @@
         return { angle: ((angle % (Math.PI / 2)) + Math.PI / 2) % (Math.PI / 2), strength: Math.hypot(jxx, jyy) / jxy };
     }
 
+    // Tampons réutilisés entre les appels (évite d'allouer des millions de cases à chaque essai)
+    const BUF = {};
+    function buf(name, Type, n) {
+        if (!BUF[name] || BUF[name].length < n) BUF[name] = new Type(n);
+        return BUF[name];
+    }
+
     /** Croissance de région depuis (sx, sy) avec tolérance de couleur et arrêt sur les contours forts. */
     function growRegion(pre, sx, sy, tol, edgeMax, maxRadius) {
         const { w, h, r, g, b, mag } = pre;
-        const mask = new Uint8Array(w * h);
+        // masque propre à l'appel (rendu au réservoir par release())
+        const mask = buf('mask', Uint8Array, w * h);
         const seed = sy * w + sx;
         // Couleur de référence : moyenne 5×5 autour du clic
         let mr = 0, mg = 0, mb = 0, k = 0;
@@ -230,8 +238,9 @@
             const i = y * w + x; mr += r[i]; mg += g[i]; mb += b[i]; k++;
         }
         mr /= k; mg /= k; mb /= k;
-        const queue = new Int32Array(w * h);
+        const queue = buf('queue', Int32Array, w * h);
         let qh = 0, qt = 0, count = 0, leaked = false;
+        let minX = sx, maxX = sx, minY = sy, maxY = sy;
         queue[qt++] = seed; mask[seed] = 1;
         const r2 = maxRadius * maxRadius;
         while (qh < qt) {
@@ -250,22 +259,27 @@
                 const d = Math.hypot(r[j] - mr, g[j] - mg, b[j] - mb);
                 if (d > tol) continue;
                 mask[j] = 1; queue[qt++] = j;
+                if (jx < minX) minX = jx; if (jx > maxX) maxX = jx; if (jy < minY) minY = jy; if (jy > maxY) maxY = jy;
             }
         }
-        return { mask, count, leaked };
+        return { mask, count, leaked, box: [minX, minY, maxX, maxY],
+            release() { for (let i = 0; i < qt; i++) mask[queue[i]] = 0; } };
     }
 
     /** Fermeture morphologique (dilatation puis érosion) dans une boîte englobante. */
-    function closeMask(mask, w, h, radius) {
-        const dil = new Uint8Array(w * h), out = new Uint8Array(w * h);
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    function closeMask(mask, w, h, radius, box) {
+        const x0 = box ? Math.max(0, box[0] - radius - 1) : 0, x1 = box ? Math.min(w - 1, box[2] + radius + 1) : w - 1;
+        const y0 = box ? Math.max(0, box[1] - radius - 1) : 0, y1 = box ? Math.min(h - 1, box[3] + radius + 1) : h - 1;
+        const dil = buf('dil', Uint8Array, w * h), out = buf('out', Uint8Array, w * h);
+        for (let y = y0; y <= y1; y++) { dil.fill(0, y * w + x0, y * w + x1 + 1); out.fill(0, y * w + x0, y * w + x1 + 1); }
+        for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
             if (!mask[y * w + x]) continue;
             for (let dy = -radius; dy <= radius; dy++) for (let dx = -radius; dx <= radius; dx++) {
                 const xx = x + dx, yy = y + dy;
                 if (xx >= 0 && yy >= 0 && xx < w && yy < h) dil[yy * w + xx] = 1;
             }
         }
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
             let all = 1;
             for (let dy = -radius; dy <= radius && all; dy++) for (let dx = -radius; dx <= radius; dx++) {
                 const xx = x + dx, yy = y + dy;
@@ -289,15 +303,19 @@
         const pre = opt.pre || preprocess(rgba, w, h);
         const maxRadius = Math.sqrt(maxArea) / mpp; // ~ demi-diagonale large
         let best = null;
-        for (const tol of [12, 18, 24, 32, 42, 54]) {
-            for (const edge of [18, 28, 40]) {
+        for (const tol of opt.tolerances || [12, 18, 24, 32, 42, 54]) {
+            for (const edge of opt.edges || [18, 28, 40]) {
                 const reg = growRegion(pre, sx, sy, tol, edge, maxRadius);
                 const area0 = reg.count * mpp * mpp;
-                if (area0 < minArea * 0.3 || area0 > maxArea * 1.5) continue;
-                const closed = closeMask(reg.mask, w, h, Math.max(1, Math.round(0.8 / mpp)));
+                if (area0 < minArea * 0.3 || area0 > maxArea * 1.5) { reg.release(); continue; }
+                const rad = Math.max(1, Math.round(0.8 / mpp));
+                const closed = closeMask(reg.mask, w, h, rad, reg.box);
+                reg.release();
                 const pts = [];
                 let filled = 0;
-                for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+                const bx0 = Math.max(1, reg.box[0] - rad - 1), bx1 = Math.min(w - 2, reg.box[2] + rad + 1);
+                const by0 = Math.max(1, reg.box[1] - rad - 1), by1 = Math.min(h - 2, reg.box[3] + rad + 1);
+                for (let y = by0; y <= by1; y++) for (let x = bx0; x <= bx1; x++) {
                     const i = y * w + x;
                     if (!closed[i]) continue;
                     filled++;
@@ -330,6 +348,43 @@
             best.orientation = dominantOrientation(pre, sx, sy, 30 / mpp);
         }
         return best;
+    }
+
+    /**
+     * Détection en série : sème des points sur une grille (pas ≈ moitié d'un lot) et
+     * garde les concessions détectées avec une bonne confiance, sans doublons.
+     * @param {function} onProgress (fait, total) facultatif
+     */
+    function detectMany(rgba, w, h, opt, onProgress) {
+        const mpp = opt.mpp, target = opt.targetArea || 400;
+        const pre = preprocess(rgba, w, h);
+        const step = Math.max(4, Math.round(Math.sqrt(target) / 2 / mpp));
+        const margin = Math.round(Math.sqrt(target) / mpp / 2);
+        const seeds = [];
+        for (let y = margin; y < h - margin; y += step) for (let x = margin; x < w - margin; x += step) seeds.push([x, y]);
+        const found = [];
+        const inside = (pt, poly) => {
+            let c = false;
+            for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+                const [xi, yi] = poly[i], [xj, yj] = poly[j];
+                if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) c = !c;
+            }
+            return c;
+        };
+        seeds.forEach(([sx, sy], k) => {
+            if (onProgress && k % 10 === 0) onProgress(k, seeds.length);
+            if (found.some((f) => inside([sx, sy], f.corners))) return;
+            if (opt.skip && opt.skip(sx, sy)) return;
+            const r = detectParcel(rgba, w, h, sx, sy, Object.assign({ tolerances: [16, 24, 34], edges: [22, 36] }, opt, { pre }));
+            if (!r || r.score < (opt.minScore || 0.55) || r.area < target * 0.55 || r.area > target * 2.5) return;
+            // concession coupée par le bord de l'image : incomplète, ignorée
+            if (r.corners.some(([x, y]) => x < 2 || y < 2 || x > w - 3 || y > h - 3)) return;
+            const cx = r.corners.reduce((s, c) => s + c[0], 0) / 4, cy = r.corners.reduce((s, c) => s + c[1], 0) / 4;
+            if (found.some((f) => inside([cx, cy], f.corners))) return;
+            found.push(r);
+        });
+        if (onProgress) onProgress(seeds.length, seeds.length);
+        return found;
     }
 
     // ------------------------------------------------------------ Repère métrique local (ellipsoïde)
@@ -438,7 +493,7 @@
     return {
         latLngToPixel, pixelToLatLng, metersPerPixel, utmZone, toUtm, fromUtm, toDms, geodesicArea, geodesicDistance, geodesicLength,
         convexHull, minAreaRect, polygonArea, rectCorners,
-        preprocess, dominantOrientation, growRegion, closeMask, detectParcel,
+        preprocess, dominantOrientation, growRegion, closeMask, detectParcel, detectMany,
         localFrame, rectangleLatLngs, analyzePolygon, squarePolygon, scaleToArea, rotate, bearingScreen, subdivide,
     };
 }));

@@ -202,6 +202,7 @@ if (request_method() === 'POST' && !$blocking) {
                     SqlRunner::runFile($pdo, __DIR__ . '/database/demo_data.sql');
                 }
             }
+            MigrationService::migrate($pdo);
             $roleId = (int) $pdo->query("SELECT id FROM roles WHERE code = 'admin_general'")->fetchColumn();
             if ($roleId <= 0) {
                 throw new RuntimeException('Rôle admin_general introuvable : schema.sql n\'a pas été importé entièrement.');
@@ -231,7 +232,7 @@ if (request_method() === 'POST' && !$blocking) {
             if ($createdTables) {
                 try {
                     $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
-                    foreach (NP_TABLES as $t) {
+                    foreach (array_merge(['issued_documents', 'quality_dismissals'], NP_TABLES) as $t) {
                         $pdo->exec("DROP TABLE IF EXISTS `$t`");
                     }
                     $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');

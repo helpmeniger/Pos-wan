@@ -26,6 +26,9 @@ $jsConfig = [
     <meta name="robots" content="noindex, nofollow">
     <title><?= e($pageTitle) ?> · Niger Parcelles</title>
     <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>" type="image/svg+xml">
+    <link rel="manifest" href="<?= e(url('manifest.webmanifest')) ?>">
+    <link rel="apple-touch-icon" href="<?= e(asset('img/apple-touch-icon.png')) ?>">
+    <meta name="theme-color" content="#e05206">
     <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap/css/bootstrap.min.css')) ?>">
     <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
     <?php if (in_array('leaflet', $vendor, true)): ?>

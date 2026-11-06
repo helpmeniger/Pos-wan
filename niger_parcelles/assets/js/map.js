@@ -186,9 +186,17 @@
         try {
             const fc = await NP.api('api/parcelles.php?' + q.toString(), { signal: loadCtrl.signal });
             lastFc = fc;
+            setOffline(false);
             renderParcels(fc);
         } catch (e) {
-            if (e.name !== 'AbortError') NP.toast('Chargement des parcelles impossible : ' + e.message, 'error');
+            if (e.name === 'AbortError') return;
+            if (e.status === 0 && window.NPOffline) {
+                // Hors connexion : parcelles de la zone préparée sur l'appareil
+                setOffline(true);
+                try { const fc = await NPOffline.localFeatures(map.getBounds()); lastFc = fc; renderParcels(fc); } catch (e2) { /* aucune zone */ }
+            } else {
+                NP.toast('Chargement des parcelles impossible : ' + e.message, 'error');
+            }
         } finally {
             $('mapLoading').hidden = true;
         }
@@ -701,7 +709,20 @@
             if (editing.mode === 'create') {
                 const attributes = {};
                 new FormData($('parcelForm')).forEach((v, k) => { attributes[k] = v; });
-                r = await NP.api('api/parcelles.php?action=create', { method: 'POST', body: { attributes, geometry, acknowledge } });
+                try {
+                    r = await NP.api('api/parcelles.php?action=create', { method: 'POST', body: { attributes, geometry, acknowledge } });
+                } catch (netErr) {
+                    if (netErr.status !== 0 || !window.NPOffline) throw netErr;
+                    // Pas de réseau : la parcelle est conservée sur l'appareil et sera envoyée plus tard
+                    await NPOffline.enqueue(attributes, geometry);
+                    stopEditing();
+                    setOffline(true);
+                    await refreshQueue();
+                    showPanel('Saisie conservée sur l\'appareil', '<div class="alert alert-info small">Pas de réseau : la parcelle ('
+                        + NP.fmtArea(m.area) + ') est enregistrée sur cet appareil. Elle sera envoyée automatiquement au retour du réseau '
+                        + '(ou via « Hors ligne › Synchroniser »). Sa référence sera attribuée par le serveur à ce moment-là.</div>');
+                    return;
+                }
                 NP.toast('Parcelle enregistrée : ' + r.parcel_reference + ' (' + NP.fmtArea(r.area_m2) + ')');
                 const id = r.id;
                 stopEditing();
@@ -1009,6 +1030,7 @@
     }
     onMenu('asDetect', () => startAssist('detect'));
     onMenu('asTemplate', () => startAssist('template'));
+    onMenu('asDetectAll', () => { startAssist('detect'); detectInView(); });
     onMenu('asSubdivide', () => startAssist('subdivide'));
 
     function onAssistClick(ll) {
@@ -1059,6 +1081,79 @@
         const lls = AS.rectangleLatLngs(ll.lat, ll.lng, t.w, t.h, ang);
         const area = AS.geodesicArea(lls);
         return addCandidate(lls, { area, score: null, source: source || ('gabarit ' + t.w + ' × ' + t.h + ' m') });
+    }
+
+    /** Charge les tuiles satellite couvrant une emprise (lat/lng) dans un canevas. */
+    function loadSatelliteBounds(bounds, z) {
+        const nw = AS.latLngToPixel(bounds.getNorth(), bounds.getWest(), z), se = AS.latLngToPixel(bounds.getSouth(), bounds.getEast(), z);
+        const tx0 = Math.floor(nw.x / 256), ty0 = Math.floor(nw.y / 256), tx1 = Math.floor(se.x / 256), ty1 = Math.floor(se.y / 256);
+        if ((tx1 - tx0 + 1) * (ty1 - ty0 + 1) > 30) return Promise.reject(new Error('zone trop grande'));
+        const canvas = document.createElement('canvas');
+        canvas.width = (tx1 - tx0 + 1) * 256;
+        canvas.height = (ty1 - ty0 + 1) * 256;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const jobs = [];
+        for (let tx = tx0; tx <= tx1; tx++) for (let ty = ty0; ty <= ty1; ty++) {
+            jobs.push(new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.referrerPolicy = 'strict-origin-when-cross-origin';
+                img.onload = () => { ctx.drawImage(img, (tx - tx0) * 256, (ty - ty0) * 256); resolve(); };
+                img.onerror = () => reject(new Error('tuile'));
+                img.src = SATELLITE_URL.replace('{z}', z).replace('{x}', tx).replace('{y}', ty);
+            }));
+        }
+        return Promise.all(jobs).then(() => ({ canvas, ctx, z, originX: tx0 * 256, originY: ty0 * 256 }));
+    }
+
+    let detectWorker = null;
+    /** Détecte toutes les concessions visibles (image satellite, zoom ≥ 18). */
+    async function detectInView() {
+        if (map.getZoom() < 18) { NP.toast('Zoomez davantage (niveau 18 ou plus) : la détection en série couvre au plus quelques centaines de mètres.', 'warning'); return; }
+        if (detectWorker) { NP.toast('Détection déjà en cours…', 'info'); return; }
+        const t = assist.template;
+        const z = 19;
+        let patch;
+        $('mapLoading').hidden = false;
+        try {
+            patch = await loadSatelliteBounds(map.getBounds(), z);
+        } catch (e) {
+            $('mapLoading').hidden = true;
+            NP.toast(e.message === 'zone trop grande' ? 'Zone trop grande : zoomez davantage.' : 'Image satellite inaccessible (connexion Internet ?).', 'warning');
+            return;
+        }
+        const data = patch.ctx.getImageData(0, 0, patch.canvas.width, patch.canvas.height);
+        // Les parcelles déjà enregistrées ou proposées ne sont pas re-détectées
+        const toPx = (lat, lng) => { const p = AS.latLngToPixel(lat, lng, z); return [p.x - patch.originX, p.y - patch.originY]; };
+        const skipBoxes = [];
+        const addBox = (ring) => {
+            const pts = ring.map(([lng, lat]) => toPx(lat, lng));
+            skipBoxes.push([Math.min(...pts.map((p) => p[0])), Math.min(...pts.map((p) => p[1])), Math.max(...pts.map((p) => p[0])), Math.max(...pts.map((p) => p[1]))]);
+        };
+        (lastFc ? lastFc.features : []).forEach((f) => { if (f.geometry.type === 'Polygon') addBox(f.geometry.coordinates[0]); });
+        candidates.forEach((c) => addBox(ringLatLngs(c.layer).map((p) => [p.lng, p.lat])));
+        const mpp = AS.metersPerPixel(map.getCenter().lat, z);
+        const label = $('mapLoading').innerHTML;
+        detectWorker = new Worker(NP.url('assets/js/assist-worker.js'));
+        detectWorker.onmessage = (ev) => {
+            if (ev.data.progress) {
+                const [d, n] = ev.data.progress;
+                $('mapLoading').innerHTML = '<span class="badge text-bg-dark"><span class="spinner-border spinner-border-sm"></span> Analyse de l\'image : ' + Math.round(100 * d / Math.max(n, 1)) + ' %</span>';
+                return;
+            }
+            const found = ev.data.done;
+            found.forEach((r) => {
+                const lls = r.corners.map(([x, y]) => AS.pixelToLatLng(x + patch.originX, y + patch.originY, z));
+                addCandidate(lls, { area: AS.geodesicArea(lls), score: r.score, source: 'détection en série (confiance ' + Math.round(r.score * 100) + ' %)' });
+            });
+            detectWorker.terminate();
+            detectWorker = null;
+            $('mapLoading').innerHTML = label;
+            $('mapLoading').hidden = true;
+            NP.toast(found.length ? found.length + ' concession(s) proposée(s). Vérifiez chaque contour avant d\'enregistrer.' : 'Aucune concession nette détectée dans cette vue.', found.length ? 'success' : 'info');
+        };
+        detectWorker.onerror = () => { detectWorker = null; $('mapLoading').innerHTML = label; $('mapLoading').hidden = true; NP.toast('Échec de l\'analyse de l\'image.', 'error'); };
+        detectWorker.postMessage({ rgba: data.data, w: data.width, h: data.height, opt: { mpp, targetArea: t.w * t.h }, skipBoxes });
     }
 
     /** Charge les tuiles satellite autour du point dans un canevas (CORS requis). */
@@ -1146,7 +1241,7 @@
         const presets = [[20, 20], [15, 25], [16, 25], [20, 25], [20, 30], [10, 40], [25, 40]];
         let html = '<div class="alert alert-warning py-1 small mb-2">Propositions automatiques indicatives : vérifiez chaque contour sur le terrain ou l\'image avant de l\'enregistrer.</div>';
         html += '<div class="btn-group btn-group-sm w-100 mb-2" role="group">'
-            + ['detect:Détecter', 'template:Gabarit', 'subdivide:Lotir'].map((m) => {
+            + ['detect:Détecter', 'all:Tout détecter', 'template:Gabarit', 'subdivide:Lotir'].map((m) => {
                 const [k, l] = m.split(':');
                 return '<button class="btn btn-outline-primary' + (assist.mode === k ? ' active' : '') + '" data-mode="' + k + '">' + l + '</button>';
             }).join('') + '</div>';
@@ -1179,7 +1274,9 @@
         }
         showPanel('Assistant d\'identification', html);
         const body = $('panelBody');
-        body.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => startAssist(b.dataset.mode)));
+        body.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => {
+            if (b.dataset.mode === 'all') { startAssist('detect'); detectInView(); } else startAssist(b.dataset.mode);
+        }));
         const syncTemplate = () => {
             t.w = Math.max(1, parseFloat($('asW').value) || 20);
             t.h = Math.max(1, parseFloat($('asH').value) || 20);
@@ -1251,6 +1348,73 @@
         const force = $('candForce');
         if (force) force.addEventListener('click', () => saveCandidates(true));
     }
+
+    // ===================================================================
+    // Travail sans réseau
+    // ===================================================================
+    const queueLayer = L.featureGroup().addTo(map);
+    let offlineShown = false;
+    function setOffline(off) {
+        $('btnOffline').classList.toggle('btn-warning', off);
+        if (off && !offlineShown) {
+            offlineShown = true;
+            NP.toast('Hors connexion : affichage de la zone préparée sur l\'appareil ; les nouvelles parcelles seront synchronisées plus tard.', 'warning');
+        }
+        if (!off) offlineShown = false;
+    }
+    async function refreshQueue() {
+        if (!window.NPOffline) return [];
+        const items = await NPOffline.queue().catch(() => []);
+        queueLayer.clearLayers();
+        items.forEach((it) => {
+            L.geoJSON(it.geometry, { style: { color: '#1565c0', weight: 2, dashArray: '3 4', fillColor: '#90caf9', fillOpacity: 0.3 }, pmIgnore: true })
+                .bindTooltip('En attente de synchronisation' + (it.message ? ' : ' + NP.esc(it.message) : ''), { sticky: true }).addTo(queueLayer);
+        });
+        $('offBadge').hidden = !items.length;
+        $('offBadge').textContent = items.length;
+        return items;
+    }
+    async function runSync(ackIds) {
+        const rep = await NPOffline.sync(ackIds);
+        await refreshQueue();
+        if (rep.needLogin) { NP.toast('Session expirée : reconnectez-vous, puis synchronisez (les saisies restent sur l\'appareil).', 'warning'); return rep; }
+        if (rep.sent.length) { NP.toast(rep.sent.length + ' parcelle(s) synchronisée(s) : ' + rep.sent.join(', ')); loadParcels(); }
+        if (rep.warnings.length) NP.toast(rep.warnings.length + ' saisie(s) chevauchent des parcelles existantes : à confirmer (Hors ligne › Saisies en attente).', 'warning');
+        return rep;
+    }
+    async function showQueuePanel() {
+        const items = await refreshQueue();
+        const info = await NPOffline.zoneInfo().catch(() => null);
+        let html = '<p class="small">' + (info ? 'Zone préparée le ' + new Date(info.at).toLocaleString('fr-FR') + ' (' + info.n + ' parcelles).' : 'Aucune zone préparée sur cet appareil.')
+            + ' Les fonds de carte ne sont disponibles hors connexion que pour les secteurs déjà affichés.</p>';
+        html += items.length ? items.map((it) => '<div class="candidate-item small' + (it.status !== 'en_attente' ? ' low' : '') + '">'
+            + '<strong>Saisie du ' + new Date(it.created).toLocaleString('fr-FR') + '</strong> · ' + NP.esc(NP.fmtArea(AS.geodesicArea(it.geometry.coordinates[0])))
+            + (it.message ? '<div class="text-danger">' + NP.esc(it.message) + '</div>' : '')
+            + '<div class="mt-1">' + (it.status === 'avertissement' ? '<button class="btn btn-sm btn-warning me-1" data-ack="' + it.uuid + '">Enregistrer malgré l\'avertissement</button>' : '')
+            + '<button class="btn btn-sm btn-outline-danger" data-drop="' + it.uuid + '">Supprimer</button></div></div>').join('')
+            : '<p class="small text-muted">Aucune saisie en attente.</p>';
+        if (items.length) html += '<button class="btn btn-sm btn-success w-100 mt-2" id="offSyncNow"><i class="bi bi-cloud-upload"></i> Synchroniser maintenant</button>';
+        showPanel('Travail sans réseau', html);
+        const body = $('panelBody');
+        body.querySelectorAll('[data-drop]').forEach((b) => b.addEventListener('click', async () => {
+            if (window.confirm('Supprimer définitivement cette saisie de l\'appareil ?')) { await NPOffline.remove(b.dataset.drop); showQueuePanel(); }
+        }));
+        body.querySelectorAll('[data-ack]').forEach((b) => b.addEventListener('click', async () => { await runSync([b.dataset.ack]); showQueuePanel(); }));
+        const sn = $('offSyncNow');
+        if (sn) sn.addEventListener('click', async () => { sn.disabled = true; await runSync([]); showQueuePanel(); });
+    }
+    onMenu('offPrepare', async () => {
+        if (map.getZoom() < 14) { NP.toast('Zoomez sur le quartier de travail (niveau 14 ou plus) avant de préparer la zone.', 'warning'); return; }
+        try {
+            const n = await NPOffline.prepareZone(map.getBounds());
+            NP.toast(n + ' parcelle(s) copiée(s) sur l\'appareil pour le travail sans réseau. Parcourez la zone pour mettre ses fonds de carte en cache.');
+        } catch (e) { NP.toast('Préparation impossible : ' + e.message, 'error'); }
+    });
+    onMenu('offQueue', () => showQueuePanel());
+    onMenu('offClear', async () => { if (window.confirm('Effacer la zone préparée de cet appareil ?')) { await NPOffline.clearZone(); NP.toast('Zone effacée.'); } });
+    window.addEventListener('online', async () => { setOffline(false); if ((await refreshQueue()).length) runSync([]); loadParcels(); });
+    window.addEventListener('offline', () => setOffline(true));
+    refreshQueue().then((items) => { if (items.length && navigator.onLine) runSync([]); });
 
     // ------------------------------------------------- Vue d'ensemble
     $('btnNiger').addEventListener('click', () => map.fitBounds(nigerBounds));
@@ -1353,5 +1517,5 @@
     updateZoomInfo();
     loadParcels();
     // utilisé par les tests automatisés
-    window.NPMap = { map, openParcel, loadParcels, detectAt, addTemplateAt, startAssist, candidates: () => candidates, gpsAverage };
+    window.NPMap = { map, openParcel, loadParcels, refreshQueue, runSync, detectAt, detectInView, addTemplateAt, startAssist, candidates: () => candidates, gpsAverage };
 })();

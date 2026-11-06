@@ -35,6 +35,7 @@ function reset_test_database(): void
     $server->exec('CREATE DATABASE `' . $c['database'] . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
     SqlRunner::runFile(db(), APP_ROOT . '/database/schema.sql');
     setting('__reset__');
+    MigrationService::migrate();
 }
 
 /** Crée un utilisateur de test et le définit comme utilisateur courant. */

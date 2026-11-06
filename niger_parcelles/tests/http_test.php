@@ -277,7 +277,7 @@ test('Profil consultation : lecture seule, aucune donnée personnelle ni adminis
     $h = $GLOBALS['ctx']['consult'];
     assert_same(200, $h->get('parcelles.php')['status']);
     assert_same(200, $h->get('carte.php')['status']);
-    foreach (['utilisateurs.php', 'parametres.php', 'proprietaires.php', 'importation.php', 'documents.php'] as $p) {
+    foreach (['utilisateurs.php', 'parametres.php', 'proprietaires.php', 'importation.php', 'documents.php', 'controle.php'] as $p) {
         assert_same(403, $h->get($p)['status'], $p);
     }
     $csrf = $h->csrf('dashboard.php');
@@ -339,6 +339,26 @@ test('Envoi validé, téléchargement contrôlé, fichier exécutable refusé, a
     @unlink($evil);
     $r = (new Http($GLOBALS['ctx']['BASE']))->get('storage/documents/' . date('Y/m') . '/');
     assert_true(in_array($r['status'], [403, 404], true), 'listing du stockage interdit');
+});
+
+suite('Fiches authentifiables (vérification publique)');
+
+test('QR code de la fiche PDF -> page publique sans connexion, sans donnée personnelle', function () {
+    $admin = $GLOBALS['ctx']['admin'];
+    $pdf = $admin->get('api/export.php?type=fiche_pdf&id=' . $GLOBALS['ctx']['pid'])['body'];
+    assert_same('%PDF-', substr($pdf, 0, 5));
+    $last = $admin->get('parcelle_details.php?id=' . $GLOBALS['ctx']['pid'] . '&tab=historique')['body'];
+    assert_true((bool) preg_match('/class="ref">([0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4})</', $last, $m), 'code de fiche affiché');
+    $public = new Http($GLOBALS['ctx']['BASE']);
+    $r = $public->get('verifier.php?t=' . $m[1]);
+    assert_same(200, $r['status']);
+    assert_contains('Fiche authentique et à jour', $r['body']);
+    assert_not_contains('Test HTTP', $r['body'], 'aucun nom d\'agent');
+    assert_not_contains('<script>alert', $r['body'], 'contenu échappé');
+    assert_contains('identités non publiées', $r['body']);
+    $r = $public->get('verifier.php?t=' . rawurlencode("' OR 1=1 --"));
+    assert_contains('Fiche INCONNUE', $r['body']);
+    assert_same(401, $public->get('api/session.php?action=token')['status'], 'jeton CSRF réservé aux connectés');
 });
 
 suite('Exports et déconnexion');

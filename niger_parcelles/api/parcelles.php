@@ -121,7 +121,9 @@ switch (api_action('list')) {
         api_require_post();
         require_permission('parcel.create');
         $body = json_input();
-        $res = ParcelService::create((array) ($body['attributes'] ?? []), $body['geometry'] ?? null, $uid, !empty($body['acknowledge']));
+        $uuid = isset($body['client_uuid']) && is_string($body['client_uuid']) ? strtolower($body['client_uuid']) : null;
+        $res = ParcelService::create((array) ($body['attributes'] ?? []), $body['geometry'] ?? null, $uid, !empty($body['acknowledge']),
+            'dessin', null, false, $uuid);
         json_response(['ok' => true] + $res, 201);
 
     case 'update':

@@ -1,5 +1,8 @@
 -- =============================================================================
--- Niger Parcelles - Schéma de base de données
+-- Niger Parcelles - Schéma de base de données (version 1)
+-- Les versions suivantes (fiches authentifiables, saisie hors connexion,
+-- contrôle qualité) sont ajoutées AUTOMATIQUEMENT par l'application à la
+-- première connexion (includes/services/MigrationService.php).
 -- Compatible MySQL 5.7+ / 8.x et MariaDB 10.3+ (WampServer)
 -- Moteur InnoDB, encodage utf8mb4 (caractères français et emojis)
 --
@@ -20,6 +23,8 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS issued_documents;
+DROP TABLE IF EXISTS quality_dismissals;
 DROP TABLE IF EXISTS audit_logs;
 DROP TABLE IF EXISTS import_batches;
 DROP TABLE IF EXISTS parcel_overlaps;

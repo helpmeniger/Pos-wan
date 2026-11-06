@@ -135,8 +135,19 @@ final class ParcelService
      * @return array{id:int, parcel_reference:string, overlaps:array, warnings:array}
      */
     public static function create(array $attrs, $geojson, int $userId, bool $acknowledge = false,
-                                  string $source = 'dessin', ?string $sourceCrs = null, bool $isDemo = false): array
+                                  string $source = 'dessin', ?string $sourceCrs = null, bool $isDemo = false, ?string $clientUuid = null): array
     {
+        // Saisie hors connexion : un même envoi répété (réseau coupé pendant la réponse) ne crée jamais de doublon
+        if ($clientUuid !== null) {
+            if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $clientUuid)) {
+                throw new UserFacingException('Identifiant de saisie invalide.');
+            }
+            $existing = db_one('SELECT id, parcel_reference, area_m2, perimeter_m FROM parcels WHERE client_uuid = ?', [$clientUuid]);
+            if ($existing) {
+                return ['id' => (int) $existing['id'], 'parcel_reference' => $existing['parcel_reference'], 'overlaps' => [], 'warnings' => [],
+                        'area_m2' => (float) $existing['area_m2'], 'perimeter_m' => (float) $existing['perimeter_m'], 'already_synced' => true];
+            }
+        }
         $data = self::sanitizeAttributes($attrs);
         [$rings, $m] = self::prepareGeometry($geojson);
 
@@ -147,7 +158,7 @@ final class ParcelService
                 ['warnings' => $warnings, 'overlaps' => $overlaps]);
         }
 
-        return db_transaction(static function () use ($data, $rings, $m, $userId, $overlaps, $warnings, $source, $sourceCrs, $isDemo) {
+        return db_transaction(static function () use ($data, $rings, $m, $userId, $overlaps, $warnings, $source, $sourceCrs, $isDemo, $clientUuid) {
             $ref = self::nextReference($data['administrative_area_id'] ?? null);
             $cols = array_merge($data, [
                 'parcel_reference' => $ref,
@@ -157,7 +168,7 @@ final class ParcelService
                 'current_geometry_version' => 1, 'verification_status' => 'brouillon',
                 'has_overlap_warning' => $overlaps ? 1 : 0, 'is_demo' => $isDemo ? 1 : 0,
                 'created_by' => $userId, 'updated_by' => $userId,
-            ]);
+            ] + ($clientUuid !== null ? ['client_uuid' => $clientUuid] : []));
             $names = array_keys($cols);
             db_query('INSERT INTO parcels (' . implode(',', $names) . ') VALUES (' . implode(',', array_fill(0, count($names), '?')) . ')',
                 array_values($cols));

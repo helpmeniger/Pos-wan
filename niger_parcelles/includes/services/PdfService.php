@@ -176,11 +176,18 @@ final class PdfService
         $geom = ParcelService::currentGeometry($id);
         $a = admin_area_breakdown($p['administrative_area_id'] ? (int) $p['administrative_area_id'] : null);
 
+        // Fiche authentifiable : enregistrement + QR code de vérification
+        $issued = IssuedDocumentService::issueParcelSheet($id, current_user()['id'] ?? null);
+        $qx = SimplePdf::W - self::M - 84;
+        $pdf->qr($qx, $s->y - 12, 84, QrCode::matrix($issued['url']));
+        $pdf->text($qx + 42, $s->y + 78, 'Code : ' . $issued['code'], 7.5, true, [30, 37, 44], 'C');
+        $pdf->text($qx + 42, $s->y + 87, 'Scanner pour vérifier', 6.5, false, self::GRAY, 'C');
         $pdf->text(self::M, $s->y + 6, 'FICHE PARCELLAIRE', 17, true, self::ORANGE);
         $pdf->text(self::M, $s->y + 26, $p['parcel_reference'], 14, true);
-        $pdf->text(SimplePdf::W - self::M, $s->y + 6, label('verification_status', $p['verification_status']), 10, true, self::GREEN, 'R');
-        $pdf->text(SimplePdf::W - self::M, $s->y + 20, label('survey_level', $p['survey_level']), 8.5, false, self::GRAY, 'R');
-        $s->y += 40;
+        $pdf->text(self::M, $s->y + 42, label('verification_status', $p['verification_status']) . ' · ' . label('survey_level', $p['survey_level']), 9, true, self::GREEN);
+        $pdf->paragraph(self::M, $s->y + 58, 330, 'Authenticité : scannez le QR code ou saisissez le code sur ' . public_url('verifier.php')
+            . ' — une fiche périmée ou révoquée y est signalée.', 7, false, self::GRAY);
+        $s->y += 104; // sous le bloc QR code
         if ((int) $p['is_demo'] === 1) {
             $pdf->rect(self::M, $s->y - 10, 515, 16, [255, 236, 179]);
             $pdf->text(self::M + 6, $s->y + 1, 'DONNÉE DE DÉMONSTRATION FICTIVE - sans aucune valeur.', 9, true, [140, 70, 0]);

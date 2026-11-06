@@ -481,6 +481,7 @@ function labels(string $group): array
             'document_ajout' => 'Ajout de document', 'document_statut' => 'Vérification de document',
             'document_archive' => 'Archivage de document', 'chevauchement' => 'Chevauchement détecté',
             'chevauchement_statut' => 'Décision sur chevauchement', 'archivage' => 'Archivage', 'import' => 'Importation',
+            'fiche_revoquee' => 'Révocation d\'une fiche émise', 'limite_recollee' => 'Recollage d\'une limite commune (contrôle qualité)',
         ],
     ];
     return $l[$group] ?? [];
@@ -652,4 +653,23 @@ function api_action(string $default = ''): string
 {
     $a = (string) ($_GET['action'] ?? $_POST['action'] ?? $default);
     return preg_match('/^[a-z_]{1,40}$/', $a) ? $a : '';
+}
+
+/**
+ * URL absolue (QR codes, liens envoyés hors de l'application). Utilise le
+ * paramètre « public_base_url » (ex. https://cadastre.commune.ne/niger_parcelles/)
+ * s'il est défini, sinon l'adresse par laquelle le serveur est consulté.
+ */
+function public_url(string $path, array $query = []): string
+{
+    $base = trim((string) setting('public_base_url', ''));
+    if ($base === '' || !preg_match('#^https?://#i', $base)) {
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        if (!preg_match('/^[A-Za-z0-9.\-]+(:\d+)?$/', $host)) {
+            $host = 'localhost'; // en-tête Host invalide : jamais réutilisé tel quel
+        }
+        $base = (is_https() ? 'https://' : 'http://') . $host . base_path();
+    }
+    $u = rtrim($base, '/') . '/' . ltrim($path, '/');
+    return $query ? $u . '?' . http_build_query($query) : $u;
 }

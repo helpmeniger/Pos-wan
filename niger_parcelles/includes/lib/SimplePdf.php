@@ -161,6 +161,23 @@ final class SimplePdf
             $cx - $r, $y - $k, $cx - $k, $y - $r, $cx, $y - $r, $cx + $k, $y - $r, $cx + $r, $y - $k, $cx + $r, $y);
     }
 
+    /** QR code (matrice de booléens) dessiné en (x, y), côté total `size` points, marge blanche incluse. */
+    public function qr(float $x, float $y, float $size, array $matrix): void
+    {
+        $n = count($matrix);
+        $cell = $size / ($n + 8);
+        $this->rect($x, $y, $size, $size, [255, 255, 255]);
+        $ops = '0 0 0 rg ';
+        foreach ($matrix as $r => $row) {
+            foreach ($row as $c => $on) {
+                if ($on) {
+                    $ops .= sprintf('%.3F %.3F %.3F %.3F re ', $x + ($c + 4) * $cell, self::H - ($y + ($r + 5) * $cell), $cell + 0.01, $cell + 0.01);
+                }
+            }
+        }
+        $this->buf .= $ops . "f\n";
+    }
+
     /** Assemble le document et retourne son contenu binaire. */
     public function output(): string
     {

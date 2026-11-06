@@ -110,6 +110,19 @@ for (const angle of [0, 17, 38]) {
     });
 }
 
+test('Détection en série : toutes les concessions d\'un îlot, sans doublon', () => {
+    const w = 512, h = 512, mpp = 0.2903;
+    const img = synthImage(w, h, mpp, 20, 12);
+    const res = A.detectMany(img, w, h, { mpp, targetArea: 400 });
+    ok(res.length >= 8, 'concessions trouvées : ' + res.length);
+    res.forEach((r) => near(400, r.area, 40, 'superficie'));
+    // aucune paire de détections ne doit se recouvrir (centres distincts d'au moins 15 m)
+    const ctr = res.map((r) => [r.corners.reduce((s, c) => s + c[0], 0) / 4, r.corners.reduce((s, c) => s + c[1], 0) / 4]);
+    for (let i = 0; i < ctr.length; i++) for (let j = i + 1; j < ctr.length; j++) {
+        ok(Math.hypot(ctr[i][0] - ctr[j][0], ctr[i][1] - ctr[j][1]) * mpp > 15, 'doublon de détection');
+    }
+});
+
 test('Orientation dominante retrouvée par le tenseur de structure', () => {
     const w = 256, h = 256, mpp = 0.29;
     const img = synthImage(w, h, mpp, 20, 25);

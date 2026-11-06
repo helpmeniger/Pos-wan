@@ -50,4 +50,8 @@ if (!defined('NP_CLI')) {
         }
         redirect('install.php');
     }
+    // Mise à jour automatique de la base après remplacement des fichiers de l'application
+    if (!defined('NP_INSTALLER')) {
+        MigrationService::autoMigrate();
+    }
 }

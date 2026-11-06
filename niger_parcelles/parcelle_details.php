@@ -95,6 +95,20 @@ if (request_method() === 'POST') {
                 DocumentService::setStatus((int) $doc['id'], (string) ($_POST['verification_status'] ?? ''), $uid);
                 flash('success', 'Statut du document mis à jour.');
                 break;
+            case 'revoke_sheet':
+                require_permission('parcel.validate');
+                $tab = 'historique';
+                $doc = db_one('SELECT id FROM issued_documents WHERE id = ? AND parcel_id = ?', [(int) ($_POST['document_id'] ?? 0), $id]);
+                if (!$doc) {
+                    throw new UserFacingException('Fiche introuvable.', 404);
+                }
+                $reason = input_str('reason', 255);
+                if (!$reason) {
+                    throw new UserFacingException('Indiquez le motif de la révocation.');
+                }
+                IssuedDocumentService::revoke((int) $doc['id'], $uid, $reason);
+                flash('success', 'Fiche révoquée : sa vérification publique l\'indiquera désormais comme annulée.');
+                break;
             case 'overlap':
                 require_permission('overlap.resolve');
                 $tab = 'chevauchements';
@@ -125,6 +139,7 @@ $documents = can('document.view') ? db_all('SELECT d.*, u.full_name AS uploaded_
 $history = ParcelService::historyEntries($id);
 $versions = ParcelService::geometryVersions($id);
 $overlaps = ParcelService::overlapsOf($id);
+$issued = IssuedDocumentService::forParcel($id);
 $transitions = allowed_status_transitions($parcel);
 $canEdit = can_edit_parcel($parcel);
 $canPersonal = can('owner.view_personal');
@@ -165,6 +180,12 @@ $dd = static fn (string $k, $v) => '<dt class="col-sm-4">' . e($k) . '</dt><dd c
     </div>
 </div>
 
+<?php $risk = can('parcel.verify') ? RiskService::forParcel($id) : null; if ($risk): ?>
+    <div class="alert alert-<?= ['eleve' => 'danger', 'moyen' => 'warning', 'faible' => 'secondary'][$risk['level']] ?> py-2"><i class="bi bi-shield-exclamation"></i>
+        <strong>Indice de risque : <?= (int) $risk['score'] ?>/100</strong> —
+        <?= e(implode(' · ', array_map(static fn ($c) => RiskService::RULES[$c][1], $risk['reasons']))) ?>.
+        <a href="<?= e(url('controle.php')) ?>">Centre de contrôle</a></div>
+<?php endif; ?>
 <?php if ((int) $parcel['has_overlap_warning'] === 1): ?>
     <div class="alert alert-danger py-2"><i class="bi bi-intersect"></i> Cette parcelle présente un chevauchement potentiel à vérifier (onglet Chevauchements).</div>
 <?php endif; ?>
@@ -436,6 +457,22 @@ $dd = static fn (string $k, $v) => '<dt class="col-sm-4">' . e($k) . '</dt><dd c
                     <span class="text-muted"><?= e(fmt_date($v['created_at'], true)) ?> · <?= e($v['created_by_name'] ?? '—') ?> · <?= e($v['source']) ?><?= $v['source_crs'] ? ' (' . e($v['source_crs']) . ')' : '' ?></span>
                     <?php if ($v['change_reason']): ?><br><em><?= e($v['change_reason']) ?></em><?php endif; ?></li>
             <?php endforeach; ?>
+            </ul></div>
+            <div class="card mt-3"><div class="card-header">Fiches PDF émises (QR code)</div>
+            <ul class="list-group list-group-flush small">
+            <?php foreach ($issued as $d): ?>
+                <li class="list-group-item"><span class="ref"><?= e(IssuedDocumentService::shortCode($d['token'])) ?></span>
+                    <?= $d['revoked_at'] ? '<span class="badge text-bg-danger">révoquée</span>' : '' ?><br>
+                    <span class="text-muted"><?= e(fmt_date($d['issued_at'], true)) ?> · <?= e($d['issued_by_name'] ?? '—') ?> · vérifiée <?= (int) $d['verify_count'] ?> fois</span>
+                    <?php if ($d['revoked_at']): ?><br><em><?= e($d['revoke_reason']) ?> (<?= e($d['revoked_by_name'] ?? '') ?>)</em>
+                    <?php elseif (can('parcel.validate')): ?>
+                    <form method="post" class="d-flex gap-1 mt-1" data-confirm="Révoquer cette fiche ? Sa vérification publique indiquera qu'elle est annulée.">
+                        <?= csrf_field() ?><input type="hidden" name="action" value="revoke_sheet"><input type="hidden" name="document_id" value="<?= (int) $d['id'] ?>">
+                        <input class="form-control form-control-sm" name="reason" placeholder="Motif (perte, erreur…)" required maxlength="255">
+                        <button class="btn btn-sm btn-outline-danger">Révoquer</button></form>
+                    <?php endif; ?></li>
+            <?php endforeach; ?>
+            <?php if (!$issued): ?><li class="list-group-item text-muted">Aucune fiche émise.</li><?php endif; ?>
             </ul></div></div>
     </div>
 </div>

@@ -17,6 +17,9 @@ const SETTING_FIELDS = [
     'overlap_tolerance_m' => ['Tolérance de contiguïté (m) pour les chevauchements', 'float'],
     'max_upload_mb' => ['Taille maximale des documents (Mo)', 'int'], 'map_max_features' => ['Nombre max. de parcelles par requête carte', 'int'],
     'satellite_enabled' => ['Activer la couche satellite (Esri World Imagery)', 'bool'],
+    'public_base_url' => ['Adresse publique de l\'application pour les QR codes (ex. https://cadastre.commune.ne/niger_parcelles/) — vide : adresse actuelle', 'url'],
+    'quality_tolerance_m' => ['Contrôle qualité : distance max. entre limites voisines à recoller (m)', 'float'],
+    'risk_overdue_days' => ['Contrôle : délai d\'attente signalé (jours)', 'int'],
 ];
 
 if (request_method() === 'POST') {
@@ -35,6 +38,12 @@ if (request_method() === 'POST') {
                     } elseif ($type === 'float') {
                         $v = str_replace(',', '.', (string) $v);
                         if (filter_var($v, FILTER_VALIDATE_FLOAT) === false) { throw new UserFacingException("Valeur numérique attendue : $label."); }
+                    } elseif ($type === 'url') {
+                        $v = trim((string) $v);
+                        if ($v !== '' && (!filter_var($v, FILTER_VALIDATE_URL) || !preg_match('#^https?://#i', $v))) {
+                            throw new UserFacingException("Adresse invalide : $label.");
+                        }
+                        $v = $v === '' ? '' : rtrim($v, '/') . '/';
                     } else {
                         $v = mb_substr(trim((string) $v), 0, 150);
                     }
@@ -241,8 +250,8 @@ require __DIR__ . '/includes/header.php';
                 <label class="form-check-label" for="s_<?= $k ?>"><?= e($label) ?></label></div>
                 <div class="form-text">Respectez les conditions d'utilisation du fournisseur d'imagerie.</div></div>
         <?php else: ?>
-            <div class="col-md-<?= $type === 'text' ? '12' : '3' ?>"><label class="form-label small" for="s_<?= $k ?>"><?= e($label) ?></label>
-                <input class="form-control form-control-sm" id="s_<?= $k ?>" name="<?= $k ?>" value="<?= e(setting($k, '')) ?>" required></div>
+            <div class="col-md-<?= in_array($type, ['text', 'url'], true) ? '12' : '3' ?>"><label class="form-label small" for="s_<?= $k ?>"><?= e($label) ?></label>
+                <input class="form-control form-control-sm" id="s_<?= $k ?>" name="<?= $k ?>" value="<?= e(setting($k, '')) ?>" <?= $type === 'url' ? 'type="url" placeholder="' . e(public_url('')) . '"' : 'required' ?>></div>
         <?php endif; ?>
     <?php endforeach; ?>
 </div><div class="card-footer"><button class="btn btn-primary">Enregistrer</button></div></form>
@@ -297,7 +306,9 @@ require __DIR__ . '/includes/header.php';
         <form method="post"><?= csrf_field() ?><input type="hidden" name="action" value="backup">
             <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="wd" name="with_documents" value="1" checked><label class="form-check-label" for="wd">Inclure les documents</label></div>
             <button class="btn btn-primary btn-sm"><i class="bi bi-hdd"></i> Sauvegarder maintenant</button></form>
-        <hr><p class="mb-0">Alternative : phpMyAdmin &gt; base niger_parcelles &gt; Exporter (format SQL), et copie du dossier <code>storage/documents</code>.</p>
+        <hr><p class="mb-1"><strong>Sauvegarde automatique chaque nuit</strong> : planifiez <code>tools\sauvegarde_auto.bat</code> dans le Planificateur de tâches Windows
+            (30 jours conservés ; journal : <code>storage/logs/sauvegardes.log</code>). Voir le guide (README).</p>
+        <p class="mb-0">Alternative : phpMyAdmin &gt; base niger_parcelles &gt; Exporter (format SQL), et copie du dossier <code>storage/documents</code> et de <code>storage/secret.key</code>.</p>
     </div></div></div>
     <div class="col-lg-6"><div class="card h-100"><div class="card-header text-danger">Restaurer une sauvegarde</div><div class="card-body small">
         <p>Remplace <strong>toutes</strong> les données actuelles par celles du fichier. Une sauvegarde de sécurité est créée automatiquement juste avant.</p>
@@ -340,7 +351,8 @@ require __DIR__ . '/includes/header.php';
 <div class="card"><div class="card-body small"><dl class="row mb-0">
     <dt class="col-sm-4">Version de l'application</dt><dd class="col-sm-8"><?= e(config('version')) ?></dd>
     <dt class="col-sm-4">PHP</dt><dd class="col-sm-8"><?= e(PHP_VERSION) ?></dd>
-    <dt class="col-sm-4">Base de données</dt><dd class="col-sm-8"><?= e((string) db_value('SELECT VERSION()')) ?></dd>
+    <dt class="col-sm-4">Base de données</dt><dd class="col-sm-8"><?= e((string) db_value('SELECT VERSION()')) ?> · structure version <?= (int) setting('schema_version', 1) ?>/<?= MigrationService::LATEST ?> (mise à jour automatique)</dd>
+    <dt class="col-sm-4">Clé de signature des fiches</dt><dd class="col-sm-8"><?= is_file(MigrationService::secretPath()) ? 'Présente (storage/secret.key) — incluse dans les sauvegardes des documents' : 'Absente' ?></dd>
     <dt class="col-sm-4">Extensions</dt><dd class="col-sm-8"><?php foreach (['pdo_mysql', 'mbstring', 'fileinfo', 'zip', 'zlib', 'openssl'] as $x): ?><span class="badge text-bg-<?= extension_loaded($x) ? 'success' : 'secondary' ?> me-1"><?= e($x) ?></span><?php endforeach; ?></dd>
     <dt class="col-sm-4">upload_max_filesize / post_max_size</dt><dd class="col-sm-8"><?= e(ini_get('upload_max_filesize')) ?> / <?= e(ini_get('post_max_size')) ?></dd>
     <dt class="col-sm-4">HTTPS</dt><dd class="col-sm-8"><?= is_https() ? 'Oui' : 'Non (acceptable en local uniquement ; obligatoire avant toute exposition sur un réseau)' ?></dd>

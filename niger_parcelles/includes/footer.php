@@ -22,6 +22,7 @@ $scripts = $scripts ?? [];
 <?php if (in_array('turf', $vendor, true)): ?><script src="<?= e(asset('vendor/turf/turf.min.js')) ?>"></script><?php endif; ?>
 <?php if (in_array('chart', $vendor, true)): ?><script src="<?= e(asset('vendor/chartjs/chart.umd.js')) ?>"></script><?php endif; ?>
 <script src="<?= e(asset('js/app.js')) ?>"></script>
+<script src="<?= e(asset('js/offline.js')) ?>"></script>
 <?php foreach ($scripts as $s): ?>
 <script src="<?= e(asset('js/' . $s)) ?>"></script>
 <?php endforeach; ?>

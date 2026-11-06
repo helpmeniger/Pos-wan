@@ -4,6 +4,7 @@ config/app.local.php
 
 # Données privées et générées
 storage/installed.lock
+storage/secret.key
 storage/documents/*
 storage/exports/*
 storage/logs/*

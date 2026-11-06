@@ -408,3 +408,161 @@ test('Recalcul des superficies : correction tracée, limites inchangées', funct
     $h = db_one("SELECT new_data FROM parcel_history WHERE parcel_id = ? AND action_type = 'modification' ORDER BY id DESC LIMIT 1", [$id]);
     assert_contains('ellipsoïde', (string) $h['new_data']);
 });
+
+suite('Mises à jour de la base (migrations)');
+
+test('Migrations idempotentes : version 2, tables et colonne créées, relance sans effet', function () {
+    assert_same('2', (string) db_value("SELECT setting_value FROM settings WHERE setting_key = 'schema_version'"));
+    assert_same([], MigrationService::migrate(), 'aucune migration à rejouer');
+    foreach (['issued_documents', 'quality_dismissals'] as $t) {
+        assert_true((bool) db_value('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [$t]), $t);
+    }
+    assert_true((bool) db_value("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'parcels' AND COLUMN_NAME = 'client_uuid'"));
+    // Base « version 1 » : la migration complète la structure sans perte
+    db_query("UPDATE settings SET setting_value = '1' WHERE setting_key = 'schema_version'");
+    $n = (int) db_value('SELECT COUNT(*) FROM parcels');
+    assert_same([2], MigrationService::migrate());
+    assert_same($n, (int) db_value('SELECT COUNT(*) FROM parcels'));
+    assert_true(is_file(MigrationService::secretPath()) && strlen(MigrationService::secretKey()) === 64, 'clé de signature');
+});
+
+suite('Fiches authentifiables (QR code)');
+
+test('Fiche émise : authentique, puis périmée après modification, révocable, falsification détectée', function () {
+    $u = as_user('admin_foncier');
+    $r = ParcelService::create(['category' => 'residentiel'], rect_geom(2.80, 13.60), $u['id']);
+    $pid = $r['id'];
+    $doc = IssuedDocumentService::issueParcelSheet($pid, $u['id']);
+    assert_true((bool) preg_match('/^[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/', $doc['code']), $doc['code']);
+    assert_contains('verifier.php?t=' . $doc['token'], $doc['url']);
+    assert_same('authentique', IssuedDocumentService::verify($doc['token'])['state']);
+    assert_same('authentique', IssuedDocumentService::verify($doc['code'])['state'], 'code court');
+    assert_same('authentique', IssuedDocumentService::verify($doc['url'])['state'], 'adresse complète collée');
+    assert_same('inconnue', IssuedDocumentService::verify('ABCD-ABCD-ABCD')['state']);
+    // Une seconde fiche identique ne rend pas la première périmée
+    IssuedDocumentService::issueParcelSheet($pid, $u['id']);
+    $v = IssuedDocumentService::verify($doc['token']);
+    assert_same('authentique', $v['state']);
+    assert_contains('plus récente', implode(' ', $v['changes']));
+    // Changement de limites -> périmée
+    ParcelService::updateGeometry($pid, rect_geom(2.80, 13.60, 25, 30), $u['id'], 'Relevé GPS');
+    $v = IssuedDocumentService::verify($doc['token']);
+    assert_same('perimee', $v['state']);
+    assert_contains('limites', implode(' ', $v['changes']));
+    // Mutation -> propriétaires changés
+    $doc2 = IssuedDocumentService::issueParcelSheet($pid, $u['id']);
+    $o = OwnerService::create(['last_name' => 'QRTEST'], $u['id']);
+    OwnerService::link($pid, $o, [], $u['id']);
+    assert_contains('propriétaires', implode(' ', IssuedDocumentService::verify($doc2['token'])['changes']));
+    // Révocation
+    IssuedDocumentService::revoke($doc2['id'], $u['id'], 'Fiche perdue');
+    assert_same('revoquee', IssuedDocumentService::verify($doc2['token'])['state']);
+    // Falsification du contenu enregistré (base modifiée sans la clé)
+    $doc3 = IssuedDocumentService::issueParcelSheet($pid, $u['id']);
+    db_query("UPDATE issued_documents SET snapshot = REPLACE(snapshot, '\"area_m2\":', '\"area_m2\":9') WHERE id = ?", [$doc3['id']]);
+    assert_same('falsifiee', IssuedDocumentService::verify($doc3['token'])['state']);
+    $facts = json_decode((string) db_value('SELECT snapshot FROM issued_documents WHERE id = ?', [$doc['id']]), true);
+    assert_false(isset($facts['owners']) || strpos(json_encode($facts), 'QRTEST') !== false, 'aucune donnée personnelle dans la fiche publique');
+    assert_true((int) db_value('SELECT verify_count FROM issued_documents WHERE id = ?', [$doc['id']]) >= 4, 'vérifications comptées');
+    $GLOBALS['qr_pid'] = $pid;
+});
+
+test('La fiche PDF contient un QR code et est enregistrée', function () {
+    as_user('admin_general');
+    $before = (int) db_value('SELECT COUNT(*) FROM issued_documents');
+    $pdf = PdfService::parcelSheet($GLOBALS['qr_pid']);
+    assert_same('%PDF-', substr($pdf, 0, 5));
+    assert_same($before + 1, (int) db_value('SELECT COUNT(*) FROM issued_documents'));
+});
+
+suite('Indice de risque (anti-fraude)');
+
+test('Règles : double vente, titre sans référence, auto-validation, conflit de propriétaires', function () {
+    $u = as_user('admin_foncier');
+    $p1 = ParcelService::create(['category' => 'residentiel', 'declared_status' => 'titre_foncier'], rect_geom(2.90, 13.70), $u['id'])['id'];
+    $a = OwnerService::create(['last_name' => 'RISQUE-A'], $u['id']);
+    $b = OwnerService::create(['last_name' => 'RISQUE-B'], $u['id']);
+    $c = OwnerService::create(['last_name' => 'RISQUE-C'], $u['id']);
+    OwnerService::link($p1, $a, [], $u['id']);
+    OwnerService::recordMutation($p1, ['mutation_type' => 'vente', 'mutation_date' => date('Y-m-d', strtotime('-200 days'))], [['owner_id' => $b]], null, $u['id']);
+    OwnerService::recordMutation($p1, ['mutation_type' => 'vente', 'mutation_date' => date('Y-m-d', strtotime('-10 days'))], [['owner_id' => $c]], null, $u['id']);
+    $r = RiskService::forParcel($p1);
+    assert_true(in_array('double_vente', $r['reasons'], true), json_encode($r));
+    assert_true(in_array('titre_sans_reference', $r['reasons'], true));
+    assert_true(in_array('titre_indicatif', $r['reasons'], true));
+    assert_true($r['score'] >= 60 && $r['level'] === 'eleve', 'score ' . $r['score']);
+    // Chevauchement entre propriétaires différents
+    $p2 = ParcelService::create(['category' => 'residentiel'], rect_geom(2.90 + 0.00005, 13.70), $u['id'], true)['id'];
+    OwnerService::link($p2, $a, [], $u['id']);
+    assert_true(in_array('conflit_proprietaires', RiskService::forParcel($p2)['reasons'], true));
+    // Auto-validation (même auteur et valideur) et validation sans document
+    $p3 = ParcelService::create(['category' => 'residentiel'], rect_geom(2.95, 13.75), $u['id'])['id'];
+    ParcelService::changeStatus($p3, 'soumise', $u['id']);
+    ParcelService::changeStatus($p3, 'verifiee', $u['id']);
+    $r3 = RiskService::forParcel($p3);
+    assert_true(in_array('auto_validation', $r3['reasons'], true) && in_array('verifiee_sans_document', $r3['reasons'], true), json_encode($r3));
+    // Parcelle saine : aucun indicateur
+    $p4 = ParcelService::create(['category' => 'residentiel'], rect_geom(2.99, 13.79), $u['id'])['id'];
+    assert_same(null, RiskService::forParcel($p4));
+});
+
+test('Dossiers en attente au-delà du délai', function () {
+    $u = $GLOBALS['np_cli_user'];
+    $p = ParcelService::create(['category' => 'agricole'], rect_geom(3.05, 13.85), $u['id'])['id'];
+    ParcelService::changeStatus($p, 'soumise', $u['id']);
+    db_query("UPDATE parcel_history SET created_at = NOW() - INTERVAL 40 DAY WHERE parcel_id = ? AND action_type = 'statut'", [$p]);
+    assert_true(in_array($p, array_map('intval', array_column(RiskService::overdue(15), 'id')), true));
+    assert_false(in_array($p, array_map('intval', array_column(RiskService::overdue(60), 'id')), true));
+});
+
+suite('Contrôle qualité des limites');
+
+test('Écart de 30 cm entre voisines détecté, recollé (nouvelle version), puis plus signalé', function () {
+    $u = as_user('admin_foncier');
+    $base = rect_geom(3.10, 13.90);
+    $a = ParcelService::create(['category' => 'residentiel'], $base, $u['id'])['id'];
+    $bb = Geo::bbox(Geo::normalizePolygon($base));
+    $gap = 0.30 / (111320 * cos(deg2rad(13.9)));
+    $w = 0.0002;
+    $east = ['type' => 'Polygon', 'coordinates' => [[[$bb['max_lng'] + $gap, $bb['min_lat']], [$bb['max_lng'] + $gap + $w, $bb['min_lat']],
+        [$bb['max_lng'] + $gap + $w, $bb['max_lat']], [$bb['max_lng'] + $gap, $bb['max_lat']], [$bb['max_lng'] + $gap, $bb['min_lat']]]]];
+    $b = ParcelService::create(['category' => 'residentiel'], $east, $u['id'])['id'];
+    $issues = array_values(array_filter(QualityService::scan(), static fn ($i) => in_array($a, [$i['a'], $i['b']], true)));
+    assert_same(1, count($issues));
+    assert_same('ecart', $issues[0]['kind']);
+    assert_near(0.30, $issues[0]['max_m'], 0.02);
+    $res = QualityService::snap($b, $a, $u['id']);
+    assert_same(2, $res['moved']);
+    assert_same(2, (int) db_value('SELECT current_geometry_version FROM parcels WHERE id = ?', [$b]));
+    assert_same([], array_values(array_filter(QualityService::scan(), static fn ($i) => in_array($a, [$i['a'], $i['b']], true))), 'limite commune exacte');
+    assert_same([], ParcelService::findOverlaps(Geo::normalizePolygon(ParcelService::currentGeometry($b)), $b), 'pas de chevauchement après recollage');
+    assert_true(in_array('limite_recollee', array_column(ParcelService::historyEntries($b), 'action_type'), true));
+});
+
+test('Écart accepté (ruelle, mur épais) : plus signalé', function () {
+    $u = $GLOBALS['np_cli_user'];
+    $base = rect_geom(3.20, 13.95);
+    $a = ParcelService::create(['category' => 'residentiel'], $base, $u['id'])['id'];
+    $bb = Geo::bbox(Geo::normalizePolygon($base));
+    $g = 0.4 / (111320 * cos(deg2rad(13.95)));
+    $b = ParcelService::create(['category' => 'residentiel'], ['type' => 'Polygon', 'coordinates' => [[[$bb['max_lng'] + $g, $bb['min_lat']],
+        [$bb['max_lng'] + $g + 0.0002, $bb['min_lat']], [$bb['max_lng'] + $g + 0.0002, $bb['max_lat']], [$bb['max_lng'] + $g, $bb['max_lat']],
+        [$bb['max_lng'] + $g, $bb['min_lat']]]]], $u['id'])['id'];
+    $find = static fn () => array_filter(QualityService::scan(), static fn ($i) => in_array($a, [$i['a'], $i['b']], true));
+    assert_same(1, count($find()));
+    QualityService::dismiss($b, $a, 'Mur mitoyen de 40 cm', $u['id']);
+    assert_same(0, count($find()));
+});
+
+suite('Saisie hors connexion');
+
+test('Envoi répété d\'une même saisie (même identifiant) : une seule parcelle', function () {
+    $u = $GLOBALS['np_cli_user'];
+    $uuid = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
+    $r1 = ParcelService::create(['category' => 'residentiel'], rect_geom(3.30, 14.00), $u['id'], false, 'dessin', null, false, $uuid);
+    $r2 = ParcelService::create(['category' => 'residentiel'], rect_geom(3.30, 14.00), $u['id'], false, 'dessin', null, false, $uuid);
+    assert_same($r1['id'], $r2['id']);
+    assert_true(!empty($r2['already_synced']));
+    assert_same(1, (int) db_value('SELECT COUNT(*) FROM parcels WHERE client_uuid = ?', [$uuid]));
+    assert_throws(fn () => ParcelService::create(['category' => 'autre'], rect_geom(3.4, 14.1), $u['id'], false, 'dessin', null, false, "x' OR 1=1"), UserFacingException::class);
+});
