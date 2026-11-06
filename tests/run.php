@@ -1318,8 +1318,16 @@ test('Mise à jour du logiciel : chemins contrôlés, version, intégrité, sauv
     file_put_contents($dir . '/config/app.php', $cfg);
     // Application (même version : réparation) : sauvegardes base + code, nouveau fichier copié
     $before = count(S\UpdateService::codeBackups());
-    $res = S\UpdateService::apply($t);
+    // Étapes très courtes (comme un hébergement qui coupe les requêtes longues) : reprise jusqu'à la fin
+    $steps = 0;
+    do {
+        $st = S\UpdateService::step($t, false, 0.05);
+        $steps++;
+    } while (!$st['done'] && $steps < 5000);
+    $res = $st['result'];
+    ok($steps > 3, "installation découpée en $steps étapes");
     ok($res['files'] > 200 && is_file(BASE_PATH . '/docs/TEST_MISE_A_JOUR.txt'), 'fichiers copiés');
+    ok($res['changed'] >= 1 && $res['changed'] < 20, 'seuls les fichiers modifiés sont copiés : ' . $res['changed']);
     ok(!is_file(BASE_PATH . '/pirate.php') && !is_file(dirname(BASE_PATH, 2) . '/pirate.php'), 'aucun fichier hors du logiciel');
     eq($before + 1, count(S\UpdateService::codeBackups()), 'sauvegarde du code');
     ok(is_file(S\BackupService::path($res['db_backup'])), 'sauvegarde de la base');
@@ -2109,7 +2117,7 @@ test('Synchronisation de la base : tables, colonnes et listes de valeurs manquan
     $c = $SS::check();
     ok(in_array('stock_import_rows', $c['missing_tables'], true), 'table manquante détectée');
     ok(in_array('customers.loyalty_points', array_map(fn($x) => $x['table'] . '.' . $x['column'], $c['missing_columns']), true), 'colonne manquante détectée');
-    ok($c['enums'] && $c['enums'][0]['table'] === 'display_media' && $c['enums'][0]['added'] === ['video'], 'valeur manquante détectée : ' . json_encode($c['enums']));
+    ok($c['enums'] && $c['enums'][0]['table'] === 'display_media' && in_array('video', $c['enums'][0]['added'], true), 'valeur manquante détectée : ' . json_encode($c['enums']));
     $r = $SS::repair();
     ok(!$r['errors'] && $r['created'] === ['stock_import_rows'] && in_array('customers.loyalty_points', $r['columns'], true) && $r['enums'], 'réparé : ' . json_encode($r['errors']));
     ok($r['backup'] && is_file(S\BackupService::dir() . '/' . $r['backup']), 'sauvegarde faite avant la réparation');
@@ -2138,6 +2146,57 @@ test('Photos servies par l\'application : adresse /media, types, chemins refusé
         eq(null, $M::resolve($bad), "refusé : $bad");
     }
     @unlink($f);
+});
+
+test('Écran client : publications (menu, promotion) texte seul ou texte + photo, couleurs, contrôles', function () {
+    actingAs('admin');
+    $CD = S\CustomerDisplay::class;
+    throws(fn() => $CD::saveText(null, ['title' => '', 'body' => '']), 'au moins un titre');
+    throws(fn() => $CD::saveText(null, ['title' => 'x', 'body' => str_repeat("ligne\n", 20)]), '14 lignes');
+    $id = $CD::saveText(null, ['title' => 'Menu du jour', 'body' => "# Plats\nRiz sauce arachide 1500 F\nPoulet braisé 3000 F", 'palette' => 'soleil', 'layout' => 'auto', 'duration_s' => '12']);
+    $m = DB::one('SELECT * FROM display_media WHERE id = ?', [$id]);
+    ok($m['kind'] === 'text' && $m['path'] === null && $CD::fileProblem($m) === null, 'publication sans photo');
+    eq(['palette' => 'soleil', 'layout' => 'auto'], $CD::style($m));
+    $pl = array_values(array_filter($CD::playlist(), fn($x) => $x['id'] === $id));
+    ok($pl && $pl[0]['kind'] === 'text' && $pl[0]['url'] === null && str_contains($pl[0]['body'], 'Poulet braisé') && $pl[0]['seconds'] === 12, 'diffusée');
+    // Couleurs personnalisées : seules les couleurs valides sont gardées
+    $CD::saveText($id, ['title' => 'Menu du jour', 'body' => 'Jus de bissap 500 F', 'palette' => 'perso', 'bg' => '#112233', 'fg' => 'rouge', 'accent' => '#FFAA00', 'layout' => 'overlay', 'duration_s' => '10']);
+    eq(['palette' => 'perso', 'layout' => 'overlay', 'bg' => '#112233', 'accent' => '#ffaa00'], $CD::style(DB::one('SELECT * FROM display_media WHERE id = ?', [$id])));
+    // Texte + photo
+    $png = tempnam(sys_get_temp_dir(), 'pub'); $im = imagecreatetruecolor(800, 600); imagejpeg($im, $png); imagedestroy($im);
+    $CD::saveText($id, ['title' => 'Promo', 'body' => '- 20 % sur le riz', 'palette' => 'nuit', 'duration_s' => '10'], ['name' => 'p.jpg', 'tmp_name' => $png, 'size' => filesize($png), 'error' => UPLOAD_ERR_OK]);
+    $m = DB::one('SELECT * FROM display_media WHERE id = ?', [$id]);
+    ok($m['path'] && is_file(UPLOADS_PATH . '/' . $m['path']), 'photo jointe');
+    $file = UPLOADS_PATH . '/' . $m['path'];
+    $CD::saveText($id, ['title' => 'Promo', 'body' => '- 20 % sur le riz', 'palette' => 'nuit', 'duration_s' => '10', 'remove_photo' => '1']);
+    ok(!is_file($file) && DB::value('SELECT path FROM display_media WHERE id = ?', [$id]) === null, 'photo retirée et supprimée');
+    $CD::deleteMedia($id);
+    eq(null, DB::value('SELECT id FROM display_media WHERE id = ?', [$id]));
+});
+test('Écrans : accès direct par mot de passe, cantonnement, écran mémorisé, mot de passe changé, révocation', function () {
+    $SC = S\Screens::class;
+    $cat = $SC::catalog();
+    ok(isset($cat['client'], $cat['cuisine'], $cat['pressing'], $cat['hotel'], $cat['clinique']), 'tous les écrans');
+    App\Core\Session::destroy();
+    $_SESSION = [];
+    throws(fn() => $SC::login('client', 'caissier', 'mauvais', false), 'incorrect');
+    $role = DB::one("SELECT * FROM roles WHERE code = 'cook'");
+    if (!DB::value("SELECT id FROM users WHERE username = 'ecran_cuisine'")) {
+        DB::insert('users', ['username' => 'ecran_cuisine', 'full_name' => 'Cuisine', 'role_id' => $role['id'], 'password_hash' => App\Core\Auth::hash('Cuisine-Ecran-2026'), 'password_changed_at' => date('Y-m-d H:i:s')]);
+    }
+    throws(fn() => $SC::login('client', 'ecran_cuisine', 'Cuisine-Ecran-2026', false), 'pas accès à cet écran');
+    eq(null, App\Core\Session::get('uid'), 'compte refusé : aucune session ouverte');
+    $SC::login('client', 'caissier', 'Mot-de-passe-2026', false);
+    eq('client', App\Core\Session::get('screen_scope'));
+    eq(null, $SC::guard('/afficheur'));
+    eq(null, $SC::guard('/afficheur/playlist'));
+    eq(null, $SC::guard('/media/display/x.jpg'));
+    eq('/afficheur', $SC::guard('/pos'), 'caisse refusée');
+    eq('/afficheur', $SC::guard('/settings'), 'paramètres refusés');
+    eq('/afficheur', $SC::guard('/afficheurs-pirate'), 'préfixe exact');
+    App\Core\Session::destroy();
+    $_SESSION = [];
+    eq(null, $SC::guard('/pos'), 'session normale non cantonnée');
 });
 
 echo "\n== HTTP & sécurité (serveur PHP intégré) ==\n";
@@ -2598,6 +2657,36 @@ test('Écran client (HTTP) : paramètres, caisse, écran du second moniteur, dro
     $rg = $c->req('GET', "$B/media/" . $mm[1], null, ['Range: bytes=0-9']);
     ok($rg['code'] === 206 && strlen($rg['body']) === 10, 'lecture partielle (vidéos)');
     eq(404, (new Http())->req('GET', "$B/media/../.env")['code'], 'fichier hors des téléversements refusé');
+    // Accès direct à l'écran client depuis un téléviseur (aucune session au départ)
+    $tv = new Http();
+    $f = $tv->req('GET', "$B/ecran/client");
+    ok($f['code'] === 200 && str_contains($f['body'], 'Mémoriser cet écran'), 'formulaire de l\'écran');
+    $lg = $tv->req('POST', "$B/ecran/client", http_build_query(['_csrf' => $tv->token("$B/ecran/client"), 'username' => 'caissier', 'password' => 'Mot-de-passe-2026', 'remember' => '1']));
+    ok($lg['code'] === 302 && str_contains($lg['headers'], '/afficheur') && preg_match('/Set-Cookie: PMSCREEN=(\d+\.[a-f0-9]{64})/i', $lg['headers'], $ck), 'connecté et mémorisé');
+    eq(200, $tv->req('GET', "$B/afficheur")['code'], 'écran affiché');
+    $pos = $tv->req('GET', "$B/pos");
+    ok($pos['code'] === 302 && str_contains($pos['headers'], '/afficheur'), 'caisse inaccessible depuis l\'écran');
+    eq(403, $tv->req('GET', "$B/products", null, ['Accept: application/json'])['code'], 'données de gestion refusées (JSON)');
+    // Écran redémarré : seul le cookie d'appareil reste → reconnexion silencieuse
+    $ch = curl_init("$B/afficheur");
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_COOKIE => 'PMSCREEN=' . $ck[1]]);
+    $raw = (string) curl_exec($ch);
+    eq(200, (int) curl_getinfo($ch, CURLINFO_HTTP_CODE), 'reconnexion automatique de l\'écran mémorisé');
+    curl_close($ch);
+    $devId = (int) explode('.', $ck[1])[0];
+    ok((int) DB::value('SELECT user_id FROM screen_devices WHERE id = ? AND revoked_at IS NULL', [$devId]) > 0, 'appareil enregistré');
+    $sc = $a->req('GET', "$B/screens");
+    ok($sc['code'] === 200 && str_contains($sc['body'], '/ecran/client') && str_contains($sc['body'], 'Déconnecter'), 'page des écrans');
+    $a->req('POST', "$B/screens/$devId/revoke", http_build_query(['_csrf' => $a->token("$B/screens")]));
+    $ch = curl_init("$B/afficheur");
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_COOKIE => 'PMSCREEN=' . $ck[1]]);
+    curl_exec($ch);
+    eq(302, (int) curl_getinfo($ch, CURLINFO_HTTP_CODE), 'écran révoqué : mot de passe redemandé');
+    curl_close($ch);
+    // Cuisine : un caissier sans le droit de l'écran cuisine est refusé
+    $k = new Http();
+    $k->req('POST', "$B/ecran/cuisine", http_build_query(['_csrf' => $k->token("$B/ecran/cuisine"), 'username' => 'caissier', 'password' => 'Mot-de-passe-2026']));
+    ok(str_contains($k->req('GET', "$B/ecran/cuisine")['body'], 'pas accès à cet écran'), 'écran cuisine refusé sans le droit');
     $db = $a->req('GET', "$B/system/database");
     ok($db['code'] === 200 && str_contains($db['body'], 'Base complète'), 'page Vérification de la base');
     $pl = json_decode($c->req('GET', "$B/afficheur/playlist", null, ['Accept: application/json'])['body'], true);

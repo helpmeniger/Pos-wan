@@ -36,7 +36,14 @@
       const t = setTimeout(() => reject(new Error('délai')), 45000);
       const done = (el) => { clearTimeout(t); resolve(el); };
       const fail = () => { clearTimeout(t); reject(new Error('illisible')); };
-      if (m.kind === 'video') {
+      if (m.kind === 'text') {
+        // Publication : mise en forme automatique ; la photo éventuelle est chargée avant d'apparaître
+        const show = () => { try { done(window.PMTextSlide.render(m)); } catch (e) { fail(); } };
+        if (!m.url) { show(); return; }
+        const pic = new Image();
+        pic.src = m.url;
+        (pic.decode ? pic.decode() : new Promise((r, j) => { pic.onload = r; pic.onerror = j; })).then(show, fail);
+      } else if (m.kind === 'video') {
         const v = document.createElement('video');
         v.muted = !CFG.sound; v.playsInline = true; v.preload = 'auto';
         v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
@@ -68,7 +75,7 @@
   function build(m, el) {
     const slide = document.createElement('div');
     const fx = effect();
-    const fill = m.kind === 'video' && CFG.fill === 'blur' ? 'theme' : (CFG.fill || 'blur');
+    const fill = (m.kind === 'video' && CFG.fill === 'blur') || m.kind === 'text' ? 'theme' : (CFG.fill || 'blur');
     slide.className = `cd-slide fx-${fx} fill-${fill}`;
     slide.style.setProperty('--dur', Math.max(3, m.seconds || 8) + 's');
     // Ken Burns : direction du mouvement variée d'une image à l'autre
@@ -82,7 +89,7 @@
     }
     el.classList.add('cd-item');
     slide.appendChild(el);
-    if (CFG.captions && m.title) {
+    if (CFG.captions && m.title && m.kind !== 'text') {
       const c = document.createElement('div');
       c.className = 'cd-caption';
       c.textContent = m.title;
@@ -92,14 +99,14 @@
   }
 
   function playable() {
-    return list.filter((m) => !failed.has(m.url));
+    return list.filter((m) => !failed.has(m.id));
   }
 
   function drawDots(active) {
     if (!dots) return;
     const ok = playable();
     dots.classList.toggle('d-none', !CFG.progress || ok.length < 2);
-    dots.innerHTML = ok.map((m) => `<i class="${m.url === active ? 'on' : ''}"></i>`).join('');
+    dots.innerHTML = ok.map((m) => `<i class="${String(m.id) === active ? 'on' : ''}"></i>`).join('');
   }
 
   function runProgress(seconds) {
@@ -139,11 +146,11 @@
       setTimeout(() => { const v = old.querySelector('video'); if (v) v.pause(); old.remove(); }, 1600);
     }
     const alone = playable().length === 1;
-    drawDots(m.url);
+    drawDots(String(m.id));
     if (m.kind === 'video') {
       el.loop = alone;
       el.addEventListener('ended', () => next(), { once: true });
-      el.addEventListener('error', () => { failed.add(m.url); next(); }, { once: true });
+      el.addEventListener('error', () => { failed.add(m.id); next(); }, { once: true });
       el.addEventListener('timeupdate', () => {
         if (progress && CFG.progress && el.duration) { progress.style.transition = 'none'; progress.style.transform = `scaleX(${el.currentTime / el.duration})`; }
       });
@@ -163,18 +170,18 @@
       if (!playable().length) break;
       idx = (idx + 1) % list.length;
       const m = list[idx];
-      if (failed.has(m.url)) continue;
+      if (failed.has(m.id)) continue;
       // Une seule image déjà affichée : rien à recharger
-      if (current && playable().length === 1 && current.dataset.url === m.url) return;
+      if (current && playable().length === 1 && current.dataset.url === String(m.id)) return;
       try {
         const el = await load(m);
         if (my !== seq) return; // une liste plus récente a pris la main
         const slide = build(m, el);
-        slide.dataset.url = m.url;
+        slide.dataset.url = String(m.id);
         present(slide, m, el);
         return;
       } catch (e) {
-        failed.add(m.url);
+        failed.add(m.id);
         if (window.console) console.warn('Écran client : fichier ignoré', m.url, e.message);
       }
     }
@@ -191,7 +198,8 @@
       const d = await r.json();
       if (!d.ok) return;
       Object.assign(CFG, { transition: d.cfg.transition, fill: d.cfg.fill, captions: d.cfg.captions, progress: d.cfg.progress, sound: d.cfg.sound });
-      const changed = JSON.stringify(d.playlist.map((m) => [m.url, m.seconds, m.title])) !== JSON.stringify(list.map((m) => [m.url, m.seconds, m.title]));
+      const sig = (l) => JSON.stringify(l.map((m) => [m.id, m.url, m.seconds, m.title, m.body || '', m.style || null]));
+      const changed = sig(d.playlist) !== sig(list);
       const retry = failed.size > 0;
       failed.clear();
       if (changed) { list = d.playlist; idx = -1; }

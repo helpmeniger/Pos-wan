@@ -11,8 +11,9 @@ final class CustomerDisplayController extends Controller
 {
     public function settings(): void
     {
+        $edit = Request::int('edit') ? \App\Core\DB::one("SELECT * FROM display_media WHERE id = ? AND kind = 'text'", [Request::int('edit')]) : null;
         view('settings/display', [
-            'title' => 'Écran et afficheur client',
+            'title' => 'Écran et afficheur client', 'edit' => $edit, 'screenUrl' => \App\Services\Screens::url('client'),
             's' => CustomerDisplay::settings(),
             'media' => CustomerDisplay::media(),
             'limits' => [
@@ -22,7 +23,7 @@ final class CustomerDisplayController extends Controller
                 'php_post' => (string) ini_get('post_max_size'),
                 'php_bytes' => \App\Core\Upload::phpMaxBytes(),
             ],
-            'scripts' => ['js/customer-display-link.js', 'js/display-media-upload.js'],
+            'scripts' => ['js/customer-display-link.js', 'js/display-media-upload.js', 'js/display-text.js', 'js/display-text-editor.js'],
             'displayConfig' => CustomerDisplay::clientConfig(),
         ]);
     }
@@ -43,6 +44,24 @@ final class CustomerDisplayController extends Controller
         $this->attempt(fn() => CustomerDisplay::addMedia($_FILES['media'] ?? [], Request::str('title')), '/settings/display');
         flash('success', t('Fichier ajouté à la diffusion.'));
         redirect('/settings/display');
+    }
+
+    /** Publication : texte seul ou texte + photo (création ou modification). */
+    public function textSave(int $id = 0): void
+    {
+        $back = '/settings/display' . ($id ? '?edit=' . $id : '') . '#publication';
+        if (empty($_FILES) && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0 && empty($_POST)) {
+            $this->fail(sprintf(t('Fichier trop volumineux pour ce serveur (limite PHP : %s).'), (string) ini_get('post_max_size')), $back);
+        }
+        $this->attempt(fn() => CustomerDisplay::saveText($id ?: null, $_POST, $_FILES['photo'] ?? null), $back);
+        flash('success', $id ? t('Publication modifiée : elle passe sur l\'écran client en moins de 2 minutes.') : t('Publication ajoutée à la diffusion.'));
+        redirect('/settings/display');
+    }
+
+    /** Aperçu d'une publication (même rendu que l'écran, affiché réduit dans les paramètres). */
+    public function textPreview(): void
+    {
+        view('display/text_preview', [], null);
     }
 
     public function mediaUpdate(int $id): void

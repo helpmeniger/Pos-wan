@@ -175,7 +175,7 @@ final class SchemaSync
             return $report;
         }
         if ($backup) {
-            $report['backup'] = BackupService::create('avant_synchro_base')['sql'] ?? null;
+            $report['backup'] = BackupService::create('avant_synchro_base', false)['sql'] ?? null;
         }
         $expected = self::expected();
         $pdo = DB::connection();

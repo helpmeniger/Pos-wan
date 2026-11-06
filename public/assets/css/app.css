@@ -199,3 +199,7 @@ html[dir="rtl"] .menu-right .side-link.active { border-left-color: var(--wan-ora
 .lbl-list { max-height: 44vh; overflow: auto; }
 .lbl-row { display: flex; gap: 6px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--bs-border-color); font-size: .85rem; }
 .lbl-row input { width: 64px; }
+
+/* Écran client : aperçu réel d'une publication (page 1920 × 1080 réduite) */
+.pub-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 10px; background: #000; box-shadow: 0 4px 16px rgba(0, 0, 0, .2); }
+.pub-frame iframe { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; border: 0; transform-origin: 0 0; pointer-events: none; }

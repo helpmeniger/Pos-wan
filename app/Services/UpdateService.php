@@ -10,9 +10,10 @@ use App\Core\BusinessException;
 /**
  * Mise à jour de POS Marwa depuis le navigateur : l'administrateur sélectionne le dossier
  * complet de la nouvelle version ; les fichiers sont envoyés par lots dans un dossier de
- * préparation (storage/tmp/update_<jeton>), contrôlés, puis copiés sur l'installation après
- * une double sauvegarde (base de données + code actuel). La base est ensuite mise à jour
- * automatiquement au chargement suivant (InstallService::autoMigrate).
+ * préparation (storage/tmp/update_<jeton>), contrôlés, puis seuls les fichiers modifiés sont
+ * copiés sur l'installation, après une double sauvegarde (base de données + code remplacé), par
+ * étapes courtes (compatible avec les hébergements qui coupent les requêtes longues). La base
+ * est ensuite mise à jour automatiquement au chargement suivant (migrations + SchemaSync).
  *
  * Jamais touchés : .env (accès à la base), storage/ (sauvegardes, journaux, sessions),
  * public/uploads/ (photos). Les modules ajoutés par l'utilisateur dans addons/ sont conservés.
@@ -110,8 +111,13 @@ final class UpdateService
         return preg_match("/'version'\\s*=>\\s*'(\\d+\\.\\d+\\.\\d+)'/", $src, $m) ? $m[1] : null;
     }
 
-    /** Contrôle de la version préparée. @return array{version, current, files, errors, warnings, verified} */
-    public static function inspect(string $token): array
+    /**
+     * Contrôle de la version préparée.
+     * $hash = false : contrôle rapide (version, fichiers essentiels) ; l'empreinte de chaque fichier
+     * est alors vérifiée pendant l'installation, par étapes courtes, avant toute modification.
+     * @return array{version, current, files, errors, warnings, verified, manifest}
+     */
+    public static function inspect(string $token, bool $hash = true): array
     {
         $dir = self::stagingDir($token);
         $errors = $warnings = [];
@@ -131,95 +137,253 @@ final class UpdateService
         }
         $files = self::listFiles($dir);
         $verified = false;
+        $hasManifest = false;
         $rel = $dir . '/release.json';
         if (is_file($rel)) {
             $manifest = json_decode((string) file_get_contents($rel), true);
             if (!is_array($manifest) || !is_array($manifest['files'] ?? null)) {
                 $errors[] = 'release.json illisible.';
             } else {
-                $missing = $bad = [];
-                foreach ($manifest['files'] as $path => $hash) {
-                    $p = self::normalizePath((string) $path);
-                    if ($p === null) {
-                        continue;
-                    }
-                    if (!is_file($dir . '/' . $p)) {
-                        $missing[] = $p;
-                    } elseif (!hash_equals((string) $hash, hash_file('sha256', $dir . '/' . $p))) {
-                        $bad[] = $p;
-                    }
-                }
+                $hasManifest = true;
                 if (($manifest['version'] ?? null) !== $version) {
                     $errors[] = 'release.json ne correspond pas à la version ' . $version . '.';
                 }
-                if ($missing) {
-                    $errors[] = count($missing) . ' fichier(s) manquant(s) (copie incomplète ou envoi interrompu), ex. : ' . implode(', ', array_slice($missing, 0, 5));
+                if ($hash) {
+                    [$missing, $bad] = self::verifyFiles($dir, $manifest['files']);
+                    if ($missing) {
+                        $errors[] = count($missing) . ' fichier(s) manquant(s) (copie incomplète ou envoi interrompu), ex. : ' . implode(', ', array_slice($missing, 0, 5));
+                    }
+                    if ($bad) {
+                        $errors[] = count($bad) . ' fichier(s) modifié(s) ou endommagé(s), ex. : ' . implode(', ', array_slice($bad, 0, 5));
+                    }
+                    $verified = !$missing && !$bad;
+                } else {
+                    $missing = array_filter(array_keys($manifest['files']), fn($p) => ($q = self::normalizePath((string) $p)) !== null && !is_file($dir . '/' . $q));
+                    if ($missing) {
+                        $errors[] = count($missing) . ' fichier(s) manquant(s) (copie incomplète ou envoi interrompu), ex. : ' . implode(', ', array_slice(array_values($missing), 0, 5));
+                    }
                 }
-                if ($bad) {
-                    $errors[] = count($bad) . ' fichier(s) modifié(s) ou endommagé(s), ex. : ' . implode(', ', array_slice($bad, 0, 5));
-                }
-                $verified = !$missing && !$bad;
             }
         } else {
             $warnings[] = 'Pas de fichier release.json : l\'intégrité des fichiers ne peut pas être vérifiée. Utilisez de préférence une version officielle.';
         }
-        return ['version' => $version, 'current' => $current, 'files' => count($files), 'errors' => $errors, 'warnings' => $warnings, 'verified' => $verified];
+        return ['version' => $version, 'current' => $current, 'files' => count($files), 'errors' => $errors, 'warnings' => $warnings, 'verified' => $verified, 'manifest' => $hasManifest];
     }
 
-    /**
-     * Applique la mise à jour : sauvegarde de la base et du code actuel, copie des fichiers,
-     * publication des fichiers des modules installés. @return array résumé
-     */
+    /** @return array{0: string[], 1: string[]} fichiers manquants, fichiers altérés */
+    private static function verifyFiles(string $dir, array $hashes, ?float $deadline = null, int &$offset = 0): array
+    {
+        $missing = $bad = [];
+        $paths = array_keys($hashes);
+        for ($n = count($paths), $done = 0; $offset < $n; $offset++, $done++) {
+            if ($deadline !== null && $done > 0 && microtime(true) > $deadline) {
+                break; // au moins un fichier par étape : l'installation avance toujours
+            }
+            $p = self::normalizePath((string) $paths[$offset]);
+            if ($p === null) {
+                continue;
+            }
+            if (!is_file($dir . '/' . $p)) {
+                $missing[] = $p;
+            } elseif (!hash_equals((string) $hashes[$paths[$offset]], hash_file('sha256', $dir . '/' . $p))) {
+                $bad[] = $p;
+            }
+        }
+        return [$missing, $bad];
+    }
+
+    // ------------------------------------------------------------------ installation par étapes
+    //
+    // Un hébergement mutualisé (o2switch…) coupe une requête trop longue : « 504 ». L'installation
+    // est donc découpée en étapes de quelques secondes, rappelées par la page jusqu'à la fin :
+    // vérification → fichiers modifiés → sauvegarde de la base → sauvegarde du code concerné →
+    // copie → finalisation. L'état est enregistré après chaque lot : une étape coupée reprend où
+    // elle s'était arrêtée, sans jamais refaire ni casser ce qui est fait.
+
+    public const PHASES = [
+        'verify' => 'Vérification des fichiers reçus',
+        'diff' => 'Recherche des fichiers modifiés',
+        'backup_db' => 'Sauvegarde de la base de données',
+        'backup_code' => 'Sauvegarde du code remplacé',
+        'copy' => 'Installation des nouveaux fichiers',
+        'finish' => 'Finalisation',
+    ];
+
+    private static function stateFile(string $token): string
+    {
+        return self::stagingDir($token) . '/.maj-state.json';
+    }
+
+    /** Une étape (au plus $budget secondes). @return array{done: bool, phase: string, label: string, done_count: int, total: int, result?: array} */
+    public static function step(string $token, bool $acceptUnverified = false, float $budget = 8.0): array
+    {
+        $dir = self::stagingDir($token);
+        if (!is_dir($dir)) {
+            throw new BusinessException('Préparation introuvable : envoyez de nouveau les fichiers.');
+        }
+        $fh = fopen($dir . '/.maj-lock', 'c');
+        if (!$fh || !flock($fh, LOCK_EX | LOCK_NB)) {
+            return ['done' => false, 'phase' => 'wait', 'label' => 'Étape précédente encore en cours…', 'done_count' => 0, 'total' => 0];
+        }
+        @set_time_limit(max(60, (int) $budget * 6));
+        @ignore_user_abort(true);
+        $deadline = microtime(true) + $budget;
+        try {
+            $sf = self::stateFile($token);
+            $st = is_file($sf) ? (json_decode((string) file_get_contents($sf), true) ?: []) : [];
+            if (!$st) {
+                $info = self::inspect($token, false);
+                if ($info['errors']) {
+                    throw new BusinessException(implode(' ', $info['errors']));
+                }
+                if (!$info['manifest'] && !$acceptUnverified) {
+                    throw new BusinessException('Intégrité non vérifiée : cochez la confirmation pour continuer.');
+                }
+                $st = ['phase' => $info['manifest'] ? 'verify' : 'diff', 'offset' => 0, 'files' => self::listFiles($dir), 'changed' => [],
+                    'version' => $info['version'], 'current' => $info['current'], 'db' => null, 'code' => null, 'copied' => 0, 'started' => date('c')];
+            }
+            // Par référence : chaque sauvegarde enregistre l'avancement réel (une étape coupée reprend là)
+            $save = function () use (&$st, $sf) {
+                file_put_contents($sf, json_encode($st, JSON_UNESCAPED_SLASHES), LOCK_EX);
+            };
+            $total = count($st['files']);
+            $save();
+            do {
+                switch ($st['phase']) {
+                    case 'verify':
+                        $hashes = (array) (json_decode((string) file_get_contents($dir . '/release.json'), true)['files'] ?? []);
+                        $off = (int) $st['offset'];
+                        [$missing, $bad] = self::verifyFiles($dir, $hashes, $deadline, $off);
+                        if ($missing || $bad) {
+                            @unlink($sf);
+                            throw new BusinessException(($missing ? count($missing) . ' fichier(s) manquant(s), ex. : ' . implode(', ', array_slice($missing, 0, 3)) . '. ' : '')
+                                . ($bad ? count($bad) . ' fichier(s) modifié(s) ou endommagé(s), ex. : ' . implode(', ', array_slice($bad, 0, 3)) . '. ' : '') . 'Rien n\'a été modifié : envoyez de nouveau le dossier.');
+                        }
+                        $st['offset'] = $off;
+                        if ($off >= count($hashes)) {
+                            $st['phase'] = 'diff';
+                            $st['offset'] = 0;
+                        }
+                        break;
+                    case 'diff':
+                        // Seuls les fichiers nouveaux ou différents seront sauvegardés puis copiés
+                        for ($k = 0; $st['offset'] < $total && ($k === 0 || microtime(true) < $deadline); $st['offset']++, $k++) {
+                            $rel = $st['files'][$st['offset']];
+                            $cur = BASE_PATH . '/' . $rel;
+                            if (!is_file($cur) || filesize($cur) !== filesize($dir . '/' . $rel) || !hash_equals(hash_file('sha256', $cur), hash_file('sha256', $dir . '/' . $rel))) {
+                                $st['changed'][] = $rel;
+                            }
+                        }
+                        if ($st['offset'] >= $total) {
+                            $st['phase'] = 'backup_db';
+                            $st['offset'] = 0;
+                        }
+                        break;
+                    case 'backup_db':
+                        $st['db'] = BackupService::create('avant_maj_' . str_replace('.', '_', (string) $st['version']), false)['sql'];
+                        $st['phase'] = 'backup_code';
+                        $st['code'] = 'code_' . date('Ymd_His') . '_v' . preg_replace('/[^0-9.]/', '', (string) $st['current']) . '.zip';
+                        break;
+                    case 'backup_code':
+                        if (!class_exists(\ZipArchive::class)) {
+                            throw new BusinessException('Extension PHP « zip » requise pour sauvegarder le code avant la mise à jour.');
+                        }
+                        $zip = new \ZipArchive();
+                        if ($zip->open(BackupService::dir() . '/' . $st['code'], \ZipArchive::CREATE) !== true) {
+                            throw new BusinessException('Impossible de créer la sauvegarde du code.');
+                        }
+                        $n = count($st['changed']);
+                        $added = 0;
+                        for ($k = 0; $st['offset'] < $n && $added < 300 && ($k === 0 || microtime(true) < $deadline); $st['offset']++, $k++) {
+                            $rel = $st['changed'][$st['offset']];
+                            if (is_file(BASE_PATH . '/' . $rel)) {
+                                $zip->addFile(BASE_PATH . '/' . $rel, $rel);
+                                $added++;
+                            }
+                        }
+                        if ($zip->numFiles === 0) {
+                            $zip->addFromString('LISEZMOI.txt', 'Aucun fichier existant remplacé par cette mise à jour.');
+                        }
+                        $zip->close();
+                        if ($st['offset'] >= $n) {
+                            $st['phase'] = 'copy';
+                            $st['offset'] = 0;
+                        }
+                        break;
+                    case 'copy':
+                        file_put_contents(STORAGE_PATH . '/maintenance.lock', (string) time());
+                        $n = count($st['changed']);
+                        for ($k = 0; $st['offset'] < $n && ($k === 0 || microtime(true) < $deadline); $st['offset']++, $k++) {
+                            self::copyOne($dir, $st['changed'][$st['offset']], (string) $st['code']);
+                            $st['copied']++;
+                            if ($st['offset'] % 25 === 0) {
+                                $save();
+                            }
+                        }
+                        if ($st['offset'] >= $n) {
+                            $st['phase'] = 'finish';
+                        }
+                        break;
+                    case 'finish':
+                        if (function_exists('opcache_reset')) {
+                            @opcache_reset();
+                        }
+                        foreach (array_keys(Addons::installed()) as $mod) {
+                            if (is_dir(Addons::dir() . '/' . $mod . '/public')) {
+                                Addons::publishAssets($mod);
+                            }
+                        }
+                        // La base sera synchronisée par la nouvelle version au chargement suivant
+                        @unlink(STORAGE_PATH . '/cache/schema_sync');
+                        $result = ['from' => $st['current'], 'to' => $st['version'], 'files' => $total, 'changed' => count($st['changed']), 'code_backup' => $st['code'], 'db_backup' => $st['db']];
+                        Audit::log('system.update', null, null, $result);
+                        @unlink(STORAGE_PATH . '/maintenance.lock');
+                        flock($fh, LOCK_UN);
+                        fclose($fh);
+                        $fh = null;
+                        self::rrmdir($dir);
+                        return ['done' => true, 'phase' => 'finish', 'label' => self::PHASES['finish'], 'done_count' => $total, 'total' => $total, 'result' => $result];
+                }
+                $save();
+            } while (microtime(true) < $deadline);
+            $count = match ($st['phase']) { 'verify', 'diff' => (int) $st['offset'], 'backup_code', 'copy' => (int) $st['offset'], default => 0 };
+            $of = in_array($st['phase'], ['backup_code', 'copy'], true) ? count($st['changed']) : $total;
+            return ['done' => false, 'phase' => $st['phase'], 'label' => self::PHASES[$st['phase']], 'done_count' => $count, 'total' => $of, 'changed' => count($st['changed'])];
+        } catch (\Throwable $e) {
+            // Jamais de site bloqué en « maintenance » après une erreur : la reprise reste possible
+            @unlink(STORAGE_PATH . '/maintenance.lock');
+            throw $e;
+        } finally {
+            if ($fh) {
+                flock($fh, LOCK_UN);
+                fclose($fh);
+            }
+        }
+    }
+
+    private static function copyOne(string $dir, string $rel, string $codeBackup): void
+    {
+        $target = BASE_PATH . '/' . $rel;
+        if (!is_dir(dirname($target))) {
+            mkdir(dirname($target), 0755, true);
+        }
+        // Copie vers un fichier temporaire puis renommage : jamais de fichier à moitié écrit
+        $tmp = $target . '.maj-tmp';
+        if (!@copy($dir . '/' . $rel, $tmp) || !@rename($tmp, $target)) {
+            @unlink($tmp);
+            if (!@copy($dir . '/' . $rel, $target)) {
+                throw new BusinessException('Écriture impossible : ' . $rel . ' (le serveur n\'a pas le droit de modifier les fichiers du logiciel : vérifiez les droits du dossier). Le site reste utilisable ; le code déjà remplacé est sauvegardé dans ' . $codeBackup . ' — cliquez sur « Reprendre l\'installation » une fois les droits corrigés.');
+            }
+        }
+    }
+
+    /** Installation complète en une fois (ligne de commande, tests) : les étapes s'enchaînent. */
     public static function apply(string $token, bool $acceptUnverified = false): array
     {
-        $info = self::inspect($token);
-        if ($info['errors']) {
-            throw new BusinessException(implode(' ', $info['errors']));
-        }
-        if (!$info['verified'] && !$acceptUnverified) {
-            throw new BusinessException('Intégrité non vérifiée : cochez la confirmation pour continuer.');
-        }
-        @set_time_limit(900);
-        // Connexion du navigateur coupée pendant l'installation : le serveur termine quand même
-        // (jamais de version à moitié copiée) ; la page vérifie ensuite la version installée.
-        @ignore_user_abort(true);
-        $dir = self::stagingDir($token);
-        $files = self::listFiles($dir);
-        $lock = STORAGE_PATH . '/maintenance.lock';
-        file_put_contents($lock, (string) time());
-        try {
-            $db = BackupService::create('avant_maj_' . str_replace('.', '_', $info['version']));
-            $code = self::backupCode($info['current']);
-            $copied = 0;
-            foreach ($files as $rel) {
-                $target = BASE_PATH . '/' . $rel;
-                if (!is_dir(dirname($target))) {
-                    mkdir(dirname($target), 0755, true);
-                }
-                // Copie vers un fichier temporaire puis renommage : jamais de fichier à moitié écrit
-                $tmp = $target . '.maj-tmp';
-                if (!copy($dir . '/' . $rel, $tmp) || !@rename($tmp, $target)) {
-                    @unlink($tmp);
-                    if (!copy($dir . '/' . $rel, $target)) {
-                        throw new \RuntimeException('Écriture impossible : ' . $rel . ' (droits du dossier ?). Restaurez le code depuis ' . $code . '.');
-                    }
-                }
-                $copied++;
-            }
-            if (function_exists('opcache_reset')) {
-                @opcache_reset();
-            }
-            foreach (array_keys(Addons::installed()) as $mod) {
-                if (is_dir(Addons::dir() . '/' . $mod . '/public')) {
-                    Addons::publishAssets($mod);
-                }
-            }
-            Audit::log('system.update', null, null, ['from' => $info['current'], 'to' => $info['version'], 'files' => $copied, 'code_backup' => $code, 'db_backup' => $db['sql']]);
-            return ['from' => $info['current'], 'to' => $info['version'], 'files' => $copied, 'code_backup' => $code, 'db_backup' => $db['sql']];
-        } finally {
-            @unlink($lock);
-            self::rrmdir($dir);
-        }
+        do {
+            $r = self::step($token, $acceptUnverified, 30.0);
+        } while (!$r['done']);
+        return $r['result'];
     }
 
     /** Archive ZIP du code actuel (sans .env, storage, uploads) pour pouvoir revenir en arrière. */

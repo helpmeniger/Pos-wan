@@ -26,7 +26,12 @@ final class BackupService
         return $d;
     }
 
-    public static function create(string $label = 'manuel'): array
+    /**
+     * @param bool $withFiles false : base seule, sans l'archive des photos (avant une mise à jour ou
+     *                        une migration, qui ne touchent pas aux photos ; évite les longues
+     *                        attentes et les coupures « 504 » des hébergements mutualisés)
+     */
+    public static function create(string $label = 'manuel', bool $withFiles = true): array
     {
         $label = preg_replace('/[^a-z0-9_-]/i', '', $label) ?: 'manuel';
         $base = 'poswan_' . date('Ymd_His') . '_' . $label;
@@ -67,7 +72,7 @@ final class BackupService
         file_put_contents($sqlFile . '.sha256', hash_file('sha256', $sqlFile));
 
         $zipFile = null;
-        if (class_exists(\ZipArchive::class)) {
+        if ($withFiles && class_exists(\ZipArchive::class)) {
             $zipFile = self::dir() . '/' . $base . '_fichiers.zip';
             $zip = new \ZipArchive();
             if ($zip->open($zipFile, \ZipArchive::CREATE) === true) {

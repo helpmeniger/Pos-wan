@@ -70,7 +70,28 @@ final class UpdateController extends Controller
     public function check(): void
     {
         $t = $this->token();
-        $this->jsonAttempt(fn() => UpdateService::inspect($t));
+        // Contrôle rapide : l'empreinte des fichiers est vérifiée ensuite, par étapes courtes
+        $this->jsonAttempt(fn() => UpdateService::inspect($t, false));
+    }
+
+    /** Une étape de l'installation (quelques secondes) ; la page rappelle jusqu'à « done ». */
+    public function step(): void
+    {
+        $t = $this->token();
+        try {
+            $r = UpdateService::step($t, Request::input('accept') === true || Request::str('accept') === '1');
+        } catch (BusinessException $e) {
+            json_response(['ok' => false, 'error' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            Logger::error('Mise à jour interrompue : ' . $e->getMessage(), ['file' => $e->getFile() . ':' . $e->getLine()]);
+            json_response(['ok' => false, 'error' => 'Mise à jour interrompue : ' . $e->getMessage()], 500);
+        }
+        if ($r['done']) {
+            Session::forget('update_token');
+            $x = $r['result'];
+            flash('success', 'POS Marwa mis à jour : version ' . $x['from'] . ' → ' . $x['to'] . ' (' . $x['changed'] . ' fichier(s) remplacé(s) sur ' . $x['files'] . '). Sauvegardes : ' . $x['db_backup'] . ' et ' . $x['code_backup'] . '. La base de données est synchronisée automatiquement.');
+        }
+        json_response(['ok' => true] + $r);
     }
 
     public function apply(): void
@@ -85,7 +106,7 @@ final class UpdateController extends Controller
             json_response(['ok' => false, 'error' => 'Mise à jour interrompue : ' . $e->getMessage()], 500);
         }
         Session::forget('update_token');
-        flash('success', 'POS Marwa mis à jour : version ' . $r['from'] . ' → ' . $r['to'] . ' (' . $r['files'] . ' fichiers). Sauvegardes : ' . $r['db_backup'] . ' et ' . $r['code_backup'] . '. La base de données a été mise à jour automatiquement.');
+        flash('success', 'POS Marwa mis à jour : version ' . $r['from'] . ' → ' . $r['to'] . ' (' . $r['changed'] . ' fichier(s) remplacé(s)). Sauvegardes : ' . $r['db_backup'] . ' et ' . $r['code_backup'] . '. La base de données a été mise à jour automatiquement.');
         json_response(['ok' => true] + $r);
     }
 

@@ -22,15 +22,17 @@ final class Auth
         }
         $id = Session::get('uid');
         if (!$id) {
-            return null;
+            return self::resumeScreen();
         }
         $cfg = config('app.session');
         $now = time();
-        if ($now - (int) Session::get('last_seen', 0) > $cfg['idle_timeout']
+        // Écran d'affichage (téléviseur…) : pas d'expiration pour inactivité (il reste allumé)
+        $idle = Session::get('screen_scope') ? 86400 * 7 : $cfg['idle_timeout'];
+        if ($now - (int) Session::get('last_seen', 0) > $idle
             || $now - (int) Session::get('login_at', 0) > $cfg['absolute_timeout']) {
             Audit::log('auth.session_expired', 'user', (int) $id, null, (int) $id);
             Session::destroy();
-            return null;
+            return self::resumeScreen();
         }
         $u = DB::one('SELECT u.*, r.code AS role_code, r.name AS role_name FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = ? AND u.active = 1', [$id]);
         if (!$u || (string) Session::get('pwd_sig') !== self::pwdSig($u)) {
@@ -113,7 +115,7 @@ final class Auth
     }
 
     /** Signature liée au hash du mot de passe : invalide les sessions après changement. */
-    private static function pwdSig(array $u): string
+    public static function pwdSig(array $u): string
     {
         return substr(hash('sha256', $u['password_hash'] . '|' . $u['id']), 0, 32);
     }
@@ -217,6 +219,27 @@ final class Auth
         unset($_SESSION['_csrf']);
         self::$user = null;
         self::$perms = null;
+    }
+
+    /** Écran mémorisé (cookie d'appareil) : reconnexion silencieuse, cantonnée à son écran. */
+    private static function resumeScreen(): ?array
+    {
+        if (PHP_SAPI === 'cli' || empty($_COOKIE[\App\Services\Screens::COOKIE])) {
+            return null;
+        }
+        try {
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                Session::start();
+            }
+            $u = \App\Services\Screens::resume();
+        } catch (\Throwable) {
+            return null; // table absente (base pas encore à jour) : connexion normale
+        }
+        if (!$u) {
+            return null;
+        }
+        self::$user = null;
+        return self::user();
     }
 
     public static function logout(): void

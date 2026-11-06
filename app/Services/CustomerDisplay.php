@@ -219,6 +219,9 @@ final class CustomerDisplay
     /** Problème d'un fichier de diffusion (absent, vide, image illisible), sinon null. */
     public static function fileProblem(array $m): ?string
     {
+        if ($m['kind'] === 'text' && (string) $m['path'] === '') {
+            return null; // publication sans photo
+        }
         if (!self::fileExists($m)) {
             return 'Fichier introuvable sur le serveur : il n\'est pas diffusé. Supprimez cette ligne et ajoutez de nouveau le fichier.';
         }
@@ -250,8 +253,12 @@ final class CustomerDisplay
             if (self::fileProblem($m) !== null) {
                 continue;
             }
-            $out[] = ['id' => (int) $m['id'], 'kind' => $m['kind'], 'url' => upload_url($m['path']),
+            $item = ['id' => (int) $m['id'], 'kind' => $m['kind'], 'url' => (string) $m['path'] !== '' ? upload_url($m['path']) : null,
                 'seconds' => (int) $m['duration_s'] ?: $default, 'title' => (string) $m['title']];
+            if ($m['kind'] === 'text') {
+                $item += ['body' => (string) $m['body'], 'style' => self::style($m)];
+            }
+            $out[] = $item;
         }
         return $out;
     }
@@ -273,6 +280,68 @@ final class CustomerDisplay
         ]);
         Audit::log('display.media_add', 'display_media', $id, ['kind' => $video ? 'video' : 'image']);
         return $id;
+    }
+
+    public const PALETTES = ['nuit' => 'Nuit et or', 'soleil' => 'Soleil', 'foret' => 'Forêt', 'bordeaux' => 'Bordeaux', 'ocean' => 'Océan', 'violet' => 'Violet', 'clair' => 'Clair', 'perso' => 'Couleurs personnalisées'];
+    public const LAYOUTS = ['auto' => 'Automatique', 'overlay' => 'Photo en fond, texte devant', 'split_left' => 'Photo à gauche, texte à droite', 'split_right' => 'Texte à gauche, photo à droite'];
+
+    public static function style(array $m): array
+    {
+        $s = json_decode((string) ($m['style'] ?? ''), true);
+        return is_array($s) ? $s : ['palette' => 'nuit', 'layout' => 'auto'];
+    }
+
+    /**
+     * Publication (menu du jour, promotion, annonce) : texte seul ou texte + photo, mise en forme
+     * automatique à l'écran. @param ?array $file photo facultative ($_FILES)
+     */
+    public static function saveText(?int $id, array $d, ?array $file = null): int
+    {
+        $title = mb_substr(trim((string) ($d['title'] ?? '')), 0, 120);
+        $body = trim(str_replace("\r", '', (string) ($d['body'] ?? '')));
+        if ($title === '' && $body === '') {
+            throw new BusinessException('Écrivez au moins un titre ou un texte.');
+        }
+        if (mb_strlen($body) > 1500 || count(array_filter(explode("\n", $body), 'strlen')) > 14) {
+            throw new BusinessException('Texte trop long : 14 lignes au plus (1 500 caractères), pour rester lisible de loin.');
+        }
+        $palette = isset(self::PALETTES[$d['palette'] ?? '']) ? (string) $d['palette'] : 'nuit';
+        $hex = fn(string $k) => preg_match('/^#[0-9a-f]{6}$/i', (string) ($d[$k] ?? '')) ? strtolower((string) $d[$k]) : null;
+        $style = ['palette' => $palette, 'layout' => isset(self::LAYOUTS[$d['layout'] ?? '']) ? (string) $d['layout'] : 'auto'];
+        if ($palette === 'perso') {
+            $style += array_filter(['bg' => $hex('bg'), 'fg' => $hex('fg'), 'accent' => $hex('accent')]);
+        }
+        $dur = (int) ($d['duration_s'] ?? 10);
+        if ($dur < 3 || $dur > 300) {
+            throw new BusinessException('Durée d\'affichage : 3 à 300 secondes.');
+        }
+        $old = $id ? DB::one("SELECT * FROM display_media WHERE id = ? AND kind = 'text'", [$id]) : null;
+        if ($id && !$old) {
+            throw new BusinessException('Publication introuvable.');
+        }
+        $path = $old['path'] ?? null;
+        if ($file && ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            $new = Upload::image($file, 'display', 1920, (int) config('app.uploads.max_display_image_bytes'));
+            if ($path) {
+                Upload::delete($path);
+            }
+            $path = $new;
+        } elseif (!empty($d['remove_photo']) && $path) {
+            Upload::delete($path);
+            $path = null;
+        }
+        $row = ['kind' => 'text', 'title' => $title ?: null, 'body' => $body ?: null, 'style' => json_encode($style), 'path' => $path, 'duration_s' => $dur,
+            'size_bytes' => $path ? (int) @filesize(UPLOADS_PATH . '/' . $path) : 0];
+        if ($old) {
+            DB::update('display_media', $row, 'id = ?', [$id]);
+        } else {
+            if (DB::value('SELECT COUNT(*) FROM display_media') >= 50) {
+                throw new BusinessException('50 éléments au plus dans la diffusion : supprimez-en avant d\'en ajouter.');
+            }
+            $id = DB::insert('display_media', $row + ['sort_order' => (int) DB::value('SELECT COALESCE(MAX(sort_order),0)+1 FROM display_media'), 'created_by' => Auth::id()]);
+        }
+        Audit::log($old ? 'display.text_update' : 'display.text_add', 'display_media', $id, ['title' => $title, 'photo' => $path !== null]);
+        return (int) $id;
     }
 
     public static function updateMedia(int $id, array $d): void
@@ -310,7 +379,9 @@ final class CustomerDisplay
             throw new BusinessException('Fichier introuvable.');
         }
         DB::run('DELETE FROM display_media WHERE id = ?', [$id]);
-        Upload::delete($m['path']);
+        if ((string) $m['path'] !== '') {
+            Upload::delete($m['path']);
+        }
         Audit::log('display.media_delete', 'display_media', $id, ['kind' => $m['kind'], 'title' => $m['title']]);
     }
 

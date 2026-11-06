@@ -326,15 +326,27 @@ sur téléphone (PWA).
 ## 12. Mettre à jour POS Marwa en ligne
 
 1. Faites une sauvegarde (Système & maintenance → Sauvegardes) et téléchargez-la.
-2. **Système & maintenance → Mise à jour du logiciel** → envoyez le nouveau ZIP de version.
-   - Les empreintes `release.json` sont vérifiées.
-   - `.env`, `storage/` et vos données sont conservés.
-   - Les migrations de la base s'appliquent toutes seules.
-3. Autre méthode, par SSH : décompressez la nouvelle version dans un dossier temporaire, recopiez-la
-   par-dessus **sans** `.env` ni `storage/`, puis lancez :
+2. **Système & maintenance → Mise à jour du logiciel** → sélectionnez le dossier de la nouvelle
+   version (décompressé), puis « Sauvegarder puis installer ».
+   - Depuis la version 3.4, l'installation se fait **par étapes de quelques secondes** (jamais de
+     coupure « 504 » d'o2switch) et seuls les fichiers modifiés sont remplacés.
+   - Les empreintes `release.json` sont vérifiées avant toute modification.
+   - `.env`, `storage/` et `public/uploads/` sont conservés ; la base se synchronise toute seule.
+3. **Par le Terminal de cPanel** (aucune limite de durée) : envoyez le ZIP dans votre dossier
+   personnel avec le Gestionnaire de fichiers, puis :
    ```bash
-   php bin/migrate.php
+   cd ~/pos-marwa        # dossier de POS Marwa
+   php bin/update.php ~/POS-Marwa-3.4.0.zip
    ```
+   Mêmes contrôles et mêmes sauvegardes que la page ; la base est mise à jour à la fin.
+
+> **Passage d'une version antérieure à la 3.4.** C'est encore l'ancienne page de mise à jour (en une
+> seule requête) qui installe la 3.4 : sur o2switch elle peut afficher « 504 ». Dans ce cas,
+> ouvrez « À propos de POS Marwa » quelques minutes plus tard : si la version affichée est 3.4, la
+> mise à jour s'est terminée côté serveur. Sinon, installez la 3.4 une seule fois par le Terminal
+> (point 3) ou en décompressant le ZIP dans le Gestionnaire de fichiers par-dessus l'installation
+> (sans écraser `.env`, `storage/`, `public/uploads/`). Les mises à jour suivantes passent par la
+> page sans coupure.
 
 ---
 

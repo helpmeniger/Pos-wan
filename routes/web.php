@@ -219,6 +219,7 @@ $router->post('/update/start', [C\UpdateController::class, 'start'], 'system.upd
 $router->post('/update/upload', [C\UpdateController::class, 'upload'], 'system.update');
 $router->post('/update/check', [C\UpdateController::class, 'check'], 'system.update');
 $router->post('/update/apply', [C\UpdateController::class, 'apply'], 'system.update');
+$router->post('/update/step', [C\UpdateController::class, 'step'], 'system.update');
 $router->post('/update/rollback', [C\UpdateController::class, 'rollback'], 'system.update');
 $router->get('/about', [C\AboutController::class, 'about']);
 $router->get('/mobile', [C\MobileController::class, 'index'], 'settings.manage');
@@ -239,7 +240,17 @@ $router->post('/settings/display', [C\CustomerDisplayController::class, 'save'],
 $router->post('/settings/display/media', [C\CustomerDisplayController::class, 'mediaAdd'], 'settings.manage');
 $router->post('/settings/display/media/{id}', [C\CustomerDisplayController::class, 'mediaUpdate'], 'settings.manage');
 $router->post('/settings/display/media/{id}/delete', [C\CustomerDisplayController::class, 'mediaDelete'], 'settings.manage');
+$router->post('/settings/display/text', [C\CustomerDisplayController::class, 'textSave'], 'settings.manage');
+$router->post('/settings/display/text/{id}', [C\CustomerDisplayController::class, 'textSave'], 'settings.manage');
+$router->get('/settings/display/text-preview', [C\CustomerDisplayController::class, 'textPreview'], 'settings.manage');
 $router->post('/settings/display/vfd-test', [C\CustomerDisplayController::class, 'vfdTest'], 'settings.manage');
+// Accès direct aux écrans (téléviseur, écran connecté) : identifiant + mot de passe, appareil mémorisé
+foreach (array_keys(App\Services\Screens::catalog()) as $screenCode) {
+    $router->get('/ecran/' . $screenCode, [C\ScreenController::class, 'show'], null, true);
+    $router->post('/ecran/' . $screenCode, [C\ScreenController::class, 'login'], null, true);
+}
+$router->get('/screens', [C\ScreenController::class, 'index'], 'settings.manage');
+$router->post('/screens/{id}/revoke', [C\ScreenController::class, 'revoke'], 'settings.manage');
 $router->get('/afficheur', [C\CustomerDisplayController::class, 'screen'], 'pos.sell');
 $router->get('/afficheur/playlist', [C\CustomerDisplayController::class, 'playlist'], 'pos.sell');
 $router->post('/afficheur/vfd', [C\CustomerDisplayController::class, 'vfd'], 'pos.sell');

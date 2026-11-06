@@ -63,7 +63,7 @@
     if (json) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(Object.assign({ _csrf: CSRF }, body)); } else { body.append('_csrf', CSRF); opt.body = body; }
     const r = await fetch(BASE + path, opt);
     const d = await r.json().catch(() => ({ ok: false, error: 'Réponse invalide du serveur (' + r.status + ').' }));
-    if (!d.ok) throw new Error(d.error || 'Erreur');
+    if (!d.ok) { const e = new Error(d.error || 'Erreur'); e.status = r.status; e.transient = [0, 408, 429, 500, 502, 503, 504, 520, 522, 524].includes(r.status) && !d.error?.startsWith('Mise à jour interrompue'); throw e; }
     return d;
   }
 
@@ -106,36 +106,47 @@
     const box = $('#upCheck');
     box.classList.remove('d-none');
     const ok = !c.errors.length;
-    box.innerHTML = `<div class="alert ${ok ? (c.verified ? 'alert-success' : 'alert-warning') : 'alert-danger'} mb-2">
-      <div class="fw-semibold mb-1">${ok ? T('Prêt') : T('Mise à jour impossible')} : v${esc(c.current)} → v${esc(c.version || '?')} · ${c.files} ${T('fichiers')}${c.verified ? ' · <i class="bi bi-shield-check"></i> ' + T('intégrité vérifiée') : ''}</div>
+    box.innerHTML = `<div class="alert ${ok ? (c.manifest ? 'alert-success' : 'alert-warning') : 'alert-danger'} mb-2">
+      <div class="fw-semibold mb-1">${ok ? T('Prêt') : T('Mise à jour impossible')} : v${esc(c.current)} → v${esc(c.version || '?')} · ${c.files} ${T('fichiers')}${c.manifest ? ' · <i class="bi bi-shield-check"></i> ' + T('intégrité contrôlée avant toute modification') : ''}</div>
       ${c.errors.map((x) => '<div><i class="bi bi-x-octagon"></i> ' + esc(x) + '</div>').join('')}
       ${c.warnings.map((x) => '<div><i class="bi bi-exclamation-triangle"></i> ' + esc(x) + '</div>').join('')}</div>
-      ${ok ? `${c.verified ? '' : `<label class="small d-block mb-2"><input type="checkbox" id="upAccept"> ${T('Je confirme vouloir installer cette copie non vérifiée.')}</label>`}
+      ${ok ? `${c.manifest ? '' : `<label class="small d-block mb-2"><input type="checkbox" id="upAccept"> ${T('Je confirme vouloir installer cette copie non vérifiée.')}</label>`}
       <button class="btn btn-success" id="upApply"><i class="bi bi-check2-circle"></i> ${T('Sauvegarder puis installer la version')} ${esc(c.version)}</button>` : ''}`;
     const a = $('#upApply');
     if (!a) { $('#upSend').disabled = false; input.disabled = false; return; }
     a.addEventListener('click', async () => {
-      if (!c.verified && !$('#upAccept').checked) { $('#upAccept').focus(); return; }
+      if (!c.manifest && !$('#upAccept').checked) { $('#upAccept').focus(); return; }
       a.disabled = true;
-      a.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + T('Sauvegarde et installation en cours… ne fermez pas cette page.');
+      $('#upProgressBox').classList.remove('d-none');
+      a.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + T('Installation en cours… ne fermez pas cette page.');
+      // Étapes courtes rappelées jusqu'à la fin : aucune requête longue (hébergement mutualisé)
+      let fails = 0;
       try {
-        try {
-          await post('/update/apply', { token, accept: !c.verified });
-        } catch (e) {
-          if (!(e instanceof TypeError)) throw e;
-          // Connexion coupée pendant l'installation : le serveur continue (installation complète
-          // garantie côté serveur). On attend qu'il réponde avec la nouvelle version.
-          a.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + T('Connexion interrompue : vérification de la version installée…');
-          let done = false;
-          for (let k = 0; k < 60 && !done; k++) {
-            await sleep(3000);
-            try { const h = await (await fetch(BASE + '/health', { cache: 'no-store' })).json(); done = h.version === c.version; } catch (x) { /* serveur occupé */ }
+        for (;;) {
+          let d;
+          try {
+            d = await post('/update/step', { token, accept: !c.manifest });
+            fails = 0;
+          } catch (e) {
+            if (!(e instanceof TypeError) && !e.transient) throw e;
+            if (++fails > 12) {
+              // Le serveur ne répond plus : la nouvelle version est peut-être déjà en place
+              try { const h = await (await fetch(BASE + '/health', { cache: 'no-store' })).json(); if (h.version === c.version) break; } catch (x) { /* serveur occupé */ }
+              throw netError(e, T('installation'));
+            }
+            $('#upStatus').textContent = T('Serveur occupé, nouvel essai…') + ' (' + fails + ')';
+            await sleep(2500 * Math.min(fails, 4));
+            continue;
           }
-          if (!done) throw netError(e, T('installation'));
+          const lbl = T(d.label) + (d.total ? ' : ' + d.done_count + ' / ' + d.total : '') + (d.changed !== undefined && d.phase !== 'verify' && d.phase !== 'diff' ? ' (' + d.changed + ' ' + T('fichier(s) modifié(s)') + ')' : '');
+          progress(d.done_count, d.total || 1, lbl);
+          if (d.done) break;
+          if (d.phase === 'wait') await sleep(2000);
         }
+        progress(1, 1, T('Mise à jour installée. Synchronisation de la base…'));
         location.href = BASE + '/update';
       } catch (e) {
-        a.disabled = false; a.textContent = T('Réessayer');
+        a.disabled = false; a.textContent = T('Reprendre l\'installation');
         box.insertAdjacentHTML('beforeend', '<div class="alert alert-danger mt-2">' + esc(e.message) + '</div>');
       }
     });

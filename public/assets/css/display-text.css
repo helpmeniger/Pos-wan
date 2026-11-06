@@ -1,0 +1,46 @@
+/* POS Marwa — publications de l'écran client (texte seul ou texte + photo), mise en forme automatique */
+.cdt { position: absolute; inset: 0; overflow: hidden; background: var(--cdt-bg); color: var(--cdt-fg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  display: flex; align-items: center; justify-content: center; }
+/* Fond animé : deux halos de la couleur d'accent qui dérivent lentement */
+.cdt-blob { position: absolute; width: 70%; aspect-ratio: 1; border-radius: 50%; filter: blur(60px); opacity: .28; background: radial-gradient(circle, var(--cdt-accent), transparent 65%); pointer-events: none; }
+.cdt-b1 { top: -30%; left: -20%; animation: cdtDrift1 18s ease-in-out infinite alternate; }
+.cdt-b2 { bottom: -35%; right: -20%; opacity: .18; animation: cdtDrift2 22s ease-in-out infinite alternate; }
+@keyframes cdtDrift1 { to { transform: translate(25%, 20%) scale(1.15); } }
+@keyframes cdtDrift2 { to { transform: translate(-20%, -15%) scale(1.2); } }
+
+.cdt-text { position: relative; z-index: 2; width: min(86%, 1500px); max-height: 90%; display: flex; flex-direction: column; justify-content: center; }
+.cdt-bar { height: .9vh; width: 0; background: var(--cdt-accent); border-radius: 99px; margin-bottom: 2.2vh; animation: cdtBar .9s cubic-bezier(.2, .8, .2, 1) .1s forwards; }
+@keyframes cdtBar { to { width: 12vh; } }
+.cdt-title { font-size: var(--cdt-title, 8vh); font-weight: 900; line-height: 1.05; letter-spacing: -.01em; margin-bottom: 3vh; }
+.cdt-w { display: inline-block; opacity: 0; transform: translateY(60%); animation: cdtUp .8s cubic-bezier(.2, .8, .2, 1) forwards; }
+.cdt-lines { display: flex; flex-direction: column; gap: 1.2vh; font-size: var(--cdt-line, 4vh); }
+.cdt-l { opacity: 0; transform: translateY(1.8vh); animation: cdtUp .7s cubic-bezier(.2, .8, .2, 1) forwards; line-height: 1.25; }
+@keyframes cdtUp { to { opacity: 1; transform: none; } }
+.cdt-head { font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--cdt-accent); font-size: .72em; margin-top: 1.2vh; }
+.cdt-bullet::before { content: ""; display: inline-block; width: .5em; height: .5em; border-radius: 50%; background: var(--cdt-accent); margin-right: .6em; vertical-align: .12em; }
+.cdt-line { opacity: .92; }
+/* Ligne de menu : nom ……… prix */
+.cdt-item { display: flex; align-items: baseline; gap: .6em; font-weight: 600; }
+.cdt-name { flex: none; max-width: 70%; }
+.cdt-dots { flex: 1; border-bottom: .14em dotted var(--cdt-fg); opacity: .45; transform: translateY(-.25em); min-width: 1em; }
+.cdt-price { flex: none; font-weight: 900; color: var(--cdt-bg); background: var(--cdt-accent); padding: .08em .5em; border-radius: .4em; animation: cdtPop .5s cubic-bezier(.3, 1.6, .5, 1) both; animation-delay: inherit; }
+@keyframes cdtPop { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
+.cdt-menu .cdt-lines { gap: 1.6vh; }
+
+/* Texte + photo : photo en fond avec voile (peu de lignes) */
+.cdt-photo { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
+.cdt-photo img { width: 100%; height: 100%; object-fit: cover; display: block; animation: cdtKen 16s ease-in-out infinite alternate; }
+@keyframes cdtKen { from { transform: scale(1.02); } to { transform: scale(1.14) translate(-2%, -1.5%); } }
+.cdt-lay-overlay .cdt-photo::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(var(--cdt-bg-rgb), .96) 0%, rgba(var(--cdt-bg-rgb), .92) 50%, rgba(var(--cdt-bg-rgb), .6) 72%, rgba(var(--cdt-bg-rgb), .15) 100%); }
+.cdt-lay-overlay .cdt-text { width: min(52%, 1100px); margin-right: auto; margin-left: 6%; }
+/* Texte + photo côte à côte (liste longue, menu) */
+.cdt-lay-split .cdt-photo, .cdt-lay-split_left .cdt-photo, .cdt-lay-split_right .cdt-photo { inset: 6vh auto 6vh 4vw; width: 40%; border-radius: 3vh; box-shadow: 0 3vh 8vh rgba(0, 0, 0, .35);
+  opacity: 0; transform: translateX(-6%) scale(.96); animation: cdtIn 1s cubic-bezier(.2, .8, .2, 1) .15s forwards; }
+.cdt-lay-split_right .cdt-photo { inset: 6vh 4vw 6vh auto; transform: translateX(6%) scale(.96); }
+.cdt-lay-split .cdt-text, .cdt-lay-split_left .cdt-text { width: 48%; margin-left: 48%; }
+.cdt-lay-split_right .cdt-text { width: 48%; margin-right: 48%; }
+@keyframes cdtIn { to { opacity: 1; transform: none; } }
+.cdt-text .cdt-title:only-child { margin-bottom: 0; }
+@media (prefers-reduced-motion: reduce) { .cdt *, .cdt { animation-duration: .01s !important; animation-delay: 0s !important; } }
+

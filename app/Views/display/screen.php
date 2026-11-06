@@ -9,6 +9,7 @@
 <link rel="icon" href="<?= e(asset('img/logo.svg')) ?>">
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/customer-display.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/display-text.css')) ?>">
 </head>
 <body class="cd theme-<?= e($cfg['theme']) ?>">
 <div class="cd-media" id="cdMedia" aria-hidden="true">
@@ -39,6 +40,7 @@
 <button type="button" class="cd-fs" id="cdFs"><i class="bi bi-arrows-fullscreen"></i> <?= e(t('Toucher pour passer en plein écran')) ?></button>
 <script type="application/json" id="cd-config"><?= json_encode(['cfg' => $cfg, 'playlist' => $playlist], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
 <script src="<?= e(asset('js/money.js')) ?>"></script>
+<script src="<?= e(asset('js/display-text.js')) ?>"></script>
 <script src="<?= e(asset('js/customer-display.js')) ?>"></script>
 </body>
 </html>

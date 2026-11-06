@@ -64,6 +64,7 @@ final class Menu
                 ['Rôles & permissions', 'bi-shield-lock', '/roles', 'roles.manage', '#8e44ad'],
                 ['Imprimantes', 'bi-printer', '/printers', 'settings.manage', '#2c3e50'],
                 ['Écran et afficheur client', 'bi-display', '/settings/display', 'settings.manage', '#16a085'],
+                ['Écrans : accès direct (TV)', 'bi-tv', '/screens', 'settings.manage', '#0f766e'],
                 ['Accès mobile (QR code)', 'bi-qr-code', '/mobile', 'settings.manage', '#117a65'],
                 ['Appareils connectés', 'bi-phone', '/devices', 'users.manage', '#7d3c98'],
                 ['Mon mot de passe / PIN', 'bi-key', '/account/password', null, '#f1c40f'],

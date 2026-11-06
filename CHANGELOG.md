@@ -2,6 +2,39 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.4.0] — 2026-11-06
+
+### Corrigé
+- **Mise à jour du logiciel sur o2switch : « Réponse invalide du serveur (504) »**. L'installation se
+  faisait en une seule requête (sauvegarde de la base et des photos, archive complète du code
+  — plus de 1 000 fichiers —, vérification puis copie de tous les fichiers) : l'hébergement la
+  coupait. Elle est maintenant découpée en **étapes de quelques secondes** que la page enchaîne
+  (vérification → fichiers modifiés → sauvegarde de la base → sauvegarde du code remplacé →
+  copie → finalisation), avec reprise automatique si une étape est coupée.
+  - **Seuls les fichiers modifiés** sont sauvegardés puis copiés (une mise à jour courante n'en
+    touche que quelques dizaines).
+  - Sauvegardes de la base sans l'archive des photos avant une mise à jour, une migration ou
+    l'installation d'un module (les photos ne sont pas touchées) : plus rapide.
+  - Nouveau : `php bin/update.php POS-Marwa-x.y.z.zip` (cPanel → Terminal ou VPS), sans limite
+    de durée.
+
+### Ajouté
+- **Publications sur l'écran client** : menu du jour, promotion, annonce — **texte seul** ou
+  **texte + photo**. Mise en forme automatique : « Poulet braisé 3000 F » devient une ligne de menu
+  avec son prix, « # Boissons » une rubrique, « - texte » une puce. Taille du texte ajustée,
+  apparitions animées (barre, mots qui montent, lignes en cascade, prix qui ressortent), fond animé,
+  photo en mouvement lent. **7 palettes** ou couleurs personnalisées (fond, texte, accent),
+  4 dispositions, aperçu réel en direct dans les paramètres.
+- **Accès direct aux écrans** (téléviseur connecté, box Android, tablette, second PC) :
+  `…/ecran/client`, `…/ecran/cuisine`, `…/ecran/pressing`, `…/ecran/hotel`, `…/ecran/clinique`.
+  - Identifiant et mot de passe d'un utilisateur autorisé pour cet écran (son droit habituel).
+  - Écran **mémorisé** : il se reconnecte seul après une coupure (jeton propre à l'appareil,
+    seule son empreinte est conservée).
+  - Session **cantonnée à son écran** : ni caisse, ni gestion, même si le compte a d'autres droits.
+  - Configuration → **Écrans : accès direct** : adresses et QR codes, écrans connectés,
+    bouton « Déconnecter ». Un écran est aussi déconnecté si le mot de passe du compte change, si le
+    compte est désactivé ou perd le droit de l'écran.
+
 ## [3.3.0] — 2026-11-06
 
 ### Corrigé

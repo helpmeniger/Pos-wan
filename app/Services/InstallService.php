@@ -56,7 +56,7 @@ final class InstallService
                 return [];
             }
             @set_time_limit(600);
-            BackupService::create('avant_migration');
+            BackupService::create('avant_migration', false);
             $applied = self::migrate();
             \App\Core\Logger::info('Migrations appliquées automatiquement', ['migrations' => $applied]);
             @unlink($flag);

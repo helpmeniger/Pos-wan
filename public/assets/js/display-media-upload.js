@@ -23,8 +23,8 @@
     el.addEventListener('error', report);
     if (el.tagName === 'IMG' && el.complete && el.naturalWidth === 0) report();
   });
-  const input = document.querySelector('input[data-display-upload]');
-  if (!input) return;
+  document.querySelectorAll('input[data-display-upload]').forEach(setup);
+  function setup(input) {
   const info = input.parentElement.querySelector('[data-upload-info]');
   const form = input.form;
   const btn = form.querySelector('button:not([type=button])');
@@ -96,6 +96,7 @@
         const dt = new DataTransfer();
         dt.items.add(out.file);
         input.files = dt.files;
+        input.dispatchEvent(new CustomEvent('pm-prepared'));
         say(`<i class="bi bi-magic"></i> Image préparée pour l'écran : ${out.from[0]}×${out.from[1]} → <b>${out.to[0]}×${out.to[1]}</b>, ${mo(out.from[2])} → <b>${mo(out.to[2])}</b>.`, 'text-success');
       }
       const size = input.files[0].size;
@@ -114,4 +115,5 @@
     if (busy) { ev.preventDefault(); return; }
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Envoi…'; }
   });
+  }
 })();

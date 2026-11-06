@@ -7,7 +7,7 @@ if (PHP_SAPI !== 'cli') {
 }
 require dirname(__DIR__) . '/app/bootstrap.php';
 
-$backup = App\Services\BackupService::create('avant_migration');
+$backup = App\Services\BackupService::create('avant_migration', false);
 echo "Sauvegarde de sécurité : {$backup['sql']}\n";
 $applied = App\Services\InstallService::migrate();
 echo $applied ? 'Migrations appliquées : ' . implode(', ', $applied) . "\n" : "Base déjà à jour.\n";

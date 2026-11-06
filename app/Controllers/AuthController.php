@@ -16,6 +16,13 @@ final class AuthController extends Controller
         if (Auth::check()) {
             redirect('/');
         }
+        // Téléviseur déjà mémorisé pour un écran : retour à son écran
+        try {
+            if ($code = \App\Services\Screens::cookieScreen()) {
+                redirect('/ecran/' . $code);
+            }
+        } catch (\Throwable) {
+        }
         $lang = (string) Request::query('lang', '');
         if (isset(\App\Core\Lang::LANGUAGES[$lang])) {
             Session::set('locale', $lang);
@@ -71,6 +78,11 @@ final class AuthController extends Controller
 
     public function logout(): void
     {
+        // Déconnexion d'un écran mémorisé : l'appareil est oublié (sinon il se reconnecterait seul)
+        if (preg_match('/^(\d+)\./', (string) ($_COOKIE[\App\Services\Screens::COOKIE] ?? ''), $m)) {
+            \App\Services\Screens::revoke((int) $m[1]);
+            setcookie(\App\Services\Screens::COOKIE, '', ['expires' => time() - 3600, 'path' => (base_path_prefix() ?: '') . '/']);
+        }
         Auth::logout();
         Session::start();
         flash('success', 'Vous êtes déconnecté.');

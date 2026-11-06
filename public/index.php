@@ -68,6 +68,14 @@ if (App\Services\LicenceService::blocks(Request::method(), $path)) {
     redirect('/licence');
 }
 
+// Écran d'affichage (téléviseur, écran connecté) : cantonné aux pages de son écran
+if (InstallService::isInstalled() && ($to = App\Services\Screens::guard($path)) !== null) {
+    if (Request::wantsJson()) {
+        json_response(['ok' => false, 'error' => 'Cet écran n\'a accès qu\'à son affichage.'], 403);
+    }
+    redirect($to);
+}
+
 $router = new Router();
 require BASE_PATH . '/routes/web.php';
 App\Core\Addons::registerRoutes($router); // routes des modules actifs (addons/)

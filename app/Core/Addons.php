@@ -408,7 +408,7 @@ final class Addons
         @set_time_limit(600);
         $m = self::manifestOrFail($code);
         if ($backup) {
-            BackupService::create((self::installed()[$code] ?? null ? 'avant_maj_module_' : 'avant_module_') . $code);
+            BackupService::create((self::installed()[$code] ?? null ? 'avant_maj_module_' : 'avant_module_') . $code, false);
         }
         // Logiciel mis à jour par simple copie des fichiers : la base doit d'abord être à jour
         // (table « addons » de la 1.4, etc.), sinon l'installation échouerait.
