@@ -350,6 +350,13 @@ sur téléphone (PWA).
 
 ---
 
+**Réinstallation (nouveaux fichiers, base conservée).** Les fichiers CSS/JS des modules
+(`public/assets/addons/`) ne sont pas dans le zip : depuis la 3.4.1 ils sont recopiés
+automatiquement au premier chargement d'une page. Si une page d'un module s'affiche sans mise en
+forme, ouvrez n'importe quelle page puis rechargez (Ctrl+F5), ou lancez `php bin/migrate.php`
+dans le Terminal. Pour restaurer une sauvegarde `.sql` par phpMyAdmin, laissez le jeu de
+caractères sur **utf8mb4** (les sauvegardes 3.4.1 le déclarent elles-mêmes).
+
 ## 13. Ce qu'il ne faut jamais faire
 
 - Mettre `.env`, une sauvegarde `.sql.gz` ou un ZIP de données dans `public/` ou `public_html/`.

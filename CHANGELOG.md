@@ -2,6 +2,21 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.4.1] — 2026-11-06
+
+### Corrigé
+- **Pressing après une réinstallation (o2switch) : dépôt impossible à enregistrer, écran des
+  dépôts bloqué sur « Chargement… », pages sans mise en forme.** Les fichiers CSS/JS des modules
+  (`public/assets/addons/<module>/`) ne font pas partie du paquet : ils étaient copiés seulement à
+  l'installation du module. Après une réinstallation des fichiers avec une base où le module est
+  déjà installé, ils manquaient (sans `pressing.js`, toucher un article n'ajoute aucune ligne).
+  Ils sont maintenant recopiés automatiquement dès qu'ils manquent ou ont changé (aussi après une
+  mise à jour où la version du module ne change pas) ; si la copie est impossible (droits du
+  dossier), ils sont servis directement depuis `addons/<module>/public` (fichiers statiques
+  seulement, jamais de PHP). `php bin/migrate.php` les recopie aussi.
+- **Sauvegardes : encodage déclaré** (`SET NAMES utf8mb4`) en tête du fichier SQL. Sans lui, une
+  restauration par phpMyAdmin ou `mysql` réglés en latin1 abîmait les accents (« piÃ¨ces »).
+
 ## [3.4.0] — 2026-11-06
 
 ### Corrigé

@@ -25,6 +25,13 @@ if (str_starts_with($path, '/media/') && in_array(Request::method(), ['GET', 'HE
     App\Core\Media::serve(substr($path, 7));
 }
 
+// Fichiers publics d'un module absents du dossier public (copie impossible) : servis depuis addons/
+if (str_starts_with($path, '/assets/addons/') && in_array(Request::method(), ['GET', 'HEAD'], true)) {
+    App\Core\Addons::serveAsset(substr($path, 15));
+    http_response_code(404);
+    exit;
+}
+
 Session::start();
 
 // Mode SaaS : site public et console de l'exploitant (domaine principal)…
@@ -55,6 +62,8 @@ InstallService::autoMigrate();
 // … puis les modules actifs dont la version a changé (nouvelles tables avant leurs nouveaux écrans)
 if (InstallService::isInstalled()) {
     App\Core\Addons::autoUpgrade();
+    // … fichiers CSS/JS des modules recopiés s'ils manquent ou ont changé (réinstallation, mise à jour)
+    App\Core\Addons::syncAssets();
     // … puis contrôle de la structure : tables et colonnes manquantes recréées (une fois par mise à jour)
     App\Services\SchemaSync::auto();
 }

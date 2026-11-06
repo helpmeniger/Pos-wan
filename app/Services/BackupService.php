@@ -42,7 +42,8 @@ final class BackupService
         }
         $pdo = DB::connection();
         gzwrite($gz, '-- POS Marwa sauvegarde ' . date('c') . ' version ' . config('app.version') . "\n");
-        gzwrite($gz, "SET FOREIGN_KEY_CHECKS=0;\n");
+        // Encodage déclaré : sans lui, phpMyAdmin ou « mysql » réglés en latin1 abîment les accents
+        gzwrite($gz, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;\nSET FOREIGN_KEY_CHECKS=0;\n");
         $tables = DB::all("SELECT TABLE_NAME AS t FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME");
         $rowsTotal = 0;
         foreach ($tables as $t) {

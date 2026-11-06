@@ -4581,6 +4581,42 @@ test('Pressing : écran des dépôts en cours (atelier) et affichage clients san
     eq(403, $r['code'], 'auditeur : lecture seule');
 });
 
+test('Modules : fichiers CSS/JS recopiés après une réinstallation, repli servi depuis addons/', function () use ($B) {
+    // Réinstallation sur o2switch : base conservée (module déjà installé), dossier public/assets/addons absent
+    $dst = PUBLIC_PATH . '/assets/addons/pressing';
+    foreach (glob($dst . '/*') ?: [] as $f) {
+        unlink($f);
+    }
+    @rmdir($dst);
+    @unlink(STORAGE_PATH . '/cache/addon_assets_pressing');
+    ok(!is_file($dst . '/pressing.js'), 'fichiers absents (situation après réinstallation)');
+    // Repli : servis depuis addons/pressing/public même avant la copie
+    $a = new Http();
+    $r = $a->req('GET', "$B/assets/addons/pressing/pressing.js");
+    eq(200, $r['code'], 'pressing.js servi par le repli');
+    ok(str_contains($r['headers'], 'javascript') && $r['body'] === file_get_contents(BASE_PATH . '/addons/pressing/public/pressing.js'), 'contenu et type exacts');
+    eq(404, $a->req('GET', "$B/assets/addons/pressing/../routes.php")['code'], 'aucune sortie du dossier public du module');
+    eq(404, $a->req('GET', "$B/assets/addons/pressing/manifest.php")['code'], 'jamais de PHP');
+    // Copie automatique au chargement d'une page
+    $a->req('GET', "$B/login");
+    ok(is_file($dst . '/pressing.js') && is_file($dst . '/pressing-ecran.js') && is_file($dst . '/pressing.css'), 'fichiers recopiés automatiquement');
+    // Fichier modifié par une mise à jour (même version du module) : recopié
+    file_put_contents($dst . '/pressing.css', '/* ancienne version */');
+    touch(BASE_PATH . '/addons/pressing/public/pressing.css');
+    clearstatcache();
+    App\Core\Addons::syncAssets();
+    eq(file_get_contents(BASE_PATH . '/addons/pressing/public/pressing.css'), file_get_contents($dst . '/pressing.css'), 'fichier modifié recopié');
+    // Formulaire de dépôt : le script est bien référencé
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $f = $a->req('GET', "$B/pressing/create")['body'];
+    ok(str_contains($f, 'assets/addons/pressing/pressing.js') && str_contains($f, 'assets/addons/pressing/pressing.css'), 'formulaire : CSS et JS du module');
+    // Sauvegarde : encodage déclaré (restauration phpMyAdmin / mysql sans accents abîmés)
+    $bk = S\BackupService::create('test_encodage', false);
+    $head = gzread($gz = gzopen(S\BackupService::dir() . '/' . $bk['sql'], 'rb'), 300);
+    gzclose($gz);
+    ok(str_contains($head, 'SET NAMES utf8mb4'), 'sauvegarde : SET NAMES utf8mb4');
+});
+
 test('Comptabilité générale : mise en place SYSCOHADA, écritures de la caisse, saisie, validation, extourne, lettrage, états, clôture', function () use ($B) {
     $C = Addons\Comptabilite\Compta::class;
     $R = Addons\Comptabilite\Reports::class;

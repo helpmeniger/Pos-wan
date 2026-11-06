@@ -496,11 +496,95 @@ final class Addons
                 continue; // jamais de .php ni de .htaccess dans le dossier public
             }
             $target = $dst . '/' . $rel;
-            if (!is_dir(dirname($target))) {
-                mkdir(dirname($target), 0775, true);
+            if (!is_dir(dirname($target)) && !@mkdir(dirname($target), 0775, true) && !is_dir(dirname($target))) {
+                throw new \RuntimeException('dossier ' . dirname($target) . ' impossible à créer (droits)');
             }
-            copy($f->getPathname(), $target);
+            if (!@copy($f->getPathname(), $target)) {
+                throw new \RuntimeException('copie de ' . $rel . ' impossible (droits du dossier public/assets/addons)');
+            }
         }
+    }
+
+    /** Extensions servies depuis addons/<code>/public (jamais de PHP). */
+    private const ASSET_TYPES = ['css' => 'text/css; charset=utf-8', 'js' => 'application/javascript; charset=utf-8', 'png' => 'image/png', 'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg', 'gif' => 'image/gif', 'svg' => 'image/svg+xml', 'webp' => 'image/webp', 'woff' => 'font/woff', 'woff2' => 'font/woff2',
+        'ttf' => 'font/ttf', 'json' => 'application/json', 'txt' => 'text/plain; charset=utf-8', 'bin' => 'application/octet-stream'];
+
+    /**
+     * Fichiers publics des modules tenus à jour. Ils ne font pas partie du paquet du logiciel
+     * (copiés à l'installation du module) : après une réinstallation ou une mise à jour des
+     * fichiers, un module déjà installé en base n'avait plus ses CSS/JS (pages sans mise en
+     * forme, boutons sans effet, écran bloqué sur « Chargement… »). Contrôle léger à chaque
+     * requête (dates et tailles), copie seulement quand quelque chose a changé.
+     */
+    public static function syncAssets(): void
+    {
+        foreach (array_keys(self::active()) as $code) {
+            $src = self::dir() . '/' . $code . '/public';
+            if (!is_dir($src)) {
+                continue;
+            }
+            try {
+                $sig = [];
+                $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($src, \FilesystemIterator::SKIP_DOTS));
+                foreach ($it as $f) {
+                    if ($f->isFile()) {
+                        $sig[] = substr($f->getPathname(), strlen($src) + 1) . ':' . $f->getSize() . ':' . $f->getMTime();
+                    }
+                }
+                sort($sig);
+                $sig = md5(implode('|', $sig));
+                $marker = STORAGE_PATH . '/cache/addon_assets_' . $code;
+                $dst = PUBLIC_PATH . '/assets/addons/' . $code;
+                $seen = is_file($marker) ? trim((string) file_get_contents($marker)) : '';
+                if ((is_dir($dst) && $seen === $sig) || ($seen === 'echec:' . $sig && filemtime($marker) > time() - 600)) {
+                    continue; // à jour, ou copie impossible essayée il y a moins de 10 minutes
+                }
+                try {
+                    self::publishAssets($code);
+                    @file_put_contents($marker, $sig);
+                } catch (\Throwable $e) {
+                    @file_put_contents($marker, 'echec:' . $sig);
+                    throw $e;
+                }
+            } catch (\Throwable $e) {
+                // Copie impossible (droits du dossier) : serveAsset() sert les fichiers depuis addons/
+                Logger::error('Fichiers publics du module « ' . $code . ' » non copiés : ' . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Repli : /assets/addons/<code>/<fichier> absent du dossier public (copie impossible) →
+     * servi directement depuis addons/<code>/public. Fichiers statiques seulement (liste fermée
+     * d'extensions, jamais de PHP) ; aucun accès à la base : appelé avant la session.
+     */
+    public static function serveAsset(string $rel): void
+    {
+        $rel = rawurldecode($rel);
+        if (!preg_match('#^([a-z0-9_]+)/([A-Za-z0-9_./-]+)$#', $rel, $m) || str_contains($m[2], '..')) {
+            return;
+        }
+        $ext = strtolower(pathinfo($m[2], PATHINFO_EXTENSION));
+        $file = self::dir() . '/' . $m[1] . '/public/' . $m[2];
+        $base = realpath(self::dir() . '/' . $m[1] . '/public');
+        $real = realpath($file);
+        if (!isset(self::ASSET_TYPES[$ext]) || !$base || !$real || !str_starts_with($real, $base . DIRECTORY_SEPARATOR) || !is_file($real)) {
+            return;
+        }
+        $etag = '"' . md5($real . filesize($real) . filemtime($real)) . '"';
+        header('Content-Type: ' . self::ASSET_TYPES[$ext]);
+        header('Cache-Control: public, max-age=86400');
+        header('ETag: ' . $etag);
+        if (trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) {
+            http_response_code(304);
+            exit;
+        }
+        header('Content-Length: ' . filesize($real));
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'HEAD') {
+            readfile($real);
+        }
+        exit;
     }
 
     public static function setActive(string $code, bool $active): void

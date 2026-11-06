@@ -15,6 +15,8 @@ echo $applied ? 'Migrations appliquées : ' . implode(', ', $applied) . "\n" : "
 $r = App\Services\SchemaSync::repair(false);
 $n = count($r['created']) + count($r['columns']) + count($r['enums']);
 echo $n ? 'Structure synchronisée : ' . count($r['created']) . ' table(s) créée(s), ' . count($r['columns']) . ' colonne(s) ajoutée(s), ' . count($r['enums']) . " liste(s) de valeurs élargie(s).\n" : "Structure de la base complète.\n";
+// Fichiers CSS/JS des modules actifs (absents du paquet du logiciel) recopiés si besoin
+App\Core\Addons::syncAssets();
 foreach ($r['errors'] as $e) {
     fwrite(STDERR, "Erreur : $e\n");
 }

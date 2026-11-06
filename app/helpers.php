@@ -46,6 +46,10 @@ function asset(string $path): string
 {
     $file = PUBLIC_PATH . '/assets/' . ltrim($path, '/');
     $v = is_file($file) ? (string) filemtime($file) : '1';
+    // Fichier d'un module pas encore copié dans public/ : version prise sur la source (addons/)
+    if ($v === '1' && preg_match('#^addons/([a-z0-9_]+)/(.+)$#', ltrim($path, '/'), $m) && is_file($src = BASE_PATH . '/addons/' . $m[1] . '/public/' . $m[2])) {
+        $v = (string) filemtime($src);
+    }
     return base_path_prefix() . '/assets/' . ltrim($path, '/') . '?v=' . $v;
 }
 
