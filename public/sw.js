@@ -47,7 +47,7 @@ self.addEventListener('fetch', (e) => {
   }
 
   // Fichiers statiques versionnés (?v=…) et photos des articles : copie locale d'abord
-  if (url.pathname.startsWith(SCOPE + 'assets/') || url.pathname.startsWith(SCOPE + 'uploads/products/')) {
+  if (url.pathname.startsWith(SCOPE + 'assets/') || url.pathname.startsWith(SCOPE + 'uploads/products/') || url.pathname.startsWith(SCOPE + 'media/products/')) {
     e.respondWith((async () => {
       const cached = await caches.match(req);
       if (cached) return cached;

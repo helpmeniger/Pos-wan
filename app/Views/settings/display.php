@@ -71,10 +71,11 @@ $mb = fn($b) => round($b / 1048576) . ' Mo';
         <li class="list-group-item <?= (int) $m['active'] ? '' : 'opacity-50' ?>">
           <div class="d-flex gap-2 align-items-center">
             <div style="width:96px;height:54px;flex:none;background:#000;border-radius:6px;overflow:hidden">
-              <?php if ($m['kind'] === 'video'): ?><video src="<?= e($url) ?>#t=0.5" muted preload="metadata" style="width:100%;height:100%;object-fit:cover"></video><?php else: ?><img src="<?= e($url) ?>" alt="" style="width:100%;height:100%;object-fit:cover"><?php endif; ?>
+              <?php if ($m['kind'] === 'video'): ?><video src="<?= e($url) ?>#t=0.5" muted preload="metadata" style="width:100%;height:100%;object-fit:cover" data-media-check></video><?php else: ?><img src="<?= e($url) ?>" alt="" style="width:100%;height:100%;object-fit:cover" data-media-check><?php endif; ?>
             </div>
             <form method="post" action="<?= e(url('/settings/display/media/' . $m['id'])) ?>" class="flex-grow-1 row g-1 align-items-center"><?= csrf_field() ?>
-              <?php if (!CD::fileExists($m)): ?><div class="col-12"><span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> Fichier introuvable sur le serveur : il n'est pas diffusé. Supprimez cette ligne et ajoutez de nouveau le fichier.</span></div><?php endif; ?>
+              <?php if ($pb = CD::fileProblem($m)): ?><div class="col-12"><span class="badge bg-danger text-wrap text-start"><i class="bi bi-exclamation-triangle"></i> <?= e($pb) ?></span></div><?php endif; ?>
+              <div class="col-12 d-none" data-media-error><span class="badge bg-warning text-dark text-wrap text-start"></span></div>
               <div class="col-12"><input name="title" class="form-control form-control-sm" maxlength="150" value="<?= e($m['title'] ?? '') ?>" placeholder="<?= $m['kind'] === 'video' ? 'Vidéo' : 'Image' ?> <?= $i + 1 ?>"></div>
               <div class="col-5"><?php if ($m['kind'] === 'image'): ?><div class="input-group input-group-sm"><input name="duration_s" type="number" min="3" max="300" class="form-control" value="<?= (int) $m['duration_s'] ?>"><span class="input-group-text">s</span></div><?php else: ?><input type="hidden" name="duration_s" value="<?= (int) $m['duration_s'] ?>"><span class="badge bg-dark"><i class="bi bi-film"></i> vidéo entière</span><?php endif; ?></div>
               <div class="col-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="active" value="1" id="ma<?= (int) $m['id'] ?>" <?= (int) $m['active'] ? 'checked' : '' ?>><label class="form-check-label small" for="ma<?= (int) $m['id'] ?>">Diffusé</label></div></div>

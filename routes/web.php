@@ -253,6 +253,8 @@ $router->post('/printers', [C\PrinterController::class, 'store'], 'settings.mana
 $router->post('/printers/{id}', [C\PrinterController::class, 'update'], 'settings.manage');
 $router->post('/printers/{id}/delete', [C\PrinterController::class, 'delete'], 'settings.manage');
 $router->post('/printers/{id}/test', [C\PrinterController::class, 'test'], 'settings.manage');
+$router->get('/system/database', [C\SchemaController::class, 'index'], 'backup.manage');
+$router->post('/system/database', [C\SchemaController::class, 'repair'], 'backup.manage');
 $router->get('/backups', [C\BackupController::class, 'index'], 'backup.manage');
 $router->post('/backups', [C\BackupController::class, 'create'], 'backup.manage');
 $router->post('/backups/download', [C\BackupController::class, 'download'], 'backup.manage');

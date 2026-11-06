@@ -19,9 +19,14 @@ header('Permissions-Policy: geolocation=(), microphone=(), camera=(self)');
 header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self'; object-src 'none'");
 header_remove('X-Powered-By');
 
+$path = Request::path();
+// Photos et vidéos téléversées : servies par l'application (indépendant de la configuration Apache)
+if (str_starts_with($path, '/media/') && in_array(Request::method(), ['GET', 'HEAD'], true)) {
+    App\Core\Media::serve(substr($path, 7));
+}
+
 Session::start();
 
-$path = Request::path();
 // Mode SaaS : site public et console de l'exploitant (domaine principal)…
 if (App\Saas\Saas::isCentral()) {
     App\Saas\Gate::central($path);
@@ -50,6 +55,8 @@ InstallService::autoMigrate();
 // … puis les modules actifs dont la version a changé (nouvelles tables avant leurs nouveaux écrans)
 if (InstallService::isInstalled()) {
     App\Core\Addons::autoUpgrade();
+    // … puis contrôle de la structure : tables et colonnes manquantes recréées (une fois par mise à jour)
+    App\Services\SchemaSync::auto();
 }
 // Licence : sans clé valide après la période d'essai, lecture seule (aucune donnée bloquée)
 if (App\Services\LicenceService::blocks(Request::method(), $path)) {

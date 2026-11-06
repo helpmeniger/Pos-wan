@@ -2,6 +2,33 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.3.0] — 2026-11-06
+
+### Corrigé
+- **Images de l'écran client qui ne s'affichent pas** (vignette cassée dans les paramètres, écran
+  client sans image) : les photos et vidéos téléversées sont désormais **servies par
+  l'application** (adresse `/media/…`) au lieu d'un accès direct au dossier `public/uploads`.
+  Elles s'affichent dès que les pages s'affichent, quelle que soit la configuration du serveur
+  (règles `.htaccess` refusées, module Apache absent, type de fichier inconnu, sous-dossier,
+  réécriture d'adresse). Vérifié sous Apache avec l'accès direct au dossier bloqué.
+  Concerne aussi les photos des articles, des catégories et le logo. Lecture partielle pour les
+  vidéos, cache du navigateur, seuls les fichiers image / vidéo du dossier des téléversements
+  sont lisibles.
+- **Diagnostic** dans Écran et afficheur client : fichier absent, vide ou abîmé signalé ; une
+  vignette qui ne se charge pas indique la raison (réponse du serveur, type reçu).
+
+### Ajouté
+- **Synchronisation automatique de la base après une mise à jour** : POS Marwa lit la structure
+  attendue par la version installée (schéma, mises à jour du logiciel et des modules installés),
+  la compare à la base, puis, après une sauvegarde : applique les mises à jour en attente,
+  **crée les tables manquantes**, **ajoute les colonnes manquantes** et complète les listes de
+  valeurs. Rien n'est supprimé ni modifié. Couvre les cas que les mises à jour numérotées ne
+  voyaient pas : mise à jour interrompue mais marquée faite, ancienne sauvegarde restaurée,
+  base copiée d'un autre poste, module installé avant une mise à jour.
+- **Système → Vérification de la base** : état détaillé (tables, colonnes, valeurs, mises à jour
+  en attente), bouton « Réparer et synchroniser », rapport de la dernière synchronisation.
+- `php bin/migrate.php` synchronise aussi la structure.
+
 ## [3.2.0] — 2026-11-05
 
 ### Ajouté

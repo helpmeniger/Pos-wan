@@ -216,6 +216,22 @@ final class CustomerDisplay
     }
 
     /** Liste publiée sur l'écran client (adresses des fichiers, durées). */
+    /** Problème d'un fichier de diffusion (absent, vide, image illisible), sinon null. */
+    public static function fileProblem(array $m): ?string
+    {
+        if (!self::fileExists($m)) {
+            return 'Fichier introuvable sur le serveur : il n\'est pas diffusé. Supprimez cette ligne et ajoutez de nouveau le fichier.';
+        }
+        $f = UPLOADS_PATH . '/' . $m['path'];
+        if ((int) @filesize($f) === 0) {
+            return 'Fichier vide sur le serveur (envoi interrompu) : supprimez-le et ajoutez-le de nouveau.';
+        }
+        if ($m['kind'] === 'image' && @getimagesize($f) === false) {
+            return 'Fichier abîmé : ce n\'est pas une image lisible. Supprimez-le et ajoutez-le de nouveau.';
+        }
+        return null;
+    }
+
     /** Fichier encore présent sur le disque (absent après une réinstallation sans le dossier uploads). */
     public static function fileExists(array $m): bool
     {
@@ -231,10 +247,10 @@ final class CustomerDisplay
         $default = (int) setting('display_image_seconds', '8');
         $out = [];
         foreach (self::media(true) as $m) {
-            if (!self::fileExists($m)) {
+            if (self::fileProblem($m) !== null) {
                 continue;
             }
-            $out[] = ['id' => (int) $m['id'], 'kind' => $m['kind'], 'url' => upload_url($m['path']) . '?v=' . (int) @filemtime(UPLOADS_PATH . '/' . $m['path']),
+            $out[] = ['id' => (int) $m['id'], 'kind' => $m['kind'], 'url' => upload_url($m['path']),
                 'seconds' => (int) $m['duration_s'] ?: $default, 'title' => (string) $m['title']];
         }
         return $out;

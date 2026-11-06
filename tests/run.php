@@ -2090,6 +2090,56 @@ test('Import du stock : aperçu sans modification, ajout, stock compté, erreurs
     ok($rows[0][0] === 'reference' && in_array('CIM-TEST', array_column($rows, 0), true), 'modèle : articles et stock actuel');
 });
 
+test('Synchronisation de la base : tables, colonnes et listes de valeurs manquantes recréées sans perte', function () {
+    actingAs('admin');
+    $SS = S\SchemaSync::class;
+    $c = $SS::check();
+    ok($c['ok'] && !$c['pending_migrations'], 'base de test complète : ' . json_encode([$c['missing_tables'], $c['missing_columns'], $c['enums']]));
+    ok($c['tables'] > 60, 'structure attendue lue (' . $c['tables'] . ' tables, logiciel + modules installés)');
+    eq(['a', "ENUM('x','y,z')", 'DECIMAL(15,3) NOT NULL'], $SS::splitTop("a, ENUM('x','y,z'), DECIMAL(15,3) NOT NULL"), 'découpage SQL');
+    // Base abîmée : table supprimée alors que sa migration est marquée faite, colonne perdue, ENUM réduit
+    $n = (int) DB::value('SELECT COUNT(*) FROM customers');
+    $pdo = DB::connection();
+    $pdo->exec('SET foreign_key_checks = 0');
+    $pdo->exec('DROP TABLE stock_import_rows');
+    $pdo->exec('ALTER TABLE customers DROP COLUMN loyalty_points');
+    $pdo->exec("DELETE FROM display_media WHERE kind = 'video'");
+    $pdo->exec("ALTER TABLE display_media MODIFY kind ENUM('image') NOT NULL");
+    $pdo->exec('SET foreign_key_checks = 1');
+    $c = $SS::check();
+    ok(in_array('stock_import_rows', $c['missing_tables'], true), 'table manquante détectée');
+    ok(in_array('customers.loyalty_points', array_map(fn($x) => $x['table'] . '.' . $x['column'], $c['missing_columns']), true), 'colonne manquante détectée');
+    ok($c['enums'] && $c['enums'][0]['table'] === 'display_media' && $c['enums'][0]['added'] === ['video'], 'valeur manquante détectée : ' . json_encode($c['enums']));
+    $r = $SS::repair();
+    ok(!$r['errors'] && $r['created'] === ['stock_import_rows'] && in_array('customers.loyalty_points', $r['columns'], true) && $r['enums'], 'réparé : ' . json_encode($r['errors']));
+    ok($r['backup'] && is_file(S\BackupService::dir() . '/' . $r['backup']), 'sauvegarde faite avant la réparation');
+    ok($SS::check()['ok'], 'base de nouveau complète');
+    eq($n, (int) DB::value('SELECT COUNT(*) FROM customers'), 'aucune donnée perdue');
+    ok((int) DB::value("SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'stock_import_rows'") === 1, 'clé étrangère recréée');
+    ok(S\SchemaSync::lastReport()['created'] === ['stock_import_rows'], 'rapport conservé');
+    // Automatique : rien à faire tant que les fichiers ne changent pas
+    @unlink(STORAGE_PATH . '/cache/schema_sync');
+    eq(null, $SS::auto(), 'base complète : aucune réparation');
+    ok(is_file(STORAGE_PATH . '/cache/schema_sync'), 'empreinte mémorisée');
+    $pdo->exec('ALTER TABLE customers DROP COLUMN loyalty_points');
+    eq(null, $SS::auto(), 'empreinte inchangée : pas de nouveau contrôle à chaque page');
+    @unlink(STORAGE_PATH . '/cache/schema_sync'); // = fichiers mis à jour
+    $r = $SS::auto();
+    ok($r && in_array('customers.loyalty_points', $r['columns'], true), 'après une mise à jour : réparation automatique');
+});
+test('Photos servies par l\'application : adresse /media, types, chemins refusés', function () {
+    $M = App\Core\Media::class;
+    $f = UPLOADS_PATH . '/products/test-media.png';
+    @mkdir(dirname($f), 0755, true);
+    $im = imagecreatetruecolor(4, 4); imagepng($im, $f); imagedestroy($im);
+    ok(str_contains((string) upload_url('products/test-media.png'), '/media/products/test-media.png?v='), 'adresse /media versionnée : ' . upload_url('products/test-media.png'));
+    eq(realpath($f), $M::resolve('products/test-media.png'));
+    foreach (['../.env', 'products/../../.env', '../../config/app.php', 'products/test-media.php', '/etc/passwd', 'products/inconnu.png', 'products/test media.png'] as $bad) {
+        eq(null, $M::resolve($bad), "refusé : $bad");
+    }
+    @unlink($f);
+});
+
 echo "\n== HTTP & sécurité (serveur PHP intégré) ==\n";
 $port = (int) (getenv('TEST_PORT') ?: 8099);
 if ($busy = @fsockopen('127.0.0.1', $port, $errno, $errstr, 0.5)) {
@@ -2539,8 +2589,17 @@ test('Écran client (HTTP) : paramètres, caisse, écran du second moniteur, dro
     $pos = $c->req('GET', "$B/pos");
     ok(str_contains($pos['body'], 'data-cd-open') && str_contains($pos['body'], 'customer-display-link.js'), 'caisse : bouton de l\'écran client');
     $scr = $c->req('GET', "$B/afficheur");
-    ok($scr['code'] === 200 && str_contains($scr['body'], 'Bienvenue chez Test') && str_contains($scr['body'], 'theme-light') && str_contains($scr['body'], '/uploads/display/'), 'écran client : accueil, thème, images');
+    ok($scr['code'] === 200 && str_contains($scr['body'], 'Bienvenue chez Test') && str_contains($scr['body'], 'theme-light') && str_contains($scr['body'], '/media/display/'), 'écran client : accueil, thème, images');
     ok(str_contains($scr['body'], 'id="cdProgress"') && str_contains($scr['body'], 'id="cdDots"'), 'écran client : progression et repères');
+    preg_match('#/media/(display/[a-f0-9]+\.\w+)\?v=\d+#', $scr['body'], $mm);
+    ok(!empty($mm[1]), 'écran client : images servies par l\'application');
+    $img = $c->req('GET', "$B/media/" . $mm[1]);
+    ok($img['code'] === 200 && preg_match('#Content-Type: image/#i', $img['headers']) && stripos($img['headers'], 'Set-Cookie') === false, 'image délivrée (200, type image, sans cookie)');
+    $rg = $c->req('GET', "$B/media/" . $mm[1], null, ['Range: bytes=0-9']);
+    ok($rg['code'] === 206 && strlen($rg['body']) === 10, 'lecture partielle (vidéos)');
+    eq(404, (new Http())->req('GET', "$B/media/../.env")['code'], 'fichier hors des téléversements refusé');
+    $db = $a->req('GET', "$B/system/database");
+    ok($db['code'] === 200 && str_contains($db['body'], 'Base complète'), 'page Vérification de la base');
     $pl = json_decode($c->req('GET', "$B/afficheur/playlist", null, ['Accept: application/json'])['body'], true);
     ok(($pl['ok'] ?? false) && is_array($pl['playlist']) && isset($pl['cfg']['transition']), 'liste de diffusion relue par l\'écran (JSON)');
     ok(str_contains($pg['body'], 'data-display-upload') && str_contains($pg['body'], 'display-media-upload.js') && str_contains($pg['body'], 'name="display_transition"'), 'paramètres : préparation des images, choix de l\'effet');

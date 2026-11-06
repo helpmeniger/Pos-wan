@@ -72,6 +72,7 @@ final class Menu
                 ['Modules complémentaires', 'bi-puzzle', '/addons', 'addons.manage', '#6c3483'],
                 ['Mise à jour du logiciel', 'bi-cloud-arrow-up', '/update', 'system.update', '#1f618d'],
                 ['Sauvegardes', 'bi-hdd-stack', '/backups', 'backup.manage', '#b03a2e'],
+                ['Vérification de la base', 'bi-database-check', '/system/database', 'backup.manage', '#0e7490'],
                 ['Licence et activation', 'bi-key-fill', '/licence', 'licence.manage', '#b7950b'],
                 ['Journal d\'audit', 'bi-journal-check', '/audit', 'audit.view', '#34495e'],
             ],

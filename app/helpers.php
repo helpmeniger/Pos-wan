@@ -51,7 +51,12 @@ function asset(string $path): string
 
 function upload_url(?string $path): ?string
 {
-    return $path ? base_path_prefix() . '/' . UPLOADS_URL . '/' . ltrim($path, '/') : null;
+    if (!$path) {
+        return null;
+    }
+    // Servi par l'application (App\Core\Media) ; la date du fichier évite d'afficher une ancienne version
+    $mtime = @filemtime(UPLOADS_PATH . '/' . ltrim($path, '/'));
+    return base_path_prefix() . '/media/' . implode('/', array_map('rawurlencode', explode('/', ltrim($path, '/')))) . ($mtime ? '?v=' . $mtime : '');
 }
 
 function redirect(string $path, array $query = []): never

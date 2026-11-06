@@ -7,6 +7,22 @@
    ===================================================================== */
 (function () {
   'use strict';
+  // Diagnostic : une vignette qui ne s'affiche pas indique la raison exacte (au lieu d'un carré noir)
+  document.querySelectorAll('[data-media-check]').forEach((el) => {
+    const report = async () => {
+      const box = el.closest('li') && el.closest('li').querySelector('[data-media-error]');
+      if (!box) return;
+      let why = 'le navigateur ne peut pas lire ce fichier';
+      try {
+        const r = await fetch(el.currentSrc || el.src, { method: 'HEAD', credentials: 'same-origin', cache: 'no-store' });
+        why = r.ok ? `le serveur répond mais le contenu n'est pas lisible (${r.headers.get('Content-Type') || 'type inconnu'})` : `le serveur répond « ${r.status} »`;
+      } catch (e) { why = 'le serveur ne répond pas'; }
+      box.querySelector('.badge').textContent = 'Aperçu impossible : ' + why + '. Supprimez ce fichier et ajoutez-le de nouveau ; si le problème continue, envoyez cette ligne à l\'assistance.';
+      box.classList.remove('d-none');
+    };
+    el.addEventListener('error', report);
+    if (el.tagName === 'IMG' && el.complete && el.naturalWidth === 0) report();
+  });
   const input = document.querySelector('input[data-display-upload]');
   if (!input) return;
   const info = input.parentElement.querySelector('[data-upload-info]');
