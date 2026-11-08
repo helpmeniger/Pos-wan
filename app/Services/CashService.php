@@ -30,8 +30,53 @@ final class CashService
         return self::openSessionForRegister((int) $user['register_id']);
     }
 
+    /** Le fond de caisse est-il demandé à l'ouverture ? (sinon ouverture directe, fond de 0) */
+    public static function asksOpening(): bool
+    {
+        return setting('cash_ask_opening', '1') !== '0';
+    }
+
+    /**
+     * Clôture automatique (option « cash_auto_close ») : toute caisse encore ouverte après
+     * 23h59 du jour de son ouverture est clôturée à 23:59:59 de ce jour-là. Les espèces ne
+     * sont pas comptées (montant compté et écart vides, « à vérifier ») : le caissier ou le
+     * responsable contrôle le lendemain. Appelée à chaque requête (au plus une fois par minute)
+     * et par la tâche planifiée ; une session ouverte aujourd'hui n'est jamais touchée.
+     * @return int nombre de caisses clôturées
+     */
+    public static function autoClose(bool $force = false): int
+    {
+        if (setting('cash_auto_close', '0') !== '1') {
+            return 0;
+        }
+        $flag = STORAGE_PATH . '/cache/cash_auto_close';
+        if (!$force && is_file($flag) && filemtime($flag) > time() - 60) {
+            return 0;
+        }
+        @touch($flag);
+        $n = 0;
+        foreach (DB::all("SELECT id FROM cash_sessions WHERE status = 'open' AND opened_at < CURDATE()") as $row) {
+            $n += DB::transaction(function () use ($row) {
+                $s = DB::one("SELECT * FROM cash_sessions WHERE id = ? AND status = 'open' FOR UPDATE", [$row['id']]);
+                if (!$s) {
+                    return 0;
+                }
+                $expected = self::expectedCash((int) $s['id']);
+                $at = substr((string) $s['opened_at'], 0, 10) . ' 23:59:59';
+                DB::update('cash_sessions', ['status' => 'closed', 'expected_amount' => $expected, 'counted_amount' => null, 'difference' => null, 'closed_at' => $at,
+                    'closed_by' => null, 'auto_closed' => 1, 'closing_note' => 'Clôture automatique à 23h59 : espèces non comptées, à vérifier.'], 'id = ?', [$s['id']]);
+                Audit::log('cash.auto_close', 'cash_session', (int) $s['id'], ['expected' => $expected, 'closed_at' => $at], null);
+                return 1;
+            });
+        }
+        return $n;
+    }
+
     public static function open(int $registerId, float $amount): int
     {
+        if (!self::asksOpening()) {
+            $amount = 0.0;
+        }
         if ($amount < 0) {
             throw new BusinessException('Le fond de caisse ne peut pas être négatif.');
         }

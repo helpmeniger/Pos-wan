@@ -2,6 +2,31 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.5.0] — 2026-11-08
+
+### Ajouté
+- **Module Boutique en ligne** (`addons/boutique`) : page publique moderne pour vos clients
+  (catégories, recherche, tri, fiche article, panier, « À la une », promotions, disponibilité),
+  commande en une page (retrait ou livraison), **reçu automatique** avec QR code et suivi.
+  Dans POS Marwa : liste des commandes, alerte « nouvelle commande » (bulle + son),
+  vérification du stock réel, validation, **encaissement = vente dans la caisse** (stock
+  déstocké, ticket, clôture), livraison, annulation. Stock en ligne = entrepôt de la caisse
+  choisie moins les quantités déjà commandées (réservées). Réglages : couleur, livraison et
+  frais, minimum de commande, affichage du stock, commandes seulement caisse ouverte,
+  articles masqués / à la une / texte en ligne.
+- **Boutiques, entrepôts, caisses : modification** (nom, code, adresse, boutique, entrepôt),
+  désactivation contrôlée, **suppression d'une caisse jamais utilisée** (sinon désactivation,
+  historique conservé).
+- **Caisse : clôture automatique à 23h59** (option) : une caisse oubliée ouverte est clôturée
+  à 23:59:59 du jour d'ouverture, espèces « non comptées, à vérifier » (badge « auto 23h59 »).
+  **Fond de caisse facultatif** (option) : ouverture directe avec un fond de 0.
+- **Barre de progression** en haut de l'écran pendant les chargements (pages, formulaires,
+  échanges avec le serveur de plus de 350 ms).
+
+### Modifié
+- **Écrans : accès direct** : ouvert en `localhost`, l'adresse affichée (et son QR code) utilise
+  automatiquement l'adresse IP du réseau local (choix possible s'il y a plusieurs cartes réseau).
+
 ## [3.4.1] — 2026-11-06
 
 ### Corrigé

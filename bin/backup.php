@@ -11,6 +11,11 @@ if (PHP_SAPI !== 'cli') {
 require dirname(__DIR__) . '/app/bootstrap.php';
 
 $o = getopt('', ['copy-to:']);
+// Caisses restées ouvertes après 23h59 (option « clôture automatique ») : clôturées avant la sauvegarde
+$closed = App\Services\CashService::autoClose(true);
+if ($closed) {
+    echo "Caisses clôturées automatiquement : $closed\n";
+}
 $r = App\Services\BackupService::create('auto');
 echo "Sauvegarde créée : {$r['sql']} ({$r['tables']} tables, {$r['rows']} lignes)\n";
 if (!empty($o['copy-to'])) {

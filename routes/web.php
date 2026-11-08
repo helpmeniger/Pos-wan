@@ -258,6 +258,10 @@ $router->get('/stores', [C\SettingsController::class, 'stores'], 'stores.manage'
 $router->post('/stores', [C\SettingsController::class, 'storeStore'], 'stores.manage');
 $router->post('/warehouses', [C\SettingsController::class, 'warehouseStore'], 'stores.manage');
 $router->post('/registers', [C\SettingsController::class, 'registerStore'], 'stores.manage');
+$router->post('/stores/{id}', [C\SettingsController::class, 'storeUpdate'], 'stores.manage');
+$router->post('/warehouses/{id}', [C\SettingsController::class, 'warehouseUpdate'], 'stores.manage');
+$router->post('/registers/{id}', [C\SettingsController::class, 'registerUpdate'], 'stores.manage');
+$router->post('/registers/{id}/delete', [C\SettingsController::class, 'registerDelete'], 'stores.manage');
 $router->get('/audit', [C\SettingsController::class, 'audit'], 'audit.view');
 $router->get('/printers', [C\PrinterController::class, 'index'], 'settings.manage');
 $router->post('/printers', [C\PrinterController::class, 'store'], 'settings.manage');

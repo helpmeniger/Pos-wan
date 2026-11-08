@@ -66,6 +66,12 @@ if (InstallService::isInstalled()) {
     App\Core\Addons::syncAssets();
     // … puis contrôle de la structure : tables et colonnes manquantes recréées (une fois par mise à jour)
     App\Services\SchemaSync::auto();
+    // Caisses restées ouvertes après 23h59 (option) : clôture automatique
+    try {
+        App\Services\CashService::autoClose();
+    } catch (\Throwable $e) {
+        App\Core\Logger::error('Clôture automatique des caisses impossible : ' . $e->getMessage());
+    }
 }
 // Licence : sans clé valide après la période d'essai, lecture seule (aucune donnée bloquée)
 if (App\Services\LicenceService::blocks(Request::method(), $path)) {

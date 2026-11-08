@@ -142,6 +142,7 @@ $notes = $u ? Notifications::get() : [];
   </div>
 </div>
 <?= App\Core\View::partial('partials/confirm') ?>
+<script src="<?= e(asset('js/progress.js')) ?>"></script>
 <script src="<?= e(asset('vendor/bootstrap/bootstrap.bundle.min.js')) ?>"></script>
 <?= i18n_script() ?>
 <script src="<?= e(asset('js/money.js')) ?>"></script>

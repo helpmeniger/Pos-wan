@@ -1,0 +1,27 @@
+{
+    "code": "boutique",
+    "name": "Boutique en ligne",
+    "version": "1.0.0",
+    "requires": "3.5.0",
+    "author": "POS Marwa",
+    "description": "Vos articles en ligne (photo, description, prix, disponibilité) sur une page pour vos clients : panier, commande et reçu automatique. Dans POS Marwa, le caissier vérifie la commande, la valide, l'encaisse (le stock diminue) puis la livre. Stock synchronisé avec l'entrepôt de la caisse choisie.",
+    "icon": "bi-bag-heart",
+    "color": "#e83e8c",
+    "permissions": {
+        "boutique.orders": "Voir, valider, encaisser et livrer les commandes en ligne",
+        "boutique.manage": "Réglages de la boutique en ligne et articles publiés"
+    },
+    "roles": {
+        "owner": ["boutique.orders", "boutique.manage"],
+        "store_manager": ["boutique.orders", "boutique.manage"],
+        "cashier": ["boutique.orders"],
+        "auditor": []
+    },
+    "assets": {
+        "js": ["shop-alert.js"]
+    },
+    "menu": [
+        { "group": "Boutique en ligne", "label": "Commandes en ligne", "icon": "bi-bag-check", "url": "/boutique-admin", "permission": "boutique.orders", "color": "#e83e8c" },
+        { "group": "Boutique en ligne", "label": "Réglages et articles en ligne", "icon": "bi-sliders", "url": "/boutique-admin/reglages", "permission": "boutique.manage", "color": "#6f42c1" }
+    ]
+}

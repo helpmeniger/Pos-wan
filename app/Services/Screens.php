@@ -53,9 +53,27 @@ final class Screens
         return self::catalog()[$code] ?? null;
     }
 
-    /** Adresse complète à saisir sur l'écran (affichée dans les paramètres). */
-    public static function url(string $code): string
+    /** Ce poste est-il ouvert en local (localhost) ? Un téléviseur ne peut pas joindre « localhost ». */
+    public static function isLoopbackHost(): bool
     {
+        $host = strtolower((string) parse_url('http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'), PHP_URL_HOST));
+        return in_array(trim($host, '[]'), ['localhost', '127.0.0.1', '::1'], true) || str_starts_with($host, '127.');
+    }
+
+    /**
+     * Adresse complète à saisir sur l'écran (affichée dans les paramètres). Ouvert en
+     * « localhost », l'adresse IP du réseau local est détectée automatiquement (le téléviseur
+     * doit être sur le même Wi-Fi / réseau) ; $ip choisit une autre carte réseau.
+     */
+    public static function url(string $code, ?string $ip = null): string
+    {
+        if (self::isLoopbackHost()) {
+            $ips = NetworkService::localIps();
+            $ip = $ip !== null && in_array($ip, $ips, true) ? $ip : ($ips[0] ?? null);
+            if ($ip !== null) {
+                return NetworkService::urlFor($ip, '/ecran/' . $code);
+            }
+        }
         $https = (($_SERVER['HTTPS'] ?? '') === 'on') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
         $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
         return ($https ? 'https' : 'http') . '://' . $host . url('/ecran/' . $code);

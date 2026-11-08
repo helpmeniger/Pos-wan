@@ -134,10 +134,12 @@
       <p>Aucune caisse n'est associée à votre compte. Un administrateur doit vous affecter une caisse (Utilisateurs).</p>
       <a class="btn btn-light" href="<?= e(url('/menu')) ?>">Menu de gestion</a>
     <?php elseif (can('cash.open_close')): ?>
-      <p>Saisissez le fond de caisse compté pour ouvrir <b><?= e($register['name']) ?></b>.</p>
+      <?php $askFloat = App\Services\CashService::asksOpening(); ?>
+      <p><?= $askFloat ? 'Saisissez le fond de caisse compté pour ouvrir' : 'Ouvrez' ?> <b><?= e($register['name']) ?></b><?= $askFloat ? '.' : ' pour commencer à vendre.' ?></p>
       <form method="post" action="<?= e(url('/cash/open')) ?>">
         <?= csrf_field() ?><input type="hidden" name="return" value="pos">
-        <div class="input-group input-group-lg mb-3"><input type="number" name="opening_amount" class="form-control text-end" min="0" step="1" required placeholder="0" autofocus><span class="input-group-text"><?= e(currency()['symbol']) ?></span></div>
+        <?php if ($askFloat): ?><div class="input-group input-group-lg mb-3"><input type="number" name="opening_amount" class="form-control text-end" min="0" step="1" required placeholder="0" autofocus><span class="input-group-text"><?= e(currency()['symbol']) ?></span></div><?php else: ?><input type="hidden" name="opening_amount" value="0"><?php endif; ?>
+        <?php if (setting('cash_auto_close') === '1'): ?><p class="small opacity-75"><i class="bi bi-moon-stars"></i> Clôture automatique à 23h59 si elle n'est pas clôturée avant.</p><?php endif; ?>
         <button class="btn btn-warning btn-lg w-100"><i class="bi bi-unlock"></i> Ouvrir la caisse</button>
       </form>
     <?php else: ?>
@@ -258,6 +260,7 @@
 
 <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" id="toasts"></div>
 <script type="application/json" id="pos-config"><?= json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?></script>
+<script src="<?= e(asset('js/progress.js')) ?>"></script>
 <script src="<?= e(asset('vendor/bootstrap/bootstrap.bundle.min.js')) ?>"></script>
 <?= i18n_script() ?>
 <script src="<?= e(asset('js/money.js')) ?>"></script>

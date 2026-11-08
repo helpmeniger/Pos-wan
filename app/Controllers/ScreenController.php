@@ -50,11 +50,15 @@ final class ScreenController extends Controller
     /** Configuration → Écrans : adresses directes, appareils mémorisés, révocation. */
     public function index(): void
     {
+        $local = Screens::isLoopbackHost();
+        $ips = $local ? \App\Services\NetworkService::localIps() : [];
+        $ip = in_array((string) Request::query('ip'), $ips, true) ? (string) Request::query('ip') : ($ips[0] ?? null);
         $list = [];
         foreach (Screens::catalog() as $code => $s) {
-            $list[$code] = $s + ['url' => Screens::url($code)];
+            $list[$code] = $s + ['url' => Screens::url($code, $ip)];
         }
-        view('screens/index', ['title' => 'Écrans : accès direct', 'screens' => $list, 'devices' => Screens::devices(), 'scripts' => ['vendor/qrcode/qrcode.js', 'js/qr.js']]);
+        view('screens/index', ['title' => 'Écrans : accès direct', 'screens' => $list, 'devices' => Screens::devices(), 'local' => $local, 'ips' => $ips, 'ip' => $ip,
+            'scripts' => ['vendor/qrcode/qrcode.js', 'js/qr.js']]);
     }
 
     public function revoke(int $id): void

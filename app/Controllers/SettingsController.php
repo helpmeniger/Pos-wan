@@ -47,6 +47,8 @@ final class SettingsController extends Controller
         'default_tax_rate' => ['Taux de taxe par défaut des nouveaux articles (%)', 'number'],
         'allow_negative_stock' => ['Autoriser la vente en stock négatif (déconseillé)', 'bool'],
         'require_cash_session' => ['Exiger une caisse ouverte pour vendre', 'bool'],
+        'cash_ask_opening' => ['Caisse : demander le fond de caisse à l\'ouverture (décoché : la caisse s\'ouvre directement avec un fond de 0)', 'bool'],
+        'cash_auto_close' => ['Caisse : clôture automatique chaque jour à 23h59 si le caissier ne l\'a pas clôturée (espèces non comptées, à vérifier le lendemain)', 'bool'],
         'cancel_max_hours' => ['Délai maximal d\'annulation d\'une vente (heures)', 'number'],
         'return_max_days' => ['Délai maximal de retour (jours)', 'number'],
         'credit_default_days' => ['Échéance par défaut des crédits clients (jours)', 'number'],
@@ -293,6 +295,98 @@ final class SettingsController extends Controller
         $id = DB::insert('cash_registers', ['name' => mb_substr($name, 0, 100), 'store_id' => $storeId, 'warehouse_id' => $whId]);
         Audit::log('register.create', 'cash_register', $id);
         flash('success', 'Caisse créée. Affectez-la à un utilisateur (Utilisateurs).');
+        redirect('/stores');
+    }
+
+    public function storeUpdate(int $id): void
+    {
+        $s = DB::one('SELECT * FROM stores WHERE id = ?', [$id]) ?? $this->fail('Boutique introuvable.', '/stores');
+        $name = Request::str('name');
+        $code = strtoupper(Request::str('code'));
+        if ($name === '' || !preg_match('/^[A-Z0-9_-]{1,20}$/', $code) || DB::value('SELECT 1 FROM stores WHERE code = ? AND id <> ?', [$code, $id])) {
+            $this->fail('Nom ou code de boutique invalide / déjà utilisé.', '/stores');
+        }
+        $active = Request::input('active') === '1' ? 1 : 0;
+        if (!$active && (int) $s['active'] === 1) {
+            if ((int) DB::value('SELECT COUNT(*) FROM stores WHERE active = 1') <= 1) {
+                $this->fail('Impossible de désactiver la dernière boutique active.', '/stores');
+            }
+            if (DB::value('SELECT 1 FROM cash_registers WHERE store_id = ? AND active = 1', [$id])) {
+                $this->fail('Désactivez d\'abord les caisses de cette boutique.', '/stores');
+            }
+        }
+        DB::update('stores', ['name' => mb_substr($name, 0, 150), 'code' => $code, 'address' => Request::str('address') ?: null, 'phone' => Request::str('phone') ?: null, 'active' => $active], 'id = ?', [$id]);
+        Audit::log('store.update', 'store', $id, ['before' => array_intersect_key($s, array_flip(['name', 'code', 'address', 'phone', 'active']))]);
+        flash('success', 'Boutique modifiée.');
+        redirect('/stores');
+    }
+
+    public function warehouseUpdate(int $id): void
+    {
+        $w = DB::one('SELECT * FROM warehouses WHERE id = ?', [$id]) ?? $this->fail('Entrepôt introuvable.', '/stores');
+        $name = Request::str('name');
+        $code = strtoupper(Request::str('code'));
+        if ($name === '' || !preg_match('/^[A-Z0-9_-]{1,20}$/', $code) || DB::value('SELECT 1 FROM warehouses WHERE code = ? AND id <> ?', [$code, $id])) {
+            $this->fail('Nom ou code d\'entrepôt invalide / déjà utilisé.', '/stores');
+        }
+        $storeId = Request::int('store_id') ?: null;
+        if ($storeId && !DB::value('SELECT 1 FROM stores WHERE id = ?', [$storeId])) {
+            $this->fail('Boutique invalide.', '/stores');
+        }
+        $active = Request::input('active') === '1' ? 1 : 0;
+        if (!$active && (int) $w['active'] === 1) {
+            if ((int) DB::value('SELECT COUNT(*) FROM warehouses WHERE active = 1') <= 1) {
+                $this->fail('Impossible de désactiver le dernier entrepôt actif.', '/stores');
+            }
+            if ($r = DB::value('SELECT name FROM cash_registers WHERE warehouse_id = ? AND active = 1 LIMIT 1', [$id])) {
+                $this->fail('Cet entrepôt fournit le stock de la caisse « ' . $r . ' » : rattachez-la à un autre entrepôt ou désactivez-la d\'abord.', '/stores');
+            }
+        }
+        DB::update('warehouses', ['name' => mb_substr($name, 0, 150), 'code' => $code, 'store_id' => $storeId, 'is_sales_point' => Request::input('is_sales_point') === '1' ? 1 : 0, 'active' => $active], 'id = ?', [$id]);
+        Audit::log('warehouse.update', 'warehouse', $id, ['before' => array_intersect_key($w, array_flip(['name', 'code', 'store_id', 'is_sales_point', 'active']))]);
+        flash('success', 'Entrepôt modifié.' . (!$active ? ' Son stock est conservé ; il n\'apparaît plus dans les listes.' : ''));
+        redirect('/stores');
+    }
+
+    public function registerUpdate(int $id): void
+    {
+        $r = DB::one('SELECT * FROM cash_registers WHERE id = ?', [$id]) ?? $this->fail('Caisse introuvable.', '/stores');
+        $name = Request::str('name');
+        $storeId = Request::int('store_id');
+        $whId = Request::int('warehouse_id');
+        if ($name === '' || !DB::value('SELECT 1 FROM stores WHERE id = ?', [$storeId]) || !DB::value('SELECT 1 FROM warehouses WHERE id = ? AND active = 1', [$whId])) {
+            $this->fail('Caisse invalide.', '/stores');
+        }
+        $active = Request::input('active') === '1' ? 1 : 0;
+        $open = (bool) DB::value("SELECT 1 FROM cash_sessions WHERE register_id = ? AND status = 'open'", [$id]);
+        if ($open && ($storeId !== (int) $r['store_id'] || $whId !== (int) $r['warehouse_id'] || !$active)) {
+            $this->fail('Cette caisse est ouverte : clôturez-la avant de changer sa boutique, son entrepôt ou de la désactiver.', '/stores');
+        }
+        if ($active && !(int) $r['active'] && ($err = \App\Saas\Subscription::limitError('registers'))) {
+            $this->fail($err, '/stores');
+        }
+        DB::update('cash_registers', ['name' => mb_substr($name, 0, 100), 'store_id' => $storeId, 'warehouse_id' => $whId, 'active' => $active], 'id = ?', [$id]);
+        Audit::log('register.update', 'cash_register', $id, ['before' => array_intersect_key($r, array_flip(['name', 'store_id', 'warehouse_id', 'active']))]);
+        flash('success', 'Caisse modifiée.');
+        redirect('/stores');
+    }
+
+    /** Suppression d'une caisse jamais utilisée ; sinon seule la désactivation est possible (historique conservé). */
+    public function registerDelete(int $id): void
+    {
+        $r = DB::one('SELECT * FROM cash_registers WHERE id = ?', [$id]) ?? $this->fail('Caisse introuvable.', '/stores');
+        $used = (int) DB::value('SELECT COUNT(*) FROM cash_sessions WHERE register_id = ?', [$id]) + (int) DB::value('SELECT COUNT(*) FROM sales WHERE register_id = ?', [$id]);
+        if ($used > 0) {
+            $this->fail('La caisse « ' . $r['name'] . ' » a déjà servi (sessions ou ventes) : elle ne peut pas être supprimée sans perdre l\'historique. Désactivez-la (Modifier → décocher « Active »).', '/stores');
+        }
+        DB::transaction(function () use ($id) {
+            DB::run('UPDATE users SET register_id = NULL WHERE register_id = ?', [$id]);
+            DB::run('UPDATE printers SET register_id = NULL WHERE register_id = ?', [$id]);
+            DB::run('DELETE FROM held_sales WHERE register_id = ?', [$id]);
+            DB::run('DELETE FROM cash_registers WHERE id = ?', [$id]);
+        });
+        Audit::log('register.delete', 'cash_register', $id, ['name' => $r['name']]);
+        flash('success', 'Caisse « ' . $r['name'] . ' » supprimée. Vérifiez la caisse affectée aux utilisateurs concernés.');
         redirect('/stores');
     }
 

@@ -4581,6 +4581,217 @@ test('Pressing : écran des dépôts en cours (atelier) et affichage clients san
     eq(403, $r['code'], 'auditeur : lecture seule');
 });
 
+test('Boutiques, entrepôts, caisses : modification, désactivation, suppression d\'une caisse jamais utilisée', function () use ($B) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $t = $a->token("$B/stores");
+    $page = $a->req('GET', "$B/stores")['body'];
+    ok(str_contains($page, 'data-bs-target="#st1"') && str_contains($page, '/registers/1"') && str_contains($page, '/registers/1/delete"'), 'boutons et formulaires de modification');
+    $st = DB::one('SELECT * FROM stores WHERE id = 1');
+    $a->req('POST', "$B/stores/1", http_build_query(['_csrf' => $t, 'name' => 'Boutique Centre', 'code' => $st['code'], 'address' => 'Plateau', 'phone' => '90000000', 'active' => '1']));
+    eq('Boutique Centre', DB::value('SELECT name FROM stores WHERE id = 1'), 'boutique renommée');
+    $wh = DB::one('SELECT * FROM warehouses WHERE id = 1');
+    $a->req('POST', "$B/warehouses/1", http_build_query(['_csrf' => $t, 'name' => 'Magasin principal', 'code' => $wh['code'], 'store_id' => '1', 'is_sales_point' => '1', 'active' => '1']));
+    eq('Magasin principal', DB::value('SELECT name FROM warehouses WHERE id = 1'), 'entrepôt renommé');
+    // Entrepôt d'une caisse active : désactivation refusée
+    $a->req('POST', "$B/warehouses/1", http_build_query(['_csrf' => $t, 'name' => 'Magasin principal', 'code' => $wh['code'], 'store_id' => '1', 'is_sales_point' => '1']));
+    eq(1, (int) DB::value('SELECT active FROM warehouses WHERE id = 1'), 'entrepôt d\'une caisse active : reste actif');
+    // Caisse ouverte : nom modifiable, mais pas désactivable
+    if (!S\CashService::openSessionForRegister(1)) {
+        actingAs('caissier');
+        S\CashService::open(1, 0);
+    }
+    $a->req('POST', "$B/registers/1", http_build_query(['_csrf' => $t, 'name' => 'Caisse principale', 'store_id' => '1', 'warehouse_id' => '1']));
+    eq(1, (int) DB::value('SELECT active FROM cash_registers WHERE id = 1'), 'caisse ouverte : désactivation refusée');
+    $a->req('POST', "$B/registers/1", http_build_query(['_csrf' => $t, 'name' => 'Caisse principale', 'store_id' => '1', 'warehouse_id' => '1', 'active' => '1']));
+    eq('Caisse principale', DB::value('SELECT name FROM cash_registers WHERE id = 1'), 'caisse ouverte : nom modifié');
+    // Suppression : refusée pour une caisse utilisée, acceptée pour une caisse jamais ouverte
+    $a->req('POST', "$B/registers/1/delete", http_build_query(['_csrf' => $t]));
+    ok((bool) DB::value('SELECT 1 FROM cash_registers WHERE id = 1'), 'caisse utilisée : jamais supprimée');
+    $a->req('POST', "$B/registers", http_build_query(['_csrf' => $t, 'name' => 'Caisse en trop', 'store_id' => '1', 'warehouse_id' => '1']));
+    $rid = (int) DB::value("SELECT id FROM cash_registers WHERE name = 'Caisse en trop'");
+    ok($rid > 0, 'caisse créée');
+    $a->req('POST', "$B/registers/$rid/delete", http_build_query(['_csrf' => $t]));
+    ok(!DB::value('SELECT 1 FROM cash_registers WHERE id = ?', [$rid]), 'caisse jamais utilisée : supprimée');
+    eq(1, (int) DB::value("SELECT COUNT(*) FROM audit_logs WHERE action = 'register.delete' AND entity_id = ?", [$rid]), 'suppression tracée');
+    // Accès réservé
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(403, $c->req('POST', "$B/stores/1", http_build_query(['_csrf' => $c->token("$B/pos"), 'name' => 'Pirate', 'code' => 'X1']))['code'], 'caissier : refusé');
+});
+
+test('Écrans : adresse du réseau local au lieu de localhost, barre de chargement dans les pages', function () use ($B) {
+    $saved = $_SERVER['HTTP_HOST'] ?? null;
+    $_SERVER['HTTP_HOST'] = 'localhost:8080';
+    try {
+        ok(S\Screens::isLoopbackHost(), 'localhost reconnu');
+        $ips = S\NetworkService::localIps();
+        $u = S\Screens::url('client');
+        if ($ips) {
+            ok(str_contains($u, $ips[0]) && !str_contains($u, 'localhost') && str_ends_with($u, '/ecran/client'), 'adresse IP du réseau : ' . $u);
+        } else {
+            ok(str_contains($u, 'localhost'), 'aucun réseau : localhost conservé');
+        }
+        $_SERVER['HTTP_HOST'] = 'pos.exemple.com';
+        ok(!S\Screens::isLoopbackHost() && str_starts_with(S\Screens::url('client'), 'http://pos.exemple.com') && str_ends_with(S\Screens::url('client'), '/ecran/client'), 'nom de domaine conservé tel quel');
+    } finally {
+        $_SERVER['HTTP_HOST'] = $saved;
+    }
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    ok(str_contains($a->req('GET', "$B/dashboard")['body'], 'js/progress.js'), 'barre de chargement : gestion');
+    ok(str_contains($a->req('GET', "$B/pos")['body'], 'js/progress.js'), 'barre de chargement : caisse');
+    eq(200, $a->req('GET', "$B/assets/js/progress.js")['code'], 'script servi');
+});
+
+test('Caisse : fond de caisse facultatif et clôture automatique à 23h59', function () {
+    actingAs('admin');
+    $rid = DB::insert('cash_registers', ['name' => 'Caisse nuit', 'store_id' => 1, 'warehouse_id' => 1]);
+    // Fond de caisse non demandé : ouverture directe à 0, même si un montant est envoyé
+    setting_set('cash_ask_opening', '0');
+    $sid = S\CashService::open($rid, 25000);
+    eq(0.0, (float) DB::value('SELECT opening_amount FROM cash_sessions WHERE id = ?', [$sid]), 'fond de 0');
+    setting_set('cash_ask_opening', '1');
+    // Clôture automatique désactivée : rien ne bouge
+    DB::run('UPDATE cash_sessions SET opened_at = ? WHERE id = ?', [date('Y-m-d', strtotime('-1 day')) . ' 08:00:00', $sid]);
+    setting_set('cash_auto_close', '0');
+    eq(0, S\CashService::autoClose(true), 'option désactivée');
+    setting_set('cash_auto_close', '1');
+    S\CashService::movement($sid, 'sale', 'cash', 1500, null, null, 'test');
+    eq(1, S\CashService::autoClose(true), 'session de la veille clôturée');
+    $s = DB::one('SELECT * FROM cash_sessions WHERE id = ?', [$sid]);
+    ok($s['status'] === 'closed' && (int) $s['auto_closed'] === 1, 'statut et marque « auto »');
+    eq(date('Y-m-d', strtotime('-1 day')) . ' 23:59:59', $s['closed_at'], 'clôturée à 23:59:59 du jour d\'ouverture');
+    ok($s['counted_amount'] === null && $s['difference'] === null && (float) $s['expected_amount'] === 1500.0, 'espèces non comptées, théorique conservé');
+    // Session ouverte aujourd'hui : jamais touchée
+    $sid2 = S\CashService::open($rid, 1000);
+    eq(0, S\CashService::autoClose(true), 'session du jour conservée');
+    eq('open', DB::value('SELECT status FROM cash_sessions WHERE id = ?', [$sid2]));
+    S\CashService::close($sid2, 1000, null);
+    setting_set('cash_auto_close', '0');
+});
+
+test('Boutique en ligne : catalogue public, commande, reçu, réservation, encaissement (stock), livraison, annulation', function () use ($B) {
+    actingAs('admin');
+    eq(['0001_boutique'], App\Core\Addons::install('boutique', false), 'installation du module');
+    App\Core\Addons::reset();
+    ok(App\Core\Addons::isActive('boutique'));
+    ok(isset(Auth::permissionsForRole((int) DB::value("SELECT id FROM roles WHERE code = 'cashier'"))['boutique.orders']), 'caissier : droit sur les commandes');
+    setting_set('shop_register_id', '1');
+    // Article de test avec photo et stock connu dans l'entrepôt de la caisse 1
+    $wh = (int) DB::value('SELECT warehouse_id FROM cash_registers WHERE id = 1');
+    $pid = DB::insert('products', ['reference' => 'WEB-001', 'name' => 'Sac en pagne', 'description' => 'Sac cousu main', 'sale_price' => 7500, 'cost_price' => 4000, 'track_stock' => 1, 'status' => 'active']);
+    S\StockService::receive($pid, $wh, 5, 4000, 'adjustment', null, null, 'stock initial boutique');
+    $hid = DB::insert('products', ['reference' => 'WEB-002', 'name' => 'Article masqué', 'sale_price' => 1000, 'track_stock' => 0, 'status' => 'active']);
+    DB::insert('shop_products', ['product_id' => $hid, 'hidden' => 1]);
+    $cat = Addons\Boutique\ShopService::catalog();
+    $p = array_values(array_filter($cat, fn ($x) => $x['id'] === $pid))[0] ?? null;
+    ok($p && $p['price'] === 7500.0 && $p['avail'] === 5.0, 'article en ligne avec son stock');
+    ok(!in_array($hid, array_column($cat, 'id'), true), 'article masqué absent');
+
+    // Visiteur sans compte
+    $v = new Http();
+    $page = $v->req('GET', "$B/boutique");
+    eq(200, $page['code'], 'boutique publique');
+    ok(str_contains($page['body'], 'Sac en pagne') && !str_contains($page['body'], 'Article masqué'), 'catalogue affiché');
+    preg_match('/"csrf":"([a-f0-9]+)"/', $page['body'], $m);
+    $csrf = $m[1] ?? '';
+    ok($csrf !== '', 'jeton de la page');
+    $post = fn (array $d) => $v->req('POST', "$B/boutique/commande", json_encode($d + ['_csrf' => $csrf]), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $csrf]);
+    $r = $post(['name' => 'Aïcha', 'phone' => '+227 96 11 22 33', 'items' => [['id' => $pid, 'qty' => 9]]]);
+    ok($r['code'] === 422 && str_contains($r['body'], 'Il ne reste que 5'), 'quantité supérieure au stock refusée');
+    $r = $post(['name' => 'Robot', 'phone' => '+227 96 11 22 33', 'website' => 'http://spam', 'items' => [['id' => $pid, 'qty' => 1]]]);
+    eq(422, $r['code'], 'robot (champ piège) refusé');
+    $r = $post(['name' => 'Aïcha', 'phone' => '12', 'items' => [['id' => $pid, 'qty' => 1]]]);
+    ok($r['code'] === 422 && str_contains($r['body'], 'téléphone'), 'téléphone obligatoire');
+    $r = $post(['name' => 'Aïcha Moussa', 'phone' => '+227 96 11 22 33', 'items' => [['id' => $pid, 'qty' => 3]], 'note' => 'Couleur bleue']);
+    $j = json_decode($r['body'], true);
+    ok($r['code'] === 200 && $j['ok'] && str_starts_with($j['number'], 'WEB'), 'commande enregistrée : ' . ($j['number'] ?? $r['body']));
+    eq(22500.0, (float) $j['total'], 'total recalculé par le serveur');
+    $oid = (int) DB::value('SELECT id FROM shop_orders WHERE number = ?', [$j['number']]);
+    // Reçu par lien secret
+    $rec = $v->req('GET', $B . substr($j['url'], (int) strpos($j['url'], '/boutique/')));
+    ok($rec['code'] === 200 && str_contains($rec['body'], $j['number']) && str_contains($rec['body'], 'Sac en pagne'), 'reçu de commande');
+    eq(404, $v->req('GET', "$B/boutique/commande/$oid?t=" . str_repeat('0', 32))['code'], 'mauvais lien : refusé');
+    // Réservation : 2 encore disponibles en ligne, stock réel inchangé
+    $p = array_values(array_filter(Addons\Boutique\ShopService::catalog(), fn ($x) => $x['id'] === $pid))[0];
+    eq(2.0, $p['avail'], 'quantité réservée déduite en ligne');
+    eq(5.0, stock($pid, $wh), 'stock réel inchangé avant encaissement');
+    $r = $post(['name' => 'Ibrahim', 'phone' => '+227 90 00 00 01', 'items' => [['id' => $pid, 'qty' => 3]]]);
+    eq(422, $r['code'], 'la réservation protège la dernière pièce');
+
+    // Traitement dans POS Marwa par le caissier
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    $list = $c->req('GET', "$B/boutique-admin")['body'];
+    ok(str_contains($list, $j['number']), 'commande visible dans l\'application');
+    $feed = json_decode($c->req('GET', "$B/boutique-admin/feed", null, ['Accept: application/json'])['body'], true);
+    ok($feed['ok'] && $feed['new'] >= 1, 'alerte nouvelle commande');
+    $show = $c->req('GET', "$B/boutique-admin/$oid")['body'];
+    ok(str_contains($show, 'tout est disponible'), 'vérification du stock');
+    $t = $c->token("$B/boutique-admin/$oid");
+    $c->req('POST', "$B/boutique-admin/$oid/livrer", http_build_query(['_csrf' => $t]));
+    eq('new', DB::value('SELECT status FROM shop_orders WHERE id = ?', [$oid]), 'livraison impossible avant encaissement');
+    $c->req('POST', "$B/boutique-admin/$oid/valider", http_build_query(['_csrf' => $t]));
+    eq('confirmed', DB::value('SELECT status FROM shop_orders WHERE id = ?', [$oid]), 'commande validée');
+    if (!S\CashService::openSessionForRegister(1)) {
+        actingAs('caissier');
+        S\CashService::open(1, 0);
+    }
+    $c->req('POST', "$B/boutique-admin/$oid/encaisser", http_build_query(['_csrf' => $t, 'method' => 'cash', 'tendered' => '25000']));
+    $o = DB::one('SELECT * FROM shop_orders WHERE id = ?', [$oid]);
+    eq('paid', $o['status'], 'commande encaissée');
+    $sale = DB::one('SELECT * FROM sales WHERE id = ?', [$o['sale_id']]);
+    ok($sale && (float) $sale['total'] === 22500.0 && str_contains((string) $sale['note'], $j['number']) && (float) $sale['change_due'] === 2500.0, 'vente créée (total, note, monnaie)');
+    eq(2.0, stock($pid, $wh), 'stock diminué à l\'encaissement');
+    $p = array_values(array_filter(Addons\Boutique\ShopService::catalog(), fn ($x) => $x['id'] === $pid))[0];
+    eq(2.0, $p['avail'], 'en ligne : stock réel, plus de réservation');
+    $c->req('POST', "$B/boutique-admin/$oid/encaisser", http_build_query(['_csrf' => $t, 'method' => 'cash', 'tendered' => '25000']));
+    eq(1, (int) DB::value('SELECT COUNT(*) FROM sales WHERE note LIKE ?', ['%' . $j['number'] . '%']), 'double encaissement impossible');
+    $c->req('POST', "$B/boutique-admin/$oid/annuler", http_build_query(['_csrf' => $t, 'reason' => 'test']));
+    eq('paid', DB::value('SELECT status FROM shop_orders WHERE id = ?', [$oid]), 'commande encaissée : annulation refusée');
+    $c->req('POST', "$B/boutique-admin/$oid/livrer", http_build_query(['_csrf' => $t]));
+    eq('delivered', DB::value('SELECT status FROM shop_orders WHERE id = ?', [$oid]), 'commande livrée');
+    ok(str_contains($v->req('GET', $B . substr($j['url'], (int) strpos($j['url'], '/boutique/')))['body'], 'class="done current"'), 'le client voit l\'avancement');
+    eq(4, (int) DB::value('SELECT COUNT(*) FROM shop_order_log WHERE order_id = ?', [$oid]), 'historique complet');
+
+    // Livraison payante par mobile money ; annulation qui libère la réservation
+    setting_set('shop_delivery_fee', '1000');
+    $j2 = json_decode($post(['name' => 'Ibrahim', 'phone' => '+227 90 00 00 01', 'delivery' => 'delivery', 'address' => 'Quartier Plateau, près de la pharmacie', 'items' => [['id' => $pid, 'qty' => 1]]])['body'], true);
+    ok($j2['ok'] && (float) $j2['total'] === 8500.0, 'livraison ajoutée au total');
+    $o2 = (int) DB::value('SELECT id FROM shop_orders WHERE number = ?', [$j2['number']]);
+    $c->req('POST', "$B/boutique-admin/$o2/encaisser", http_build_query(['_csrf' => $t, 'method' => 'mobile_money', 'reference' => 'TX123']));
+    $o = DB::one('SELECT * FROM shop_orders WHERE id = ?', [$o2]);
+    eq('paid', $o['status'], 'encaissée par mobile money');
+    eq(1000.0, (float) DB::value("SELECT SUM(amount) FROM cash_movements WHERE type = 'shop_delivery' AND ref_id = ?", [$o2]), 'frais de livraison en recette de caisse');
+    eq(7500.0, (float) DB::value('SELECT total FROM sales WHERE id = ?', [$o['sale_id']]), 'vente : articles seulement');
+    $j3 = json_decode($post(['name' => 'Ibrahim', 'phone' => '+227 90 00 00 01', 'items' => [['id' => $pid, 'qty' => 1]]])['body'], true);
+    $o3 = (int) DB::value('SELECT id FROM shop_orders WHERE number = ?', [$j3['number']]);
+    $c->req('POST', "$B/boutique-admin/$o3/annuler", http_build_query(['_csrf' => $t, 'reason' => 'Client injoignable']));
+    eq('cancelled', DB::value('SELECT status FROM shop_orders WHERE id = ?', [$o3]), 'commande annulée');
+    $p = array_values(array_filter(Addons\Boutique\ShopService::catalog(), fn ($x) => $x['id'] === $pid))[0];
+    eq(1.0, $p['avail'], 'réservation libérée');
+    setting_set('shop_delivery_fee', '0');
+
+    // Boutique fermée quand la caisse doit être ouverte et ne l'est pas ; boutique désactivée
+    setting_set('shop_require_open', '1');
+    ok(Addons\Boutique\ShopService::isOpen(), 'caisse 1 ouverte : commandes acceptées');
+    setting_set('shop_require_open', '0');
+    setting_set('shop_enabled', '0');
+    eq(503, $v->req('GET', "$B/boutique")['code'], 'boutique désactivée');
+    setting_set('shop_enabled', '1');
+    // Réglages et articles : réservés au responsable
+    eq(403, $c->req('GET', "$B/boutique-admin/reglages")['code'], 'caissier : pas de réglages');
+    $g = new Http();
+    $g->login($B, 'admin', 'Essai-Niamey-2026');
+    ok(str_contains($g->req('GET', "$B/boutique-admin/reglages")['body'], 'Articles en ligne'), 'page des réglages');
+    $tg = $g->token("$B/boutique-admin/reglages");
+    $g->req('POST', "$B/boutique-admin/articles/$pid", http_build_query(['_csrf' => $tg, 'featured' => '1', 'web_description' => 'Pièce unique']));
+    $sp = DB::one('SELECT * FROM shop_products WHERE product_id = ?', [$pid]);
+    ok((int) $sp['hidden'] === 1 && (int) $sp['featured'] === 1 && $sp['web_description'] === 'Pièce unique', 'article masqué / à la une / texte en ligne');
+    DB::run('UPDATE shop_products SET hidden = 0 WHERE product_id = ?', [$pid]);
+});
+
 test('Modules : fichiers CSS/JS recopiés après une réinstallation, repli servi depuis addons/', function () use ($B) {
     // Réinstallation sur o2switch : base conservée (module déjà installé), dossier public/assets/addons absent
     $dst = PUBLIC_PATH . '/assets/addons/pressing';
