@@ -18,7 +18,7 @@
     <div class="card mb-3"><div class="card-header"><i class="bi bi-plus-circle"></i> Nouvelle opération</div><div class="card-body">
       <form method="post" action="<?= e(url('/expenses')) ?>" class="row g-2"><?= csrf_field() ?>
         <div class="col-12"><div class="btn-group w-100"><input type="radio" class="btn-check" name="type" value="expense" id="tE" checked><label class="btn btn-outline-danger" for="tE">Dépense</label><input type="radio" class="btn-check" name="type" value="income" id="tI"><label class="btn btn-outline-success" for="tI">Recette</label></div></div>
-        <div class="col-12"><select name="category_id" class="form-select" required><option value="">Catégorie…</option><?php foreach ($categories as $c): ?><option value="<?= (int) $c['id'] ?>"><?= e($c['name']) ?> (<?= $c['type'] === 'expense' ? 'dépense' : 'recette' ?>)</option><?php endforeach; ?></select></div>
+        <div class="col-12"><select name="category_id" class="form-select" required><option value="">Catégorie…</option><?php foreach ($categories as $c): ?><option value="<?= (int) $c['id'] ?>"><?= e($c['name']) ?> (<?= e(t($c['type'] === 'expense' ? 'dépense' : 'recette')) ?>)</option><?php endforeach; ?></select></div>
         <div class="col-6"><input type="number" name="amount" min="1" step="any" class="form-control" placeholder="Montant" required></div>
         <div class="col-6"><input type="date" name="expense_date" value="<?= e(date('Y-m-d')) ?>" max="<?= e(date('Y-m-d')) ?>" class="form-control" required></div>
         <div class="col-12"><input name="description" class="form-control" placeholder="Description (bénéficiaire, objet…)" required maxlength="255"></div>

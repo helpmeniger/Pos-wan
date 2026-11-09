@@ -2,6 +2,14 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.5.1] — 2026-11-09
+
+### Corrigé
+- **Interface en anglais** : environ 90 textes restaient en français (inventaire, stock rapide, étiquettes, réception de commande, rapports, clôture de caisse, confirmations). Ils sont maintenant traduits.
+- Traduction des textes composés côté serveur qui contiennent un nombre, un numéro de document, une date, un montant ou un nom (ex. « 16 vente(s) », « Vente V2026-000151 »). Les données saisies par l'utilisateur ne sont jamais traduites.
+- Fenêtre de paiement de la caisse : les modes de paiement (« Espèces »…) s'affichent dans la langue choisie.
+- Dépenses : le libellé « (dépense) / (recette) » des catégories est traduit.
+
 ## [3.5.0] — 2026-11-08
 
 ### Ajouté

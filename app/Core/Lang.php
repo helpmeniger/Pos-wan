@@ -57,6 +57,7 @@ final class Lang
         if (isset(self::LANGUAGES[$code])) {
             self::$locale = $code;
             self::$dict = [];
+            self::$patterns = [];
         }
     }
 
@@ -64,6 +65,7 @@ final class Lang
     {
         self::$locale = null;
         self::$dict = [];
+        self::$patterns = [];
     }
 
     public static function dir(): string
@@ -117,7 +119,7 @@ final class Lang
             }, $p);
             $p = preg_replace_callback('/\b(placeholder|title|aria-label|data-confirm|alt)="([^"]*)"/u', static function ($m) use ($d) {
                 $raw = html_entity_decode($m[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $tr = $d[trim($raw)] ?? null;
+                $tr = self::lookup(trim($raw), $d);
                 return $tr === null ? $m[0] : $m[1] . '="' . htmlspecialchars($tr, ENT_QUOTES, 'UTF-8') . '"';
             }, $p);
             $out .= $p;
@@ -134,8 +136,8 @@ final class Lang
         }
         $lead = substr($raw, 0, strlen($raw) - strlen(ltrim($raw)));
         $tail = substr($raw, strlen(rtrim($raw)));
-        if (isset($d[$trim])) {
-            return htmlspecialchars($lead . $d[$trim] . $tail, ENT_NOQUOTES, 'UTF-8');
+        if (($tr = self::lookup($trim, $d)) !== null) {
+            return htmlspecialchars($lead . $tr . $tail, ENT_NOQUOTES, 'UTF-8');
         }
         // « Libellé : » → traduit « Libellé » et garde la ponctuation finale
         if (preg_match('/^(.*?)(\s*[:：]|\s*…|\s*\*)$/u', $trim, $m) && isset($d[$m[1]])) {
@@ -146,6 +148,70 @@ final class Lang
             return htmlspecialchars($lead . $d[$m[1]] . $m[2] . $m[3] . $tail, ENT_NOQUOTES, 'UTF-8');
         }
         return $node;
+    }
+
+    /** Modèles du dictionnaire contenant des valeurs variables : « {n} vente(s) » → motif. */
+    private static array $patterns = [];
+
+    /**
+     * Traduction d'un texte : exacte, puis espaces multiples ramenés à un seul, puis modèle
+     * avec valeurs variables (« 16 vente(s) » trouve « {n} vente(s) » => « {n} sale(s) »).
+     */
+    private static function lookup(string $text, array $d): ?string
+    {
+        if (isset($d[$text])) {
+            return $d[$text];
+        }
+        $norm = preg_replace('/\s+/u', ' ', $text) ?? $text;
+        if ($norm !== $text && isset($d[$norm])) {
+            return $d[$norm];
+        }
+        $key = self::$locale ?? '';
+        if (!isset(self::$patterns[$key])) {
+            self::$patterns[$key] = [];
+            foreach ($d as $src => $dst) {
+                if (!str_contains((string) $src, '{')) {
+                    continue;
+                }
+                $names = [];
+                $parts = preg_split('/\{(\w+)\}/u', (string) $src, -1, PREG_SPLIT_DELIM_CAPTURE) ?: [];
+                $rx = '';
+                foreach ($parts as $i => $part) {
+                    if ($i % 2) {
+                        $names[] = $part;
+                        // Valeurs typées : un nombre ne peut pas « avaler » un mot
+                        $g = match (rtrim($part, '0123456789')) {
+                            'n', 'm', 'c' => '(\d[\d\s.,\x{202F}\x{00A0}]*)',
+                            'ref' => '([A-Z]{1,4}\d{4}-\d{3,})',
+                            'date' => '(\d{2}/\d{2}/\d{4}(?: \d{2}:\d{2})?)',
+                            'money' => '(-?\d[\d\s.,\x{202F}\x{00A0}]*\s?[^\s\d]{0,4})',
+                            'txt' => '(.+?)',
+                            default => null, // nom inconnu ({x}…) : clé réservée au JavaScript, pas de motif
+                        };
+                        if ($g === null) {
+                            $rx = null;
+                            break;
+                        }
+                        $rx .= $g;
+                    } else {
+                        $rx .= preg_quote($part, '#');
+                    }
+                }
+                if ($names && $rx !== null) {
+                    self::$patterns[$key][] = ['#^' . $rx . '$#u', $names, (string) $dst];
+                }
+            }
+        }
+        foreach (self::$patterns[$key] as [$rx, $names, $dst]) {
+            if (preg_match($rx, $norm, $m)) {
+                $out = $dst;
+                foreach ($names as $i => $n) {
+                    $out = str_replace('{' . $n . '}', $m[$i + 1], $out);
+                }
+                return $out;
+            }
+        }
+        return null;
     }
 
     /** Dictionnaire pour le JavaScript (uniquement si la langue n'est pas le français). */

@@ -33,7 +33,7 @@ final class PosController extends Controller
             'register' => $register ? $register['name'] : null,
             'sessionOpen' => (bool) $session,
             'requireSession' => setting('require_cash_session', '1') === '1',
-            'methods' => payment_methods(),
+            'methods' => array_map('t', payment_methods()), // libellés traduits (fenêtre d'encaissement)
             'maxDiscount' => (float) setting('max_discount_percent', '10'),
             'features' => ['wholesale' => feature('wholesale'), 'pharmacy' => feature('pharmacy'), 'lots' => feature('lots'), 'packaging' => feature('packaging')],
             'perms' => [
