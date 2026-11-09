@@ -175,16 +175,18 @@ input[type=text] { flex: 1; min-width: 300px; padding: 10px 12px; border: 1px so
   async function analyse() {
     const p = $('#pkg').value.trim().replace(/^"|"$/g, '');
     if (!p) return;
-    $('#pkgResult').innerHTML = '<span class="spin"></span> Lecture du paquet (décompression si nécessaire)…';
+    $('#pkgResult').innerHTML = '<span class="spin"></span> Lecture du contenu du paquet…';
     const d = await api('/api/analyser', { paquet: p });
     if (!d.ok) { $('#pkgResult').innerHTML = `<p class="note">${esc(d.erreur)}</p>`; return; }
     const el = d.analyse.elements || [];
     const has = (t) => el.some((e) => e.type === t);
-    $('#pkgResult').innerHTML = `<table><thead><tr><th>Composant</th><th>Fichier</th></tr></thead><tbody>${el.map((e) => `<tr><td>${LABEL[e.type]}${e.type === 'vcredist' ? ` ${e.annee} ${e.x64 ? 'x64' : 'x86'}` : ''}</td><td><small>${esc(e.nom)}</small></td></tr>`).join('')}</tbody></table>
+    const etat = (e) => e.type === 'posmarwa' ? 'à installer' : !e.installe ? 'à installer' : e.type === 'vcredist' ? `déjà installé (${esc(e.installe)}) : ignoré s'il est à jour` : 'déjà installé : ignoré';
+    $('#pkgResult').innerHTML = `<p class="info" style="margin-top:0">Le paquet n'est pas décompressé en entier : seuls les composants qui manquent sur ce PC seront extraits et installés.</p><table><thead><tr><th>Composant</th><th>Fichier</th><th>Sur ce PC</th></tr></thead><tbody>${el.map((e) => `<tr><td>${LABEL[e.type]}${e.type === 'vcredist' ? ` ${e.annee} ${e.x64 ? 'x64' : 'x86'}` : ''}</td><td><small>${esc(e.nom)}</small></td><td><small style="color:${e.installe ? 'var(--ok)' : 'var(--muted)'}">${etat(e)}</small></td></tr>`).join('')}</tbody></table>
       <div class="row" style="margin-top:10px">${['vcredist', 'wamp', 'chrome', 'posmarwa'].map((t) => `<span class="check"><span class="dot ${has(t) ? 'ok' : (t === 'chrome' ? 'warn' : 'no')}">${has(t) ? '✓' : '!'}</span>${LABEL[t]}</span>`).join('')}</div>`;
     // WampServer peut manquer dans le paquet s'il est déjà installé sur ce PC (contrôlé par l'installateur)
     $('#go').disabled = !has('posmarwa');
-    $('#goHint').textContent = $('#go').disabled ? 'Le paquet doit contenir le zip de POS Marwa.' : `${el.length} composant(s) prêt(s) à installer.${has('wamp') ? '' : ' WampServer absent du paquet : il doit déjà être installé sur ce PC.'}`;
+    const aFaire = el.filter((e) => !e.installe).length;
+    $('#goHint').textContent = $('#go').disabled ? 'Le paquet doit contenir le zip de POS Marwa.' : `${aFaire} composant(s) à installer, ${el.length - aFaire} déjà présent(s).${has('wamp') ? '' : ' WampServer absent du paquet : il doit déjà être installé sur ce PC.'}`;
   }
   $('#go').addEventListener('click', async () => {
     const o = (id) => $('#o-' + id).checked;

@@ -63,6 +63,9 @@ CE QU'IL DETECTE ET VOUS EXPLIQUE, SANS Y TOUCHER (c'est a vous de decider) :
   serait lui-meme considere comme dangereux par Windows.
 
 CE QUE L'INSTALLATEUR FAIT :
+  - n'installe que ce qui manque : le paquet n'est pas decompresse en entier, seuls les
+    composants absents du PC sont extraits ; un Visual C++ deja installe en version egale ou
+    plus recente est ignore ; WampServer et Chrome deja installes sont ignores ;
   - installe Visual C++ (dans l'ordre), WampServer (C:\wamp64, ou C:\wamp en 32 bits),
     Google Chrome ;
   - active mod_rewrite d'Apache, met les services Wamp en demarrage automatique,

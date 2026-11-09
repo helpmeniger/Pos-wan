@@ -15,6 +15,8 @@
 #>
 param([switch]$SansFenetre, [string]$Depuis = '')
 $ErrorActionPreference = 'Stop'
+# Sans barre de progression : Expand-Archive et Invoke-WebRequest sont plusieurs fois plus rapides sous PowerShell 5.1
+$ProgressPreference = 'SilentlyContinue'
 $Ici = $PSScriptRoot
 if (-not $Ici) { $Ici = Split-Path -Parent $MyInvocation.MyCommand.Path }
 if ($Depuis) {
@@ -55,6 +57,7 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 
 # ------------------------------------------------------------------ bibliothèque (partagée avec la tâche d'installation)
 $Lib = @'
+$ProgressPreference = 'SilentlyContinue'
 $Racine = 'C:\POS-Marwa-Installation'
 New-Item -ItemType Directory -Force -Path $Racine | Out-Null
 $Journal = Join-Path $Racine 'installation.log'
@@ -76,14 +79,80 @@ function Get-Wmi([string]$classe, [string]$filtre = '', [string]$ns = 'root\cimv
 
 function Commande([string]$nom) { return [bool](Get-Command $nom -ErrorAction SilentlyContinue) }
 
-# Décompression : Expand-Archive (PowerShell 5), sinon .NET 4.5, sinon l'Explorateur Windows
+# Décompression : .NET 4.5 (rapide), sinon Expand-Archive (PowerShell 5, lent), sinon l'Explorateur Windows
 function Extraire-Zip([string]$zip, [string]$dest) {
     New-Item -ItemType Directory -Force -Path $dest | Out-Null
+    try { Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::ExtractToDirectory($zip, $dest); return } catch { Log "Décompression .NET impossible ($($_.Exception.Message)) : autre méthode" }
     if (Commande 'Expand-Archive') { Expand-Archive -LiteralPath $zip -DestinationPath $dest -Force; return }
-    try { Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::ExtractToDirectory($zip, $dest); return } catch {}
     $sh = New-Object -ComObject Shell.Application
     $sh.NameSpace($dest).CopyHere($sh.NameSpace($zip).Items(), 0x614)
 }
+
+# Liste des fichiers d'un zip, sans rien décompresser (lecture de la table des matières : instantané)
+function Lister-Zip([string]$zip) {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $z = [IO.Compression.ZipFile]::OpenRead($zip)
+    try { return @($z.Entries | Where-Object { $_.Name } | ForEach-Object { $_.FullName }) } finally { $z.Dispose() }
+}
+
+# Extrait du zip les seuls fichiers demandés (un fichier, ou tout un dossier si $prefixe est donné)
+function Extraire-Entrees([string]$zip, [string]$dossier, [string]$entree = '', [string]$prefixe = '') {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $z = [IO.Compression.ZipFile]::OpenRead($zip)
+    try {
+        foreach ($en in $z.Entries) {
+            if (-not $en.Name) { continue }
+            $rel = $en.FullName -replace '/', '\'
+            if ($rel -match '(^|\\)\.\.(\\|$)') { continue }   # chemin piégé (« ..\ ») : ignoré
+            if ($entree) { if ($en.FullName -ne $entree) { continue } }
+            elseif (-not $rel.StartsWith($prefixe, [StringComparison]::OrdinalIgnoreCase)) { continue }
+            $cible = Join-Path $dossier $rel
+            if (Test-Path -LiteralPath $cible) { continue }
+            New-Item -ItemType Directory -Force -Path (Split-Path $cible -Parent) | Out-Null
+            # Écrit d'abord sous un nom temporaire : une extraction interrompue ne laisse jamais un fichier tronqué
+            [IO.Compression.ZipFileExtensions]::ExtractToFile($en, "$cible.part", $true)
+            Move-Item -LiteralPath "$cible.part" -Destination $cible -Force
+        }
+    } finally { $z.Dispose() }
+}
+
+# Rend disponible sur le disque le fichier d'un composant du paquet (extraction à la demande)
+function Obtenir-Element($e) {
+    if ($e.zip) {
+        if ($null -ne $e.prefixe) { Extraire-Entrees $e.zip $e.dossier '' ([string]$e.prefixe) }
+        elseif (-not (Test-Path -LiteralPath $e.fichier)) { Log "Extraction de $($e.nom)"; Extraire-Entrees $e.zip $e.dossier $e.entree }
+    }
+    if (-not (Test-Path -LiteralPath $e.fichier)) { throw "Fichier introuvable : $($e.fichier)" }
+    return $e.fichier
+}
+
+# Version (majeure.mineure.build) d'un exécutable
+function Get-VersionFichier([string]$f) {
+    try {
+        $vi = (Get-Item -LiteralPath $f).VersionInfo
+        $t = [string]$vi.ProductVersion; if (-not $t) { $t = [string]$vi.FileVersion }
+        $p = @(($t -replace '[^\d\.]', '').Split('.') | Where-Object { $_ -ne '' })
+        if ($p.Count -ge 3) { return [version]('{0}.{1}.{2}' -f $p[0], $p[1], $p[2]) }
+    } catch {}
+    return $null
+}
+
+# Visual C++ déjà installé : version la plus récente pour une génération (9 = 2008 … 14 = 2015-2022) et une architecture
+function Get-VcInstalle([int]$majeur, [bool]$x64) {
+    $arch = if ($x64) { 'x64' } else { 'x86' }
+    $meilleure = $null
+    foreach ($k in @(Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue)) {
+        $nom = [string]$k.DisplayName
+        if ($nom -notlike 'Microsoft Visual C++*Redistributable*' -or $nom -notmatch $arch) { continue }
+        $p = @(([string]$k.DisplayVersion).Split('.') | Where-Object { $_ -ne '' })
+        if ($p.Count -lt 3) { continue }
+        try { $v = [version]('{0}.{1}.{2}' -f $p[0], $p[1], $p[2]) } catch { continue }
+        if ($v.Major -eq $majeur -and (-not $meilleure -or $v -gt $meilleure)) { $meilleure = $v }
+    }
+    return $meilleure
+}
+
+function Get-MajeurVc([int]$annee) { switch ($annee) { 2005 { 8 } 2008 { 9 } 2010 { 10 } 2012 { 11 } 2013 { 12 } default { 14 } } }
 
 # Le fichier porte-t-il la marque « téléchargé depuis Internet » ?
 # (Windows PowerShell 5.1 peut échouer sur « Get-Item -LiteralPath … -Stream » quand le flux n'existe pas,
@@ -363,38 +432,67 @@ function New-Hex([int]$octets = 32) {
     return -join ($b | ForEach-Object { $_.ToString('x2') })
 }
 
-# Contenu du paquet : chaque programme est reconnu par son nom de fichier
+# Contenu du paquet : chaque programme est reconnu par son nom de fichier.
+# Un zip est lu sans être décompressé : seuls les composants réellement installés seront extraits.
 function Analyser-Paquet([string]$chemin) {
     if (-not $chemin -or -not (Test-Path -LiteralPath $chemin)) { throw "Introuvable : $chemin" }
-    $dossier = $chemin
+    $zip = $null; $fichiers = @()
     if ((Get-Item -LiteralPath $chemin).PSIsContainer -eq $false) {
         [void](Debloquer $chemin)
         $dossier = Join-Path $Racine ('paquet\' + [IO.Path]::GetFileNameWithoutExtension($chemin))
-        if (-not (Test-Path $dossier)) {
-            Log "Extraction du paquet $chemin"
-            try { Extraire-Zip $chemin $dossier } catch { Remove-Item $dossier -Recurse -Force -ErrorAction SilentlyContinue; throw "Décompression impossible de $chemin : $($_.Exception.Message)" }
+        $entrees = $null
+        try { $entrees = Lister-Zip $chemin } catch { Log "Lecture directe du zip impossible ($($_.Exception.Message)) : décompression complète" }
+        if ($null -ne $entrees) {
+            $zip = $chemin
+            foreach ($en in $entrees) {
+                $rel = $en -replace '/', '\'
+                if ($rel -match '(^|\\)\.\.(\\|$)') { continue }
+                $fichiers += @{ nom = (Split-Path $rel -Leaf); rel = $rel; entree = $en; complet = (Join-Path $dossier $rel) }
+            }
+        } else {
+            if (-not (Test-Path $dossier)) {
+                Log "Extraction du paquet $chemin"
+                try { Extraire-Zip $chemin $dossier } catch { Remove-Item $dossier -Recurse -Force -ErrorAction SilentlyContinue; throw "Décompression impossible de $chemin : $($_.Exception.Message)" }
+            }
         }
+    } else { $dossier = $chemin }
+    if (-not $zip) {
+        [void](Debloquer $dossier)
+        $racineLen = ([string]$dossier).TrimEnd('\').Length + 1
+        foreach ($f in Get-ChildItem -LiteralPath $dossier -Recurse -File) { $fichiers += @{ nom = $f.Name; rel = $f.FullName.Substring($racineLen); entree = $null; complet = $f.FullName } }
     }
-    [void](Debloquer $dossier)
+    $wampIci = Find-Wamp; $chromeIci = Find-Chrome
     $items = @()
-    foreach ($f in Get-ChildItem -LiteralPath $dossier -Recurse -File) {
-        $n = $f.Name.ToLower()
+    foreach ($f in $fichiers) {
+        $n = $f.nom.ToLower()
         $x64 = $n -match 'x64|amd64'
+        $e = [ordered]@{ type = $null; fichier = $f.complet; nom = $f.nom; zip = $zip; dossier = $dossier; entree = $f.entree; installe = $null }
         if ($n -match '^vc_?redist|vcredist') {
             $an = 2015; if ($n -match '(2005|2008|2010|2012|2013|2015|2017|2019|2022)') { $an = [int]$Matches[1] }
-            $items += [ordered]@{ type = 'vcredist'; fichier = $f.FullName; nom = $f.Name; annee = $an; x64 = $x64; ordre = $an * 10 + [int]$x64 }
+            if ($an -lt 2008) { continue }   # Visual C++ 2005 : inutile à WampServer
+            if ($x64 -and -not [Environment]::Is64BitOperatingSystem) { continue }   # x64 impossible sur Windows 32 bits
+            $e['type'] = 'vcredist'; $e['annee'] = $an; $e['x64'] = $x64; $e['ordre'] = $an * 10 + [int]$x64
+            $iv = Get-VcInstalle (Get-MajeurVc $an) $x64
+            if ($iv) { $e['installe'] = "v$iv" }
         } elseif ($n -like 'wampserver*.exe') {
-            $items += [ordered]@{ type = 'wamp'; fichier = $f.FullName; nom = $f.Name; x64 = ($n -notmatch 'x86|32'); ordre = 50000 }
+            $e['type'] = 'wamp'; $e['x64'] = ($n -notmatch 'x86|32'); $e['ordre'] = 50000; if ($wampIci) { $e['installe'] = $wampIci }
         } elseif ($n -like '*chrome*.exe' -or $n -like 'googlechrome*.msi') {
-            $items += [ordered]@{ type = 'chrome'; fichier = $f.FullName; nom = $f.Name; ordre = 60000 }
+            $e['type'] = 'chrome'; $e['ordre'] = 60000; if ($chromeIci) { $e['installe'] = 'installé' }
         } elseif ($n -match '^pos[-_ ]?(marwa|wan).*\.zip$') {
-            $items += [ordered]@{ type = 'posmarwa'; fichier = $f.FullName; nom = $f.Name; ordre = 70000 }
-        }
+            $e['type'] = 'posmarwa'; $e['ordre'] = 70000
+        } else { continue }
+        $items += $e
     }
-    # POS Marwa déjà décompressé dans le paquet (dossier contenant public\index.php et app\)
+    # POS Marwa déjà décompressé dans le paquet (dossier contenant public\index.php et app\bootstrap.php)
     if (-not ($items | Where-Object { $_.type -eq 'posmarwa' })) {
-        $idx = Get-ChildItem -LiteralPath $dossier -Recurse -Filter 'index.php' -ErrorAction SilentlyContinue | Where-Object { $_.Directory.Name -eq 'public' -and (Test-Path (Join-Path $_.Directory.Parent.FullName 'app\bootstrap.php')) } | Select-Object -First 1
-        if ($idx) { $items += [ordered]@{ type = 'posmarwa'; fichier = $idx.Directory.Parent.FullName; nom = 'POS Marwa (dossier)'; ordre = 70000 } }
+        $rels = @($fichiers | ForEach-Object { $_.rel })
+        foreach ($r in $rels) {
+            if ($r -match '^(.*?)public\\index\.php$' -and ($rels -contains ($Matches[1] + 'app\bootstrap.php'))) {
+                $pre = $Matches[1]
+                $items += [ordered]@{ type = 'posmarwa'; fichier = $(if ($pre) { Join-Path $dossier $pre.TrimEnd('\') } else { $dossier }); nom = 'POS Marwa (dossier)'; zip = $zip; dossier = $dossier; prefixe = $pre; ordre = 70000 }
+                break
+            }
+        }
     }
     $items = @($items | Sort-Object { $_.ordre })
     return [ordered]@{ dossier = $dossier; elements = $items }
@@ -419,13 +517,17 @@ function Arguments-Silencieux($e) {
 
 function Lancer-Installateur($e) {
     $arguments = Arguments-Silencieux $e
+    try { $fichier = Obtenir-Element $e } catch {
+        Log "  → $($e.nom) : extraction impossible ($($_.Exception.Message))"
+        return @{ ok = $false; texte = "extraction impossible : $($_.Exception.Message)"; redemarrage = $false }
+    }
     for ($essai = 1; $essai -le 20; $essai++) {
         Log "Installation : $($e.nom) $arguments"
         try {
-            if ($e.fichier -like '*.msi') {
-                $p = Start-Process -FilePath 'msiexec.exe' -ArgumentList "/i `"$($e.fichier)`" $arguments" -Wait -PassThru
+            if ($fichier -like '*.msi') {
+                $p = Start-Process -FilePath 'msiexec.exe' -ArgumentList "/i `"$fichier`" $arguments" -Wait -PassThru
             } else {
-                $p = Start-Process -FilePath $e.fichier -ArgumentList $arguments -Wait -PassThru
+                $p = Start-Process -FilePath $fichier -ArgumentList $arguments -Wait -PassThru
             }
         } catch {
             # Programme refusé par Windows avant même de démarrer
@@ -537,12 +639,9 @@ $Installation = {
             }
         } catch { Log "Avertissement (ports réservés) : $($_.Exception.Message)" }
         try {
-            $t0 = Get-Date
-            while ((Test-MsiOccupe) -and ((Get-Date) - $t0).TotalMinutes -lt 15) {
-                Etape 'prep' 'Préparation de Windows' 'encours' 'une autre installation est en cours (Windows Update ?) : attente qu''elle se termine…'
-                Start-Sleep -Seconds 10
-            }
-            if (Test-MsiOccupe) { $prep += 'Windows Installer toujours occupé : les installations seront réessayées' }
+            # Pas d'attente ici : si une autre installation occupe Windows Installer, chaque composant
+            # concerné est réessayé automatiquement (code 1618) au moment de son installation.
+            if (Test-MsiOccupe) { $prep += 'Windows Installer occupé par une autre installation : les composants concernés seront réessayés' }
             if (Test-RedemarrageEnAttente) { $prep += 'un redémarrage de Windows est en attente (conseillé avant l''installation)' }
         } catch { Log "Avertissement (Windows Installer occupé) : $($_.Exception.Message)" }
         $p = Analyser-Paquet $Paquet
@@ -559,15 +658,26 @@ $Installation = {
         # 2. Visual C++ (indispensables à Apache, PHP et MySQL)
         $x64 = [Environment]::Is64BitOperatingSystem
         $vcs = @($p.elements | Where-Object { $_.type -eq 'vcredist' -and ($_.x64 -eq $false -or $x64) })
-        $n = 0; $refus = @()
+        $n = 0; $refus = @(); $installes = 0; $ignores = 0
         foreach ($v in $vcs) {
             $n++
             Etape 'vc' 'Composants Visual C++ 2008 à 2022' 'encours' "$n / $($vcs.Count) : $($v.nom)"
+            # Déjà installé dans une version égale ou plus récente : rien à faire (gain de temps)
+            $deja = $null
+            if ($v.installe) {
+                try {
+                    $pv = Get-VersionFichier (Obtenir-Element $v)
+                    $iv = Get-VcInstalle (Get-MajeurVc $v.annee) $v.x64
+                    if ($pv -and $iv -and $iv -ge $pv) { $deja = "v$iv" }
+                } catch { Log "  Version de $($v.nom) non vérifiable : installation" }
+            }
+            if ($deja) { $ignores++; Log "  → $($v.nom) : déjà installé ($deja), ignoré"; continue }
             $r = Lancer-Installateur $v
             if ($r.redemarrage) { $res.redemarrage = $true }
-            if (-not $r.ok) { $refus += "$($v.nom) : $($r.texte)" }
+            if ($r.ok) { $installes++ } else { $refus += "$($v.nom) : $($r.texte)" }
         }
-        Etape 'vc' 'Composants Visual C++ 2008 à 2022' $(if (-not $vcs) { 'absent' } elseif ($refus) { 'erreur' } else { 'ok' }) $(if (-not $vcs) { 'aucun vcredist dans le paquet' } elseif ($refus) { $refus -join ' · ' } else { "$($vcs.Count) paquet(s) traité(s)" })
+        $bilan = "$installes installé(s), $ignores déjà à jour (ignoré(s))"
+        Etape 'vc' 'Composants Visual C++ 2008 à 2022' $(if (-not $vcs) { 'absent' } elseif ($refus) { 'erreur' } else { 'ok' }) $(if (-not $vcs) { 'aucun vcredist dans le paquet' } elseif ($refus) { "$bilan · " + ($refus -join ' · ') } else { $bilan })
 
         # 3. WampServer (version 64 bits sur Windows 64 bits, sinon 32 bits)
         $ws = @($p.elements | Where-Object { $_.type -eq 'wamp' })
@@ -633,7 +743,7 @@ $Installation = {
             $res.url = 'http://localhost/pos-marwa/'
         } elseif ($app) {
             Etape 'app' 'POS Marwa' 'encours' "copie dans $cible"
-            $src = $app.fichier
+            $src = Obtenir-Element $app
             if ($src -like '*.zip') {
                 $tmp = Join-Path $Racine 'pos-marwa-tmp'; Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
                 Extraire-Zip $src $tmp
