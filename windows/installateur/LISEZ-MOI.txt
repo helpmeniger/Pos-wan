@@ -1,29 +1,70 @@
-INSTALLATEUR POS MARWA (Windows 10 / 11, 64 bits)
-=================================================
+INSTALLATEUR POS MARWA (Windows 7 SP1, 8.1, 10 et 11 - 32 ou 64 bits)
+=====================================================================
 
-1. Placez dans le meme dossier que "INSTALLER POS MARWA.bat" votre paquet zip
+DEUX FACONS DE LANCER L'INSTALLATEUR (meme assistant) :
+  A) Installateur-POS-Marwa.exe         <- conseille (un seul fichier)
+  B) INSTALLER POS MARWA.bat            <- solution de secours (avec le dossier "installateur")
+
+1. Placez dans le MEME dossier que l'installateur votre paquet zip
    (ex. "pos-wan install.zip") contenant :
      - les vcredist (2008, 2010, 2012, 2013, 2015-2022, x86 et x64)
-     - wampserver3.x.x_x64.exe
+     - wampserver3.x.x_x64.exe (Windows 64 bits) et/ou wampserver3.x.x_x86.exe (Windows 32 bits)
      - l'installateur hors ligne de Google Chrome (facultatif)
      - POS-Marwa-x.x.x.zip
    Vous pouvez aussi le choisir plus tard avec le bouton "Choisir...".
+   Copiez tout sur le disque C: (Bureau ou Telechargements), pas sur un lecteur reseau.
+   Si vous avez recu un zip : clic droit > "Extraire tout..." AVANT de lancer l'installateur.
 
-2. Double-cliquez sur "INSTALLER POS MARWA.bat" et acceptez la demande
-   d'autorisation de Windows (administrateur).
+2. Double-cliquez sur l'installateur et acceptez la demande d'autorisation de Windows
+   (administrateur). Sur un compte standard, saisissez le mot de passe d'un administrateur.
 
-3. La fenetre de l'installateur s'ouvre :
-     1) Configuration du PC : materiel, Windows, reseau, prerequis, deja installe.
+3. SI WINDOWS AFFICHE "Windows a protege votre ordinateur" (SmartScreen) :
+   cliquez sur "Informations complementaires" puis "Executer quand meme".
+   Ce message apparait pour tout programme recu par Internet et non signe par un
+   certificat payant. Pour l'eviter : avant d'extraire le zip recu, clic droit sur le zip >
+   Proprietes > cocher "Debloquer" > OK, puis "Extraire tout...". Une copie par cle USB
+   (formatee en FAT32, le cas le plus courant) supprime aussi ce marquage.
+
+4. La fenetre de l'installateur s'ouvre (une fenetre PowerShell reste ouverte derriere :
+   ne la fermez pas) :
+     1) Configuration du PC + "Ce qui peut bloquer l'installation" (voir plus bas).
      2) Ports du serveur : 80 (Apache), 3306/3307/3308 (MySQL/MariaDB). Si un autre
-        programme les occupe (IIS, Skype...), bouton "Liberer le port".
+        programme les occupe (IIS, Skype, XAMPP...), bouton "Liberer le port".
      3) Installation : analyse du paquet, options, puis "Installer maintenant".
+   Si la fenetre ne s'ouvre pas, l'adresse est affichee dans la fenetre PowerShell :
+   copiez-la dans Google Chrome, Microsoft Edge ou Firefox.
 
-4. A la fin, cliquez sur "Ouvrir POS Marwa" et terminez dans la page web : nom du
+5. A la fin, cliquez sur "Ouvrir POS Marwa" et terminez dans la page web : nom du
    commerce et VOTRE mot de passe administrateur.
 
-Ce que l'installateur fait :
-  - installe Visual C++ (dans l'ordre), WampServer dans C:\wamp64, Google Chrome ;
-  - libere les ports occupes (arrete et desactive le programme ou service en cause) ;
+CE QUE L'INSTALLATEUR DETECTE ET CORRIGE (sans danger) :
+  - fichiers marques "telecharges depuis Internet" : debloques (comme Proprietes > Debloquer) ;
+  - service Windows Installer desactive : reactive ;
+  - autre installation en cours (Windows Update) : attente automatique puis nouvel essai ;
+  - ports 80 / 3306-3308 reserves par Hyper-V, WSL ou Docker : reservation liberee
+    (redemarrage du service NAT de Windows) ;
+  - ports occupes par un autre programme : programme ou service arrete et desactive ;
+  - mise a jour en attente de redemarrage : bouton "Redemarrer Windows" ;
+  - port de l'assistant deja reserve par Windows : un autre port est choisi automatiquement ;
+  - navigateur deja ouvert : l'assistant s'ouvre dans une fenetre separee, sinon dans le
+    navigateur par defaut.
+
+CE QU'IL DETECTE ET VOUS EXPLIQUE, SANS Y TOUCHER (c'est a vous de decider) :
+  - Controle intelligent des applications (Windows 11) : s'il bloque un programme du paquet,
+    il faut le desactiver dans Securite Windows > Controle des applications et du navigateur.
+    Attention : cette desactivation est definitive.
+  - Windows en mode S : WampServer ne peut pas s'installer tant que le PC est en mode S.
+  - PowerShell en mode restreint (AppLocker / WDAC) ou scripts interdits par une strategie
+    de groupe : a lever par l'administrateur du PC (instructions affichees).
+  - antivirus : s'il signale un fichier du paquet, choisissez "Autoriser" ;
+  - acces controle aux dossiers (Defender) : peut refuser le raccourci du Bureau.
+  L'installateur ne desactive JAMAIS l'antivirus, SmartScreen, le Controle intelligent des
+  applications, le controle de compte (UAC) ni le pare-feu : un programme qui le ferait
+  serait lui-meme considere comme dangereux par Windows.
+
+CE QUE L'INSTALLATEUR FAIT :
+  - installe Visual C++ (dans l'ordre), WampServer (C:\wamp64, ou C:\wamp en 32 bits),
+    Google Chrome ;
   - active mod_rewrite d'Apache, met les services Wamp en demarrage automatique,
     cree la tache planifiee "POS Marwa - WampServer" (icone Wamp a l'ouverture de session) ;
   - autorise Apache dans le pare-feu sur le reseau prive (telephones, tablettes) ;
@@ -33,12 +74,20 @@ Ce que l'installateur fait :
   - cree le raccourci "POS Marwa" (Bureau et menu Demarrer).
   Les mots de passe sont dans C:\POS-Marwa-Installation\identifiants-POS-Marwa.txt
   (lisible par les administrateurs seulement). Journal : C:\POS-Marwa-Installation\installation.log
+  Il n'ecrase jamais une installation de POS Marwa existante (dossier avec .env) :
+  pour changer de version, utilisez la mise a jour integree de POS Marwa.
 
-Ce que l'installateur ne fait PAS (volontairement) :
-  - il ne desactive ni le controle de compte (UAC), ni l'antivirus, ni le pare-feu ;
-  - il n'ecrase jamais une installation de POS Marwa existante (dossier avec .env) :
-    pour changer de version, utilisez la mise a jour integree de POS Marwa.
+WINDOWS 7 ET 8.1 :
+  - Windows PowerShell 3.0 au minimum est necessaire. Windows 7 : installez .NET Framework 4.8
+    puis "Windows Management Framework 5.1" (gratuits, Microsoft) et redemarrez.
+  - Microsoft Edge ou Google Chrome (ou Firefox) est necessaire pour la fenetre de
+    l'installateur : Internet Explorer ne suffit pas.
+  - Les versions recentes de WampServer et de Chrome peuvent refuser ces anciens Windows :
+    utilisez alors des versions compatibles dans le paquet.
 
 Si WampServer reste orange : redemarrez l'ordinateur, puis relancez l'installateur
 (onglet Ports). Certaines versions de WampServer posent encore une question
 (navigateur ou editeur par defaut) pendant l'installation : repondez "Non" ou validez.
+
+Pour l'auteur : l'executable se construit avec NSIS 3 (Windows ou Linux) :
+  makensis installateur.nsi   ->   Installateur-POS-Marwa.exe

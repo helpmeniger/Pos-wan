@@ -36,3 +36,4 @@ storage/imagerie/
 storage/tenants/
 storage/saas/
 storage/imports/*
+windows/installateur/*.exe

@@ -24,7 +24,7 @@ main { padding: 20px 28px 40px; max-width: 1180px; margin: 0 auto; }
 .kv { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--line); } .kv span { color: var(--muted); min-width: 120px; } .kv b { font-weight: 600; word-break: break-word; }
 .check { display: flex; gap: 10px; align-items: center; padding: 6px 0; }
 .dot { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 13px; flex: none; }
-.dot.ok { background: var(--ok); } .dot.no { background: var(--err); } .dot.warn { background: var(--warn); } .dot.wait { background: #cbd5e1; } .dot.run { background: var(--blue); animation: pulse 1s infinite alternate; }
+.dot.ok { background: var(--ok); } .dot.no { background: var(--err); } .dot.warn { background: var(--warn); } .dot.wait { background: #cbd5e1; } .dot.info { background: var(--blue); } .dot.run { background: var(--blue); animation: pulse 1s infinite alternate; }
 @keyframes pulse { to { opacity: .45; } }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; } .tag { background: #eef2ff; border-radius: 99px; padding: 3px 10px; font-size: 12px; }
 table { width: 100%; border-collapse: collapse; } td, th { padding: 9px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; } th { font-size: 12px; text-transform: uppercase; color: var(--muted); }
@@ -43,7 +43,7 @@ input[type=text] { flex: 1; min-width: 300px; padding: 10px 12px; border: 1px so
 </style>
 </head>
 <body>
-<header><div class="logo">M</div><div><h1>Installateur POS Marwa</h1><p>WampServer · Visual C++ · Google Chrome · POS Marwa</p></div><div class="admin">🛡️ Administrateur Windows</div></header>
+<header><div class="logo">M</div><div><h1>Installateur POS Marwa</h1><p>Windows 7 SP1 · 8.1 · 10 · 11 — WampServer · Visual C++ · Google Chrome · POS Marwa</p></div><div class="admin">🛡️ Administrateur Windows</div></header>
 <main>
   <nav class="steps">
     <button data-tab="config" class="active"><b>1</b>Configuration du PC</button>
@@ -53,6 +53,11 @@ input[type=text] { flex: 1; min-width: 300px; padding: 10px 12px; border: 1px so
 
   <section id="tab-config">
     <div class="card"><h2>Prérequis</h2><div id="verdicts"><span class="spin"></span> Analyse de l'ordinateur…</div></div>
+    <div class="card"><h2>Ce qui peut bloquer l'installation</h2>
+      <p style="margin-top:0;color:var(--muted)">Contrôle de Windows : fichiers bloqués, mise à jour en attente, ports réservés, protections actives… Les corrections proposées sont sans danger ; l'antivirus, SmartScreen, l'UAC et le pare-feu ne sont jamais désactivés.</p>
+      <div id="diag"><span class="spin"></span> Contrôle de Windows…</div>
+      <div class="row" style="margin-top:10px"><button class="btn" id="refreshDiag">↻ Contrôler de nouveau</button></div>
+    </div>
     <div class="card"><h2>Configuration de l'ordinateur</h2><div class="grid" id="sysinfo"></div></div>
     <div class="card"><h2>Déjà installé</h2><div id="already"></div></div>
     <div class="row"><button class="btn primary big" data-go="ports">Continuer : vérifier les ports →</button></div>
@@ -97,7 +102,9 @@ input[type=text] { flex: 1; min-width: 300px; padding: 10px 12px; border: 1px so
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   async function api(path, body) {
-    const r = await fetch(path, { method: body ? 'POST' : 'GET', headers: { 'X-Jeton': T, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    let r;
+    try { r = await fetch(path, { method: body ? 'POST' : 'GET', headers: { 'X-Jeton': T, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }); }
+    catch (e) { return { ok: false, erreur: "L'installateur ne répond plus (fenêtre PowerShell fermée ?). Relancez-le." }; }
     return r.json();
   }
   function tab(id) {
@@ -124,6 +131,24 @@ input[type=text] { flex: 1; min-width: 300px; padding: 10px 12px; border: 1px so
       ${vc.length ? `<div class="tags" style="margin:4px 0 0 32px">${vc.map((x) => `<span class="tag">${esc(x.replace('Microsoft Visual C++ ', ''))}</span>`).join('')}</div>` : ''}`;
     if (d.paquet) { $('#pkg').value = d.paquet; }
   }
+
+  // Diagnostic : ce qui peut bloquer l'installation
+  const NIV = { ok: ['ok', '✓'], info: ['info', 'i'], attention: ['warn', '!'], bloquant: ['no', '✕'] };
+  async function loadDiag() {
+    $('#diag').innerHTML = '<span class="spin"></span> Contrôle de Windows…';
+    const d = await api('/api/diagnostic');
+    if (!d.ok) { $('#diag').textContent = d.erreur || 'Erreur'; return; }
+    $('#diag').innerHTML = (d.elements || []).map((x) => { const [c, s] = NIV[x.niveau] || ['wait', '·'];
+      return `<div class="check"><span class="dot ${c}">${s}</span><div style="flex:1"><b>${esc(x.titre)}</b><br><small style="color:var(--muted)">${esc(x.detail)}</small></div>${x.action ? `<button class="btn ${x.niveau === 'bloquant' ? 'danger' : ''}" data-fix="${esc(x.action)}">${esc(x.libelle)}</button>` : ''}</div>`; }).join('');
+    document.querySelectorAll('[data-fix]').forEach((b) => b.addEventListener('click', async () => {
+      if (b.dataset.fix === 'redemarrer' && !confirm('Redémarrer Windows dans 30 secondes ? Enregistrez votre travail, puis relancez l\'installateur après le redémarrage.')) return;
+      if (b.dataset.fix === 'winnat' && !confirm('Redémarrer le service NAT de Windows ? Le réseau de WSL, Docker ou Hyper-V sera coupé quelques secondes.')) return;
+      b.disabled = true; b.innerHTML = '<span class="spin"></span>';
+      const r = await api('/api/corriger', { action: b.dataset.fix });
+      alert(r.message || r.erreur); loadDiag();
+    }));
+  }
+  $('#refreshDiag').addEventListener('click', loadDiag);
 
   // 2. Ports
   async function loadPorts() {
@@ -194,6 +219,9 @@ input[type=text] { flex: 1; min-width: 300px; padding: 10px 12px; border: 1px so
     on('#quit', async () => { await api('/api/quitter', {}); window.close(); });
   }
   loadSystem().catch((e) => { $('#verdicts').textContent = 'Erreur : ' + e.message; });
+  loadDiag().catch((e) => { $('#diag').textContent = 'Erreur : ' + e.message; });
+  // Signe de vie : l'installateur s'arrête seul quelques minutes après la fermeture de cette fenêtre
+  setInterval(() => { api('/api/ping').catch(() => {}); }, 15000);
 })();
 </script>
 </body>

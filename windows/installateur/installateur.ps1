@@ -1,24 +1,56 @@
-﻿#Requires -Version 5.1
-<#
-  Installateur POS Marwa pour Windows 10 / 11 (WampServer).
+﻿<#
+  Installateur POS Marwa pour Windows 7 SP1, 8.1, 10 et 11 (32 ou 64 bits) – WampServer.
   - Affiche la configuration de l'ordinateur et contrôle les prérequis.
+  - Diagnostic de tout ce qui peut bloquer l'installation (fichiers marqués « Internet », mise à jour
+    en attente de redémarrage, Windows Installer occupé ou désactivé, ports réservés par Hyper-V / WSL /
+    Docker, Contrôle intelligent des applications, mode S, antivirus…) et correction des blocages
+    qui peuvent l'être sans danger.
   - Détecte les programmes qui occupent les ports de WampServer (80, 3306, 3307, 3308) et les libère.
   - Installe depuis le paquet fourni (zip ou dossier) : Visual C++ 2008 à 2022, WampServer,
     Google Chrome, puis POS Marwa (base de données, utilisateur MySQL dédié, fichier .env).
-  - Démarre le serveur automatiquement avec Windows (services en démarrage automatique,
-    tâche planifiée pour l'icône Wamp), crée le raccourci, ouvre les règles du pare-feu utiles.
-  Interface : page HTML locale (http://127.0.0.1:47811, accessible uniquement depuis ce PC).
-  Ne désactive jamais l'UAC, l'antivirus ni le pare-feu de Windows.
+  - Démarre le serveur automatiquement avec Windows, crée le raccourci, ouvre les règles du pare-feu utiles.
+  Interface : page HTML locale (http://127.0.0.1:<port>, accessible uniquement depuis ce PC).
+  Ne désactive jamais l'UAC, l'antivirus, SmartScreen, le Contrôle intelligent des applications ni le pare-feu.
+  Compatible Windows PowerShell 3.0 et plus récent (5.1 conseillé).
 #>
-param([switch]$SansFenetre)
+param([switch]$SansFenetre, [string]$Depuis = '')
 $ErrorActionPreference = 'Stop'
-$Ici = Split-Path -Parent $MyInvocation.MyCommand.Path
+$Ici = $PSScriptRoot
+if (-not $Ici) { $Ici = Split-Path -Parent $MyInvocation.MyCommand.Path }
+if ($Depuis) {
+    $Depuis = $Depuis.Trim('"').TrimEnd('\'); if ($Depuis -match '^[A-Za-z]:$') { $Depuis += '\' }
+    try { $Depuis = [IO.Path]::GetFullPath($Depuis) } catch {}
+}
+
+try { $Host.UI.RawUI.WindowTitle = 'Installateur POS Marwa' } catch {}
+Write-Host ''
+Write-Host '  INSTALLATEUR POS MARWA' -ForegroundColor Yellow
+Write-Host '  Ne fermez pas cette fenêtre : elle fait fonctionner l''assistant d''installation.' -ForegroundColor Gray
+Write-Host ''
+
+# ------------------------------------------------------------------ mode restreint (AppLocker, WDAC, Contrôle intelligent des applications)
+if ($ExecutionContext.SessionState.LanguageMode -ne 'FullLanguage') {
+    Write-Host "  PowerShell fonctionne en mode restreint ($($ExecutionContext.SessionState.LanguageMode))." -ForegroundColor Red
+    Write-Host '  Une stratégie de sécurité de Windows (AppLocker, Device Guard / WDAC ou le Contrôle intelligent' -ForegroundColor Red
+    Write-Host '  des applications) empêche l''installateur de fonctionner. Elle doit être levée par l''administrateur du PC.' -ForegroundColor Red
+    Start-Sleep -Seconds 20
+    exit 4
+}
 
 # ------------------------------------------------------------------ droits administrateur
 $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Start-Process -FilePath 'powershell.exe' -Verb RunAs -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-STA', '-File', "`"$PSCommandPath`"")
-    exit
+    $a = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-STA', '-File', "`"$PSCommandPath`"")
+    if ($Depuis) { $a += @('-Depuis', "`"$($Depuis.TrimEnd('\'))`"") }
+    try {
+        Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -Verb RunAs -ArgumentList $a -ErrorAction Stop
+    } catch {
+        Write-Host '  L''autorisation administrateur a été refusée : l''installation ne peut pas continuer.' -ForegroundColor Red
+        Write-Host '  Relancez l''installateur et répondez « Oui » à la demande de Windows (ou saisissez le mot de passe d''un administrateur).' -ForegroundColor Red
+        Start-Sleep -Seconds 15
+        exit 5
+    }
+    exit 0
 }
 
 # ------------------------------------------------------------------ bibliothèque (partagée avec la tâche d'installation)
@@ -29,39 +61,80 @@ $Journal = Join-Path $Racine 'installation.log'
 
 function Log([string]$m) {
     $l = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + '  ' + $m
-    Add-Content -Path $Journal -Value $l -Encoding UTF8
+    try { Add-Content -Path $Journal -Value $l -Encoding UTF8 } catch {}
     if ($script:Etat) { [void]$script:Etat.log.Add($l) }
 }
 
+# WMI / CIM : Get-CimInstance (PowerShell 3+), sinon Get-WmiObject
+function Get-Wmi([string]$classe, [string]$filtre = '', [string]$ns = 'root\cimv2') {
+    $p = @{ Namespace = $ns; ErrorAction = 'Stop' }
+    if ($filtre) { $p.Filter = $filtre }
+    try { return @(Get-CimInstance -ClassName $classe @p) } catch {}
+    try { return @(Get-WmiObject -Class $classe @p) } catch {}
+    return @()
+}
+
+function Commande([string]$nom) { return [bool](Get-Command $nom -ErrorAction SilentlyContinue) }
+
+# Décompression : Expand-Archive (PowerShell 5), sinon .NET 4.5, sinon l'Explorateur Windows
+function Extraire-Zip([string]$zip, [string]$dest) {
+    New-Item -ItemType Directory -Force -Path $dest | Out-Null
+    if (Commande 'Expand-Archive') { Expand-Archive -LiteralPath $zip -DestinationPath $dest -Force; return }
+    try { Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::ExtractToDirectory($zip, $dest); return } catch {}
+    $sh = New-Object -ComObject Shell.Application
+    $sh.NameSpace($dest).CopyHere($sh.NameSpace($zip).Items(), 0x614)
+}
+
+# Retire la marque « téléchargé depuis Internet » (comme Propriétés > Débloquer)
+function Debloquer([string]$chemin) {
+    if (-not $chemin -or -not (Test-Path -LiteralPath $chemin)) { return 0 }
+    $n = 0
+    $fichiers = if ((Get-Item -LiteralPath $chemin).PSIsContainer) { @(Get-ChildItem -LiteralPath $chemin -Recurse -File -ErrorAction SilentlyContinue) } else { @(Get-Item -LiteralPath $chemin) }
+    foreach ($f in $fichiers) {
+        if (Get-Item -LiteralPath $f.FullName -Stream 'Zone.Identifier' -ErrorAction SilentlyContinue) {
+            try { Unblock-File -LiteralPath $f.FullName -ErrorAction Stop; $n++ } catch {}
+        }
+    }
+    return $n
+}
+
 function Get-InfoSysteme {
-    $os = Get-CimInstance Win32_OperatingSystem
-    $cs = Get-CimInstance Win32_ComputerSystem
-    $cpu = @(Get-CimInstance Win32_Processor)[0]
-    $disk = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"
-    $gpu = @(Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name) -join ', '
-    $ips = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } | Select-Object -ExpandProperty IPAddress)
+    $os = Get-Wmi Win32_OperatingSystem | Select-Object -First 1
+    $cs = Get-Wmi Win32_ComputerSystem | Select-Object -First 1
+    $cpu = Get-Wmi Win32_Processor | Select-Object -First 1
+    $disk = Get-Wmi Win32_LogicalDisk "DeviceID='$env:SystemDrive'" | Select-Object -First 1
+    $gpu = @(Get-Wmi Win32_VideoController | ForEach-Object { $_.Name }) -join ', '
+    if (Commande 'Get-NetIPAddress') {
+        $ips = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } | ForEach-Object { $_.IPAddress })
+    } else {
+        $ips = @(Get-Wmi Win32_NetworkAdapterConfiguration 'IPEnabled=True' | ForEach-Object { $_.IPAddress } | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+$' -and $_ -notlike '127.*' -and $_ -notlike '169.254.*' })
+    }
     $vc = @(Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue |
-        Where-Object { $_.DisplayName -like 'Microsoft Visual C++*Redistributable*' } | Select-Object -ExpandProperty DisplayName | Sort-Object -Unique)
-    $chrome = Find-Chrome
-    $wamp = Find-Wamp
-    $ramGo = [math]::Round($cs.TotalPhysicalMemory / 1GB, 1)
-    $libreGo = [math]::Round($disk.FreeSpace / 1GB, 1)
+        Where-Object { $_.DisplayName -like 'Microsoft Visual C++*Redistributable*' } | ForEach-Object { $_.DisplayName } | Sort-Object -Unique)
+    $ramGo = [math]::Round([double]$cs.TotalPhysicalMemory / 1GB, 1)
+    $libreGo = [math]::Round([double]$disk.FreeSpace / 1GB, 1)
     $x64 = [Environment]::Is64BitOperatingSystem
     $build = [int]$os.BuildNumber
-    $fw = @(Get-NetFirewallProfile -ErrorAction SilentlyContinue | ForEach-Object { $_.Name + ' : ' + $(if ($_.Enabled) { 'actif' } else { 'désactivé' }) }) -join ', '
+    $boot = $os.LastBootUpTime
+    if ($boot -is [string]) { try { $boot = [Management.ManagementDateTimeConverter]::ToDateTime($boot) } catch {} }
+    $demarre = if ($boot -is [datetime]) { $boot.ToString('dd/MM/yyyy HH:mm') } else { '' }
+    if (Commande 'Get-NetFirewallProfile') {
+        $fw = @(Get-NetFirewallProfile -ErrorAction SilentlyContinue | ForEach-Object { $_.Name + ' : ' + $(if ($_.Enabled) { 'actif' } else { 'désactivé' }) }) -join ', '
+    } else { $fw = 'voir Panneau de configuration > Pare-feu Windows' }
     $verdicts = @(
-        @{ ok = $x64; t = 'Windows 64 bits (obligatoire pour WampServer 64 bits)' },
-        @{ ok = ($build -ge 10240); t = 'Windows 10 ou 11' },
+        @{ ok = ($build -ge 7601); t = 'Windows 7 SP1, 8.1, 10 ou 11' },
+        @{ ok = $true; t = $(if ($x64) { 'Windows 64 bits' } else { 'Windows 32 bits : le paquet doit contenir WampServer 32 bits (fichier …_x86.exe)' }) },
+        @{ ok = ($PSVersionTable.PSVersion.Major -ge 3); t = "Windows PowerShell $($PSVersionTable.PSVersion)" },
         @{ ok = ($ramGo -ge 3.5); t = "Mémoire : $ramGo Go (4 Go conseillés)" },
-        @{ ok = ($libreGo -ge 5); t = "Espace libre sur C: : $libreGo Go (5 Go minimum)" }
+        @{ ok = ($libreGo -ge 5); t = "Espace libre sur $($env:SystemDrive) : $libreGo Go (5 Go minimum)" }
     )
     return [ordered]@{
         ordinateur = $env:COMPUTERNAME; utilisateur = "$env:USERDOMAIN\$env:USERNAME"
-        systeme = "$($os.Caption) ($($os.OSArchitecture)) – version $($os.Version)"; demarre = $os.LastBootUpTime.ToString('dd/MM/yyyy HH:mm')
-        fabricant = "$($cs.Manufacturer) $($cs.Model)"; processeur = "$($cpu.Name.Trim()) – $($cpu.NumberOfCores) cœurs / $($cpu.NumberOfLogicalProcessors) threads"
-        memoire = "$ramGo Go"; disque = "C: $libreGo Go libres sur $([math]::Round($disk.Size / 1GB, 0)) Go"; graphique = $gpu
+        systeme = "$($os.Caption) ($($os.OSArchitecture)) – version $($os.Version)"; demarre = $demarre
+        fabricant = "$($cs.Manufacturer) $($cs.Model)"; processeur = "$(([string]$cpu.Name).Trim()) – $($cpu.NumberOfCores) cœurs / $($cpu.NumberOfLogicalProcessors) threads"
+        memoire = "$ramGo Go"; disque = "$($env:SystemDrive) $libreGo Go libres sur $([math]::Round([double]$disk.Size / 1GB, 0)) Go"; graphique = $gpu
         reseau = $(if ($ips) { $ips -join ', ' } else { 'aucune adresse réseau' }); parefeu = $fw; powershell = $PSVersionTable.PSVersion.ToString()
-        vcredist = $vc; chrome = $chrome; wamp = $wamp; admin = $true; verdicts = $verdicts
+        vcredist = $vc; chrome = (Find-Chrome); wamp = (Find-Wamp); admin = $true; verdicts = $verdicts
     }
 }
 
@@ -71,6 +144,13 @@ function Find-Chrome {
         if ($p -and (Test-Path $p)) { return $p }
     }
     foreach ($p in "$env:ProgramFiles\Google\Chrome\Application\chrome.exe", "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe", "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe") {
+        if ($p -and (Test-Path $p)) { return $p }
+    }
+    return $null
+}
+
+function Find-Edge {
+    foreach ($p in "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe") {
         if ($p -and (Test-Path $p)) { return $p }
     }
     return $null
@@ -90,18 +170,32 @@ function Find-Wamp {
 # Services Windows qui utilisent le port 80 à travers le pilote http.sys (processus « System », PID 4)
 $ServicesHttp = @('W3SVC', 'WAS', 'MsDepSvc', 'ReportServer', 'SSRS', 'PeerDistSvc', 'WMSVC', 'iisadmin')
 
+# PID du programme qui écoute sur un port TCP (Get-NetTCPConnection sur Windows 8+, sinon netstat)
+function Get-PidEcoute([int]$port) {
+    if (Commande 'Get-NetTCPConnection') {
+        $c = @(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue)
+        if ($c) { return [int]$c[0].OwningProcess }
+        return $null
+    }
+    foreach ($l in @(& netstat.exe -ano -p TCP) + @(& netstat.exe -ano -p TCPv6)) {
+        # « TCP  0.0.0.0:80  0.0.0.0:0  LISTENING  4 » (le mot LISTENING est traduit selon la langue de Windows)
+        if ($l -match '^\s*TCP\s+(\S+):(\d+)\s+(\S+):0\s+\S+\s+(\d+)\s*$' -and [int]$Matches[2] -eq $port) { return [int]$Matches[4] }
+    }
+    return $null
+}
+
 function Get-InfoPort([int]$port) {
-    $c = @(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue)
-    if (-not $c) { return [ordered]@{ port = $port; libre = $true } }
-    $owner = $c[0].OwningProcess
+    $owner = Get-PidEcoute $port
+    if ($null -eq $owner) { return [ordered]@{ port = $port; libre = $true } }
     $p = Get-Process -Id $owner -ErrorAction SilentlyContinue
-    $svc = @(Get-CimInstance Win32_Service -Filter "ProcessId=$owner" -ErrorAction SilentlyContinue | ForEach-Object { $_.Name + ' (' + $_.DisplayName + ')' })
+    $svc = @(Get-Wmi Win32_Service "ProcessId=$owner" | ForEach-Object { $_.Name + ' (' + $_.DisplayName + ')' })
     if ($owner -eq 4) {
         $svc = @($ServicesHttp | ForEach-Object { Get-Service -Name $_ -ErrorAction SilentlyContinue } | Where-Object { $_.Status -eq 'Running' } | ForEach-Object { $_.Name + ' (' + $_.DisplayName + ')' })
     }
     $path = $null; try { $path = $p.Path } catch {}
-    $wamp = ($path -and ($path -match '\\wamp(64)?\\')) -or ($p.ProcessName -in @('httpd', 'mysqld', 'mariadbd') -and $path -match 'wamp')
-    return [ordered]@{ port = $port; libre = $false; pid = $owner; processus = $(if ($owner -eq 4) { 'Système Windows (http.sys)' } else { $p.ProcessName }); chemin = $path; services = $svc; wamp = [bool]$wamp }
+    $nom = if ($p) { $p.ProcessName } else { "PID $owner" }
+    $wamp = ($path -and ($path -match '\\wamp(64)?\\')) -or ($nom -in @('httpd', 'mysqld', 'mariadbd') -and $path -match 'wamp')
+    return [ordered]@{ port = $port; libre = $false; pid = $owner; processus = $(if ($owner -eq 4) { 'Système Windows (http.sys)' } else { $nom }); chemin = $path; services = $svc; wamp = [bool]$wamp }
 }
 
 function Liberer-Port([int]$port) {
@@ -119,7 +213,7 @@ function Liberer-Port([int]$port) {
             }
         }
     } else {
-        foreach ($s in @(Get-CimInstance Win32_Service -Filter "ProcessId=$($i.pid)" -ErrorAction SilentlyContinue)) {
+        foreach ($s in @(Get-Wmi Win32_Service "ProcessId=$($i.pid)")) {
             Stop-Service -Name $s.Name -Force -ErrorAction SilentlyContinue
             Set-Service -Name $s.Name -StartupType Disabled -ErrorAction SilentlyContinue
             $faits += "service $($s.Name) arrêté et désactivé"
@@ -136,6 +230,116 @@ function Liberer-Port([int]$port) {
     return $msg
 }
 
+# Plages de ports réservées par Windows (Hyper-V, WSL, Docker) : Apache ou MySQL ne peuvent pas s'y installer
+function Get-PortsReserves {
+    $out = @()
+    $lignes = @()
+    try { $lignes = @(& netsh.exe interface ipv4 show excludedportrange protocol=tcp 2>$null) } catch { return @() }
+    foreach ($l in $lignes) {
+        if ($l -match '^\s*(\d+)\s+(\d+)\s*(\*)?\s*$') { $out += @{ debut = [int]$Matches[1]; fin = [int]$Matches[2]; admin = [bool]$Matches[3] } }
+    }
+    return $out
+}
+
+function Get-ConflitsReserves {
+    $c = @()
+    $plages = @(Get-PortsReserves)
+    foreach ($port in 80, 3306, 3307, 3308) {
+        foreach ($r in $plages) { if ($port -ge $r.debut -and $port -le $r.fin) { $c += @{ port = $port; debut = $r.debut; fin = $r.fin; admin = $r.admin } } }
+    }
+    return $c
+}
+
+# Une installation Windows Installer (MSI, Windows Update…) est-elle en cours ?
+function Test-MsiOccupe {
+    $m = $null
+    try { if ([Threading.Mutex]::TryOpenExisting('Global\_MSIExecute', [ref]$m)) { $m.Dispose(); return $true } } catch {}
+    return $false
+}
+
+function Test-RedemarrageEnAttente {
+    return (Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending') -or
+           (Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired')
+}
+
+# Diagnostic : tout ce qui peut empêcher l'installation (niveau ok / info / attention / bloquant)
+function Get-Blocages([string]$paquet, [string]$ici) {
+    $l = New-Object System.Collections.ArrayList
+    function Ajouter($niveau, $titre, $detail, $action = $null, $libelle = $null) { [void]$l.Add([ordered]@{ niveau = $niveau; titre = $titre; detail = $detail; action = $action; libelle = $libelle }) }
+
+    $os = Get-Wmi Win32_OperatingSystem | Select-Object -First 1
+    $build = [int]$os.BuildNumber
+    if ($build -lt 7601) { Ajouter 'bloquant' 'Version de Windows trop ancienne' "$($os.Caption) : Windows 7 SP1 au minimum." }
+    elseif ($build -lt 10240) { Ajouter 'attention' "$($os.Caption)" 'Windows 7 et 8.1 ne reçoivent plus de mises à jour : les versions récentes de WampServer et de Google Chrome peuvent refuser de s''installer. Windows 10 ou 11 conseillé.' }
+    else { Ajouter 'ok' 'Version de Windows' "$($os.Caption) (build $build)" }
+    Ajouter 'ok' 'PowerShell et droits administrateur' "PowerShell $($PSVersionTable.PSVersion) en mode complet, exécuté en administrateur."
+
+    $ci = Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy' -ErrorAction SilentlyContinue
+    if ($ci -and $ci.SkuPolicyRequired -eq 1) { Ajouter 'bloquant' 'Windows en mode S' 'Le mode S n''autorise que les applications du Microsoft Store : WampServer ne peut pas s''installer. Sortez du mode S (Paramètres > Système > Activation) : gratuit, mais définitif.' }
+    $sac = $null; if ($ci) { $sac = $ci.VerifiedAndReputablePolicyState }
+    if ($sac -eq 1) { Ajouter 'attention' 'Contrôle intelligent des applications : activé' 'Windows 11 bloque alors, sans possibilité de passer outre, les programmes non signés ou peu connus. Si un programme du paquet est refusé, il faut le désactiver dans Sécurité Windows > Contrôle des applications et du navigateur. Cette désactivation est définitive : c''est à vous de décider, l''installateur ne le fait pas.' }
+    elseif ($sac -eq 2) { Ajouter 'info' 'Contrôle intelligent des applications : en évaluation' 'Windows observe les programmes installés et pourra l''activer plus tard.' }
+
+    if (Test-RedemarrageEnAttente) { Ajouter 'attention' 'Redémarrage de Windows en attente' 'Une mise à jour attend un redémarrage : les composants Visual C++ peuvent échouer tant que Windows n''a pas redémarré. Après le redémarrage, relancez l''installateur.' 'redemarrer' 'Redémarrer Windows' }
+    if (Test-MsiOccupe) { Ajouter 'attention' 'Une autre installation est en cours' 'Windows Installer est occupé (souvent par Windows Update). L''installateur attendra automatiquement qu''il soit libre.' }
+    $msi = Get-Wmi Win32_Service "Name='msiserver'" | Select-Object -First 1
+    if ($msi -and $msi.StartMode -eq 'Disabled') { Ajouter 'bloquant' 'Service Windows Installer désactivé' 'Les composants Visual C++ et Google Chrome (MSI) ne peuvent pas s''installer.' 'msiserver' 'Réactiver le service' }
+
+    $marques = @()
+    $aVerifier = @()
+    if ($paquet -and (Test-Path -LiteralPath $paquet -PathType Leaf)) { $aVerifier += $paquet }
+    if ($ici) { $aVerifier += @(Get-ChildItem -LiteralPath $ici -File -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }) }
+    foreach ($f in $aVerifier) { if (Get-Item -LiteralPath $f -Stream 'Zone.Identifier' -ErrorAction SilentlyContinue) { $marques += (Split-Path $f -Leaf) } }
+    if ($marques) { Ajouter 'attention' 'Fichiers marqués « téléchargé depuis Internet »' (($marques -join ', ') + ' : Windows (SmartScreen) peut bloquer ou interrompre leur exécution.') 'debloquer' 'Débloquer ces fichiers' }
+
+    foreach ($c in @(Get-ConflitsReserves)) {
+        if ($c.admin) { Ajouter 'bloquant' "Port $($c.port) réservé par un administrateur" "La plage $($c.debut)-$($c.fin) est réservée de façon permanente. Commande pour la supprimer (invite de commandes administrateur) : netsh int ipv4 delete excludedportrange protocol=tcp startport=$($c.debut) numberofports=$($c.fin - $c.debut + 1)" }
+        else { Ajouter 'bloquant' "Port $($c.port) réservé par Windows" "Hyper-V, WSL ou Docker a réservé la plage $($c.debut)-$($c.fin) : WampServer ne pourra pas utiliser le port $($c.port)." 'winnat' 'Libérer la réservation' }
+    }
+
+    $autres = @(Get-Process -Name 'httpd', 'mysqld', 'mariadbd', 'nginx' -ErrorAction SilentlyContinue | Where-Object { $p = $null; try { $p = $_.Path } catch {}; -not ($p -match '\\wamp(64)?\\') })
+    if ($autres) { Ajouter 'info' 'Autre serveur web ou MySQL en marche' ((@($autres | ForEach-Object { $_.ProcessName } | Sort-Object -Unique) -join ', ') + ' (XAMPP, Laragon… ?) : s''il occupe les ports de WampServer, libérez-les à l''étape 2.') }
+
+    $av = @(Get-Wmi AntiVirusProduct '' 'root\SecurityCenter2' | ForEach-Object { $_.displayName } | Sort-Object -Unique)
+    if ($av) { Ajouter 'info' 'Antivirus' (($av -join ', ') + ' : s''il signale WampServer ou un fichier du paquet, choisissez « Autoriser ». L''installateur ne le désactive pas.') }
+    try { $mp = Get-MpPreference -ErrorAction Stop; if ($mp.EnableControlledFolderAccess -eq 1) { Ajouter 'attention' 'Accès contrôlé aux dossiers (Windows Defender) : activé' 'Il peut empêcher la création du raccourci sur le Bureau. Le raccourci du menu Démarrer sera créé quand même.' } } catch {}
+
+    $rel = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full' -ErrorAction SilentlyContinue).Release
+    if (-not $rel -or $rel -lt 378389) { Ajouter 'attention' '.NET Framework 4.5 absent' 'Il sert à décompresser le paquet sur Windows 7 et 8. Installez .NET Framework 4.8 (gratuit, Microsoft) si la décompression échoue.' }
+
+    if ($ici -and $ici -like '\\*') { Ajouter 'attention' 'Installateur lancé depuis le réseau' 'Copiez le dossier de l''installateur et le paquet sur le disque C: (Bureau ou Téléchargements), puis relancez.' }
+    return $l
+}
+
+# Corrections sans danger proposées par le diagnostic
+function Corriger-Blocage([string]$action, [string]$paquet, [string]$ici) {
+    switch ($action) {
+        'debloquer' {
+            $n = 0; foreach ($c in @($paquet, $ici)) { $n += Debloquer $c }
+            Log "Fichiers débloqués : $n"
+            return "$n fichier(s) débloqué(s)."
+        }
+        'msiserver' {
+            Set-Service -Name msiserver -StartupType Manual
+            Log 'Service Windows Installer réactivé (démarrage manuel)'
+            return 'Service Windows Installer réactivé.'
+        }
+        'winnat' {
+            & net.exe stop winnat 2>&1 | Out-Null
+            & net.exe start winnat 2>&1 | Out-Null
+            $reste = @(Get-ConflitsReserves | ForEach-Object { $_.port })
+            $msg = if ($reste) { "Réservation toujours présente pour le(s) port(s) $($reste -join ', ') : redémarrez Windows puis relancez l'installateur." } else { 'Réservation libérée : les ports de WampServer sont disponibles.' }
+            Log "Service NAT de Windows redémarré. $msg"
+            return $msg
+        }
+        'redemarrer' {
+            & shutdown.exe /r /t 30 /c 'Redémarrage demandé par l''installateur POS Marwa. Relancez ensuite l''installateur.'
+            return 'Windows redémarre dans 30 secondes. Relancez ensuite l''installateur.'
+        }
+        default { throw "Action inconnue : $action" }
+    }
+}
+
 function New-Secret([int]$n = 24) {
     $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'.ToCharArray()
     $b = New-Object byte[] $n; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b)
@@ -149,24 +353,26 @@ function New-Hex([int]$octets = 32) {
 
 # Contenu du paquet : chaque programme est reconnu par son nom de fichier
 function Analyser-Paquet([string]$chemin) {
-    if (-not (Test-Path $chemin)) { throw "Introuvable : $chemin" }
+    if (-not $chemin -or -not (Test-Path -LiteralPath $chemin)) { throw "Introuvable : $chemin" }
     $dossier = $chemin
-    if ((Get-Item $chemin).PSIsContainer -eq $false) {
+    if ((Get-Item -LiteralPath $chemin).PSIsContainer -eq $false) {
+        [void](Debloquer $chemin)
         $dossier = Join-Path $Racine ('paquet\' + [IO.Path]::GetFileNameWithoutExtension($chemin))
         if (-not (Test-Path $dossier)) {
             Log "Extraction du paquet $chemin"
-            Expand-Archive -Path $chemin -DestinationPath $dossier -Force
+            try { Extraire-Zip $chemin $dossier } catch { Remove-Item $dossier -Recurse -Force -ErrorAction SilentlyContinue; throw "Décompression impossible de $chemin : $($_.Exception.Message)" }
         }
     }
+    [void](Debloquer $dossier)
     $items = @()
-    foreach ($f in Get-ChildItem -Path $dossier -Recurse -File) {
+    foreach ($f in Get-ChildItem -LiteralPath $dossier -Recurse -File) {
         $n = $f.Name.ToLower()
         $x64 = $n -match 'x64|amd64'
         if ($n -match '^vc_?redist|vcredist') {
             $an = 2015; if ($n -match '(2005|2008|2010|2012|2013|2015|2017|2019|2022)') { $an = [int]$Matches[1] }
             $items += [ordered]@{ type = 'vcredist'; fichier = $f.FullName; nom = $f.Name; annee = $an; x64 = $x64; ordre = $an * 10 + [int]$x64 }
         } elseif ($n -like 'wampserver*.exe') {
-            $items += [ordered]@{ type = 'wamp'; fichier = $f.FullName; nom = $f.Name; ordre = 50000 }
+            $items += [ordered]@{ type = 'wamp'; fichier = $f.FullName; nom = $f.Name; x64 = ($n -notmatch 'x86|32'); ordre = 50000 }
         } elseif ($n -like '*chrome*.exe' -or $n -like 'googlechrome*.msi') {
             $items += [ordered]@{ type = 'chrome'; fichier = $f.FullName; nom = $f.Name; ordre = 60000 }
         } elseif ($n -match '^pos[-_ ]?(marwa|wan).*\.zip$') {
@@ -175,7 +381,7 @@ function Analyser-Paquet([string]$chemin) {
     }
     # POS Marwa déjà décompressé dans le paquet (dossier contenant public\index.php et app\)
     if (-not ($items | Where-Object { $_.type -eq 'posmarwa' })) {
-        $idx = Get-ChildItem -Path $dossier -Recurse -Filter 'index.php' -ErrorAction SilentlyContinue | Where-Object { $_.Directory.Name -eq 'public' -and (Test-Path (Join-Path $_.Directory.Parent.FullName 'app\bootstrap.php')) } | Select-Object -First 1
+        $idx = Get-ChildItem -LiteralPath $dossier -Recurse -Filter 'index.php' -ErrorAction SilentlyContinue | Where-Object { $_.Directory.Name -eq 'public' -and (Test-Path (Join-Path $_.Directory.Parent.FullName 'app\bootstrap.php')) } | Select-Object -First 1
         if ($idx) { $items += [ordered]@{ type = 'posmarwa'; fichier = $idx.Directory.Parent.FullName; nom = 'POS Marwa (dossier)'; ordre = 70000 } }
     }
     $items = @($items | Sort-Object { $_.ordre })
@@ -189,7 +395,7 @@ function Arguments-Silencieux($e) {
             if ($e.annee -eq 2010) { return '/q /norestart' }
             return '/install /quiet /norestart'
         }
-        'wamp' { return '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR="C:\wamp64"' }
+        'wamp' { if ($e.x64) { return '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR="C:\wamp64"' } else { return '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR="C:\wamp"' } }
         'chrome' {
             if ($e.fichier -like '*.msi') { return '/qn /norestart' }
             # chrome_installer(_uncompressed).exe = installateur hors ligne « mini_installer » ; ChromeSetup / ChromeStandaloneSetup = /silent /install
@@ -201,18 +407,37 @@ function Arguments-Silencieux($e) {
 
 function Lancer-Installateur($e) {
     $arguments = Arguments-Silencieux $e
-    Log "Installation : $($e.nom) $arguments"
-    if ($e.fichier -like '*.msi') {
-        $p = Start-Process -FilePath 'msiexec.exe' -ArgumentList "/i `"$($e.fichier)`" $arguments" -Wait -PassThru
-    } else {
-        $p = Start-Process -FilePath $e.fichier -ArgumentList $arguments -Wait -PassThru
+    for ($essai = 1; $essai -le 20; $essai++) {
+        Log "Installation : $($e.nom) $arguments"
+        try {
+            if ($e.fichier -like '*.msi') {
+                $p = Start-Process -FilePath 'msiexec.exe' -ArgumentList "/i `"$($e.fichier)`" $arguments" -Wait -PassThru
+            } else {
+                $p = Start-Process -FilePath $e.fichier -ArgumentList $arguments -Wait -PassThru
+            }
+        } catch {
+            # Programme refusé par Windows avant même de démarrer
+            $ex = $_.Exception; while ($ex -and -not ($ex -is [ComponentModel.Win32Exception])) { $ex = $ex.InnerException }
+            $code = if ($ex) { $ex.NativeErrorCode } else { $null }
+            $txt = switch ($code) {
+                1260 { 'bloqué par une stratégie de Windows (contrôle des applications)' }
+                4551 { 'bloqué par le Contrôle intelligent des applications (ou Windows Defender Application Control)' }
+                225 { 'bloqué par l''antivirus (fichier signalé comme dangereux)' }
+                1223 { 'lancement annulé' }
+                default { $_.Exception.Message }
+            }
+            Log "  → $($e.nom) : $txt"
+            return @{ ok = $false; texte = $txt; redemarrage = $false }
+        }
+        $c = $p.ExitCode
+        # 1618 : une autre installation est en cours (Windows Update…) → on attend et on recommence
+        if ($c -eq 1618 -and $essai -lt 20) { Log '  Windows Installer occupé par une autre installation : nouvel essai dans 30 secondes'; Start-Sleep -Seconds 30; continue }
+        # 0 réussi · 3010/1641 redémarrage demandé · 1638/5100 version plus récente déjà présente
+        $ok = $c -in @(0, 3010, 1641, 1638, 5100, 1603) -or $null -eq $c
+        $txt = switch ($c) { 0 { 'installé' } 3010 { 'installé (redémarrage conseillé)' } 1641 { 'installé (redémarrage lancé)' } 1638 { 'déjà installé (version plus récente présente)' } 5100 { 'déjà installé (version plus récente présente)' } 1603 { 'déjà présent ou refusé par Windows (code 1603)' } 1618 { 'Windows Installer toujours occupé (code 1618) : redémarrez Windows puis relancez' } default { "code $c" } }
+        Log "  → $($e.nom) : $txt"
+        return @{ ok = $ok; texte = $txt; redemarrage = ($c -in @(3010, 1641)) }
     }
-    $c = $p.ExitCode
-    # 0 réussi · 3010/1641 redémarrage demandé · 1638/5100 version plus récente déjà présente
-    $ok = $c -in @(0, 3010, 1641, 1638, 5100, 1603) -or $null -eq $c
-    $txt = switch ($c) { 0 { 'installé' } 3010 { 'installé (redémarrage conseillé)' } 1641 { 'installé (redémarrage lancé)' } 1638 { 'déjà installé (version plus récente présente)' } 5100 { 'déjà installé (version plus récente présente)' } 1603 { 'déjà présent ou refusé par Windows (code 1603)' } default { "code $c" } }
-    Log "  → $($e.nom) : $txt"
-    return @{ ok = $ok; texte = $txt; redemarrage = ($c -in @(3010, 1641)) }
 }
 
 function Services-Wamp { return @(Get-Service -Name 'wampapache*', 'wampmysqld*', 'wampmariadb*' -ErrorAction SilentlyContinue) }
@@ -252,6 +477,19 @@ function Sql($db, [string]$motDePasse, [string]$requete) {
 function Proteger-Fichier([string]$f) {
     & icacls.exe $f /inheritance:r /grant:r '*S-1-5-32-544:F' '*S-1-5-18:F' | Out-Null
 }
+
+# Pare-feu : New-NetFirewallRule (Windows 8+), sinon netsh (Windows 7)
+function Autoriser-Apache([string]$wampDir) {
+    $exes = @(Get-ChildItem (Join-Path $wampDir 'bin\apache') -Recurse -Filter 'httpd.exe' -ErrorAction SilentlyContinue)
+    if (Commande 'New-NetFirewallRule') {
+        Get-NetFirewallRule -DisplayName 'POS Marwa - Apache*' -ErrorAction SilentlyContinue | Remove-NetFirewallRule
+        foreach ($exe in $exes) { New-NetFirewallRule -DisplayName "POS Marwa - Apache ($($exe.Directory.Parent.Name))" -Direction Inbound -Program $exe.FullName -Action Allow -Profile Private, Domain | Out-Null }
+    } else {
+        & netsh.exe advfirewall firewall delete rule name=POS-Marwa-Apache 2>&1 | Out-Null
+        foreach ($exe in $exes) { & netsh.exe advfirewall firewall add rule name=POS-Marwa-Apache dir=in action=allow "program=$($exe.FullName)" enable=yes profile=private,domain | Out-Null }
+    }
+    return $exes.Count
+}
 '@
 . ([scriptblock]::Create($Lib))
 
@@ -271,8 +509,26 @@ $Installation = {
     }
     $res = [ordered]@{ redemarrage = $false; url = $null; identifiants = $null; erreurs = @() }
     try {
+        # 0. Préparation de Windows : corrige ce qui peut bloquer, sans toucher à la sécurité
+        Etape 'prep' 'Préparation de Windows' 'encours' 'recherche de ce qui peut bloquer l''installation'
+        $prep = @()
+        $n = Debloquer $Paquet; if ($n) { $prep += "$n fichier(s) du paquet débloqué(s)" }
+        $msi = Get-Wmi Win32_Service "Name='msiserver'" | Select-Object -First 1
+        if ($msi -and $msi.StartMode -eq 'Disabled') { Set-Service -Name msiserver -StartupType Manual; $prep += 'service Windows Installer réactivé' }
+        if ($Options.liberer -and @(Get-ConflitsReserves | Where-Object { -not $_.admin })) {
+            & net.exe stop winnat 2>&1 | Out-Null; & net.exe start winnat 2>&1 | Out-Null
+            $prep += 'réservation de ports Hyper-V / WSL libérée (service NAT redémarré)'
+        }
+        $t0 = Get-Date
+        while ((Test-MsiOccupe) -and ((Get-Date) - $t0).TotalMinutes -lt 15) {
+            Etape 'prep' 'Préparation de Windows' 'encours' 'une autre installation est en cours (Windows Update ?) : attente qu''elle se termine…'
+            Start-Sleep -Seconds 10
+        }
+        if (Test-MsiOccupe) { $prep += 'Windows Installer toujours occupé : les installations seront réessayées' }
+        if (Test-RedemarrageEnAttente) { $prep += 'un redémarrage de Windows est en attente (conseillé avant l''installation)' }
         $p = Analyser-Paquet $Paquet
         $wampDir = Find-Wamp
+        Etape 'prep' 'Préparation de Windows' 'ok' $(if ($prep) { $prep -join ' · ' } else { 'aucun blocage' })
 
         # 1. Ports
         if ($Options.liberer) {
@@ -282,18 +538,21 @@ $Installation = {
         }
 
         # 2. Visual C++ (indispensables à Apache, PHP et MySQL)
-        $vcs = @($p.elements | Where-Object { $_.type -eq 'vcredist' -and ($_.x64 -eq $false -or [Environment]::Is64BitOperatingSystem) })
-        $n = 0
+        $x64 = [Environment]::Is64BitOperatingSystem
+        $vcs = @($p.elements | Where-Object { $_.type -eq 'vcredist' -and ($_.x64 -eq $false -or $x64) })
+        $n = 0; $refus = @()
         foreach ($v in $vcs) {
             $n++
             Etape 'vc' 'Composants Visual C++ 2008 à 2022' 'encours' "$n / $($vcs.Count) : $($v.nom)"
             $r = Lancer-Installateur $v
             if ($r.redemarrage) { $res.redemarrage = $true }
+            if (-not $r.ok) { $refus += "$($v.nom) : $($r.texte)" }
         }
-        Etape 'vc' 'Composants Visual C++ 2008 à 2022' $(if ($vcs) { 'ok' } else { 'absent' }) $(if ($vcs) { "$($vcs.Count) paquet(s) traité(s)" } else { 'aucun vcredist dans le paquet' })
+        Etape 'vc' 'Composants Visual C++ 2008 à 2022' $(if (-not $vcs) { 'absent' } elseif ($refus) { 'erreur' } else { 'ok' }) $(if (-not $vcs) { 'aucun vcredist dans le paquet' } elseif ($refus) { $refus -join ' · ' } else { "$($vcs.Count) paquet(s) traité(s)" })
 
-        # 3. WampServer
-        $w = $p.elements | Where-Object { $_.type -eq 'wamp' } | Select-Object -First 1
+        # 3. WampServer (version 64 bits sur Windows 64 bits, sinon 32 bits)
+        $ws = @($p.elements | Where-Object { $_.type -eq 'wamp' })
+        $w = if ($x64) { @($ws | Where-Object { $_.x64 }) + @($ws | Where-Object { -not $_.x64 }) | Select-Object -First 1 } else { $ws | Where-Object { -not $_.x64 } | Select-Object -First 1 }
         if ($wampDir) {
             Etape 'wamp' 'WampServer' 'ok' "déjà installé dans $wampDir"
         } elseif ($w) {
@@ -302,20 +561,22 @@ $Installation = {
             $wampDir = Find-Wamp
             if (-not $wampDir) { throw "WampServer ne s'est pas installé ($($r.texte)). Lancez $($w.nom) à la main puis relancez l'installateur." }
             Etape 'wamp' 'WampServer' 'ok' "installé dans $wampDir"
+        } elseif ($ws -and -not $x64) {
+            throw 'Ce Windows est en 32 bits et le paquet ne contient que WampServer 64 bits : ajoutez la version 32 bits (wampserver3.x.x_x86.exe) au paquet.'
         } else { throw 'WampServer absent du paquet et non installé sur ce PC.' }
 
         # 4. Google Chrome
         $c = $p.elements | Where-Object { $_.type -eq 'chrome' } | Select-Object -First 1
         if (Find-Chrome) { Etape 'chrome' 'Google Chrome' 'ok' 'déjà installé' }
         elseif ($c -and $Options.chrome) { Etape 'chrome' 'Google Chrome' 'encours' $c.nom; $r = Lancer-Installateur $c; Etape 'chrome' 'Google Chrome' $(if (Find-Chrome) { 'ok' } else { 'erreur' }) $r.texte }
-        else { Etape 'chrome' 'Google Chrome' 'absent' 'non fourni : Microsoft Edge sera utilisé' }
+        else { Etape 'chrome' 'Google Chrome' 'absent' 'non fourni : Microsoft Edge (ou le navigateur par défaut) sera utilisé' }
 
         # 5. Démarrage de WampServer, services en démarrage automatique
         Etape 'serveur' 'Serveur Apache et MySQL / MariaDB' 'encours' 'démarrage de WampServer'
         $httpd = Get-ChildItem (Join-Path $wampDir 'bin\apache') -Directory -ErrorAction SilentlyContinue | ForEach-Object { Join-Path $_.FullName 'conf\httpd.conf' } | Where-Object { Test-Path $_ }
         foreach ($conf in $httpd) {
-            $t = Get-Content $conf -Raw
-            if ($t -match '(?m)^\s*#\s*LoadModule rewrite_module') { ($t -replace '(?m)^\s*#\s*(LoadModule rewrite_module)', '$1') | Set-Content -Path $conf -Encoding ASCII; Log "mod_rewrite activé dans $conf" }
+            $t = [IO.File]::ReadAllText($conf)
+            if ($t -match '(?m)^\s*#\s*LoadModule rewrite_module') { [IO.File]::WriteAllText($conf, ($t -replace '(?m)^\s*#\s*(LoadModule rewrite_module)', '$1')); Log "mod_rewrite activé dans $conf" }
         }
         if (-not (Get-Process -Name 'wampmanager' -ErrorAction SilentlyContinue)) { Start-Process -FilePath (Join-Path $wampDir 'wampmanager.exe') -WorkingDirectory $wampDir }
         $t0 = Get-Date
@@ -326,22 +587,23 @@ $Installation = {
         }
         Start-Sleep -Seconds 4
         $etatSvc = (Services-Wamp | ForEach-Object { "$($_.Name) : $($_.Status)" }) -join ', '
-        if (-not $etatSvc) { throw 'Les services de WampServer ne sont pas apparus. Ouvrez WampServer (icône verte près de l''horloge) et vérifiez son message.' }
+        if (-not $etatSvc) { throw 'Les services de WampServer ne sont pas apparus. Ouvrez WampServer (icône près de l''horloge) et vérifiez son message.' }
         Etape 'serveur' 'Serveur Apache et MySQL / MariaDB' 'ok' "$etatSvc – démarrage automatique avec Windows"
 
         # 6. Démarrage avec Windows : icône Wamp à l'ouverture de session (les services démarrent seuls)
         if ($Options.demarrage) {
-            & schtasks.exe /Create /F /TN 'POS Marwa - WampServer' /SC ONLOGON /RL HIGHEST /DELAY 0000:20 /TR "`"$(Join-Path $wampDir 'wampmanager.exe')`"" | Out-Null
+            & schtasks.exe /Create /F /TN 'POS Marwa - WampServer' /SC ONLOGON /RL HIGHEST /DELAY 0000:20 /TR "`"$(Join-Path $wampDir 'wampmanager.exe')`"" 2>&1 | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                # Windows 7 : l'option /DELAY n'existe pas pour ONLOGON sur certaines éditions
+                & schtasks.exe /Create /F /TN 'POS Marwa - WampServer' /SC ONLOGON /RL HIGHEST /TR "`"$(Join-Path $wampDir 'wampmanager.exe')`"" 2>&1 | Out-Null
+            }
             Etape 'auto' 'Démarrage automatique' 'ok' 'services Apache/MySQL automatiques + tâche planifiée « POS Marwa - WampServer » à l''ouverture de session'
         }
 
         # 7. Pare-feu : Apache joignable depuis les téléphones et tablettes du réseau local (pas depuis Internet)
         if ($Options.parefeu) {
-            Get-NetFirewallRule -DisplayName 'POS Marwa - Apache*' -ErrorAction SilentlyContinue | Remove-NetFirewallRule
-            foreach ($exe in Get-ChildItem (Join-Path $wampDir 'bin\apache') -Recurse -Filter 'httpd.exe' -ErrorAction SilentlyContinue) {
-                New-NetFirewallRule -DisplayName "POS Marwa - Apache ($($exe.Directory.Parent.Name))" -Direction Inbound -Program $exe.FullName -Action Allow -Profile Private, Domain | Out-Null
-            }
-            Etape 'parefeu' 'Pare-feu Windows' 'ok' 'Apache autorisé sur le réseau privé (MySQL reste fermé au réseau)'
+            $nb = Autoriser-Apache $wampDir
+            Etape 'parefeu' 'Pare-feu Windows' 'ok' "Apache autorisé sur le réseau privé ($nb version(s)) ; MySQL reste fermé au réseau"
         }
 
         # 8. POS Marwa
@@ -355,9 +617,9 @@ $Installation = {
             $src = $app.fichier
             if ($src -like '*.zip') {
                 $tmp = Join-Path $Racine 'pos-marwa-tmp'; Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
-                Expand-Archive -Path $src -DestinationPath $tmp -Force
-                $idx = Get-ChildItem -Path $tmp -Recurse -Filter 'index.php' | Where-Object { $_.Directory.Name -eq 'public' -and (Test-Path (Join-Path $_.Directory.Parent.FullName 'app\bootstrap.php')) } | Select-Object -First 1
-                if (-not $idx) { throw "Le zip $($app.nom) ne contient pas POS Marwa (dossier public\ et app\ introuvables)." }
+                Extraire-Zip $src $tmp
+                $idx = Get-ChildItem -LiteralPath $tmp -Recurse -Filter 'index.php' | Where-Object { $_.Directory.Name -eq 'public' -and (Test-Path (Join-Path $_.Directory.Parent.FullName 'app\bootstrap.php')) } | Select-Object -First 1
+                if (-not $idx) { throw "Le zip $($app.nom) ne contient pas POS Marwa (dossiers public\ et app\ introuvables)." }
                 $src = $idx.Directory.Parent.FullName
             }
             if (Test-Path $cible) { Rename-Item $cible ("pos-marwa-avant-" + (Get-Date -Format 'yyyyMMdd-HHmmss')) }
@@ -397,18 +659,21 @@ $Installation = {
             Etape 'app' 'POS Marwa' 'absent' 'zip POS-Marwa absent du paquet'
         }
 
-        # 9. Raccourci « POS Marwa » (fenêtre dédiée Chrome ou Edge)
+        # 9. Raccourci « POS Marwa » (fenêtre dédiée Chrome ou Edge, sinon navigateur par défaut)
         if ($res.url -and $Options.raccourci) {
-            $nav = Find-Chrome
-            if (-not $nav) { $nav = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"; if (-not (Test-Path $nav)) { $nav = "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe" } }
+            $nav = Find-Chrome; if (-not $nav) { $nav = Find-Edge }
             $sh = New-Object -ComObject WScript.Shell
-            foreach ($dir in [Environment]::GetFolderPath('CommonDesktopDirectory'), (Join-Path ([Environment]::GetFolderPath('CommonPrograms')) '')) {
-                $lnk = $sh.CreateShortcut((Join-Path $dir 'POS Marwa.lnk'))
-                $lnk.TargetPath = $nav; $lnk.Arguments = "--app=$($res.url) --autoplay-policy=no-user-gesture-required"
-                $ico = Join-Path $cible 'windows\pos-marwa.ico'; if (Test-Path $ico) { $lnk.IconLocation = $ico }
-                $lnk.Description = 'POS Marwa'; $lnk.Save()
+            $faits = @(); $echecs = @()
+            foreach ($dir in @([Environment]::GetFolderPath('CommonDesktopDirectory'), [Environment]::GetFolderPath('CommonPrograms'))) {
+                try {
+                    $lnk = $sh.CreateShortcut((Join-Path $dir 'POS Marwa.lnk'))
+                    if ($nav) { $lnk.TargetPath = $nav; $lnk.Arguments = "--app=$($res.url) --autoplay-policy=no-user-gesture-required" }
+                    else { $lnk.TargetPath = "$env:WINDIR\explorer.exe"; $lnk.Arguments = $res.url }
+                    $ico = Join-Path $cible 'windows\pos-marwa.ico'; if (Test-Path $ico) { $lnk.IconLocation = $ico }
+                    $lnk.Description = 'POS Marwa'; $lnk.Save(); $faits += $dir
+                } catch { $echecs += $dir }
             }
-            Etape 'raccourci' 'Raccourci POS Marwa' 'ok' 'Bureau et menu Démarrer (tous les utilisateurs)'
+            Etape 'raccourci' 'Raccourci POS Marwa' $(if ($faits) { 'ok' } else { 'erreur' }) $(if ($echecs) { "créé dans : $($faits -join ', ') ; refusé dans : $($echecs -join ', ') (accès contrôlé aux dossiers ?)" } else { 'Bureau et menu Démarrer (tous les utilisateurs)' })
         }
 
         # 10. Vérification finale
@@ -429,13 +694,22 @@ $Installation = {
 }
 
 # ------------------------------------------------------------------ serveur web local (interface)
-$Port = 47811
-$Url = "http://127.0.0.1:$Port/"
-$http = New-Object System.Net.HttpListener
-$http.Prefixes.Add($Url)
-try { $http.Start() } catch { [void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); [System.Windows.Forms.MessageBox]::Show("Le port $Port est déjà utilisé : l'installateur est peut-être déjà ouvert.", 'Installateur POS Marwa') | Out-Null; exit 1 }
+# Plusieurs ports possibles : Hyper-V / WSL / Docker réservent parfois des plages entières sur Windows 10 / 11.
+$http = $null; $Url = $null
+foreach ($Port in @(47811, 47812, 38211, 28211, 18211, 52811, 61811) + @(1..5 | ForEach-Object { Get-Random -Minimum 20000 -Maximum 40000 })) {
+    $h = New-Object System.Net.HttpListener
+    $h.Prefixes.Add("http://127.0.0.1:$Port/")
+    try { $h.Start(); $http = $h; $Url = "http://127.0.0.1:$Port/"; break } catch { try { $h.Close() } catch {} }
+}
+if (-not $http) {
+    Write-Host '  Impossible d''ouvrir l''interface : aucun port local disponible (l''installateur est peut-être déjà ouvert).' -ForegroundColor Red
+    Log 'Aucun port local disponible pour l''interface'
+    Start-Sleep -Seconds 20
+    exit 1
+}
 $Jeton = New-Hex 16
-Log "Installateur démarré ($Url)"
+$Adresse = "$Url`?t=$Jeton"
+Log "Installateur démarré ($Url) – PowerShell $($PSVersionTable.PSVersion)"
 
 function Repondre($ctx, $obj, [int]$code = 200, [string]$type = 'application/json; charset=utf-8') {
     $bytes = if ($obj -is [byte[]]) { $obj } elseif ($obj -is [string]) { [Text.Encoding]::UTF8.GetBytes($obj) } else { [Text.Encoding]::UTF8.GetBytes(($obj | ConvertTo-Json -Depth 8 -Compress)) }
@@ -450,28 +724,67 @@ function Lire-Json($ctx) {
     return $t | ConvertFrom-Json
 }
 
-# Paquet trouvé automatiquement à côté de l'installateur
+# Paquet trouvé automatiquement à côté de l'installateur (ou de l'installateur .exe)
 function Paquet-Proche {
-    foreach ($d in $Ici, (Split-Path $Ici -Parent)) {
-        $z = Get-ChildItem -Path $d -Filter '*.zip' -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'install|paquet|pos' -and $_.Name -notmatch '^pos[-_ ]?(marwa|wan)-\d' } | Select-Object -First 1
+    $dossiers = @()
+    if ($Depuis) { $dossiers += $Depuis; $dossiers += (Split-Path $Depuis -Parent) }
+    $dossiers += $Ici; $dossiers += (Split-Path $Ici -Parent)
+    foreach ($d in $dossiers) {
+        if (-not $d -or -not (Test-Path -LiteralPath $d)) { continue }
+        $z = Get-ChildItem -LiteralPath $d -Filter '*.zip' -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'install|paquet|pos' -and $_.Name -notmatch '^pos[-_ ]?(marwa|wan)-\d' -and $_.Name -notmatch '^installateur' } | Select-Object -First 1
         if ($z) { return $z.FullName }
-        if (Get-ChildItem -Path $d -Filter 'wampserver*.exe' -File -ErrorAction SilentlyContinue) { return $d }
+        if (Get-ChildItem -LiteralPath $d -Filter 'wampserver*.exe' -File -ErrorAction SilentlyContinue) { return $d }
     }
     return $null
+}
+
+# Fenêtre de l'installateur : Chrome ou Edge en mode application, avec un profil séparé
+# (un navigateur lancé en administrateur ne peut pas rejoindre la fenêtre déjà ouverte par l'utilisateur).
+function Ouvrir-Interface([string]$adresse) {
+    $nav = Find-Chrome; if (-not $nav) { $nav = Find-Edge }
+    if ($nav) {
+        try {
+            Start-Process -FilePath $nav -ArgumentList @("--app=$adresse", "--user-data-dir=`"$(Join-Path $Racine 'navigateur')`"", '--no-first-run', '--no-default-browser-check', '--window-size=1180,860')
+            return
+        } catch { Log "Ouverture de $nav impossible : $($_.Exception.Message)" }
+    }
+    Ouvrir-Secours $adresse
+}
+
+# Secours : navigateur par défaut, ouvert par l'Explorateur (donc sans droits administrateur)
+function Ouvrir-Secours([string]$adresse) {
+    try { Start-Process -FilePath "$env:WINDIR\explorer.exe" -ArgumentList "`"$adresse`"" } catch { try { Start-Process $adresse } catch {} }
 }
 
 $paquet = Paquet-Proche
 $rs = $null; $ps = $null
 
-$edge = @("${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
-if (-not $SansFenetre) {
-    $nav = Find-Chrome; if (-not $nav) { $nav = $edge }
-    if ($nav) { Start-Process -FilePath $nav -ArgumentList "--app=$Url`?t=$Jeton", '--window-size=1180,860' } else { Start-Process "$Url`?t=$Jeton" }
-}
+Write-Host "  Assistant : $Adresse" -ForegroundColor Cyan
+Write-Host '  (si aucune fenêtre ne s''ouvre, copiez cette adresse dans Google Chrome, Microsoft Edge ou Firefox)' -ForegroundColor Gray
+Write-Host "  Journal : $Journal" -ForegroundColor Gray
+if (-not $SansFenetre) { Ouvrir-Interface $Adresse }
 
 $fini = $false
+$lance = Get-Date; $derniere = $lance; $premiere = $null; $secours = $false
 while ($http.IsListening -and -not $fini) {
-    $ctx = $http.GetContext()
+    $ar = $http.BeginGetContext($null, $null)
+    while (-not $ar.AsyncWaitHandle.WaitOne(1000)) {
+        $maintenant = Get-Date
+        # La fenêtre ne s'est pas connectée : on ouvre le navigateur par défaut
+        if (-not $premiere -and -not $secours -and -not $SansFenetre -and ($maintenant - $lance).TotalSeconds -gt 25) {
+            $secours = $true; Log 'Fenêtre de l''installateur non connectée : ouverture du navigateur par défaut'
+            Write-Host '  La fenêtre ne s''est pas ouverte : essai avec le navigateur par défaut…' -ForegroundColor Yellow
+            Ouvrir-Secours $Adresse
+        }
+        # Fenêtre fermée (plus de signe de vie) et aucune installation en cours : l'installateur s'arrête
+        if (-not $Etat.enCours) {
+            if ($premiere -and ($maintenant - $derniere).TotalMinutes -gt 5) { $fini = $true; break }
+            if (-not $premiere -and ($maintenant - $lance).TotalMinutes -gt 20) { $fini = $true; break }
+        }
+    }
+    if ($fini) { break }
+    $ctx = $http.EndGetContext($ar)
+    $derniere = Get-Date; if (-not $premiere) { $premiere = $derniere }
     try {
         $chemin = $ctx.Request.Url.AbsolutePath
         if ($chemin -eq '/') {
@@ -480,7 +793,13 @@ while ($http.IsListening -and -not $fini) {
         # Toute action exige le jeton de la fenêtre ouverte par l'installateur
         if ($ctx.Request.Headers['X-Jeton'] -ne $Jeton) { Repondre $ctx @{ ok = $false; erreur = 'Accès refusé' } 403; continue }
         switch ($chemin) {
+            '/api/ping' { Repondre $ctx @{ ok = $true } }
             '/api/systeme' { Repondre $ctx @{ ok = $true; info = (Get-InfoSysteme); paquet = $paquet } }
+            '/api/diagnostic' { Repondre $ctx @{ ok = $true; elements = @(Get-Blocages $paquet $Ici) } }
+            '/api/corriger' {
+                $b = Lire-Json $ctx
+                try { Repondre $ctx @{ ok = $true; message = (Corriger-Blocage ([string]$b.action) $paquet $Ici) } } catch { Repondre $ctx @{ ok = $false; erreur = $_.Exception.Message } }
+            }
             '/api/ports' { Repondre $ctx @{ ok = $true; ports = @(80, 3306, 3307, 3308 | ForEach-Object { Get-InfoPort $_ }) } }
             '/api/liberer' { $b = Lire-Json $ctx; Repondre $ctx @{ ok = $true; message = (Liberer-Port ([int]$b.port)) } }
             '/api/choisir' {
@@ -512,11 +831,13 @@ while ($http.IsListening -and -not $fini) {
                 Repondre $ctx @{ ok = $true; enCours = $Etat.enCours; fini = $Etat.fini; etapes = @($Etat.etapes); journal = @($log[[math]::Max(0, $n - 40)..($n - 1)] | Where-Object { $_ }); resultat = $Etat.resultat }
             }
             '/api/ouvrir' {
-                $nav = Find-Chrome; if (-not $nav) { $nav = $edge }
-                if ($nav) { Start-Process -FilePath $nav -ArgumentList '--app=http://localhost/pos-marwa/' } else { Start-Process 'http://localhost/pos-marwa/' }
+                # Ouvert par l'Explorateur : POS Marwa s'ouvre avec les droits normaux de l'utilisateur
+                $lnk = Join-Path ([Environment]::GetFolderPath('CommonDesktopDirectory')) 'POS Marwa.lnk'
+                if (-not (Test-Path $lnk)) { $lnk = Join-Path ([Environment]::GetFolderPath('CommonPrograms')) 'POS Marwa.lnk' }
+                if (Test-Path $lnk) { Start-Process -FilePath "$env:WINDIR\explorer.exe" -ArgumentList "`"$lnk`"" } else { Ouvrir-Secours 'http://localhost/pos-marwa/' }
                 Repondre $ctx @{ ok = $true }
             }
-            '/api/journal' { Start-Process notepad.exe -ArgumentList $Journal; Repondre $ctx @{ ok = $true } }
+            '/api/journal' { Start-Process notepad.exe -ArgumentList "`"$Journal`""; Repondre $ctx @{ ok = $true } }
             '/api/redemarrer' { Repondre $ctx @{ ok = $true }; & shutdown.exe /r /t 15 /c 'Redémarrage demandé par l''installateur POS Marwa' }
             '/api/quitter' { Repondre $ctx @{ ok = $true }; $fini = $true }
             default { Repondre $ctx @{ ok = $false; erreur = 'Inconnu' } 404 }
@@ -525,4 +846,6 @@ while ($http.IsListening -and -not $fini) {
         try { Repondre $ctx @{ ok = $false; erreur = $_.Exception.Message } 500 } catch {}
     }
 }
-$http.Stop()
+try { $http.Stop(); $http.Close() } catch {}
+Log 'Installateur fermé'
+exit 0
