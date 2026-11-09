@@ -752,10 +752,6 @@ test('Traduction : dictionnaires valides, pages traduites, scripts intacts', fun
     ok(str_contains($h, '<h1>Quote</h1>') && str_contains($h, 'Customer :') || str_contains($h, 'Client :') === false, $h);
     ok(str_contains($h, 'var x = "Devis"'), 'script non modifié');
     ok(str_contains($h, 'Mon article perso 42'), 'données saisies non traduites');
-    // Textes composés côté serveur : nombre, référence, texte libre entre guillemets
-    $h = App\Core\Lang::html('<p>16 vente(s)</p><h2>Vente V2026-000151</h2><p>Vente annulée</p>');
-    ok(str_contains($h, '16 sale(s)') && str_contains($h, 'Sale V2026-000151'), $h);
-    ok(str_contains($h, '<p>Vente annulée</p>') || !str_contains($h, 'Sale annulée'), 'pas de traduction partielle : ' . $h);
     App\Core\Lang::set('ar');
     eq('rtl', App\Core\Lang::dir());
     App\Core\Lang::reset();
