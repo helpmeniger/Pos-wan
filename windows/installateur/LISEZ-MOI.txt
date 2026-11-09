@@ -1,0 +1,44 @@
+INSTALLATEUR POS MARWA (Windows 10 / 11, 64 bits)
+=================================================
+
+1. Placez dans le meme dossier que "INSTALLER POS MARWA.bat" votre paquet zip
+   (ex. "pos-wan install.zip") contenant :
+     - les vcredist (2008, 2010, 2012, 2013, 2015-2022, x86 et x64)
+     - wampserver3.x.x_x64.exe
+     - l'installateur hors ligne de Google Chrome (facultatif)
+     - POS-Marwa-x.x.x.zip
+   Vous pouvez aussi le choisir plus tard avec le bouton "Choisir...".
+
+2. Double-cliquez sur "INSTALLER POS MARWA.bat" et acceptez la demande
+   d'autorisation de Windows (administrateur).
+
+3. La fenetre de l'installateur s'ouvre :
+     1) Configuration du PC : materiel, Windows, reseau, prerequis, deja installe.
+     2) Ports du serveur : 80 (Apache), 3306/3307/3308 (MySQL/MariaDB). Si un autre
+        programme les occupe (IIS, Skype...), bouton "Liberer le port".
+     3) Installation : analyse du paquet, options, puis "Installer maintenant".
+
+4. A la fin, cliquez sur "Ouvrir POS Marwa" et terminez dans la page web : nom du
+   commerce et VOTRE mot de passe administrateur.
+
+Ce que l'installateur fait :
+  - installe Visual C++ (dans l'ordre), WampServer dans C:\wamp64, Google Chrome ;
+  - libere les ports occupes (arrete et desactive le programme ou service en cause) ;
+  - active mod_rewrite d'Apache, met les services Wamp en demarrage automatique,
+    cree la tache planifiee "POS Marwa - WampServer" (icone Wamp a l'ouverture de session) ;
+  - autorise Apache dans le pare-feu sur le reseau prive (telephones, tablettes) ;
+  - copie POS Marwa dans C:\wamp64\www\pos-marwa, cree la base "posmarwa" avec un
+    utilisateur MySQL dedie (mot de passe aleatoire) et le fichier .env ;
+  - (option) donne un mot de passe aleatoire au compte root de MySQL ;
+  - cree le raccourci "POS Marwa" (Bureau et menu Demarrer).
+  Les mots de passe sont dans C:\POS-Marwa-Installation\identifiants-POS-Marwa.txt
+  (lisible par les administrateurs seulement). Journal : C:\POS-Marwa-Installation\installation.log
+
+Ce que l'installateur ne fait PAS (volontairement) :
+  - il ne desactive ni le controle de compte (UAC), ni l'antivirus, ni le pare-feu ;
+  - il n'ecrase jamais une installation de POS Marwa existante (dossier avec .env) :
+    pour changer de version, utilisez la mise a jour integree de POS Marwa.
+
+Si WampServer reste orange : redemarrez l'ordinateur, puis relancez l'installateur
+(onglet Ports). Certaines versions de WampServer posent encore une question
+(navigateur ou editeur par defaut) pendant l'installation : repondez "Non" ou validez.

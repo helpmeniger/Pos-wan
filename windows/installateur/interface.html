@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Installateur POS Marwa</title>
+<style>
+:root { --navy: #14213d; --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; --bg: #f1f5f9; --ok: #16a34a; --warn: #d97706; --err: #dc2626; --brand: #f5a623; --blue: #2563eb; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; background: var(--bg); color: var(--ink); font-size: 15px; }
+header { background: linear-gradient(120deg, var(--navy), #1e3a8a); color: #fff; padding: 18px 28px; display: flex; align-items: center; gap: 14px; }
+header .logo { width: 44px; height: 44px; border-radius: 12px; background: var(--brand); display: grid; place-items: center; font-weight: 800; font-size: 22px; color: var(--navy); }
+header h1 { margin: 0; font-size: 20px; } header p { margin: 2px 0 0; opacity: .8; font-size: 13px; }
+header .admin { margin-left: auto; background: rgba(255,255,255,.15); border-radius: 99px; padding: 6px 14px; font-size: 13px; }
+main { padding: 20px 28px 40px; max-width: 1180px; margin: 0 auto; }
+.steps { display: flex; gap: 8px; margin-bottom: 18px; }
+.steps button { flex: 1; border: 0; background: #fff; border-radius: 12px; padding: 12px; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; text-align: left; }
+.steps button b { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--line); margin-right: 8px; color: var(--ink); }
+.steps button.active { color: var(--ink); border-bottom-color: var(--brand); } .steps button.active b { background: var(--brand); }
+.steps button.done b { background: var(--ok); color: #fff; }
+.card { background: #fff; border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.card h2 { margin: 0 0 12px; font-size: 17px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px 22px; }
+.kv { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--line); } .kv span { color: var(--muted); min-width: 120px; } .kv b { font-weight: 600; word-break: break-word; }
+.check { display: flex; gap: 10px; align-items: center; padding: 6px 0; }
+.dot { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 13px; flex: none; }
+.dot.ok { background: var(--ok); } .dot.no { background: var(--err); } .dot.warn { background: var(--warn); } .dot.wait { background: #cbd5e1; } .dot.run { background: var(--blue); animation: pulse 1s infinite alternate; }
+@keyframes pulse { to { opacity: .45; } }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; } .tag { background: #eef2ff; border-radius: 99px; padding: 3px 10px; font-size: 12px; }
+table { width: 100%; border-collapse: collapse; } td, th { padding: 9px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; } th { font-size: 12px; text-transform: uppercase; color: var(--muted); }
+.btn { border: 0; border-radius: 10px; padding: 10px 18px; font: inherit; font-weight: 600; cursor: pointer; background: var(--line); color: var(--ink); }
+.btn.primary { background: var(--blue); color: #fff; } .btn.ok { background: var(--ok); color: #fff; } .btn.danger { background: var(--err); color: #fff; } .btn.big { padding: 14px 26px; font-size: 16px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+input[type=text] { flex: 1; min-width: 300px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; }
+.opt { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; } .opt input { width: 18px; height: 18px; margin-top: 2px; } .opt small { display: block; color: var(--muted); }
+.note { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #9a3412; }
+.info { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #1e3a8a; }
+.journal { background: #0b1220; color: #cbd5e1; border-radius: 10px; padding: 10px 12px; font: 12px/1.5 Consolas, monospace; max-height: 220px; overflow: auto; white-space: pre-wrap; }
+.secret { font-family: Consolas, monospace; background: #f8fafc; border: 1px solid var(--line); padding: 2px 8px; border-radius: 6px; }
+.hidden { display: none !important; }
+.spin { display: inline-block; width: 16px; height: 16px; border: 3px solid #cbd5e1; border-top-color: var(--blue); border-radius: 50%; animation: sp .8s linear infinite; vertical-align: -3px; } @keyframes sp { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header><div class="logo">M</div><div><h1>Installateur POS Marwa</h1><p>WampServer · Visual C++ · Google Chrome · POS Marwa</p></div><div class="admin">🛡️ Administrateur Windows</div></header>
+<main>
+  <nav class="steps">
+    <button data-tab="config" class="active"><b>1</b>Configuration du PC</button>
+    <button data-tab="ports"><b>2</b>Ports du serveur</button>
+    <button data-tab="install"><b>3</b>Installation</button>
+  </nav>
+
+  <section id="tab-config">
+    <div class="card"><h2>Prérequis</h2><div id="verdicts"><span class="spin"></span> Analyse de l'ordinateur…</div></div>
+    <div class="card"><h2>Configuration de l'ordinateur</h2><div class="grid" id="sysinfo"></div></div>
+    <div class="card"><h2>Déjà installé</h2><div id="already"></div></div>
+    <div class="row"><button class="btn primary big" data-go="ports">Continuer : vérifier les ports →</button></div>
+  </section>
+
+  <section id="tab-ports" class="hidden">
+    <div class="card"><h2>Ports utilisés par WampServer</h2>
+      <p class="info">Apache (le serveur web) utilise le port <b>80</b> ; MySQL / MariaDB utilisent <b>3306</b>, <b>3307</b> ou <b>3308</b>. Si un autre programme les occupe (IIS, Skype, un autre serveur…), WampServer reste orange. L'installateur peut l'arrêter et l'empêcher de redémarrer.</p>
+      <table><thead><tr><th>Port</th><th>État</th><th>Programme</th><th></th></tr></thead><tbody id="ports"></tbody></table>
+      <div class="row" style="margin-top:12px"><button class="btn" id="refreshPorts">↻ Vérifier de nouveau</button></div>
+    </div>
+    <div class="row"><button class="btn primary big" data-go="install">Continuer : installation →</button></div>
+  </section>
+
+  <section id="tab-install" class="hidden">
+    <div class="card" id="pkgCard"><h2>Paquet d'installation</h2>
+      <p style="margin-top:0;color:var(--muted)">Le zip « pos-wan install » qui contient : les vcredist (2008 à 2022), WampServer, l'installateur de Google Chrome et POS-Marwa-x.x.x.zip.</p>
+      <div class="row"><input type="text" id="pkg" placeholder="C:\Users\…\Téléchargements\pos-wan install.zip"><button class="btn" id="pick">📂 Choisir…</button><button class="btn primary" id="analyse">Analyser</button></div>
+      <div id="pkgResult" style="margin-top:12px"></div>
+    </div>
+    <div class="card" id="optCard"><h2>Options</h2>
+      <label class="opt"><input type="checkbox" id="o-liberer" checked><span>Libérer automatiquement les ports 80, 3306, 3307, 3308<small>Arrête et désactive le programme ou le service qui les occupe (jamais WampServer).</small></span></label>
+      <label class="opt"><input type="checkbox" id="o-chrome" checked><span>Installer Google Chrome<small>Navigateur conseillé pour la caisse (ignoré s'il est déjà installé).</small></span></label>
+      <label class="opt"><input type="checkbox" id="o-demarrage" checked><span>Démarrer le serveur avec Windows<small>Services Apache et MySQL en démarrage automatique + icône WampServer à l'ouverture de session.</small></span></label>
+      <label class="opt"><input type="checkbox" id="o-parefeu" checked><span>Autoriser Apache dans le pare-feu (réseau privé)<small>Pour les téléphones, tablettes et écrans de la boutique. MySQL reste fermé au réseau.</small></span></label>
+      <label class="opt"><input type="checkbox" id="o-raccourci" checked><span>Raccourci « POS Marwa » sur le Bureau<small>Ouvre POS Marwa dans une fenêtre dédiée, sans barre d'adresse.</small></span></label>
+      <label class="opt"><input type="checkbox" id="o-root" checked><span>Sécuriser MySQL : mot de passe aléatoire pour « root »<small>WampServer est livré sans mot de passe root. Le nouveau mot de passe est enregistré dans C:\POS-Marwa-Installation\identifiants-POS-Marwa.txt (lisible par les administrateurs seulement) ; il sera demandé par phpMyAdmin.</small></span></label>
+      <p class="note">L'installateur s'exécute avec les droits administrateur (accordés une seule fois au lancement). Il ne désactive <b>jamais</b> le contrôle de compte (UAC), l'antivirus ni le pare-feu de Windows : il n'ajoute que les autorisations nécessaires à POS Marwa.</p>
+      <div class="row"><button class="btn ok big" id="go" disabled>▶ Installer maintenant</button><span id="goHint" style="color:var(--muted)">Analysez d'abord le paquet.</span></div>
+    </div>
+    <div class="card hidden" id="progCard"><h2>Installation en cours</h2>
+      <div id="prog"></div>
+      <details style="margin-top:10px"><summary>Journal détaillé</summary><div class="journal" id="log"></div></details>
+    </div>
+    <div class="card hidden" id="endCard"></div>
+  </section>
+</main>
+<script>
+(function () {
+  'use strict';
+  const T = new URLSearchParams(location.search).get('t') || '';
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  async function api(path, body) {
+    const r = await fetch(path, { method: body ? 'POST' : 'GET', headers: { 'X-Jeton': T, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    return r.json();
+  }
+  function tab(id) {
+    document.querySelectorAll('main > section').forEach((s) => s.classList.toggle('hidden', s.id !== 'tab-' + id));
+    document.querySelectorAll('.steps button').forEach((b) => b.classList.toggle('active', b.dataset.tab === id));
+    if (id === 'ports') loadPorts();
+  }
+  document.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => tab(b.dataset.tab)));
+  document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => { document.querySelector(`[data-tab="${document.querySelector('main > section:not(.hidden)').id.slice(4)}"]`).classList.add('done'); tab(b.dataset.go); }));
+
+  // 1. Configuration
+  async function loadSystem() {
+    const d = await api('/api/systeme');
+    if (!d.ok) { $('#verdicts').textContent = d.erreur || 'Erreur'; return; }
+    const i = d.info;
+    $('#verdicts').innerHTML = i.verdicts.map((v) => `<div class="check"><span class="dot ${v.ok ? 'ok' : 'no'}">${v.ok ? '✓' : '!'}</span>${esc(v.t)}</div>`).join('');
+    const rows = [['Ordinateur', i.ordinateur], ['Utilisateur', i.utilisateur], ['Système', i.systeme], ['Démarré le', i.demarre], ['Fabricant', i.fabricant], ['Processeur', i.processeur],
+      ['Mémoire', i.memoire], ['Disque', i.disque], ['Carte graphique', i.graphique], ['Adresse réseau', i.reseau], ['Pare-feu', i.parefeu], ['PowerShell', i.powershell]];
+    $('#sysinfo').innerHTML = rows.map(([k, v]) => `<div class="kv"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
+    const vc = (i.vcredist || []);
+    $('#already').innerHTML = `<div class="check"><span class="dot ${i.wamp ? 'ok' : 'wait'}">${i.wamp ? '✓' : '–'}</span>WampServer : ${i.wamp ? esc(i.wamp) : 'non installé'}</div>
+      <div class="check"><span class="dot ${i.chrome ? 'ok' : 'wait'}">${i.chrome ? '✓' : '–'}</span>Google Chrome : ${i.chrome ? 'installé' : 'non installé'}</div>
+      <div class="check"><span class="dot ${vc.length ? 'ok' : 'wait'}">${vc.length ? '✓' : '–'}</span>Composants Visual C++ : ${vc.length} installé(s)</div>
+      ${vc.length ? `<div class="tags" style="margin:4px 0 0 32px">${vc.map((x) => `<span class="tag">${esc(x.replace('Microsoft Visual C++ ', ''))}</span>`).join('')}</div>` : ''}`;
+    if (d.paquet) { $('#pkg').value = d.paquet; }
+  }
+
+  // 2. Ports
+  async function loadPorts() {
+    $('#ports').innerHTML = '<tr><td colspan="4"><span class="spin"></span> Vérification…</td></tr>';
+    const d = await api('/api/ports');
+    $('#ports').innerHTML = d.ports.map((p) => {
+      const st = p.libre ? '<span class="dot ok">✓</span>' : p.wamp ? '<span class="dot ok">W</span>' : '<span class="dot no">!</span>';
+      const who = p.libre ? 'libre' : p.wamp ? 'WampServer (normal)' : `<b>${esc(p.processus)}</b> (PID ${esc(p.pid)})${p.chemin ? `<br><small>${esc(p.chemin)}</small>` : ''}${(p.services || []).length ? `<br><small>Service(s) : ${esc(p.services.join(', '))}</small>` : ''}`;
+      return `<tr><td><b>${p.port}</b><br><small>${p.port === 80 ? 'Apache' : 'MySQL / MariaDB'}</small></td><td>${st}</td><td>${who}</td><td>${!p.libre && !p.wamp ? `<button class="btn danger" data-free="${p.port}">Libérer le port</button>` : ''}</td></tr>`;
+    }).join('');
+    document.querySelectorAll('[data-free]').forEach((b) => b.addEventListener('click', async () => {
+      if (!confirm(`Arrêter le programme qui occupe le port ${b.dataset.free} et l'empêcher de redémarrer ?`)) return;
+      b.disabled = true; b.innerHTML = '<span class="spin"></span>';
+      const r = await api('/api/liberer', { port: Number(b.dataset.free) });
+      alert(r.message || r.erreur); loadPorts();
+    }));
+  }
+  $('#refreshPorts').addEventListener('click', loadPorts);
+
+  // 3. Paquet + installation
+  const LABEL = { vcredist: 'Visual C++', wamp: 'WampServer', chrome: 'Google Chrome', posmarwa: 'POS Marwa' };
+  $('#pick').addEventListener('click', async () => { const d = await api('/api/choisir', {}); if (d.paquet) { $('#pkg').value = d.paquet; analyse(); } });
+  $('#analyse').addEventListener('click', analyse);
+  async function analyse() {
+    const p = $('#pkg').value.trim().replace(/^"|"$/g, '');
+    if (!p) return;
+    $('#pkgResult').innerHTML = '<span class="spin"></span> Lecture du paquet (décompression si nécessaire)…';
+    const d = await api('/api/analyser', { paquet: p });
+    if (!d.ok) { $('#pkgResult').innerHTML = `<p class="note">${esc(d.erreur)}</p>`; return; }
+    const el = d.analyse.elements || [];
+    const has = (t) => el.some((e) => e.type === t);
+    $('#pkgResult').innerHTML = `<table><thead><tr><th>Composant</th><th>Fichier</th></tr></thead><tbody>${el.map((e) => `<tr><td>${LABEL[e.type]}${e.type === 'vcredist' ? ` ${e.annee} ${e.x64 ? 'x64' : 'x86'}` : ''}</td><td><small>${esc(e.nom)}</small></td></tr>`).join('')}</tbody></table>
+      <div class="row" style="margin-top:10px">${['vcredist', 'wamp', 'chrome', 'posmarwa'].map((t) => `<span class="check"><span class="dot ${has(t) ? 'ok' : (t === 'chrome' ? 'warn' : 'no')}">${has(t) ? '✓' : '!'}</span>${LABEL[t]}</span>`).join('')}</div>`;
+    // WampServer peut manquer dans le paquet s'il est déjà installé sur ce PC (contrôlé par l'installateur)
+    $('#go').disabled = !has('posmarwa');
+    $('#goHint').textContent = $('#go').disabled ? 'Le paquet doit contenir le zip de POS Marwa.' : `${el.length} composant(s) prêt(s) à installer.${has('wamp') ? '' : ' WampServer absent du paquet : il doit déjà être installé sur ce PC.'}`;
+  }
+  $('#go').addEventListener('click', async () => {
+    const o = (id) => $('#o-' + id).checked;
+    const r = await api('/api/installer', { liberer: o('liberer'), chrome: o('chrome'), demarrage: o('demarrage'), parefeu: o('parefeu'), raccourci: o('raccourci'), root: o('root') });
+    if (!r.ok) { alert(r.erreur); return; }
+    $('#optCard').classList.add('hidden'); $('#pkgCard').classList.add('hidden'); $('#progCard').classList.remove('hidden');
+    poll();
+  });
+  const DOT = { ok: ['ok', '✓'], encours: ['run', '…'], erreur: ['no', '!'], absent: ['warn', '–'] };
+  async function poll() {
+    const d = await api('/api/progression');
+    $('#prog').innerHTML = (d.etapes || []).map((e) => { const [c, s] = DOT[e.statut] || ['wait', '·']; return `<div class="check"><span class="dot ${c}">${s}</span><div><b>${esc(e.titre)}</b><br><small style="color:var(--muted)">${esc(e.detail)}</small></div></div>`; }).join('') || '<span class="spin"></span> Démarrage…';
+    $('#log').textContent = (d.journal || []).join('\n'); $('#log').scrollTop = 1e9;
+    if (d.fini && d.resultat) return finish(d.resultat);
+    setTimeout(poll, 1500);
+  }
+  function finish(r) {
+    const c = $('#endCard'); c.classList.remove('hidden');
+    const err = (r.erreurs || []).length;
+    const id = r.identifiants;
+    c.innerHTML = `<h2>${err ? '⚠️ Installation interrompue' : '✅ Installation terminée'}</h2>
+      ${err ? `<p class="note">${r.erreurs.map(esc).join('<br>')}</p>` : ''}
+      ${id ? `<p>Base de données <b>${esc(id.base)}</b> (${esc(id.serveur)}), utilisateur <b>${esc(id.utilisateur)}</b>, mot de passe <span class="secret">${esc(id.motdepasse)}</span>${r.root ? `<br>Mot de passe root MySQL (phpMyAdmin) : <span class="secret">${esc(r.root)}</span>` : ''}</p>
+        <p class="info">Ces mots de passe sont enregistrés dans <b>${esc(r.fichierIdentifiants)}</b> (lisible par les administrateurs seulement). POS Marwa les utilise déjà : vous n'avez rien à saisir.</p>` : ''}
+      ${r.url ? `<p>Dernière étape dans POS Marwa : le nom de votre commerce et <b>votre propre mot de passe administrateur</b> (aucun mot de passe par défaut n'est créé).</p>` : ''}
+      ${r.redemarrage ? '<p class="note">Un composant Visual C++ demande un redémarrage de Windows : faites-le avant d\'utiliser la caisse.</p>' : ''}
+      <div class="row">${r.url ? '<button class="btn ok big" id="openApp">Ouvrir POS Marwa</button>' : ''}<button class="btn" id="openLog">Journal complet</button>${r.redemarrage ? '<button class="btn danger" id="reboot">Redémarrer Windows</button>' : ''}<button class="btn" id="quit">Fermer l'installateur</button></div>`;
+    const on = (sel, fn) => { const b = $(sel); if (b) b.addEventListener('click', fn); };
+    on('#openApp', () => api('/api/ouvrir', {}));
+    on('#openLog', () => api('/api/journal', {}));
+    on('#reboot', () => { if (confirm('Redémarrer Windows dans 15 secondes ?')) api('/api/redemarrer', {}); });
+    on('#quit', async () => { await api('/api/quitter', {}); window.close(); });
+  }
+  loadSystem().catch((e) => { $('#verdicts').textContent = 'Erreur : ' + e.message; });
+})();
+</script>
+</body>
+</html>
