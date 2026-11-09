@@ -9,6 +9,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [
 - Traduction des textes composés côté serveur qui contiennent un nombre, un numéro de document, une date, un montant ou un nom (ex. « 16 vente(s) », « Vente V2026-000151 »). Les données saisies par l'utilisateur ne sont jamais traduites.
 - Fenêtre de paiement de la caisse : les modes de paiement (« Espèces »…) s'affichent dans la langue choisie.
 - Dépenses : le libellé « (dépense) / (recette) » des catégories est traduit.
+- Relecture complète des écrans filmés : environ 50 textes supplémentaires traduits (étiquettes, inventaire, stock rapide, rapports, caisse, « À propos »). Les phrases « créé le … par … », « ouverte le … par … » sont désormais composées par `t()` avec paramètres.
+- Historique des prix d'un article : l'origine s'affiche en clair (« Modification manuelle », « Coût moyen pondéré · Réception »…) au lieu des codes internes `manual`, `cmp:initial`.
+- Ajout de stock rapide : message de confirmation et messages d'erreur traduits.
 
 ## [3.5.0] — 2026-11-08
 

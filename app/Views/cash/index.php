@@ -20,7 +20,7 @@ $typeLabels = ['sale' => 'Ventes', 'sale_cancel' => 'Annulations', 'refund' => '
   </div>
 <?php else: ?>
   <div class="row g-3 mb-3">
-    <div class="col-md-3"><div class="kpi bg-g2"><div class="kpi-label">Fond de caisse</div><div class="kpi-value"><?= money($session['opening_amount']) ?></div><span class="small">Ouverte le <?= e(fdate($session['opened_at'])) ?> par <?= e($opener) ?></span></div></div>
+    <div class="col-md-3"><div class="kpi bg-g2"><div class="kpi-label">Fond de caisse</div><div class="kpi-value"><?= money($session['opening_amount']) ?></div><span class="small"><?= e(t('Ouverte le {date} par {name}', ['date' => fdate($session['opened_at']), 'name' => $opener])) ?></span></div></div>
     <div class="col-md-3"><div class="kpi bg-g1"><div class="kpi-label">Ventes de la session</div><div class="kpi-value"><?= money($summary['sales']['total']) ?></div><span class="small"><?= (int) $summary['sales']['n'] ?> ticket(s) · <?= (int) $summary['cancelled'] ?> annulé(s)</span></div></div>
     <div class="col-md-3"><div class="kpi bg-g4"><div class="kpi-label">Ventes à crédit</div><div class="kpi-value"><?= money($summary['sales']['credit']) ?></div></div></div>
     <div class="col-md-3"><div class="kpi bg-g3"><div class="kpi-label">Espèces théoriques</div><div class="kpi-value"><?= money($summary['expected_cash']) ?></div></div></div>

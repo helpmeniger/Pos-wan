@@ -46,7 +46,7 @@
     results.innerHTML = '';
     const r = await fetch(`${BASE}/stock/quick/product/${id}`, { headers: { Accept: 'application/json' } });
     const d = await r.json();
-    if (!d.ok) { say(d.error || 'Article introuvable.', false); msg.classList.remove('d-none'); return; }
+    if (!d.ok) { say(d.error || __('Article introuvable.'), false); msg.classList.remove('d-none'); return; }
     render(d.product);
   }
 
@@ -82,9 +82,9 @@
       const r = await fetch(`${BASE}/stock/quick`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-Token': CSRF }, body: JSON.stringify(body) });
       const d = await r.json();
       msg.classList.remove('d-none');
-      if (!d.ok) { say(d.error || 'Ajout refusé.', false); return; }
+      if (!d.ok) { say(d.error || __('Ajout refusé.'), false); return; }
       const added = Number(d.after) - Number(d.before);
-      say(`+${fmt(added)} ${product.unit || ''} ajouté(s) à « ${d.product.name} » (${d.warehouse}) : stock ${fmt(d.before)} → ${fmt(d.after)}. Enregistré au nom de ${d.user}.`, true);
+      say(__('+{q} {u} ajouté(s) à « {p} » ({w}) : stock {b} → {a}. Enregistré au nom de {usr}.', { q: fmt(added), u: product.unit || '', p: d.product.name, w: d.warehouse, b: fmt(d.before), a: fmt(d.after), usr: d.user }), true);
       const tb = $('#qsSession');
       const empty = tb.querySelector('.qs-empty'); if (empty) empty.remove();
       tb.insertAdjacentHTML('afterbegin', `<tr><td class="small">${esc(d.at.split(' ')[1])}</td><td>${esc(d.product.name)}</td><td class="small">${esc(d.warehouse)}</td><td class="text-end text-success fw-semibold">+${fmt(added)}</td><td class="text-end">${fmt(d.after)}</td></tr>`);
@@ -96,7 +96,7 @@
       search.focus();
     } catch (err) {
       msg.classList.remove('d-none');
-      say('Connexion au serveur impossible : l\'ajout n\'a pas été enregistré.', false);
+      say(__('Connexion au serveur impossible : l\'ajout n\'a pas été enregistré.'), false);
     } finally { btn.disabled = false; }
   });
 

@@ -388,7 +388,7 @@
   async function searchCustomers() {
     const d = await api('/pos/customers?q=' + encodeURIComponent($('#customerSearch').value.trim()));
     if (d.offline) { $('#customerResults').innerHTML = '<div class="text-secondary small p-2">' + esc(__('Hors connexion : la recherche de clients reprendra au retour de la connexion. Le client déjà choisi reste sur la vente.')) + '</div>'; return; }
-    $('#customerResults').innerHTML = (d.items || []).map((c) => `<button class="list-group-item list-group-item-action d-flex justify-content-between" data-c='${esc(JSON.stringify(c))}'><span>${esc(c.name)} <small class="text-secondary">${esc(c.phone || '')}</small></span><span class="small ${Number(c.balance) > 0 ? 'text-danger' : 'text-secondary'}">encours ${fmt(c.balance)}</span></button>`).join('') || '<div class="text-secondary small p-2">Aucun client.</div>';
+    $('#customerResults').innerHTML = (d.items || []).map((c) => `<button class="list-group-item list-group-item-action d-flex justify-content-between" data-c='${esc(JSON.stringify(c))}'><span>${esc(c.name)} <small class="text-secondary">${esc(c.phone || '')}</small></span><span class="small ${Number(c.balance) > 0 ? 'text-danger' : 'text-secondary'}">${esc(__('encours'))} ${fmt(c.balance)}</span></button>`).join('') || '<div class="text-secondary small p-2">Aucun client.</div>';
   }
   function chooseCustomer(c) {
     cart.customer = c ? { id: Number(c.id), name: c.name, phone: c.phone, balance: Number(c.balance), credit_limit: Number(c.credit_limit) } : null;

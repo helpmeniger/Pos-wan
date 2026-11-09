@@ -42,7 +42,7 @@ $canPrice = !$isEdit || can('products.price_edit');
       <?php endif; ?>
       <?php $vatMode = App\Services\Tax::mode(); ?>
       <?php if ($vatMode === 'product'): ?>
-      <div class="col-md-3"><label class="form-label"><?= e(App\Services\Tax::label()) ?> incluse (%)</label><input type="number" step="any" min="0" max="100" name="tax_rate" value="<?= $v('tax_rate', setting('default_tax_rate', '0')) ?>" class="form-control"></div>
+      <div class="col-md-3"><label class="form-label"><?= e(t('{tax} incluse (%)', ['tax' => t(App\Services\Tax::label())])) ?></label><input type="number" step="any" min="0" max="100" name="tax_rate" value="<?= $v('tax_rate', setting('default_tax_rate', '0')) ?>" class="form-control"></div>
       <?php else: ?><input type="hidden" name="tax_rate" value="<?= $v('tax_rate', '0') ?>"><?php endif; ?>
       <?php if ($vatMode === 'general'): ?>
       <div class="col-md-5 d-flex align-items-end"><input type="hidden" name="vat_exempt" value="0"><div class="form-check"><input type="checkbox" class="form-check-input" name="vat_exempt" value="1" id="vex" <?= (int) ($p['vat_exempt'] ?? 0) === 1 ? 'checked' : '' ?>><label class="form-check-label" for="vex">Exonéré de <?= e(App\Services\Tax::label()) ?> (taux général : <?= e(rtrim(rtrim(number_format(App\Services\Tax::generalRate(), 2, ',', ''), '0'), ',')) ?> %)</label></div></div>

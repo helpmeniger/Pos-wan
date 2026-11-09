@@ -5,7 +5,7 @@ $tabs = ['' => ['Tous', $sum['items']], 'uncounted' => ['Non comptés', $sum['un
 ?>
 <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
   <a class="btn btn-outline-secondary" href="<?= e(url('/inventories')) ?>"><i class="bi bi-arrow-left"></i></a>
-  <span><b><?= e($inv['warehouse']) ?></b><?= $inv['category'] ? ' · ' . e($inv['category']) : '' ?> · créé le <?= e(fdate($inv['created_at'])) ?> par <?= e($inv['full_name']) ?> · <?= App\Core\View::partial('partials/status', ['status' => $inv['status']]) ?><?= $inv['validator'] ? ' par ' . e($inv['validator']) . ' le ' . e(fdate($inv['validated_at'])) : '' ?></span>
+  <span><b><?= e($inv['warehouse']) ?></b><?= $inv['category'] ? ' · ' . e($inv['category']) : '' ?> · <?= e(t('créé le {date} par {name}', ['date' => fdate($inv['created_at']), 'name' => $inv['full_name']])) ?> · <?= App\Core\View::partial('partials/status', ['status' => $inv['status']]) ?><?= $inv['validator'] ? ' par ' . e($inv['validator']) . ' le ' . e(fdate($inv['validated_at'])) : '' ?></span>
   <div class="ms-auto d-flex flex-wrap gap-2">
     <a class="btn btn-outline-secondary" target="_blank" rel="noopener" href="<?= e(url('/inventories/' . $inv['id'], ['print' => 1])) ?>"><i class="bi bi-printer"></i> Feuille de comptage</a>
     <a class="btn btn-outline-primary" target="_blank" rel="noopener" href="<?= e(url('/inventories/' . $inv['id'] . '/report')) ?>"><i class="bi bi-file-earmark-text"></i> Rapport d'écarts</a>
