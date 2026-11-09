@@ -1,0 +1,20 @@
+{
+    "code": "doublons",
+    "name": "Doublons d'articles",
+    "version": "1.0.0",
+    "requires": "1.4.0",
+    "author": "POS Marwa",
+    "description": "Détecte les articles en double (même nom, accents, majuscules et espaces ignorés, ou noms ressemblants), compare chaque fiche (ventes, mouvements de stock, stock, code-barres, photo), propose celle à conserver et fusionne les doublons : ventes, stock, lots, achats et inventaires passent sur l'article conservé, puis le doublon est supprimé. Sauvegarde avant fusion et journal complet.",
+    "icon": "bi-intersect",
+    "color": "#d63384",
+    "permissions": {
+        "doublons.manage": "Détecter et fusionner les articles en double"
+    },
+    "roles": {
+        "owner": ["doublons.manage"],
+        "store_manager": ["doublons.manage"]
+    },
+    "menu": [
+        { "group": "Gestion des articles", "label": "Doublons d'articles", "icon": "bi-intersect", "url": "/doublons", "permission": "doublons.manage", "color": "#d63384" }
+    ]
+}

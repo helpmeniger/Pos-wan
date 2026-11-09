@@ -4792,6 +4792,40 @@ test('Boutique en ligne : catalogue public, commande, reçu, réservation, encai
     DB::run('UPDATE shop_products SET hidden = 0 WHERE product_id = ?', [$pid]);
 });
 
+test('Module Doublons : détection (accents, casse, espaces), comparaison, fusion du stock, des lots et des ventes', function () {
+    actingAs('admin');
+    eq(['0001_doublons'], App\Core\Addons::install('doublons', false), 'installation');
+    App\Core\Addons::reset();
+    $D = Addons\Doublons\DoublonService::class;
+    eq($D::key('Huile végétale 5 L'), $D::key(' HUILE vegetale-5l '), 'clé : accents, casse, espaces, ponctuation');
+    $a = DB::insert('products', ['reference' => 'DBL-A', 'name' => 'Café moulu 250 g', 'barcode' => '6009990001112', 'sale_price' => 1500, 'cost_price' => 1000, 'track_stock' => 1, 'status' => 'active']);
+    $b = DB::insert('products', ['reference' => 'DBL-B', 'name' => 'cafe MOULU 250g', 'sale_price' => 1400, 'cost_price' => 1200, 'track_stock' => 1, 'status' => 'active']);
+    $c = DB::insert('products', ['reference' => 'DBL-C', 'name' => 'Café moulu 500 g', 'sale_price' => 2800, 'track_stock' => 1, 'status' => 'active']);
+    S\StockService::receive($a, 1, 10, 1000, 'adjustment', null, null, 'test');
+    S\StockService::receive($b, 1, 30, 1200, 'adjustment', null, null, 'test');
+    actingAs('caissier');
+    if (!S\CashService::openSessionForRegister(1)) {
+        S\CashService::open(1, 0);
+    }
+    S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $b, 'quantity' => 2]], 'payments' => [['method' => 'cash', 'amount' => 5000]]]);
+    actingAs('admin');
+    $scan = $D::scan(false, true);
+    $grp = array_values(array_filter($scan['same'], fn ($g) => in_array($a, $g, true)))[0] ?? [];
+    eq([$a, $b], $grp, 'doublon détecté');
+    ok(!in_array($c, $grp, true), '250 g et 500 g jamais rapprochés');
+    $cmp = $D::compare($grp);
+    eq($b, $cmp['keep'], 'conserver la fiche vendue');
+    $r = $D::merge($cmp['keep'], [$a]);
+    ok($r[0]['deleted'], 'doublon supprimé');
+    ok(!DB::value('SELECT 1 FROM products WHERE id = ?', [$a]), 'plus de fiche en double');
+    eq(38.0, stock($b), 'stock additionné (10 + 30 - 2)');
+    eq('6009990001112', DB::value('SELECT barcode FROM products WHERE id = ?', [$b]), 'code-barres repris');
+    eq(1, (int) DB::value('SELECT COUNT(*) FROM sale_items WHERE product_id = ?', [$b]), 'ventes conservées');
+    eq(0, (int) DB::value('SELECT COUNT(*) FROM stock_movements WHERE product_id = ?', [$a]), 'mouvements transférés');
+    eq(1, (int) DB::value('SELECT COUNT(*) FROM doublons_journal WHERE removed_id = ?', [$a]), 'journal');
+    throws(fn () => $D::merge($b, [$b]), 'Aucun doublon');
+});
+
 test('Modules : fichiers CSS/JS recopiés après une réinstallation, repli servi depuis addons/', function () use ($B) {
     // Réinstallation sur o2switch : base conservée (module déjà installé), dossier public/assets/addons absent
     $dst = PUBLIC_PATH . '/assets/addons/pressing';
