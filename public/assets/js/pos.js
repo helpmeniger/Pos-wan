@@ -40,7 +40,13 @@
   let quickMode = false;
   let supervisor = null;
   let busy = false;
-  let online = navigator.onLine !== false; // devient faux à la première coupure constatée
+  // Serveur installé sur ce PC (WampServer : localhost / 127.0.0.1) : la caisse ne dépend ni d'Internet ni du
+  // réseau de Windows. L'indicateur du navigateur (navigator.onLine) passe à « hors ligne » dès que le Wi-Fi ou le
+  // câble est absent, alors que le serveur local répond : on ne le consulte que si le serveur est sur une autre machine.
+  // Une vraie panne du serveur local reste détectée par les réponses aux requêtes (setOnline ci-dessous).
+  const LOCAL_SERVER = /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/i.test(location.hostname);
+  const netUp = () => LOCAL_SERVER || navigator.onLine !== false;
+  let online = netUp(); // devient faux à la première coupure constatée
   const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(cart)); } catch (e) { /* stockage plein */ } };
 
   // ------------------------------------------------------------------ utilitaires
@@ -546,7 +552,7 @@
     // client_uuid) ne crée jamais de doublon et indique « déjà enregistrée » si elle l'était.
     // Coupure réseau : la vente est gardée sur l'appareil (même client_uuid) et envoyée au retour de
     // la connexion ; si le serveur l'avait déjà reçue, il répond « déjà enregistrée » (aucun doublon).
-    if (!navigator.onLine) d = { ok: false, offline: true };
+    if (!netUp()) d = { ok: false, offline: true };
     else {
       // Après une coupure récente, attente courte : le caissier ne reste pas bloqué devant le client
       try { d = await api('/pos/checkout', { method: 'POST', body, timeout: online ? 20000 : 6000 }); } catch (e) { d = { ok: false, unknown: true, error: __('Connexion au serveur interrompue : la vente n\'est pas confirmée. Validez à nouveau (aucun doublon possible).') }; }
@@ -872,9 +878,9 @@
       bar();
       loadCatalog().then(() => { if (!items.length && catalog.length && !online) loadProducts(); });
       setInterval(loadCatalog, 10 * 60 * 1000);
-      setInterval(() => { if (navigator.onLine) sync(); }, 20000);
+      setInterval(() => { if (netUp()) sync(); }, 20000);
       window.addEventListener('online', () => { api('/pos/ping', { noRedirect: true }).then(() => sync()); });
-      window.addEventListener('offline', () => setOnline(false));
+      window.addEventListener('offline', () => { if (!LOCAL_SERVER) setOnline(false); });
       window.addEventListener('storage', (e) => { if (e.key === QKEY) { api2.queue = read(); bar(); } }); // autre onglet
       document.addEventListener('click', (e) => {
         const b = e.target.closest('[data-net]');

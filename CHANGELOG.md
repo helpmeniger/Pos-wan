@@ -2,6 +2,11 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.5.2] — 2026-11-09
+
+### Corrigé
+- **Caisse installée sur le PC (WampServer, `localhost`) sans Wi-Fi ni câble réseau** : la caisse affichait « Hors connexion », gardait les ventes sur l'appareil et ne les envoyait jamais (la synchronisation attendait le réseau de Windows). Quand le serveur est sur le même PC (`localhost`, `127.0.0.1`), l'état du réseau de Windows est désormais ignoré : seules les réponses du serveur comptent. Une vraie panne du serveur local reste détectée ; le mode hors connexion d'un serveur distant (hébergeur, réseau local) ne change pas.
+
 ## [3.5.1] — 2026-11-09
 
 ### Corrigé
