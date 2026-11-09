@@ -15,7 +15,7 @@ SetCompressor /SOLID lzma
 !include x64.nsh
 !include WinVer.nsh
 
-!define VERSION "1.1.0"
+!define VERSION "1.1.1"
 !define JOURNAL "C:\POS-Marwa-Installation\installation.log"
 
 Name "Installateur POS Marwa"

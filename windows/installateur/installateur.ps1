@@ -85,16 +85,28 @@ function Extraire-Zip([string]$zip, [string]$dest) {
     $sh.NameSpace($dest).CopyHere($sh.NameSpace($zip).Items(), 0x614)
 }
 
-# Retire la marque « téléchargé depuis Internet » (comme Propriétés > Débloquer)
+# Le fichier porte-t-il la marque « téléchargé depuis Internet » ?
+# (Windows PowerShell 5.1 peut échouer sur « Get-Item -LiteralPath … -Stream » quand le flux n'existe pas,
+#  on passe par -Path échappé et -Stream *, et aucune erreur ne remonte.)
+function Test-MarqueInternet([string]$f) {
+    try {
+        $flux = @(Get-Item -Path ([Management.Automation.WildcardPattern]::Escape($f)) -Stream * -ErrorAction Stop)
+        return [bool]($flux | Where-Object { $_.Stream -eq 'Zone.Identifier' })
+    } catch { return $false }
+}
+
+# Retire la marque « téléchargé depuis Internet » (comme Propriétés > Débloquer). Ne bloque jamais l'installation.
 function Debloquer([string]$chemin) {
-    if (-not $chemin -or -not (Test-Path -LiteralPath $chemin)) { return 0 }
     $n = 0
-    $fichiers = if ((Get-Item -LiteralPath $chemin).PSIsContainer) { @(Get-ChildItem -LiteralPath $chemin -Recurse -File -ErrorAction SilentlyContinue) } else { @(Get-Item -LiteralPath $chemin) }
-    foreach ($f in $fichiers) {
-        if (Get-Item -LiteralPath $f.FullName -Stream 'Zone.Identifier' -ErrorAction SilentlyContinue) {
-            try { Unblock-File -LiteralPath $f.FullName -ErrorAction Stop; $n++ } catch {}
+    try {
+        if (-not $chemin -or -not (Test-Path -LiteralPath $chemin)) { return 0 }
+        $fichiers = if ((Get-Item -LiteralPath $chemin).PSIsContainer) { @(Get-ChildItem -LiteralPath $chemin -Recurse -File -ErrorAction SilentlyContinue) } else { @(Get-Item -LiteralPath $chemin) }
+        foreach ($f in $fichiers) {
+            if (Test-MarqueInternet $f.FullName) {
+                try { Unblock-File -LiteralPath $f.FullName -ErrorAction Stop; $n++ } catch {}
+            }
         }
-    }
+    } catch { Log "Avertissement (déblocage de $chemin) : $($_.Exception.Message)" }
     return $n
 }
 
@@ -289,7 +301,7 @@ function Get-Blocages([string]$paquet, [string]$ici) {
     $aVerifier = @()
     if ($paquet -and (Test-Path -LiteralPath $paquet -PathType Leaf)) { $aVerifier += $paquet }
     if ($ici) { $aVerifier += @(Get-ChildItem -LiteralPath $ici -File -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }) }
-    foreach ($f in $aVerifier) { if (Get-Item -LiteralPath $f -Stream 'Zone.Identifier' -ErrorAction SilentlyContinue) { $marques += (Split-Path $f -Leaf) } }
+    foreach ($f in $aVerifier) { if (Test-MarqueInternet $f) { $marques += (Split-Path $f -Leaf) } }
     if ($marques) { Ajouter 'attention' 'Fichiers marqués « téléchargé depuis Internet »' (($marques -join ', ') + ' : Windows (SmartScreen) peut bloquer ou interrompre leur exécution.') 'debloquer' 'Débloquer ces fichiers' }
 
     foreach ($c in @(Get-ConflitsReserves)) {
@@ -511,21 +523,28 @@ $Installation = {
     try {
         # 0. Préparation de Windows : corrige ce qui peut bloquer, sans toucher à la sécurité
         Etape 'prep' 'Préparation de Windows' 'encours' 'recherche de ce qui peut bloquer l''installation'
+        # Chaque contrôle est facultatif : un échec est noté dans le journal mais n'arrête jamais l'installation.
         $prep = @()
-        $n = Debloquer $Paquet; if ($n) { $prep += "$n fichier(s) du paquet débloqué(s)" }
-        $msi = Get-Wmi Win32_Service "Name='msiserver'" | Select-Object -First 1
-        if ($msi -and $msi.StartMode -eq 'Disabled') { Set-Service -Name msiserver -StartupType Manual; $prep += 'service Windows Installer réactivé' }
-        if ($Options.liberer -and @(Get-ConflitsReserves | Where-Object { -not $_.admin })) {
-            & net.exe stop winnat 2>&1 | Out-Null; & net.exe start winnat 2>&1 | Out-Null
-            $prep += 'réservation de ports Hyper-V / WSL libérée (service NAT redémarré)'
-        }
-        $t0 = Get-Date
-        while ((Test-MsiOccupe) -and ((Get-Date) - $t0).TotalMinutes -lt 15) {
-            Etape 'prep' 'Préparation de Windows' 'encours' 'une autre installation est en cours (Windows Update ?) : attente qu''elle se termine…'
-            Start-Sleep -Seconds 10
-        }
-        if (Test-MsiOccupe) { $prep += 'Windows Installer toujours occupé : les installations seront réessayées' }
-        if (Test-RedemarrageEnAttente) { $prep += 'un redémarrage de Windows est en attente (conseillé avant l''installation)' }
+        try { $n = Debloquer $Paquet; if ($n) { $prep += "$n fichier(s) du paquet débloqué(s)" } } catch { Log "Avertissement (déblocage) : $($_.Exception.Message)" }
+        try {
+            $msi = Get-Wmi Win32_Service "Name='msiserver'" | Select-Object -First 1
+            if ($msi -and $msi.StartMode -eq 'Disabled') { Set-Service -Name msiserver -StartupType Manual; $prep += 'service Windows Installer réactivé' }
+        } catch { Log "Avertissement (Windows Installer) : $($_.Exception.Message)" }
+        try {
+            if ($Options.liberer -and @(Get-ConflitsReserves | Where-Object { -not $_.admin })) {
+                & net.exe stop winnat 2>&1 | Out-Null; & net.exe start winnat 2>&1 | Out-Null
+                $prep += 'réservation de ports Hyper-V / WSL libérée (service NAT redémarré)'
+            }
+        } catch { Log "Avertissement (ports réservés) : $($_.Exception.Message)" }
+        try {
+            $t0 = Get-Date
+            while ((Test-MsiOccupe) -and ((Get-Date) - $t0).TotalMinutes -lt 15) {
+                Etape 'prep' 'Préparation de Windows' 'encours' 'une autre installation est en cours (Windows Update ?) : attente qu''elle se termine…'
+                Start-Sleep -Seconds 10
+            }
+            if (Test-MsiOccupe) { $prep += 'Windows Installer toujours occupé : les installations seront réessayées' }
+            if (Test-RedemarrageEnAttente) { $prep += 'un redémarrage de Windows est en attente (conseillé avant l''installation)' }
+        } catch { Log "Avertissement (Windows Installer occupé) : $($_.Exception.Message)" }
         $p = Analyser-Paquet $Paquet
         $wampDir = Find-Wamp
         Etape 'prep' 'Préparation de Windows' 'ok' $(if ($prep) { $prep -join ' · ' } else { 'aucun blocage' })
@@ -687,7 +706,8 @@ $Installation = {
         }
     } catch {
         $res.erreurs += $_.Exception.Message
-        Log "ERREUR : $($_.Exception.Message)"
+        $ou = ''; try { $ou = " [ligne $($_.InvocationInfo.ScriptLineNumber) : $(([string]$_.InvocationInfo.Line).Trim())]" } catch {}
+        Log "ERREUR : $($_.Exception.Message)$ou"
     } finally {
         $Etat.resultat = $res; $Etat.enCours = $false; $Etat.fini = $true
     }
@@ -795,7 +815,10 @@ while ($http.IsListening -and -not $fini) {
         switch ($chemin) {
             '/api/ping' { Repondre $ctx @{ ok = $true } }
             '/api/systeme' { Repondre $ctx @{ ok = $true; info = (Get-InfoSysteme); paquet = $paquet } }
-            '/api/diagnostic' { Repondre $ctx @{ ok = $true; elements = @(Get-Blocages $paquet $Ici) } }
+            '/api/diagnostic' {
+                try { Repondre $ctx @{ ok = $true; elements = @(Get-Blocages $paquet $Ici) } }
+                catch { Log "Erreur (diagnostic) : $($_.Exception.Message) [ligne $($_.InvocationInfo.ScriptLineNumber)]"; Repondre $ctx @{ ok = $false; erreur = "Diagnostic incomplet : $($_.Exception.Message)" } }
+            }
             '/api/corriger' {
                 $b = Lire-Json $ctx
                 try { Repondre $ctx @{ ok = $true; message = (Corriger-Blocage ([string]$b.action) $paquet $Ici) } } catch { Repondre $ctx @{ ok = $false; erreur = $_.Exception.Message } }
@@ -813,7 +836,7 @@ while ($http.IsListening -and -not $fini) {
             }
             '/api/analyser' {
                 $b = Lire-Json $ctx; if ($b.paquet) { $paquet = [string]$b.paquet }
-                try { $a = Analyser-Paquet $paquet; Repondre $ctx @{ ok = $true; paquet = $paquet; analyse = $a } } catch { Repondre $ctx @{ ok = $false; erreur = $_.Exception.Message } }
+                try { $a = Analyser-Paquet $paquet; Repondre $ctx @{ ok = $true; paquet = $paquet; analyse = $a } } catch { Log "Erreur (analyse) : $($_.Exception.Message) [ligne $($_.InvocationInfo.ScriptLineNumber)]"; Repondre $ctx @{ ok = $false; erreur = $_.Exception.Message } }
             }
             '/api/installer' {
                 if ($Etat.enCours) { Repondre $ctx @{ ok = $false; erreur = 'Installation déjà en cours.' }; break }
@@ -843,6 +866,8 @@ while ($http.IsListening -and -not $fini) {
             default { Repondre $ctx @{ ok = $false; erreur = 'Inconnu' } 404 }
         }
     } catch {
+        $ou = ''; try { $ou = " [ligne $($_.InvocationInfo.ScriptLineNumber) : $(([string]$_.InvocationInfo.Line).Trim())]" } catch {}
+        Log "Erreur ($chemin) : $($_.Exception.Message)$ou"
         try { Repondre $ctx @{ ok = $false; erreur = $_.Exception.Message } 500 } catch {}
     }
 }
