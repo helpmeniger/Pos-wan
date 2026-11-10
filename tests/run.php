@@ -4826,6 +4826,101 @@ test('Module Doublons : détection (accents, casse, espaces), comparaison, fusio
     throws(fn () => $D::merge($b, [$b]), 'Aucun doublon');
 });
 
+test('Module ONG : budget par ligne, circuit des dépenses (séparation des tâches), fonds, mission avec avance et justification, stocks', function () use ($B) {
+    actingAs('admin');
+    eq(['0001_ong'], App\Core\Addons::install('ong', false), 'installation');
+    App\Core\Addons::reset();
+    $O = Addons\Ong\OngService::class;
+    $bail = $O::saveSimple('bailleur', ['name' => 'Fonds Sahel Eau', 'kind' => 'institution', 'active' => 1]);
+    $proj = $O::saveSimple('projet', ['code' => 'WASH-26', 'name' => 'Accès à l\'eau potable', 'status' => 'en_cours']);
+    throws(fn () => $O::saveSimple('projet', ['code' => 'WASH-26', 'name' => 'Doublon']), 'déjà ce code');
+    $y = date('Y');
+    $conv = $O::saveConvention(['number' => 'FSE/2026/014', 'title' => 'Forages villageois', 'bailleur_id' => $bail, 'projet_id' => $proj, 'amount' => 10000000, 'start_date' => "$y-01-01", 'end_date' => "$y-12-31", 'status' => 'active']);
+    $lAct = $O::saveLigne($conv, ['code' => 'B1', 'label' => 'Forages', 'category' => 'activites', 'budget' => 6000000]);
+    $lMis = $O::saveLigne($conv, ['code' => 'D1', 'label' => 'Missions de suivi', 'category' => 'deplacements', 'budget' => 500000]);
+    throws(fn () => $O::saveLigne($conv, ['code' => 'E1', 'label' => 'Trop', 'category' => 'autre', 'budget' => 4000000]), 'dépasserait le montant de la convention');
+    $bank = $O::saveSimple('compte', ['name' => 'BIA projet WASH', 'kind' => 'banque', 'active' => 1]);
+    $cash = $O::saveSimple('compte', ['name' => 'Caisse terrain', 'kind' => 'caisse', 'active' => 1]);
+    // Fonds du bailleur, virement interne
+    $O::receive(['type' => 'fonds_bailleur', 'convention_id' => $conv, 'compte_id' => $bank, 'amount' => 4000000, 'op_date' => "$y-02-01", 'reference' => 'AVIS-1']);
+    $O::transfer($bank, $cash, 300000, "$y-02-02", 'Approvisionnement');
+    eq(3700000.0, (float) DB::value('SELECT balance FROM ong_comptes WHERE id = ?', [$bank]), 'solde banque');
+    throws(fn () => $O::transfer($cash, $bank, 999999, "$y-02-03"), 'Solde insuffisant');
+    // Dépense : dates, budget, circuit
+    throws(fn () => $O::submitDepense(['convention_id' => $conv, 'ligne_id' => $lAct, 'amount' => 1000, 'payee' => 'X', 'description' => 'Hors période', 'exp_date' => ($y - 1) . '-12-31']), 'hors de la période');
+    throws(fn () => $O::submitDepense(['convention_id' => $conv, 'ligne_id' => $lAct, 'amount' => 6000001, 'payee' => 'Foreur', 'description' => 'Trop cher', 'exp_date' => "$y-03-01"]), 'Dépassement de budget');
+    $d = $O::submitDepense(['convention_id' => $conv, 'ligne_id' => $lAct, 'amount' => 2500000, 'payee' => 'Entreprise Forage Niger', 'description' => 'Forage de Kollo', 'piece' => 'FAC-88', 'exp_date' => "$y-03-01"]);
+    throws(fn () => $O::payDepense($d, $bank), 'doit être approuvée');
+    throws(fn () => $O::approveDepense($d), 'Séparation des tâches');
+    actingAs('gerant');
+    $O::approveDepense($d);
+    $O::payDepense($d, $bank, "$y-03-05");
+    eq('payee', DB::value('SELECT status FROM ong_depenses WHERE id = ?', [$d]));
+    eq(1200000.0, (float) DB::value('SELECT balance FROM ong_comptes WHERE id = ?', [$bank]), 'banque après paiement');
+    $bud = $O::budget($conv);
+    $b1 = array_values(array_filter($bud['lines'], fn ($l) => $l['code'] === 'B1'))[0];
+    eq([2500000.0, 3500000.0], [(float) $b1['paid'], (float) $b1['available']], 'ligne B1 : payé et disponible');
+    eq(1500000.0, $bud['total']['cash'], 'trésorerie de la convention = reçu − payé');
+    // Dépense rejetée : ne consomme plus le budget
+    actingAs('admin');
+    $d2 = $O::submitDepense(['convention_id' => $conv, 'ligne_id' => $lAct, 'amount' => 3500000, 'payee' => 'Foreur 2', 'description' => 'Forage de Say', 'exp_date' => "$y-03-10"]);
+    throws(fn () => $O::submitDepense(['convention_id' => $conv, 'ligne_id' => $lAct, 'amount' => 1, 'payee' => 'Y', 'description' => 'Plus de budget', 'exp_date' => "$y-03-10"]), 'Dépassement');
+    actingAs('gerant');
+    $O::rejectDepense($d2, 'Devis non conforme');
+    eq(3500000.0, 6000000 - $O::engaged($lAct), 'budget libéré par le rejet');
+    // Mission : demande, approbation, avance, départ, retour, clôture avec reliquat
+    actingAs('admin');
+    $chef = $O::saveSimple('personnel', ['matricule' => 'ONG-001', 'full_name' => 'Halima Abdou', 'position' => 'Chargée de suivi', 'kind' => 'salarie', 'active' => 1]);
+    $agent = $O::saveSimple('personnel', ['matricule' => 'ONG-002', 'full_name' => 'Issa Garba', 'position' => 'Chauffeur', 'kind' => 'salarie', 'active' => 1]);
+    $veh = $O::saveSimple('vehicule', ['plate' => '8N-1234-RN', 'label' => 'Toyota Hilux', 'kind' => '4x4', 'status' => 'disponible', 'odometer' => 52000]);
+    $m = $O::requestMission(['convention_id' => $conv, 'ligne_id' => $lMis, 'title' => 'Suivi des forages', 'destination' => 'Kollo', 'start_date' => "$y-04-01", 'end_date' => "$y-04-03", 'chef_id' => $chef, 'vehicule_id' => $veh, 'other_costs' => 30000],
+        [['personnel_id' => $chef, 'per_diem' => 15000, 'days' => 3], ['personnel_id' => $agent, 'per_diem' => 10000, 'days' => 3]]);
+    eq(105000.0, (float) DB::value('SELECT estimate FROM ong_missions WHERE id = ?', [$m]), 'coût prévu : per diem + autres frais');
+    throws(fn () => $O::startMission($m), 'approuvée avant le départ');
+    actingAs('gerant');
+    $O::approveMission($m);
+    eq(105000.0, $O::engaged($lMis), 'mission approuvée = budget engagé');
+    $O::advanceMission($m, $cash, 100000, "$y-03-31");
+    $O::startMission($m);
+    eq('en_mission', DB::value('SELECT status FROM ong_vehicules WHERE id = ?', [$veh]));
+    throws(fn () => $O::logTrip(['vehicule_id' => $veh, 'driver' => 'Issa', 'km_start' => 51000, 'km_end' => 51100]), 'inférieur au compteur');
+    $O::logTrip(['vehicule_id' => $veh, 'mission_id' => $m, 'driver' => 'Issa Garba', 'route' => 'Niamey – Kollo', 'km_start' => 52000, 'km_end' => 52070, 'fuel_liters' => 9, 'fuel_amount' => 6000]);
+    eq(52070, (int) DB::value('SELECT odometer FROM ong_vehicules WHERE id = ?', [$veh]));
+    throws(fn () => $O::finishMission($m, 'court'), 'Rapport de mission obligatoire');
+    $O::finishMission($m, 'Trois forages visités, deux fonctionnels, un en panne de pompe : réparation à prévoir.');
+    eq('disponible', DB::value('SELECT status FROM ong_vehicules WHERE id = ?', [$veh]), 'véhicule libéré au retour');
+    $O::closeMission($m, 92000, $cash, 'PJ-MIS-1');
+    eq(['cloturee', 92000.0], [DB::value('SELECT status FROM ong_missions WHERE id = ?', [$m]), (float) DB::value('SELECT justified FROM ong_missions WHERE id = ?', [$m])]);
+    eq(300000.0 - 100000 + 8000, (float) DB::value('SELECT balance FROM ong_comptes WHERE id = ?', [$cash]), 'caisse : avance sortie, reliquat de 8 000 reversé');
+    eq(92000.0, $O::engaged($lMis), 'ligne mission : seuls les frais justifiés restent imputés');
+    eq(92000.0, (float) DB::value("SELECT amount FROM ong_depenses WHERE mission_id = ? AND status = 'payee'", [$m]), 'dépense de mission créée');
+    // Annulation d'une dépense payée : paiement contre-passé ; mouvement issu d'une dépense non annulable à la main
+    throws(fn () => $O::cancelMovement((int) DB::value('SELECT id FROM ong_mouvements WHERE depense_id = ?', [$d]), 'erreur'), 'annulez la dépense');
+    $O::cancelDepense($d, 'Facture en double');
+    eq(3700000.0, (float) DB::value('SELECT balance FROM ong_comptes WHERE id = ?', [$bank]), 'banque rétablie');
+    eq(1, (int) DB::value('SELECT COUNT(*) FROM ong_depenses WHERE id = ? AND status = ?', [$d, 'annulee']), 'dépense conservée, annulée');
+    // Stocks : jamais négatif, distribution avec site
+    $art = $O::saveSimple('article', ['name' => 'Kit d\'hygiène', 'unit' => 'kit', 'alert' => 20]);
+    $O::stockMove(['article_id' => $art, 'type' => 'don', 'quantity' => 100]);
+    throws(fn () => $O::stockMove(['article_id' => $art, 'type' => 'distribution', 'quantity' => 10]), 'indiquez le site');
+    throws(fn () => $O::stockMove(['article_id' => $art, 'type' => 'distribution', 'quantity' => 101, 'site' => 'Kollo']), 'Stock insuffisant');
+    $O::stockMove(['article_id' => $art, 'type' => 'distribution', 'quantity' => 85, 'site' => 'Village de Kollo', 'beneficiaries' => 85, 'projet_id' => $proj]);
+    eq(15.0, (float) DB::value('SELECT stock FROM ong_articles WHERE id = ?', [$art]));
+    eq(1, count($O::dashboard()['stockAlerts']), 'alerte de stock sous le seuil');
+    $O::saveIndicateur($proj, ['label' => 'Forages réalisés', 'unit' => 'forage', 'target' => 12, 'achieved' => 3]);
+    // Pages
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    foreach (['/ong', '/ong/projets', '/ong/projets?onglet=bailleurs', "/ong/projets/$proj", "/ong/projets?edit=$proj", '/ong/conventions', "/ong/conventions/$conv", "/ong/conventions/$conv?ligne=$lAct", "/ong/conventions/$conv/rapport", "/ong/conventions/$conv?export=csv",
+        '/ong/depenses', "/ong/depenses/$d", '/ong/depenses?export=pdf', '/ong/tresorerie', "/ong/tresorerie?edit=$bank", '/ong/tresorerie?export=csv', '/ong/missions', "/ong/missions/$m", "/ong/missions/$m/ordre",
+        '/ong/logistique', '/ong/logistique?onglet=equipements', '/ong/logistique?onglet=stocks', "/ong/logistique?edit=$veh", '/ong/personnel', "/ong/personnel?edit=$chef", '/ong/personnel?export=csv'] as $u) {
+        $x = $a->req('GET', $B . $u);
+        ok($x['code'] === 200 && !preg_match('/Fatal error|Warning:|Notice:|Deprecated:|Une erreur interne/', $x['body']), "$u ({$x['code']})");
+    }
+    $x = $a->req('GET', "$B/ong/conventions/$conv/rapport");
+    ok(str_contains($x['body'], 'RAPPORT FINANCIER') && str_contains($x['body'], 'Fonds Sahel Eau'), 'rapport financier du bailleur');
+});
+
 test('Modules : fichiers CSS/JS recopiés après une réinstallation, repli servi depuis addons/', function () use ($B) {
     // Réinstallation sur o2switch : base conservée (module déjà installé), dossier public/assets/addons absent
     $dst = PUBLIC_PATH . '/assets/addons/pressing';

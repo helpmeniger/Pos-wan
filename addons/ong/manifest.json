@@ -1,0 +1,48 @@
+{
+    "code": "ong",
+    "name": "ONG — projets, bailleurs et terrain",
+    "version": "1.0.0",
+    "requires": "3.5.0",
+    "author": "POS Marwa",
+    "description": "Gestion d'une ONG ou d'une association : bailleurs, projets, conventions de financement et lignes budgétaires, fonds reçus, dépenses avec circuit d'approbation et contrôle du budget, comptes bancaires et caisses, missions terrain (ordre de mission, avance, justification), personnel, logistique (véhicules et carnet de bord, équipements, stocks et distributions), indicateurs et rapport financier par bailleur.",
+    "icon": "bi-globe-europe-africa",
+    "color": "#0f766e",
+    "permissions": {
+        "ong.view": "ONG : consulter projets, conventions, dépenses, missions et rapports",
+        "ong.projets": "ONG : gérer bailleurs, projets, conventions, budgets et indicateurs",
+        "ong.depenses": "ONG : saisir les dépenses et demander des missions",
+        "ong.approve": "ONG : approuver ou rejeter les dépenses et les missions",
+        "ong.tresorerie": "ONG : comptes, fonds reçus, paiements, avances et virements",
+        "ong.logistique": "ONG : véhicules, carnet de bord, équipements, stocks et distributions",
+        "ong.personnel": "ONG : gérer le personnel de l'organisation",
+        "ong.admin": "ONG : annuler une dépense payée ou un mouvement, réglages"
+    },
+    "new_roles": {
+        "ong_coordinateur": { "name": "Coordinateur (ONG)", "description": "Projets, conventions, approbation des dépenses et des missions, rapports",
+            "permissions": ["ong.view", "ong.projets", "ong.depenses", "ong.approve", "ong.personnel"] },
+        "ong_comptable": { "name": "Comptable (ONG)", "description": "Dépenses, trésorerie, fonds des bailleurs, rapports financiers",
+            "permissions": ["ong.view", "ong.depenses", "ong.tresorerie", "reports.export"] },
+        "ong_logisticien": { "name": "Logisticien (ONG)", "description": "Véhicules, équipements, stocks, distributions, demandes de mission",
+            "permissions": ["ong.view", "ong.logistique", "ong.depenses"] }
+    },
+    "roles": {
+        "owner": ["ong.view", "ong.projets", "ong.depenses", "ong.approve", "ong.tresorerie", "ong.logistique", "ong.personnel", "ong.admin"],
+        "accountant": ["ong.view", "ong.depenses", "ong.tresorerie"],
+        "auditor": ["ong.view"]
+    },
+    "menu": [
+        { "group": "ONG", "label": "Tableau de bord ONG", "icon": "bi-speedometer2", "url": "/ong", "permission": "ong.view", "color": "#0f766e" },
+        { "group": "ONG", "label": "Projets et bailleurs", "icon": "bi-diagram-3", "url": "/ong/projets", "permission": "ong.view", "color": "#0e7490" },
+        { "group": "ONG", "label": "Conventions et budgets", "icon": "bi-file-earmark-ruled", "url": "/ong/conventions", "permission": "ong.view", "color": "#1d4ed8" },
+        { "group": "ONG", "label": "Dépenses", "icon": "bi-receipt", "url": "/ong/depenses", "permission": "ong.view", "color": "#b45309" },
+        { "group": "ONG", "label": "Trésorerie et fonds", "icon": "bi-bank", "url": "/ong/tresorerie", "permission": "ong.view", "color": "#0b5394" },
+        { "group": "ONG", "label": "Missions terrain", "icon": "bi-signpost-split", "url": "/ong/missions", "permission": "ong.view", "color": "#7c3aed" },
+        { "group": "ONG", "label": "Logistique", "icon": "bi-truck", "url": "/ong/logistique", "permission": "ong.view", "color": "#475569" },
+        { "group": "ONG", "label": "Personnel", "icon": "bi-people", "url": "/ong/personnel", "permission": "ong.view", "color": "#be185d" }
+    ],
+    "settings": {
+        "ong_separation": "1",
+        "ong_depassement_ligne": "0",
+        "ong_alerte_fin_jours": "60"
+    }
+}

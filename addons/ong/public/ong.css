@@ -1,0 +1,15 @@
+/* Module ONG */
+.ong-kpi { border-left: 5px solid #0f766e; }
+.ong-kpi .v { font-size: 1.35rem; font-weight: 700; }
+.ong-kpi.k2 { border-left-color: #1d4ed8; } .ong-kpi.k3 { border-left-color: #b45309; } .ong-kpi.k4 { border-left-color: #7c3aed; } .ong-kpi.k5 { border-left-color: #be185d; }
+.ong-doc { font-size: 13px; color: #000; }
+.ong-doc h2 { font-size: 18px; text-align: center; margin: 12px 0 2px; letter-spacing: .04em; }
+.ong-doc table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.ong-doc th, .ong-doc td { border: 1px solid #555; padding: 4px 6px; vertical-align: top; }
+.ong-doc th { background: #eee; text-align: left; }
+.ong-doc .num { text-align: right; white-space: nowrap; }
+.ong-doc .kv td:first-child { width: 32%; background: #f5f5f5; font-weight: 600; }
+.ong-doc .sign { display: flex; gap: 16px; margin-top: 46px; }
+.ong-doc .sign div { flex: 1; border-top: 1px solid #000; padding-top: 4px; text-align: center; font-size: 12px; }
+.ong-doc .head { text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; }
+.ong-doc .box { border: 2px solid #000; padding: 6px 10px; font-size: 16px; font-weight: 700; text-align: center; margin: 8px 0; }
