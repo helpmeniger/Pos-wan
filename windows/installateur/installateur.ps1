@@ -555,12 +555,17 @@ function Lancer-Installateur($e) {
     }
     for ($essai = 1; $essai -le 20; $essai++) {
         Log "Installation : $($e.nom) $arguments"
+        $debut = Get-Date
         try {
+            # Pas de « -Wait » : sous Windows PowerShell il attend aussi TOUS les processus lancés par
+            # l'installateur (assistants de Windows Installer, mises à jour…), qui restent parfois
+            # ouverts 5 à 10 minutes après la fin réelle. On attend uniquement l'installateur lui-même.
             if ($fichier -like '*.msi') {
-                $p = Start-Process -FilePath 'msiexec.exe' -ArgumentList "/i `"$fichier`" $arguments" -Wait -PassThru
+                $p = Start-Process -FilePath 'msiexec.exe' -ArgumentList "/i `"$fichier`" $arguments" -PassThru
             } else {
-                $p = Start-Process -FilePath $fichier -ArgumentList $arguments -Wait -PassThru
+                $p = Start-Process -FilePath $fichier -ArgumentList $arguments -PassThru
             }
+            $null = $p.Handle   # garde l'accès au code de retour une fois le programme terminé
         } catch {
             # Programme refusé par Windows avant même de démarrer
             $ex = $_.Exception; while ($ex -and -not ($ex -is [ComponentModel.Win32Exception])) { $ex = $ex.InnerException }
@@ -575,9 +580,18 @@ function Lancer-Installateur($e) {
             Log "  → $($e.nom) : $txt"
             return @{ ok = $false; texte = $txt; redemarrage = $false }
         }
-        $c = $p.ExitCode
+        # Attente du seul installateur (30 minutes au plus : WampServer est le plus long)
+        while (-not $p.WaitForExit(1000)) {
+            if (((Get-Date) - $debut).TotalMinutes -ge 30) { break }
+        }
+        if (-not $p.HasExited) {
+            Log "  → $($e.nom) : toujours en cours après 30 minutes, l'installation continue avec le composant suivant"
+            return @{ ok = $false; texte = 'toujours en cours après 30 minutes (une fenêtre attend peut-être une réponse)'; redemarrage = $false }
+        }
+        $c = $null; try { $c = $p.ExitCode } catch {}
+        Log ("  durée : {0:N0} s" -f ((Get-Date) - $debut).TotalSeconds)
         # 1618 : une autre installation est en cours (Windows Update…) → on attend et on recommence
-        if ($c -eq 1618 -and $essai -lt 20) { Log '  Windows Installer occupé par une autre installation : nouvel essai dans 30 secondes'; Start-Sleep -Seconds 30; continue }
+        if ($c -eq 1618 -and $essai -lt 20) { Log '  Windows Installer occupé par une autre installation : nouvel essai dans 15 secondes'; Start-Sleep -Seconds 15; continue }
         # 0 réussi · 3010/1641 redémarrage demandé · 1638/5100 version plus récente déjà présente
         $ok = $c -in @(0, 3010, 1641, 1638, 5100, 1603) -or $null -eq $c
         $txt = switch ($c) { 0 { 'installé' } 3010 { 'installé (redémarrage conseillé)' } 1641 { 'installé (redémarrage lancé)' } 1638 { 'déjà installé (version plus récente présente)' } 5100 { 'déjà installé (version plus récente présente)' } 1603 { 'déjà présent ou refusé par Windows (code 1603)' } 1618 { 'Windows Installer toujours occupé (code 1618) : redémarrez Windows puis relancez' } default { "code $c" } }
