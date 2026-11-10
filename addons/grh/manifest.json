@@ -1,0 +1,46 @@
+{
+    "code": "grh",
+    "name": "Ressources humaines",
+    "version": "1.0.0",
+    "requires": "3.5.0",
+    "author": "POS Marwa",
+    "description": "Gestion des ressources humaines d'une entreprise ou d'une organisation : structure (départements, postes, organigramme), dossiers des employés, contrats et fins de contrat, congés avec solde et approbation, présences, avances sur salaire, paie mensuelle avec bulletins, évaluations, sanctions, formations, attestation de travail.",
+    "icon": "bi-person-vcard",
+    "color": "#be185d",
+    "permissions": {
+        "grh.view": "RH : consulter l'annuaire, la structure et les présences",
+        "grh.manage": "RH : gérer les employés, la structure, les contrats et le dossier",
+        "grh.conges": "RH : saisir et décider les demandes de congé",
+        "grh.presences": "RH : pointer les présences",
+        "grh.paie": "RH : salaires, avances, paie et bulletins"
+    },
+    "new_roles": {
+        "grh_responsable": { "name": "Responsable RH", "description": "Employés, contrats, congés, présences, paie",
+            "permissions": ["grh.view", "grh.manage", "grh.conges", "grh.presences", "grh.paie", "reports.export"] },
+        "grh_assistant": { "name": "Assistant RH", "description": "Annuaire, présences et saisie des demandes de congé (sans les salaires)",
+            "permissions": ["grh.view", "grh.presences"] }
+    },
+    "roles": {
+        "owner": ["grh.view", "grh.manage", "grh.conges", "grh.presences", "grh.paie"],
+        "accountant": ["grh.view", "grh.paie"],
+        "auditor": ["grh.view"]
+    },
+    "menu": [
+        { "group": "Ressources humaines", "label": "Tableau de bord RH", "icon": "bi-speedometer2", "url": "/grh", "permission": "grh.view", "color": "#be185d" },
+        { "group": "Ressources humaines", "label": "Employés", "icon": "bi-people", "url": "/grh/employes", "permission": "grh.view", "color": "#9d174d" },
+        { "group": "Ressources humaines", "label": "Structure et organigramme", "icon": "bi-diagram-3", "url": "/grh/structure", "permission": "grh.view", "color": "#0e7490" },
+        { "group": "Ressources humaines", "label": "Congés", "icon": "bi-calendar2-heart", "url": "/grh/conges", "permission": "grh.view", "color": "#15803d" },
+        { "group": "Ressources humaines", "label": "Présences", "icon": "bi-calendar-check", "url": "/grh/presences", "permission": "grh.view", "color": "#1d4ed8" },
+        { "group": "Ressources humaines", "label": "Paie et bulletins", "icon": "bi-cash-stack", "url": "/grh/paie", "permission": "grh.paie", "color": "#b45309" },
+        { "group": "Ressources humaines", "label": "Avances sur salaire", "icon": "bi-wallet2", "url": "/grh/avances", "permission": "grh.paie", "color": "#7c3aed" }
+    ],
+    "settings": {
+        "grh_conges_par_mois": "2.5",
+        "grh_cnss_salarie": "5.25",
+        "grh_cnss_employeur": "16.5",
+        "grh_cnss_plafond": "500000",
+        "grh_impot_taux": "0",
+        "grh_jours_mois": "30",
+        "grh_alerte_contrat_jours": "30"
+    }
+}

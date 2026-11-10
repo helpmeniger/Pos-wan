@@ -4921,6 +4921,93 @@ test('Module ONG : budget par ligne, circuit des dépenses (séparation des tâc
     ok(str_contains($x['body'], 'RAPPORT FINANCIER') && str_contains($x['body'], 'Fonds Sahel Eau'), 'rapport financier du bailleur');
 });
 
+test('Module RH : contrats, congés (jours ouvrés, solde, chevauchement), présences, avances, paie (calcul, validation, verrouillage), sortie', function () use ($B) {
+    actingAs('admin');
+    eq(['0001_grh'], App\Core\Addons::install('grh', false), 'installation');
+    App\Core\Addons::reset();
+    $G = Addons\Grh\GrhService::class;
+    $dg = $G::saveDepartement(['name' => 'Direction générale']);
+    $fin = $G::saveDepartement(['name' => 'Finances', 'parent_id' => $dg]);
+    throws(fn () => $G::saveDepartement(['name' => 'Direction générale', 'parent_id' => $fin], $dg), 'dépendre de lui-même');
+    $poste = $G::savePoste(['title' => 'Comptable', 'departement_id' => $fin, 'grade' => 'B2', 'base_salary' => 200000]);
+    // Embauche il y a 14 mois : 14 × 2,5 = 35 jours acquis
+    $hire = date('Y-m-d', strtotime('first day of -14 months'));
+    $e = $G::saveEmploye(['matricule' => 'EMP-0001', 'civility' => 'Mme', 'last_name' => 'Maïga', 'first_name' => 'Fatouma', 'sex' => 'F', 'hire_date' => $hire, 'departement_id' => $fin, 'poste_id' => $poste, 'email' => 'f.maiga@example.org']);
+    throws(fn () => $G::saveEmploye(['matricule' => 'EMP-0001', 'last_name' => 'X', 'first_name' => 'Y', 'hire_date' => $hire]), 'matricule est déjà utilisé');
+    throws(fn () => $G::saveEmploye(['matricule' => 'EMP-0002', 'last_name' => 'X', 'first_name' => 'Y', 'hire_date' => $hire, 'email' => 'pas-un-email']), 'e-mail invalide');
+    // Contrats : CDD sans fin refusé ; un nouveau contrat termine le précédent la veille
+    throws(fn () => $G::saveContrat($e, ['kind' => 'cdd', 'start_date' => $hire, 'base_salary' => 150000]), 'a une date de fin');
+    $c1 = $G::saveContrat($e, ['kind' => 'essai', 'start_date' => $hire, 'end_date' => date('Y-m-d', strtotime($hire . ' +3 months -1 day')), 'base_salary' => 150000]);
+    $start2 = date('Y-m-d', strtotime($hire . ' +3 months'));
+    $c2 = $G::saveContrat($e, ['kind' => 'cdi', 'start_date' => $start2, 'base_salary' => 200000, 'allowances' => 40000]);
+    eq(['termine', date('Y-m-d', strtotime($start2 . ' -1 day'))], array_values(DB::one('SELECT status, end_date FROM grh_contrats WHERE id = ?', [$c1])), 'contrat précédent terminé la veille');
+    eq($c2, (int) $G::currentContract($e)['id'], 'un seul contrat en cours');
+    // Congés
+    eq(5.0, $G::workingDays('2026-11-09', '2026-11-15'), 'lundi → dimanche = 5 jours ouvrés');
+    $bal = $G::leaveBalance($e);
+    eq([14, 35.0], [$bal['months'], $bal['acquired']], 'solde acquis');
+    $mon = date('Y-m-d', strtotime('monday next week'));
+    $l1 = $G::requestLeave(['employe_id' => $e, 'kind' => 'annuel', 'start_date' => $mon, 'end_date' => date('Y-m-d', strtotime($mon . ' +11 days'))]);
+    eq(10.0, (float) DB::value('SELECT days FROM grh_conges WHERE id = ?', [$l1]), 'deux semaines = 10 jours ouvrés');
+    throws(fn () => $G::requestLeave(['employe_id' => $e, 'kind' => 'maladie', 'start_date' => date('Y-m-d', strtotime($mon . ' +2 days')), 'end_date' => date('Y-m-d', strtotime($mon . ' +3 days'))]), 'couvre déjà');
+    throws(fn () => $G::decideLeave($l1, false, ''), 'Motif du refus');
+    $G::decideLeave($l1, true);
+    eq(25.0, $G::leaveBalance($e)['balance'], 'solde après approbation');
+    $far = date('Y-m-d', strtotime($mon . ' +8 weeks'));
+    $l2 = $G::requestLeave(['employe_id' => $e, 'kind' => 'annuel', 'start_date' => $far, 'end_date' => date('Y-m-d', strtotime($far . ' +60 days'))]);
+    throws(fn () => $G::decideLeave($l2, true), 'Solde de congé insuffisant');
+    $G::decideLeave($l2, false, 'Période trop longue');
+    $G::cancelLeave($l1, 'Reporté');
+    eq(35.0, $G::leaveBalance($e)['balance'], 'jours rendus au solde après annulation');
+    // Présences du mois dernier : 2 absences
+    $pm = date('Y-m', strtotime('first day of last month'));
+    throws(fn () => $G::markDay(date('Y-m-d', strtotime('+1 day')), [$e => 'present']), 'jour à venir');
+    $G::markDay("$pm-03", [$e => 'absent']);
+    $G::markDay("$pm-04", [$e => 'absent']);
+    $G::markDay("$pm-05", [$e => 'present']);
+    // Avance : plafond du tiers du salaire
+    throws(fn () => $G::grantAvance(['employe_id' => $e, 'amount' => 300000, 'monthly' => 100000, 'granted_on' => "$pm-01"]), 'tiers du salaire');
+    $av = $G::grantAvance(['employe_id' => $e, 'amount' => 90000, 'monthly' => 30000, 'granted_on' => "$pm-01"]);
+    // Paie du mois dernier : base 200 000 + primes 40 000 − 2 jours (200 000 / 30 × 2 = 13 333) = 226 667 ; cotisation 5,25 % = 11 900
+    throws(fn () => $G::generatePaie(date('Y-m', strtotime('first day of next month'))), 'mois à venir');
+    $paie = $G::generatePaie($pm);
+    $b = DB::one('SELECT * FROM grh_bulletins WHERE paie_id = ? AND employe_id = ?', [$paie, $e]);
+    eq([2.0, 13333.0, 226667.0, 11900.0, 30000.0], [(float) $b['absence_days'], (float) $b['absence_deduction'], (float) $b['gross'], (float) $b['cnss'], (float) $b['advance']], 'brut, cotisation, avance');
+    eq(226667.0 - 11900 - 30000, (float) $b['net'], 'net à payer');
+    $G::updateBulletin((int) $b['id'], ['bonus' => 25000, 'overtime' => 0, 'tax' => '8000', 'other_deduction' => 0, 'note' => 'Prime de bilan']);
+    $b = DB::one('SELECT * FROM grh_bulletins WHERE id = ?', [$b['id']]);
+    eq([251667.0, 13213.0, 8000.0, 251667.0 - 13213 - 8000 - 30000], [(float) $b['gross'], (float) $b['cnss'], (float) $b['tax'], (float) $b['net']], 'bulletin recalculé avec prime et impôt saisi');
+    $G::generatePaie($pm); // recalcul : les éléments saisis sont conservés
+    eq([25000.0, 8000.0], array_map('floatval', array_values(DB::one('SELECT bonus, tax FROM grh_bulletins WHERE id = ?', [$b['id']]))), 'recalcul sans perte des saisies');
+    throws(fn () => $G::payPaie($paie), 'doit être validée');
+    $G::validatePaie($paie);
+    eq(60000.0, (float) DB::value('SELECT remaining FROM grh_avances WHERE id = ?', [$av]), 'avance retenue à la validation');
+    throws(fn () => $G::updateBulletin((int) $b['id'], ['bonus' => 1]), 'déjà validée');
+    throws(fn () => $G::generatePaie($pm), 'déjà validée');
+    throws(fn () => $G::markDay("$pm-06", [$e => 'absent']), 'paie de ce mois est validée');
+    throws(fn () => $G::cancelAvance($av), 'déjà été retenue');
+    $G::payPaie($paie);
+    eq('payee', DB::value('SELECT status FROM grh_paies WHERE id = ?', [$paie]));
+    $G::addDossier($e, ['kind' => 'evaluation', 'title' => 'Évaluation annuelle', 'score' => '15,5', 'detail' => 'Objectifs atteints.']);
+    throws(fn () => $G::addDossier($e, ['kind' => 'evaluation', 'title' => 'Hors barème', 'score' => 25]), 'entre 0 et 20');
+    $d = $G::dashboard();
+    eq([1, 1, 240000.0], [$d['actifs'], $d['femmes'], $d['masse']], 'tableau de bord');
+    eq('Finances', $G::tree()[0]['children'][0]['name'], 'organigramme en arbre');
+    // Pages
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    foreach (['/grh', '/grh/employes', '/grh/employes?q=Ma&status=tous', '/grh/employes?export=csv', '/grh/employes/fiche', "/grh/employes/fiche?id=$e", "/grh/employes/$e", "/grh/employes/$e/attestation", '/grh/structure', "/grh/structure?departement=$fin", "/grh/structure?poste=$poste",
+        '/grh/conges', '/grh/conges?status=refuse', '/grh/presences', "/grh/presences?jour=$pm-03", '/grh/presences?export=pdf', '/grh/paie', "/grh/paie/$paie", "/grh/paie/$paie?export=csv", '/grh/bulletins/' . $b['id'], '/grh/avances'] as $u) {
+        $x = $a->req('GET', $B . $u);
+        ok($x['code'] === 200 && !preg_match('/Fatal error|Warning:|Notice:|Deprecated:|Une erreur interne/', $x['body']), "$u ({$x['code']})");
+    }
+    ok(str_contains($a->req('GET', "$B/grh/bulletins/" . $b['id'])['body'], 'BULLETIN DE PAIE'), 'bulletin imprimable');
+    // Sortie : contrat terminé, fiche conservée
+    $G::exitEmploye($e, date('Y-m-d'), 'Démission');
+    eq(['sorti', 0], [DB::value('SELECT status FROM grh_employes WHERE id = ?', [$e]), (int) DB::value("SELECT COUNT(*) FROM grh_contrats WHERE employe_id = ? AND status = 'en_cours'", [$e])], 'sortie');
+    ok(str_contains($a->req('GET', "$B/grh/employes/$e/attestation")['body'], 'CERTIFICAT DE TRAVAIL'), 'certificat de travail après la sortie');
+});
+
 test('Modules : fichiers CSS/JS recopiés après une réinstallation, repli servi depuis addons/', function () use ($B) {
     // Réinstallation sur o2switch : base conservée (module déjà installé), dossier public/assets/addons absent
     $dst = PUBLIC_PATH . '/assets/addons/pressing';

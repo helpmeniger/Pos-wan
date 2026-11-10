@@ -1,0 +1,22 @@
+/* Module Ressources humaines */
+.grh-kpi { border-left: 5px solid #be185d; } .grh-kpi .v { font-size: 1.35rem; font-weight: 700; }
+.grh-kpi.k2 { border-left-color: #1d4ed8; } .grh-kpi.k3 { border-left-color: #15803d; } .grh-kpi.k4 { border-left-color: #b45309; } .grh-kpi.k5 { border-left-color: #7c3aed; }
+.grh-avatar { width: 56px; height: 56px; border-radius: 50%; background: #be185d; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 20px; flex: none; }
+.grh-org { list-style: none; padding-left: 0; margin: 0; }
+.grh-org ul { list-style: none; padding-left: 26px; margin: 0; border-left: 2px solid #e2e8f0; }
+.grh-org li { margin: 8px 0; }
+.grh-node { display: inline-block; min-width: 240px; border: 1px solid #cbd5e1; border-left: 5px solid #0e7490; border-radius: 8px; padding: 6px 10px; background: #fff; }
+.grh-node .who { font-size: .85rem; color: #475569; }
+.grh-pres label { margin: 0; }
+.grh-doc { font-size: 13px; color: #000; }
+.grh-doc h2 { font-size: 18px; text-align: center; margin: 14px 0 4px; letter-spacing: .04em; }
+.grh-doc table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.grh-doc th, .grh-doc td { border: 1px solid #555; padding: 4px 6px; vertical-align: top; }
+.grh-doc th { background: #eee; text-align: left; }
+.grh-doc .num { text-align: right; white-space: nowrap; }
+.grh-doc .kv td:first-child { width: 30%; background: #f5f5f5; font-weight: 600; }
+.grh-doc .head { text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; }
+.grh-doc .net { border: 2px solid #000; padding: 6px 10px; font-size: 16px; font-weight: 700; display: flex; justify-content: space-between; margin: 8px 0; }
+.grh-doc .sign { display: flex; gap: 16px; margin-top: 50px; }
+.grh-doc .sign div { flex: 1; border-top: 1px solid #000; padding-top: 4px; text-align: center; font-size: 12px; }
+.grh-doc .letter { line-height: 1.9; font-size: 14px; margin: 26px 10px; text-align: justify; }
