@@ -152,6 +152,29 @@ function Get-VcInstalle([int]$majeur, [bool]$x64) {
     return $meilleure
 }
 
+# Famille Visual C++ utile à WampServer, d'après le chemin du fichier dans le paquet (nom ET dossiers :
+# « VC2008\vcredist_x64.exe » est bien un 2008). Les seules installées, dans cet ordre :
+#   1 VC9 2008 SP1 · 2 VC10 2010 SP1 · 3 VC11 2012 Update 4 · 4 VC13 2013 Update 5 · 5 VC14 2015 · 6 VC17 2015-2022
+# rang = préférence entre plusieurs fichiers d'une même famille (service pack / mise à jour la plus récente).
+function Get-FamilleVc([string]$chemin) {
+    # Nom du fichier et de son dossier seulement (« pos-marwa install\… » ne doit rien influencer)
+    $c = (@(($chemin -replace '/', '\').Split('\') | Where-Object { $_ }) | Select-Object -Last 2) -join '\'
+    $c = $c.ToLower()
+    if ($c -match '(^|[\\_.\s-])(arm64|arm|ia64|itanium|debug)([\\_.\s-]|$)') { return $null }
+    if ($c -match '2015\s*[-_]\s*20(19|22)|2022|2019|2017') {
+        $r = if ($c -match '2022') { 3 } elseif ($c -match '2019') { 2 } else { 1 }
+        return @{ slot = 6; libelle = 'VC17 2015-2022'; annee = 2022; rang = $r }
+    }
+    if ($c -match '2015') { return @{ slot = 5; libelle = 'VC14 2015'; annee = 2015; rang = 1 } }
+    if ($c -match '2013') { return @{ slot = 4; libelle = 'VC13 2013 Update 5'; annee = 2013; rang = $(if ($c -match 'upd(ate)?[\s_-]*5|u5') { 2 } else { 1 }) } }
+    if ($c -match '2012') { return @{ slot = 3; libelle = 'VC11 2012 Update 4'; annee = 2012; rang = $(if ($c -match 'upd(ate)?[\s_-]*4|u4') { 2 } else { 1 }) } }
+    if ($c -match '2010') { return @{ slot = 2; libelle = 'VC10 2010 SP1'; annee = 2010; rang = $(if ($c -match 'sp1') { 2 } else { 1 }) } }
+    if ($c -match '2008') { return @{ slot = 1; libelle = 'VC9 2008 SP1'; annee = 2008; rang = $(if ($c -match 'sp1') { 2 } else { 1 }) } }
+    if ($c -match '2005') { return $null }   # inutile à WampServer
+    # Sans année : « VC_redist.x64.exe » = Visual C++ 2015-2022 (le moins prioritaire de sa famille)
+    return @{ slot = 6; libelle = 'VC17 2015-2022'; annee = 2022; rang = 0 }
+}
+
 function Get-MajeurVc([int]$annee) { switch ($annee) { 2005 { 8 } 2008 { 9 } 2010 { 10 } 2012 { 11 } 2013 { 12 } default { 14 } } }
 
 # Le fichier porte-t-il la marque « téléchargé depuis Internet » ?
@@ -462,18 +485,25 @@ function Analyser-Paquet([string]$chemin) {
         foreach ($f in Get-ChildItem -LiteralPath $dossier -Recurse -File) { $fichiers += @{ nom = $f.Name; rel = $f.FullName.Substring($racineLen); entree = $null; complet = $f.FullName } }
     }
     $wampIci = Find-Wamp; $chromeIci = Find-Chrome
-    $items = @()
+    $items = @(); $vcChoix = @{}; $vcIgnores = 0
     foreach ($f in $fichiers) {
         $n = $f.nom.ToLower()
         $x64 = $n -match 'x64|amd64'
         $e = [ordered]@{ type = $null; fichier = $f.complet; nom = $f.nom; zip = $zip; dossier = $dossier; entree = $f.entree; installe = $null }
-        if ($n -match '^vc_?redist|vcredist') {
-            $an = 2015; if ($n -match '(2005|2008|2010|2012|2013|2015|2017|2019|2022)') { $an = [int]$Matches[1] }
-            if ($an -lt 2008) { continue }   # Visual C++ 2005 : inutile à WampServer
-            if ($x64 -and -not [Environment]::Is64BitOperatingSystem) { continue }   # x64 impossible sur Windows 32 bits
-            $e['type'] = 'vcredist'; $e['annee'] = $an; $e['x64'] = $x64; $e['ordre'] = $an * 10 + [int]$x64
-            $iv = Get-VcInstalle (Get-MajeurVc $an) $x64
+        if ($n -match '^vc_?redist|vcredist' -and $n -like '*.exe') {
+            $fam = Get-FamilleVc $f.rel
+            if (-not $fam) { $vcIgnores++; continue }   # 2005, ARM, débogage… : inutile à WampServer
+            $x64 = ((@(($f.rel -replace '/', '\').Split('\') | Where-Object { $_ }) | Select-Object -Last 2) -join '\').ToLower() -match 'x64|amd64'
+            if ($x64 -and -not [Environment]::Is64BitOperatingSystem) { $vcIgnores++; continue }   # x64 impossible sur Windows 32 bits
+            $e['type'] = 'vcredist'; $e['annee'] = $fam.annee; $e['famille'] = $fam.libelle + $(if ($x64) { ' x64' } else { ' x86' }); $e['x64'] = $x64
+            $e['ordre'] = $fam.slot * 10 + [int]$x64; $e['rang'] = $fam.rang
+            $iv = Get-VcInstalle (Get-MajeurVc $fam.annee) $x64
             if ($iv) { $e['installe'] = "v$iv" }
+            # Un seul fichier par famille et par architecture : le plus récent (SP1, Update 4/5, 2022…)
+            $k = [string]$e['ordre']
+            if ($vcChoix.ContainsKey($k)) { $vcIgnores++; if ($e['rang'] -le $vcChoix[$k]['rang']) { continue } }
+            $vcChoix[$k] = $e
+            continue
         } elseif ($n -like 'wampserver*.exe') {
             $e['type'] = 'wamp'; $e['x64'] = ($n -notmatch 'x86|32'); $e['ordre'] = 50000; if ($wampIci) { $e['installe'] = $wampIci }
         } elseif ($n -like '*chrome*.exe' -or $n -like 'googlechrome*.msi') {
@@ -494,8 +524,10 @@ function Analyser-Paquet([string]$chemin) {
             }
         }
     }
+    $items += @($vcChoix.Values)
     $items = @($items | Sort-Object { $_.ordre })
-    return [ordered]@{ dossier = $dossier; elements = $items }
+    if ($vcIgnores) { Log "Visual C++ : $($vcChoix.Count) paquet(s) retenu(s) pour WampServer, $vcIgnores fichier(s) du paquet ignoré(s) (doublons, 2005, ARM…)" }
+    return [ordered]@{ dossier = $dossier; elements = $items; vcIgnores = $vcIgnores }
 }
 
 function Arguments-Silencieux($e) {
@@ -661,7 +693,7 @@ $Installation = {
         $n = 0; $refus = @(); $installes = 0; $ignores = 0
         foreach ($v in $vcs) {
             $n++
-            Etape 'vc' 'Composants Visual C++ 2008 à 2022' 'encours' "$n / $($vcs.Count) : $($v.nom)"
+            Etape 'vc' 'Composants Visual C++ 2008 à 2022' 'encours' "$n / $($vcs.Count) : $($v.famille) ($($v.nom))"
             # Déjà installé dans une version égale ou plus récente : rien à faire (gain de temps)
             $deja = $null
             if ($v.installe) {
