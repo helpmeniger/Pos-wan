@@ -16,6 +16,10 @@ final class PosController extends Controller
     {
         $u = $this->user();
         $mode = \App\Services\BusinessMode::current();
+        if (!\App\Services\BusinessMode::hasPos()) {
+            flash('info', 'Mode Organisation : il n\'y a pas de caisse. Changez de mode dans Paramètres pour vendre.');
+            redirect(\App\Services\BusinessMode::homeUrl() ?? '/menu');
+        }
         if (in_array($mode, ['clinique', 'pressing', 'ecole'], true)) {
             redirect(\App\Services\BusinessMode::posUrl()); // caisse dédiée à l'activité
         }

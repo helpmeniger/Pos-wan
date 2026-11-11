@@ -37,3 +37,4 @@ $router->get('/ong/logistique', [O::class, 'logistique'], 'ong.view');
 $router->post('/ong/logistique/carnet', [O::class, 'carnet'], 'ong.logistique');
 $router->post('/ong/logistique/stock', [O::class, 'stock'], 'ong.logistique');
 $router->get('/ong/personnel', [O::class, 'personnel'], 'ong.view');
+$router->post('/ong/personnel/reprendre', [O::class, 'personnelSync'], 'ong.personnel');

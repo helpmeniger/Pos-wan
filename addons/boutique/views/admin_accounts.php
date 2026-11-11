@@ -1,0 +1,7 @@
+<?php /** Clients inscrits sur la boutique en ligne. */ ?>
+<div class="d-flex mb-2 align-items-center gap-2"><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('/boutique-admin')) ?>"><i class="bi bi-arrow-left"></i> Commandes</a><span class="small text-secondary"><?= (int) $p['total'] ?> compte(s) client</span></div>
+<div class="card"><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Client</th><th>Téléphone</th><th>Adresse</th><th>Inscrit le</th><th class="num">Commandes</th><th class="num">Achats payés</th><th>Dernière commande</th></tr></thead><tbody>
+<?php foreach ($p['rows'] as $a): ?><tr><td class="fw-semibold"><?= e($a['name']) ?><div class="small text-secondary fw-normal"><?= e($a['email']) ?></div></td><td><?= e($a['phone']) ?></td><td class="small"><?= e($a['address']) ?></td><td class="small"><?= e(fdate($a['created_at'], false)) ?></td>
+  <td class="num"><?= (int) $a['orders'] ?></td><td class="num"><?= e(money($a['spent'])) ?></td><td class="small"><?= $a['last_order'] ? e(fdate($a['last_order'])) : '—' ?></td></tr><?php endforeach; ?>
+<?php if (!$p['rows']): ?><tr><td colspan="7" class="text-center text-secondary py-4">Aucun client inscrit pour le moment.</td></tr><?php endif; ?></tbody></table></div></div>
+<p class="small text-secondary mt-2"><i class="bi bi-shield-lock"></i> Données personnelles (loi n° 2017-28) : ces coordonnées servent uniquement au traitement des commandes. Un client peut supprimer lui-même son compte.</p>

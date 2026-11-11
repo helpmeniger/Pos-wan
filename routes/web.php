@@ -212,6 +212,12 @@ $router->get('/settings', [C\SettingsController::class, 'index'], 'settings.mana
 $router->post('/settings', [C\SettingsController::class, 'update'], 'settings.manage');
 $router->post('/settings/business', [C\SettingsController::class, 'business'], 'settings.manage');
 $router->post('/settings/mode', [C\SettingsController::class, 'mode'], 'settings.manage');
+$router->get('/settings/hosting', [C\HostingController::class, 'index'], 'settings.manage');
+$router->post('/settings/hosting/mode', [C\HostingController::class, 'mode'], 'settings.manage');
+$router->post('/settings/hosting', [C\HostingController::class, 'save'], 'settings.manage');
+$router->post('/settings/hosting/test', [C\HostingController::class, 'test'], 'settings.manage');
+$router->post('/settings/hosting/sync', [C\HostingController::class, 'step'], 'settings.manage');
+$router->post('/sync/tick', [C\HostingController::class, 'tick']);
 $router->get('/settings/template-preview', [C\SettingsController::class, 'templatePreview'], 'settings.manage');
 $router->get('/addons', [C\AddonController::class, 'index'], 'addons.manage');
 $router->get('/update', [C\UpdateController::class, 'index'], 'system.update');

@@ -62,6 +62,7 @@ final class Menu
                 ['Boutiques, entrepôts, caisses', 'bi-shop', '/stores', 'stores.manage', '#28b463'],
                 ['Utilisateurs', 'bi-person-badge', '/users', 'users.manage', '#5dade2'],
                 ['Rôles & permissions', 'bi-shield-lock', '/roles', 'roles.manage', '#8e44ad'],
+                ['Hébergement et synchronisation', 'bi-cloud-arrow-up', '/settings/hosting', 'settings.manage', '#0369a1'],
                 ['Imprimantes', 'bi-printer', '/printers', 'settings.manage', '#2c3e50'],
                 ['Écran et afficheur client', 'bi-display', '/settings/display', 'settings.manage', '#16a085'],
                 ['Écrans : accès direct (TV)', 'bi-tv', '/screens', 'settings.manage', '#0f766e'],
@@ -90,6 +91,8 @@ final class Menu
         'Trésorerie & banques' => 'bi-bank', 'Comptabilité' => 'bi-journal-bookmark', 'Finances & rapports' => 'bi-graph-up',
         'Configuration' => 'bi-gear', 'Système & maintenance' => 'bi-tools',
     ];
+    /** Écrans qui n'ont de sens que sur le serveur local de la boutique (imprimantes réseau, QR du Wi-Fi, caméras IP, assistance). */
+    public const LOCAL_ONLY = ['/printers', '/mobile', '/vision/cameras', '/vision/surveillance', '/assist'];
     /** Anciens noms de groupes utilisés par des modules : rangés dans la catégorie actuelle. */
     private const ALIASES = ['Caisse' => 'Trésorerie & banques', 'Finances' => 'Finances & rapports'];
 
@@ -120,8 +123,10 @@ final class Menu
             $groups['Système & maintenance'] = array_values(array_filter($groups['Système & maintenance'] ?? [], fn($i) => !in_array($i[2], ['/update', '/licence'], true)));
             $groups['Système & maintenance'][] = ['Mon abonnement', 'bi-credit-card-2-front', '/abonnement', null, '#b7950b'];
         }
+        // Hébergement en ligne : ce qui exige le réseau local de la boutique n'est pas proposé
+        $offline = SyncService::isOnline() ? self::LOCAL_ONLY : [];
         foreach ($groups as $g => $items) {
-            $f = array_values(array_filter($items, fn($i) => ($i[3] === null || can($i[3])) && (!isset($i[5]) || feature($i[5])) && !BusinessMode::hides($i[2])));
+            $f = array_values(array_filter($items, fn($i) => ($i[3] === null || can($i[3])) && (!isset($i[5]) || feature($i[5])) && !BusinessMode::hides($i[2]) && !in_array($i[2], $offline, true)));
             if ($f) {
                 $out[$g] = $f;
             }
@@ -131,6 +136,11 @@ final class Menu
             $out = ['Établissement' => $out['Établissement']] + $out;
             $noms = ['Gestion des ventes' => 'Caisse', 'Finances & rapports' => 'Finances'];
             $out = array_combine(array_map(fn($g) => $noms[$g] ?? $g, array_keys($out)), array_values($out));
+        }
+        // Mode Organisation : les modules de l'organisation en tête
+        if (BusinessMode::is('organisation')) {
+            $first = array_intersect_key($out, array_flip(['ONG', 'Ressources humaines', 'Archives']));
+            $out = $first + $out;
         }
         return $out;
     }

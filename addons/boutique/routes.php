@@ -10,9 +10,18 @@ $router->get('/boutique/stock', [S::class, 'stock'], null, true);
 $router->post('/boutique/commande', [S::class, 'order'], null, true);
 $router->get('/boutique/commande/{id}', [S::class, 'receipt'], null, true);
 
+// Compte client : coordonnées, historique des commandes, reçus (session séparée de celle du personnel)
+$router->get('/boutique/compte', [S::class, 'account'], null, true);
+$router->post('/boutique/compte/inscription', [S::class, 'accountRegister'], null, true);
+$router->post('/boutique/compte/connexion', [S::class, 'accountLogin'], null, true);
+$router->post('/boutique/compte/deconnexion', [S::class, 'accountLogout'], null, true);
+$router->post('/boutique/compte/profil', [S::class, 'accountUpdate'], null, true);
+$router->post('/boutique/compte/supprimer', [S::class, 'accountDelete'], null, true);
+
 // Traitement des commandes dans POS Marwa
 $router->get('/boutique-admin', [A::class, 'index'], 'boutique.orders');
 $router->get('/boutique-admin/feed', [A::class, 'feed'], 'boutique.orders');
+$router->get('/boutique-admin/clients', [A::class, 'accounts'], 'boutique.orders');
 $router->get('/boutique-admin/reglages', [A::class, 'settings'], 'boutique.manage');
 $router->post('/boutique-admin/reglages', [A::class, 'settingsSave'], 'boutique.manage');
 $router->post('/boutique-admin/articles/{id}', [A::class, 'product'], 'boutique.manage');

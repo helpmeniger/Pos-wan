@@ -1,7 +1,7 @@
 {
     "code": "boutique",
     "name": "Boutique en ligne",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "requires": "3.5.0",
     "author": "POS Marwa",
     "description": "Vos articles en ligne (photo, description, prix, disponibilité) sur une page pour vos clients : panier, commande et reçu automatique. Dans POS Marwa, le caissier vérifie la commande, la valide, l'encaisse (le stock diminue) puis la livre. Stock synchronisé avec l'entrepôt de la caisse choisie.",

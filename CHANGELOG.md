@@ -2,6 +2,18 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.6.0] — 2026-11-11
+
+### Ajouté
+- **Mode « Organisation »** (Paramètres → Mode de fonctionnement) pour une ONG, une association ou une administration : aucune caisse, aucun menu de ventes, d'articles ou de stock ; le bouton « Ouvrir la caisse » disparaît ; l'accueil est le tableau de bord de l'ONG ou des RH.
+- **Modules ONG et Ressources humaines** (`addons/ong`, `addons/grh`) et **module Archives** (`addons/archives`) : dépôt de documents (PDF, images, bureautique) dans des dossiers, versions, empreinte d'intégrité, confidentiel, échéances, corbeille.
+- **Modules reliés** : avec les RH actives, le personnel de l'ONG se reprend des employés RH (une seule fiche à tenir) ; en mode Organisation avec l'ONG, la trésorerie et les dépenses sont celles de l'ONG (Banques et Dépenses de la caisse masquées).
+- **Boutique en ligne 1.1** : compte client (inscription, connexion par numéro de téléphone), coordonnées enregistrées, historique des commandes et reçus, suppression du compte par le client ; liste des clients côté gestion.
+- **Hébergement et synchronisation** (Configuration) : bouton « en local / en ligne » ; base MySQL en ligne (o2switch…) et synchronisation des données locales vers elle, manuelle, automatique ou planifiée (`php bin/sync.php`).
+
+### Modifié
+- En hébergement « en ligne », les écrans propres au réseau de la boutique (imprimantes réseau, accès mobile Wi-Fi, caméras IP, assistance) ne sont plus proposés.
+
 ## [3.5.2] — 2026-11-09
 
 ### Corrigé

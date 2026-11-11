@@ -4673,7 +4673,7 @@ test('Caisse : fond de caisse facultatif et clôture automatique à 23h59', func
 
 test('Boutique en ligne : catalogue public, commande, reçu, réservation, encaissement (stock), livraison, annulation', function () use ($B) {
     actingAs('admin');
-    eq(['0001_boutique'], App\Core\Addons::install('boutique', false), 'installation du module');
+    eq(['0001_boutique', '0002_comptes'], App\Core\Addons::install('boutique', false), 'installation du module');
     App\Core\Addons::reset();
     ok(App\Core\Addons::isActive('boutique'));
     ok(isset(Auth::permissionsForRole((int) DB::value("SELECT id FROM roles WHERE code = 'cashier'"))['boutique.orders']), 'caissier : droit sur les commandes');
@@ -4828,7 +4828,7 @@ test('Module Doublons : détection (accents, casse, espaces), comparaison, fusio
 
 test('Module ONG : budget par ligne, circuit des dépenses (séparation des tâches), fonds, mission avec avance et justification, stocks', function () use ($B) {
     actingAs('admin');
-    eq(['0001_ong'], App\Core\Addons::install('ong', false), 'installation');
+    eq(['0001_ong', '0002_lien_grh'], App\Core\Addons::install('ong', false), 'installation');
     App\Core\Addons::reset();
     $O = Addons\Ong\OngService::class;
     $bail = $O::saveSimple('bailleur', ['name' => 'Fonds Sahel Eau', 'kind' => 'institution', 'active' => 1]);
@@ -5006,6 +5006,241 @@ test('Module RH : contrats, congés (jours ouvrés, solde, chevauchement), prés
     $G::exitEmploye($e, date('Y-m-d'), 'Démission');
     eq(['sorti', 0], [DB::value('SELECT status FROM grh_employes WHERE id = ?', [$e]), (int) DB::value("SELECT COUNT(*) FROM grh_contrats WHERE employe_id = ? AND status = 'en_cours'", [$e])], 'sortie');
     ok(str_contains($a->req('GET', "$B/grh/employes/$e/attestation")['body'], 'CERTIFICAT DE TRAVAIL'), 'certificat de travail après la sortie');
+});
+
+test('Mode Organisation : pas de caisse ni de menus commerciaux ; personnel ONG repris des RH', function () use ($B) {
+    actingAs('admin');
+    $M = S\BusinessMode::class;
+    $before = $M::current();
+    $M::set('organisation');
+    ok(!$M::hasPos() && $M::posUrl() === '', 'aucune caisse en mode Organisation');
+    foreach (['/pos', '/sales', '/products', '/stock', '/cash', '/customers', '/dashboard', '/banques', '/expenses'] as $u) {
+        ok($M::hides($u), "menu masqué : $u");
+    }
+    foreach (['/ong', '/grh/employes', '/settings', '/users'] as $u) {
+        ok(!$M::hides($u), "menu conservé : $u");
+    }
+    eq('/ong', $M::homeUrl(), 'accueil = tableau de bord ONG');
+    $menu = S\Menu::visible();
+    eq('ONG', array_key_first($menu), 'groupe ONG en tête');
+    ok(!isset($menu['Gestion des ventes']) && !isset($menu['Gestion des articles']), 'groupes commerciaux absents');
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $x = $a->req('GET', "$B/ong");
+    ok($x['code'] === 200 && !str_contains($x['body'], 'btn-pos-launch'), 'bouton « Ouvrir la caisse » absent');
+    $M::set($before);
+    ok(str_contains($a->req('GET', "$B/ong")['body'], 'btn-pos-launch'), 'bouton présent en mode commerce');
+    // Personnel ONG ↔ employés RH : une seule fiche à tenir
+    $O = Addons\Ong\OngService::class; $G = Addons\Grh\GrhService::class;
+    $e = $G::saveEmploye(['matricule' => 'EMP-0100', 'last_name' => 'Souley', 'first_name' => 'Aïcha', 'sex' => 'F', 'hire_date' => date('Y-m-d', strtotime('-2 months')), 'phone' => '90000000']);
+    $G::saveContrat($e, ['kind' => 'cdi', 'start_date' => date('Y-m-d', strtotime('-2 months')), 'base_salary' => 180000, 'allowances' => 20000]);
+    $r = $O::syncFromGrh();
+    ok($r['created'] >= 1, 'employé repris dans le personnel ONG');
+    $p = DB::one('SELECT * FROM ong_personnel WHERE grh_employe_id = ?', [$e]);
+    eq(['Aïcha Souley', 200000.0, 1], [$p['full_name'], (float) $p['monthly_cost'], (int) $p['active']], 'fiche reprise');
+    $proj = (int) DB::value('SELECT id FROM ong_projets LIMIT 1');
+    $O::saveSimple('personnel', ['matricule' => 'X', 'full_name' => 'Nom modifié ici', 'kind' => 'salarie', 'projet_id' => $proj], (int) $p['id']);
+    $p = DB::one('SELECT * FROM ong_personnel WHERE id = ?', [$p['id']]);
+    eq(['Aïcha Souley', $proj], [$p['full_name'], (int) $p['projet_id']], 'fiche liée : seule l\'affectation se règle côté ONG');
+    $G::exitEmploye($e, date('Y-m-d'), 'Fin de mission');
+    $O::syncFromGrh();
+    eq(0, (int) DB::value('SELECT active FROM ong_personnel WHERE grh_employe_id = ?', [$e]), 'sortie RH répercutée');
+    ok(str_contains($a->req('GET', "$B/ong/personnel")['body'], 'Reprendre les employés des RH'), 'bouton de reprise affiché');
+});
+
+test('Boutique en ligne : compte client (inscription, connexion, blocage), commande rattachée, historique et reçu', function () use ($B) {
+    actingAs('admin');
+    ok(isset(App\Core\Addons::active()['boutique']), 'module actif');
+    $v = new Http();
+    $page = $v->req('GET', "$B/boutique/compte");
+    ok($page['code'] === 200 && str_contains($page['body'], 'Créer mon compte'), 'page du compte');
+    preg_match('/name="_csrf" value="([a-f0-9]+)"/', $page['body'], $m);
+    $csrf = $m[1] ?? '';
+    ok($csrf !== '', 'jeton');
+    $form = fn (string $path, array $d) => $v->req('POST', "$B$path", $d + ['_csrf' => $csrf]);
+    $form('/boutique/compte/inscription', ['name' => 'Client Test', 'phone' => '+227 96 11 22 33', 'password' => 'court']);
+    eq(0, (int) DB::value('SELECT COUNT(*) FROM shop_accounts'), 'mot de passe trop court refusé');
+    $form('/boutique/compte/inscription', ['name' => 'Client Test', 'phone' => '+227 96 11 22 33', 'password' => 'Marche-2026', 'address' => 'Quartier Plateau', 'website' => 'http://robot']);
+    eq(0, (int) DB::value('SELECT COUNT(*) FROM shop_accounts'), 'champ piège : robot refusé');
+    $form('/boutique/compte/inscription', ['name' => 'Client Test', 'phone' => '+227 96 11 22 33', 'password' => 'Marche-2026', 'address' => 'Quartier Plateau']);
+    $acc = DB::one('SELECT * FROM shop_accounts');
+    ok($acc && $acc['phone_key'] === '22796112233' && password_verify('Marche-2026', $acc['password_hash']) && !str_contains($acc['password_hash'], 'Marche'), 'compte créé, mot de passe haché');
+    $page = $v->req('GET', "$B/boutique/compte");
+    ok(str_contains($page['body'], 'Bonjour Client') && str_contains($page['body'], 'Quartier Plateau'), 'connecté après l\'inscription, coordonnées enregistrées');
+    // Commande passée connecté : rattachée au compte, coordonnées proposées
+    $shop = $v->req('GET', "$B/boutique/panier");
+    ok(str_contains($shop['body'], '"account":{"name":"Client Test"'), 'coordonnées du compte fournies au panier');
+    preg_match('/"csrf":"([a-f0-9]+)"/', $shop['body'], $m);
+    $pid = (int) DB::value("SELECT p.id FROM products p JOIN stock_levels sl ON sl.product_id = p.id WHERE p.status = 'active' AND p.sellable = 1 AND sl.quantity >= 3 AND p.requires_prescription = 0 AND p.sales_channel <> 'restaurant' ORDER BY p.id LIMIT 1");
+    $r = $v->req('POST', "$B/boutique/commande", json_encode(['_csrf' => $m[1], 'name' => 'Client Test', 'phone' => '+227 96 11 22 33', 'delivery' => 'pickup', 'items' => [['id' => $pid, 'qty' => 1]]]), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]]);
+    $j = json_decode($r['body'], true);
+    ok(!empty($j['ok']), 'commande : ' . $r['body']);
+    eq((int) $acc['id'], (int) DB::value('SELECT account_id FROM shop_orders WHERE number = ?', [$j['number']]), 'commande rattachée au compte');
+    $page = $v->req('GET', "$B/boutique/compte");
+    ok(str_contains($page['body'], $j['number']) && str_contains($page['body'], 'Voir le reçu'), 'historique et reçu dans le compte');
+    // Un autre visiteur ne voit pas ce compte ; mauvais mot de passe : blocage après 5 essais
+    $w = new Http();
+    $p2 = $w->req('GET', "$B/boutique/compte");
+    ok(!str_contains($p2['body'], $j['number']), 'compte invisible sans connexion');
+    preg_match('/name="_csrf" value="([a-f0-9]+)"/', $p2['body'], $m2);
+    for ($i = 0; $i < 5; $i++) {
+        $w->req('POST', "$B/boutique/compte/connexion", ['_csrf' => $m2[1], 'phone' => '96112233', 'password' => 'mauvais']);
+    }
+    ok((string) DB::value('SELECT locked_until FROM shop_accounts WHERE id = ?', [$acc['id']]) > date('Y-m-d H:i:s'), 'compte bloqué après 5 échecs');
+    DB::update('shop_accounts', ['locked_until' => null], 'id = ?', [$acc['id']]);
+    $w->req('POST', "$B/boutique/compte/connexion", ['_csrf' => $m2[1], 'phone' => '0022796112233', 'password' => 'Marche-2026']);
+    ok(str_contains($w->req('GET', "$B/boutique/compte")['body'], $j['number']), 'connexion par le numéro, avec ou sans indicatif');
+    // Suppression du compte par le client : la commande reste, sans lien
+    $form('/boutique/compte/supprimer', ['password' => 'Marche-2026']);
+    eq([0, 1], [(int) DB::value('SELECT COUNT(*) FROM shop_accounts'), (int) DB::value('SELECT COUNT(*) FROM shop_orders WHERE number = ? AND account_id IS NULL', [$j['number']])], 'compte supprimé, commande conservée');
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    eq(200, $a->req('GET', "$B/boutique-admin/clients")['code'], 'liste des clients côté gestion');
+});
+
+test('Module Archives : dépôt contrôlé, versions, intégrité, confidentiel, corbeille, suppression confirmée', function () use ($B) {
+    actingAs('admin');
+    eq(['0001_archives'], App\Core\Addons::install('archives', false), 'installation');
+    App\Core\Addons::reset();
+    $A = Addons\Archives\ArchiveService::class;
+    $tmp = sys_get_temp_dir() . '/arch-' . bin2hex(random_bytes(4));
+    $pdf = "$tmp.pdf"; file_put_contents($pdf, "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n");
+    $pdf2 = "$tmp-2.pdf"; file_put_contents($pdf2, "%PDF-1.4\n1 0 obj<</Type/Catalog/V 2>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n");
+    $php = "$tmp.php"; file_put_contents($php, '<?php echo 1;');
+    $fake = "$tmp-faux.pdf"; file_put_contents($fake, '<?php system($_GET["c"]); ?>');
+    $dos = $A::saveDossier(['name' => 'Juridique']);
+    $sub = $A::saveDossier(['name' => 'Statuts', 'parent_id' => $dos]);
+    throws(fn () => $A::saveDossier(['name' => 'Statuts', 'parent_id' => $dos]), 'déjà ce nom');
+    throws(fn () => $A::saveDossier(['name' => 'Juridique', 'parent_id' => $sub], $dos), 'dans lui-même');
+    throws(fn () => $A::deposit($php, 'script.php', filesize($php), [], false), 'type de fichier non accepté');
+    throws(fn () => $A::deposit($fake, 'statuts.pdf', filesize($fake), [], false), 'ne correspond pas à son extension');
+    $r = $A::deposit($pdf, 'Statuts 2026.pdf', filesize($pdf), ['dossier_id' => $sub, 'category' => 'juridique', 'reference' => 'ST-01', 'tags' => 'Statuts, ONG , statuts', 'expires_on' => date('Y-m-d', strtotime('+10 days'))], false);
+    $id = $r['id'];
+    $d = $A::document($id);
+    eq(['Statuts 2026', 'statuts, ong', 1], [$d['title'], $d['tags'], (int) $d['versions']], 'titre tiré du nom du fichier, étiquettes dédoublées');
+    $v1 = DB::one('SELECT * FROM arch_versions WHERE document_id = ?', [$id]);
+    ok(preg_match('#^\d{4}/\d{2}/[a-f0-9]{32}\.bin$#', $v1['stored_path']) && is_file($A::root() . '/' . $v1['stored_path']) && !str_starts_with($A::root(), PUBLIC_PATH), 'fichier rangé hors du dossier public, sous un nom aléatoire');
+    eq(hash_file('sha256', $pdf), $v1['sha256'], 'empreinte enregistrée');
+    ok($A::verify((int) $v1['id']), 'intégrité vérifiée');
+    eq('Statuts 2026', $A::deposit($pdf, 'copie.pdf', filesize($pdf), [], false)['duplicate'], 'doublon de contenu signalé');
+    throws(fn () => $A::addVersion($id, $pdf, 'Statuts 2026.pdf', filesize($pdf), ''), 'identique à une version');
+    $A::addVersion($id, $pdf2, 'Statuts 2026 v2.pdf', filesize($pdf2), 'Avenant', false);
+    eq(2, (int) $A::document($id)['versions'], 'deuxième version, la première conservée');
+    file_put_contents($A::root() . '/' . $v1['stored_path'], 'altéré');
+    ok(!$A::verify((int) $v1['id']), 'fichier altéré détecté');
+    eq(1, $A::stats()['expiring'], 'échéance proche signalée');
+    throws(fn () => $A::deleteDossier($sub), 'pas vide');
+    // Confidentiel : invisible sans le droit
+    $A::update($id, ['title' => 'Statuts 2026', 'category' => 'juridique', 'dossier_id' => $sub, 'confidential' => 1]);
+    actingAs('gerant');
+    throws(fn () => $A::document($id), 'introuvable');
+    throws(fn () => $A::file((int) $v1['id']), 'introuvable');
+    actingAs('admin');
+    // Corbeille, restauration, suppression définitive confirmée par le titre
+    throws(fn () => $A::purge($id, 'Statuts 2026'), 'd\'abord le document à la corbeille');
+    $A::trash($id);
+    $A::restore($id);
+    $A::trash($id);
+    throws(fn () => $A::purge($id, 'autre titre'), 'retapez exactement le titre');
+    $files = array_column(DB::all('SELECT stored_path FROM arch_versions WHERE document_id = ?', [$id]), 'stored_path');
+    $A::purge($id, 'statuts 2026');
+    ok(!DB::value('SELECT id FROM arch_documents WHERE id = ?', [$id]) && !is_file($A::root() . '/' . $files[0]) && !is_file($A::root() . '/' . $files[1]), 'document et fichiers effacés');
+    // Pages et téléchargement
+    $keep = $A::deposit($pdf2, 'Bail du siège.pdf', filesize($pdf2), ['dossier_id' => $dos, 'category' => 'contrat'], false)['id'];
+    $vid = (int) DB::value('SELECT id FROM arch_versions WHERE document_id = ?', [$keep]);
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    foreach (['/archives', "/archives?dossier=$dos", "/archives?dossier=$dos&modifier=1", '/archives?q=bail', '/archives?vue=echeances', '/archives?vue=corbeille', '/archives?export=csv', "/archives/documents/$keep", "/archives/documents/$keep?verifier=1"] as $u) {
+        $x = $a->req('GET', $B . $u);
+        ok($x['code'] === 200 && !preg_match('/Fatal error|Warning:|Notice:|Deprecated:|Une erreur interne/', $x['body']), "$u ({$x['code']})");
+    }
+    $f = $a->req('GET', "$B/archives/fichiers/$vid");
+    ok($f['code'] === 200 && $f['body'] === file_get_contents($pdf2) && str_contains(strtolower($f['headers']), 'attachment') && str_contains(strtolower($f['headers']), 'nosniff'), 'téléchargement à l\'identique, en pièce jointe');
+    ok(str_contains(strtolower($a->req('GET', "$B/archives/fichiers/$vid?voir=1")['headers']), 'application/pdf'), 'affichage du PDF dans le navigateur');
+    ok(DB::value("SELECT COUNT(*) FROM audit_logs WHERE action = 'archives.telecharge' AND entity_id = ?", [$keep]) >= 1, 'téléchargement inscrit au journal');
+    array_map('unlink', [$pdf, $pdf2, $php, $fake]);
+});
+
+test('Hébergement en ligne / en local et synchronisation vers une base MySQL en ligne (copie exacte, sens unique)', function () use ($B, $env) {
+    actingAs('admin');
+    $Y = S\SyncService::class;
+    setting_set('hosting_mode', '');
+    ok(!$Y::guessOnline() && $Y::hostingMode() === 'local', 'localhost : détecté en local');
+    $_SERVER['HTTP_HOST'] = 'caisse.exemple.ne';
+    ok($Y::guessOnline(), 'nom de domaine public : détecté en ligne');
+    $_SERVER['HTTP_HOST'] = '192.168.1.10';
+    ok(!$Y::guessOnline(), 'adresse du réseau local : en local');
+    unset($_SERVER['HTTP_HOST']);
+    $Y::setHostingMode('online');
+    ok($Y::isOnline() && !in_array('/printers', array_column(S\Menu::visible()['Configuration'] ?? [], 2), true), 'en ligne : imprimantes réseau masquées');
+    throws(fn () => $Y::run(), 'part du poste local');
+    $Y::setHostingMode('local');
+    ok(in_array('/printers', array_column(S\Menu::visible()['Configuration'] ?? [], 2), true), 'en local : imprimantes affichées');
+    // Base « en ligne » de test : une seconde base sur le même serveur
+    $remoteDb = $env['DB_DATABASE'] . '_enligne';
+    $root = new PDO("mysql:host={$env['DB_HOST']};charset=utf8mb4", $env['DB_USERNAME'], $env['DB_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $root->exec("DROP DATABASE IF EXISTS `$remoteDb`");
+    $root->exec("CREATE DATABASE `$remoteDb` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    throws(fn () => $Y::saveConfig(['host' => '127.0.0.1', 'database' => $env['DB_DATABASE'], 'username' => 'x', 'password' => 'x']), 'base locale elle-même');
+    throws(fn () => $Y::saveConfig(['host' => 'bad host;', 'database' => $remoteDb, 'username' => 'x']), 'invalide');
+    $Y::saveConfig(['host' => '127.0.0.1', 'port' => 3306, 'database' => $remoteDb, 'username' => $env['DB_USERNAME'], 'password' => 'mauvais-mot-de-passe', 'enabled' => 1, 'auto_minutes' => 15]);
+    $stored = (string) setting('sync_db_password');
+    ok(str_starts_with($stored, 'E1.') && !str_contains($stored, 'mauvais'), 'mot de passe chiffré dans les réglages');
+    throws(fn () => $Y::test(), 'Connexion à la base en ligne impossible');
+    $Y::saveConfig(['host' => '127.0.0.1', 'port' => 3306, 'database' => $remoteDb, 'username' => $env['DB_USERNAME'], 'password' => $env['DB_PASSWORD'], 'enabled' => 1, 'auto_minutes' => 15]);
+    eq(0, $Y::test()['tables'], 'base en ligne vide');
+    ok($Y::due(), 'synchronisation automatique due');
+    $r = $Y::run();
+    ok($r['finished'] && $r['rows'] > 100, 'première synchronisation : ' . $r['rows'] . ' lignes');
+    ok(!$Y::due(), 'plus due juste après');
+    $rdb = new PDO("mysql:host={$env['DB_HOST']};dbname=$remoteDb;charset=utf8mb4", $env['DB_USERNAME'], $env['DB_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $cnt = fn (PDO $p, string $t) => (int) $p->query("SELECT COUNT(*) FROM `$t`")->fetchColumn();
+    foreach (['sales', 'sale_items', 'products', 'stock_movements', 'users', 'cash_sessions', 'ong_depenses', 'grh_bulletins'] as $t) {
+        eq($cnt(DB::connection(), $t), $cnt($rdb, $t), "table $t : même nombre de lignes");
+    }
+    eq((string) DB::value('SELECT SUM(total) FROM sales'), (string) $rdb->query('SELECT SUM(total) FROM sales')->fetchColumn(), 'mêmes montants de ventes');
+    eq(0, (int) $rdb->query("SELECT COUNT(*) FROM settings WHERE skey LIKE 'sync\\_db%'")->fetchColumn(), 'accès à la base en ligne jamais envoyés en ligne');
+    eq('online', $rdb->query("SELECT svalue FROM settings WHERE skey = 'hosting_mode'")->fetchColumn(), 'la copie se sait en ligne');
+    eq('local', $Y::hostingMode(), 'le poste local reste local');
+    // Deuxième passage sans changement : rien n'est renvoyé
+    $again = $Y::run();
+    eq(0, $again['rows'], 'rien à renvoyer quand rien n\'a changé : ' . implode(' ; ', $again['tables']));
+    // Modification, ajout et suppression en local ; saisie directe en ligne : la copie redevient exacte
+    $pid = (int) DB::value('SELECT id FROM products ORDER BY id LIMIT 1');
+    DB::update('products', ['name' => 'Article renommé en local'], 'id = ?', [$pid]);
+    $new = DB::insert('brands', ['name' => 'Marque synchro']);
+    $gone = (int) DB::value('SELECT MAX(id) FROM audit_logs');
+    DB::run('DELETE FROM audit_logs WHERE id = ?', [$gone]);
+    $rdb->exec("UPDATE products SET name = 'Modifié en ligne' WHERE id = " . ((int) DB::value('SELECT id FROM products ORDER BY id DESC LIMIT 1')));
+    $r = $Y::run();
+    ok($r['rows'] > 0 && $r['rows'] < 9000, 'seuls les blocs modifiés sont renvoyés (' . $r['rows'] . ' lignes)');
+    eq('Article renommé en local', $rdb->query("SELECT name FROM products WHERE id = $pid")->fetchColumn(), 'modification locale reçue');
+    eq('Marque synchro', $rdb->query("SELECT name FROM brands WHERE id = $new")->fetchColumn(), 'ajout reçu');
+    eq(0, (int) $rdb->query("SELECT COUNT(*) FROM audit_logs WHERE id = $gone")->fetchColumn(), 'suppression répercutée');
+    eq(0, (int) $rdb->query("SELECT COUNT(*) FROM products WHERE name = 'Modifié en ligne'")->fetchColumn(), 'saisie faite en ligne remplacée par la référence locale');
+    // Reprise par étapes (comme l'écran) ; base étrangère : confirmation exigée
+    $step = $Y::run(0, 1);
+    ok($step['finished'] || $step['next'] > 0, 'synchronisation par étapes');
+    $rdb->exec('DELETE FROM `_posmarwa_sync`');
+    $rdb->exec("INSERT INTO `_posmarwa_sync` (install_id) VALUES ('PW-AUTR-EPOS-TE00-0000')");
+    setting_set('sync_overwrite_ok', '');
+    throws(fn () => $Y::run(), 'ne viennent pas de ce poste');
+    ok($Y::run(0, 0, true)['finished'], 'après confirmation explicite');
+    // Écran et étapes HTTP
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $x = $a->req('GET', "$B/settings/hosting");
+    ok($x['code'] === 200 && str_contains($x['body'], 'Synchroniser maintenant') && !str_contains($x['body'], $env['DB_PASSWORD'] ?: '##aucun##') && !preg_match('/Warning:|Notice:|Fatal error/', $x['body']), 'écran Hébergement et synchronisation, sans mot de passe affiché');
+    preg_match('/name="csrf-token" content="([a-f0-9]+)"/', $x['body'], $m);
+    $j = json_decode($a->req('POST', "$B/settings/hosting/test", '{}', ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]])['body'], true);
+    ok(!empty($j['ok']) && str_contains($j['message'], 'Connexion réussie'), 'test de connexion depuis l\'écran');
+    $j = json_decode($a->req('POST', "$B/settings/hosting/sync", '{"from":0}', ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]])['body'], true);
+    ok(!empty($j['ok']) && isset($j['total']), 'étape de synchronisation depuis l\'écran');
+    $c = new Http();
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
+    ok(in_array($c->req('GET', "$B/settings/hosting")['code'], [302, 403], true), 'écran réservé aux paramètres');
+    setting_set('sync_enabled', '0');
+    $root->exec("DROP DATABASE IF EXISTS `$remoteDb`");
 });
 
 test('Modules : fichiers CSS/JS recopiés après une réinstallation, repli servi depuis addons/', function () use ($B) {

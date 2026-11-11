@@ -130,11 +130,15 @@ final class OngService
             if (!DB::value("SELECT id FROM `$table` WHERE id = ?", [$id])) {
                 throw new BusinessException('Fiche introuvable.');
             }
+            if ($entity === 'personnel' && self::grhActive() && DB::value('SELECT grh_employe_id FROM ong_personnel WHERE id = ?', [$id])) {
+                // Fiche tenue par les Ressources humaines : seule l'affectation au projet se règle ici
+                $data = ['projet_id' => $data['projet_id']];
+            }
             DB::update($table, $data, 'id = ?', [$id]);
         } else {
             $id = DB::insert($table, $data);
         }
-        Audit::log('ong.' . $entity . '.save', $table, $id, ['name' => $data[$unique]]);
+        Audit::log('ong.' . $entity . '.save', $table, $id, ['name' => $data[$unique] ?? null]);
         return $id;
     }
 
@@ -742,6 +746,52 @@ final class OngService
             Audit::log('ong.stock.' . $type, 'ong_stock_mouvements', $id, ['article' => $a['name'], 'qty' => $dir * $qty]);
             return $id;
         });
+    }
+
+    /** Le module Ressources humaines est-il actif ? (le personnel se tient alors dans les RH) */
+    public static function grhActive(): bool
+    {
+        try {
+            return isset(\App\Core\Addons::active()['grh']);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Reprend les employés du module Ressources humaines dans le personnel de l'ONG : une seule
+     * fiche à tenir (RH), utilisée ici pour les missions. Le projet d'affectation n'est jamais écrasé.
+     * @return array{created:int, updated:int, closed:int}
+     */
+    public static function syncFromGrh(): array
+    {
+        if (!self::grhActive()) {
+            throw new BusinessException('Le module Ressources humaines n\'est pas actif.');
+        }
+        $kinds = ['cdi' => 'salarie', 'cdd' => 'salarie', 'essai' => 'salarie', 'stage' => 'stagiaire', 'prestation' => 'consultant'];
+        $r = ['created' => 0, 'updated' => 0, 'closed' => 0];
+        DB::transaction(function () use (&$r, $kinds) {
+            $rows = DB::all("SELECT e.*, p.title AS poste, c.kind AS contrat, c.end_date AS contrat_fin, c.base_salary, c.allowances FROM grh_employes e
+                LEFT JOIN grh_postes p ON p.id = e.poste_id LEFT JOIN grh_contrats c ON c.employe_id = e.id AND c.status = 'en_cours'");
+            foreach ($rows as $e) {
+                $data = ['full_name' => trim($e['first_name'] . ' ' . $e['last_name']), 'position' => $e['poste'], 'kind' => $kinds[$e['contrat'] ?? 'cdi'] ?? 'salarie', 'phone' => $e['phone'],
+                    'start_date' => $e['hire_date'], 'end_date' => $e['exit_date'] ?: $e['contrat_fin'], 'monthly_cost' => (float) $e['base_salary'] + (float) $e['allowances'], 'active' => $e['status'] === 'sorti' ? 0 : 1];
+                $cur = DB::one('SELECT * FROM ong_personnel WHERE grh_employe_id = ?', [$e['id']]) ?? DB::one('SELECT * FROM ong_personnel WHERE matricule = ? AND grh_employe_id IS NULL', [$e['matricule']]);
+                if ($cur) {
+                    DB::update('ong_personnel', $data + ['grh_employe_id' => $e['id']], 'id = ?', [$cur['id']]);
+                    $r[(int) $cur['active'] === 1 && $data['active'] === 0 ? 'closed' : 'updated']++;
+                } elseif ($e['status'] !== 'sorti') {
+                    $mat = $e['matricule'];
+                    if (DB::value('SELECT id FROM ong_personnel WHERE matricule = ?', [$mat])) {
+                        $mat = mb_substr($mat, 0, 24) . '-RH' . $e['id'];
+                    }
+                    DB::insert('ong_personnel', $data + ['matricule' => $mat, 'grh_employe_id' => $e['id']]);
+                    $r['created']++;
+                }
+            }
+            Audit::log('ong.personnel.sync_grh', 'ong_personnel', null, $r);
+        });
+        return $r;
     }
 
     public static function saveIndicateur(int $projetId, array $in, ?int $id = null): int

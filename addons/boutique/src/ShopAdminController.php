@@ -96,6 +96,16 @@ final class ShopAdminController extends Controller
     private const KEYS = ['enabled' => 'bool', 'title' => 'text', 'tagline' => 'text', 'color' => 'color', 'register_id' => 'register', 'delivery' => 'bool',
         'delivery_fee' => 'number', 'min_order' => 'number', 'stock_display' => ['badge', 'qty', 'none'], 'require_open' => 'bool', 'out_of_stock' => ['show', 'hide'], 'whatsapp' => 'text'];
 
+    /** Clients inscrits sur la boutique en ligne. */
+    public function accounts(): void
+    {
+        $p = paginate("FROM shop_accounts a", [], "a.id, a.name, a.phone, a.email, a.address, a.created_at, a.last_login_at,
+            (SELECT COUNT(*) FROM shop_orders o WHERE o.account_id = a.id) AS orders,
+            (SELECT COALESCE(SUM(o.total), 0) FROM shop_orders o WHERE o.account_id = a.id AND o.status IN ('paid','delivered')) AS spent,
+            (SELECT MAX(o.created_at) FROM shop_orders o WHERE o.account_id = a.id) AS last_order", 'a.id DESC', 40);
+        view('boutique::admin_accounts', ['title' => 'Clients de la boutique en ligne', 'p' => $p]);
+    }
+
     public function settings(): void
     {
         $q = trim((string) Request::query('q', ''));

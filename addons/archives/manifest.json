@@ -1,0 +1,36 @@
+{
+    "code": "archives",
+    "name": "Archives et documents",
+    "version": "1.0.0",
+    "requires": "3.5.0",
+    "author": "POS Marwa",
+    "description": "Archivage des documents de l'entreprise ou de l'organisation : dossiers et sous-dossiers, dépôt de PDF, images et fichiers bureautiques, référence, catégorie, étiquettes, recherche, versions successives, empreinte d'intégrité, documents confidentiels, échéances (contrats, agréments), corbeille et restauration, journal des consultations.",
+    "icon": "bi-archive",
+    "color": "#6d4c41",
+    "permissions": {
+        "archives.view": "Archives : consulter et télécharger les documents",
+        "archives.upload": "Archives : déposer des documents et de nouvelles versions",
+        "archives.manage": "Archives : créer les dossiers, modifier, déplacer, mettre à la corbeille",
+        "archives.confidential": "Archives : voir les dossiers et documents confidentiels",
+        "archives.admin": "Archives : supprimer définitivement un document de la corbeille"
+    },
+    "new_roles": {
+        "archiviste": { "name": "Archiviste", "description": "Dépôt, classement et suivi des documents",
+            "permissions": ["archives.view", "archives.upload", "archives.manage"] }
+    },
+    "roles": {
+        "owner": ["archives.view", "archives.upload", "archives.manage", "archives.confidential", "archives.admin"],
+        "store_manager": ["archives.view", "archives.upload"],
+        "accountant": ["archives.view", "archives.upload"],
+        "auditor": ["archives.view"]
+    },
+    "menu": [
+        { "group": "Archives", "label": "Documents archivés", "icon": "bi-archive", "url": "/archives", "permission": "archives.view", "color": "#6d4c41" },
+        { "group": "Archives", "label": "Échéances des documents", "icon": "bi-alarm", "url": "/archives?vue=echeances", "permission": "archives.view", "color": "#b45309" },
+        { "group": "Archives", "label": "Corbeille des archives", "icon": "bi-trash3", "url": "/archives?vue=corbeille", "permission": "archives.manage", "color": "#64748b" }
+    ],
+    "settings": {
+        "archives_taille_max_mo": "20",
+        "archives_alerte_jours": "30"
+    }
+}

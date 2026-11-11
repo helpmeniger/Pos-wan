@@ -25,7 +25,14 @@ final class BusinessMode
         'pressing' => ['Pressing', 'Caisse des dépôts de vêtements, retraits et paiements, sans vente commerciale.', ['pressing']],
         'hotel' => ['Hôtel', 'Réception, plan des chambres, réservations, séjours et facturation ; la caisse reste disponible pour le bar et le restaurant.', ['hotel']],
         'ecole' => ['Établissement scolaire / université', 'Caisse des inscriptions et frais de scolarité, élèves, enseignants, notes, bulletins, présences ; aucun menu commercial.', ['ecole']],
+        'organisation' => ['Organisation (ONG, association, administration)', 'Aucune gestion commerciale : pas de caisse, de ventes, d\'articles ni de stock de boutique. Projets et bailleurs, ressources humaines, archives selon les modules installés.', []],
     ];
+
+    /** Modes sans vente : au moins un de ces modules doit être actif. */
+    public const ORGANISATION_ADDONS = ['ong', 'grh', 'archives'];
+    private const COMMERCE = ['/pos', '/sales', '/returns', '/quotes', '/verify', '/customers', '/customer-payments', '/restaurant', '/kitchen', '/products', '/categories', '/stock', '/inventories',
+        '/suppliers', '/purchases', '/receptions', '/supplier-returns', '/dashboard', '/reports/sales', '/reports/products', '/reports/profit', '/reports/vat', '/reports/stock', '/reports/debts', '/reports/cash',
+        '/reports/prescriptions', '/clinique', '/pressing', '/hotel', '/livraisons', '=/vision', '/vision/surveillance', '/vision/rapport'];
 
     /**
      * Menus masqués selon le mode (préfixes d'adresse) : on n'affiche pas les activités qui ne
@@ -45,6 +52,8 @@ final class BusinessMode
         'ecole' => ['/pos', '/sales', '/returns', '/quotes', '/verify', '/customers', '/restaurant', '/kitchen', '/products', '/categories', '/stock', '/inventories',
             '/suppliers', '/purchases', '/receptions', '/supplier-returns', '/dashboard', '/reports/sales', '/reports/profit', '/reports/vat', '/reports/stock', '/reports/debts',
             '/reports/prescriptions', '/clinique', '/pressing', '/hotel', '/livraisons', '=/vision', '/vision/surveillance', '/vision/rapport'],
+        // Organisation : ni caisse ni commerce ; restent les modules de l'organisation, les dépenses, la configuration
+        'organisation' => [...self::COMMERCE, '/cash', '/registers', '/ecole', '/boutique', '/doublons', '/banques/versements', '/printers', '/settings/display', '/afficheur', '/ecran'],
     ];
 
     public static function current(): string
@@ -75,6 +84,9 @@ final class BusinessMode
     public static function missingAddons(string $mode): array
     {
         $active = array_keys(Addons::active());
+        if ($mode === 'organisation') {
+            return array_intersect(self::ORGANISATION_ADDONS, $active) ? [] : ['ong ou grh'];
+        }
         return array_values(array_diff(self::MODES[$mode][2] ?? [], $active));
     }
 
@@ -108,8 +120,30 @@ final class BusinessMode
             'clinique' => '/clinique/caisse',
             'pressing' => '/pressing/caisse',
             'ecole' => '/ecole/caisse',
+            'organisation' => '',
             default => '/pos',
         };
+    }
+
+    /** Le mode courant a-t-il une caisse ? (faux pour une organisation sans activité commerciale) */
+    public static function hasPos(): bool
+    {
+        return self::posUrl() !== '';
+    }
+
+    /** Page d'accueil du mode quand le tableau de bord commercial est masqué. */
+    public static function homeUrl(): ?string
+    {
+        if (!self::hides('/dashboard')) {
+            return null;
+        }
+        $active = Addons::active();
+        foreach (self::is('ecole') ? ['ecole' => ['/ecole', 'ecole.view']] : ['ong' => ['/ong', 'ong.view'], 'grh' => ['/grh', 'grh.view'], 'archives' => ['/archives', 'archives.view']] as $code => [$url, $perm]) {
+            if (isset($active[$code]) && can($perm)) {
+                return $url;
+            }
+        }
+        return self::is('organisation') ? '/menu' : null;
     }
 
     /** Le menu doit-il masquer cette adresse dans le mode courant ? */
@@ -118,7 +152,15 @@ final class BusinessMode
         if (setting('mode_show_all_menus', '0') === '1') {
             return false;
         }
-        foreach (self::HIDDEN[self::current()] ?? [] as $prefix) {
+        $hidden = self::HIDDEN[self::current()] ?? [];
+        if (self::is('organisation')) {
+            $active = Addons::active();
+            if (isset($active['ong'])) {
+                // L'ONG a sa trésorerie et ses dépenses imputées au budget : pas de second circuit
+                array_push($hidden, '/banques', '/expenses', '/expense-categories', '/reports');
+            }
+        }
+        foreach ($hidden as $prefix) {
             if ($prefix[0] === '=') {
                 if ($url === substr($prefix, 1)) {
                     return true;

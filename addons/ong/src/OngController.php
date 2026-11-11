@@ -396,6 +396,13 @@ final class OngController extends Controller
         redirect('/ong/logistique?onglet=stocks');
     }
 
+    public function personnelSync(): void
+    {
+        $r = $this->attempt(fn () => S::syncFromGrh(), '/ong/personnel');
+        flash('success', "Personnel repris des Ressources humaines : {$r['created']} ajouté(s), {$r['updated']} mis à jour, {$r['closed']} sorti(s).");
+        redirect('/ong/personnel');
+    }
+
     public function personnel(): void
     {
         $rows = DB::all('SELECT s.*, p.code AS projet_code FROM ong_personnel s LEFT JOIN ong_projets p ON p.id = s.projet_id ORDER BY s.active DESC, s.full_name');
@@ -405,6 +412,6 @@ final class OngController extends Controller
                     $r['start_date'] ? fdate($r['start_date'], false) : '', $r['end_date'] ? fdate($r['end_date'], false) : '', (float) $r['monthly_cost']], $rows), ['landscape' => true]);
         }
         $edit = Request::int('edit');
-        view('ong::personnel', ['title' => 'Personnel de l\'organisation', 'rows' => $rows, 'edit' => $edit ? DB::one('SELECT * FROM ong_personnel WHERE id = ?', [$edit]) : null] + $this->lists());
+        view('ong::personnel', ['title' => 'Personnel de l\'organisation', 'rows' => $rows, 'edit' => $edit ? DB::one('SELECT * FROM ong_personnel WHERE id = ?', [$edit]) : null, 'grh' => S::grhActive()] + $this->lists());
     }
 }

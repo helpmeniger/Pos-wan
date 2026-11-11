@@ -14,6 +14,9 @@ final class DashboardController extends Controller
         // Accueil selon le mode de fonctionnement : le personnel de caisse arrive directement
         // sur la caisse de son activité (clinique, pressing), sans navigation supplémentaire.
         $mode = \App\Services\BusinessMode::current();
+        if ($mode === 'organisation') {
+            redirect(\App\Services\BusinessMode::homeUrl() ?? '/menu'); // pas de caisse ni de tableau de bord commercial
+        }
         if ($mode === 'clinique' || $mode === 'clinique_pharmacie') {
             if (!can('dashboard.view') && can('clinique.reception')) {
                 redirect('/clinique/caisse');
@@ -63,8 +66,8 @@ final class DashboardController extends Controller
 
     public function index(): void
     {
-        if (\App\Services\BusinessMode::is('ecole') && \App\Services\BusinessMode::hides('/dashboard') && can('ecole.view')) {
-            redirect('/ecole'); // mode Établissement : tableau de bord de l'établissement
+        if ($home = \App\Services\BusinessMode::homeUrl()) {
+            redirect($home); // mode Établissement ou Organisation : tableau de bord de l'activité
         }
         $u = $this->user();
         $storeId = (int) ($_GET['store'] ?? 0) ?: null;

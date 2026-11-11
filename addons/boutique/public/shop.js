@@ -224,6 +224,8 @@
     $$('input[name="delivery"]', form).forEach((r) => r.addEventListener('change', () => { addr.classList.toggle('d-none', form.delivery.value !== 'delivery'); onRefresh(); }));
     // Coordonnées retenues pour la prochaine commande (sur cet appareil seulement)
     try { const me = JSON.parse(localStorage.getItem('pm-shop-me') || '{}'); ['name', 'phone', 'email', 'address'].forEach((k) => { if (me[k] && form[k]) form[k].value = me[k]; }); } catch (e) { /* rien */ }
+    // Client connecté : les coordonnées de son compte priment
+    if (cfg.account) ['name', 'phone', 'email', 'address'].forEach((k) => { if (cfg.account[k] && form[k]) form[k].value = cfg.account[k]; });
     // Prix et disponibilités à jour avant de commander
     const ids = Object.keys(cart);
     if (ids.length) {

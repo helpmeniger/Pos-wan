@@ -17,6 +17,7 @@ $notes = $u ? Notifications::get() : [];
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
 <meta name="pw-currency" content="<?= e(json_encode(currency(), JSON_UNESCAPED_UNICODE)) ?>">
 <meta name="base-url" content="<?= e(url('/')) ?>">
+<?php if (App\Services\SyncService::due()): ?><meta name="pm-sync-auto" content="1"><?php endif; ?>
 <title><?= e($title) ?> · POS Marwa</title>
 <link rel="manifest" href="<?= e(url('/manifest.webmanifest')) ?>">
 <meta name="theme-color" content="#14213d">
@@ -36,7 +37,7 @@ $notes = $u ? Notifications::get() : [];
       <span>POS <b>Marwa</b></span>
     </a>
     <?php $posUrl = App\Services\BusinessMode::posUrl(); $posPerm = ['/clinique/caisse' => 'clinique.reception', '/pressing/caisse' => 'pressing.deposit', '/ecole/caisse' => 'ecole.caisse'][$posUrl] ?? 'pos.sell'; ?>
-    <?php if (can($posPerm)): ?>
+    <?php if ($posUrl !== '' && can($posPerm)): ?>
     <a href="<?= e(url($posUrl)) ?>" class="btn btn-pos-launch"><i class="bi <?= $posUrl === '/pos' ? 'bi-cart3' : 'bi-cash-coin' ?>"></i> Ouvrir la caisse</a>
     <?php endif; ?>
     <?php
@@ -116,6 +117,9 @@ $notes = $u ? Notifications::get() : [];
     </header>
     <main class="content">
       <?php $lic = App\Services\LicenceService::status(); ?>
+      <?php if (App\Services\SyncService::isOnline() && setting('sync_replica_at', '') !== ''): ?>
+        <div class="alert alert-warning py-2 small d-print-none"><i class="bi bi-arrow-repeat"></i> <b>Copie en ligne</b> alimentée par le poste local (synchronisée le <?= e(fdate(setting('sync_replica_at'))) ?>) : ce qui est saisi ici sera remplacé à la prochaine synchronisation.</div>
+      <?php endif; ?>
       <?php if (App\Saas\Saas::isTenant()): ?>
         <?php if ($lic['state'] === 'expired'): ?>
           <div class="alert alert-danger py-2 small d-print-none"><i class="bi bi-lock-fill"></i> <b>Abonnement expiré : lecture seule.</b> Ventes et modifications suspendues (vos données sont conservées). <a href="<?= e(url('/abonnement')) ?>">Renouveler mon abonnement</a></div>
@@ -150,6 +154,7 @@ $notes = $u ? Notifications::get() : [];
 <script src="<?= e(asset('js/scanner.js')) ?>"></script>
 <?php foreach ($addonAssets['js'] as $s): ?><script src="<?= e(asset($s)) ?>"></script><?php endforeach; ?>
 <?php foreach (($scripts ?? []) as $s): ?><script src="<?= e(asset($s)) ?>"></script><?php endforeach; ?>
+<script src="<?= e(asset('js/sync-auto.js')) ?>"></script>
 <script src="<?= e(asset('js/pwa.js')) ?>"></script>
 </body>
 </html>

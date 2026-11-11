@@ -23,7 +23,8 @@
       <span class="shop-name"><?= e($shopTitle) ?></span>
     </a>
     <?php if (!empty($withSearch)): ?><div class="shop-search flex-grow-1 d-none d-md-block"><i class="bi bi-search"></i><input type="search" class="form-control" placeholder="Rechercher un article…" data-search aria-label="Rechercher"></div><?php else: ?><div class="flex-grow-1"></div><?php endif; ?>
-    <?php if (!empty($withCart)): ?><button type="button" class="btn shop-cart-btn ms-auto" data-open-cart aria-label="Panier"><i class="bi bi-bag"></i><span class="d-none d-sm-inline ms-1">Panier</span><span class="shop-badge" data-cart-count hidden>0</span></button><?php endif; ?>
+    <a class="btn shop-cart-btn<?= empty($withCart) ? ' ms-auto' : '' ?>" href="<?= e(url('/boutique/compte')) ?>" aria-label="Mon compte"><i class="bi bi-person<?= !empty($account) ? '-check' : '' ?>"></i><span class="d-none d-sm-inline ms-1"><?= !empty($account) ? e(explode(' ', $account['name'])[0]) : 'Mon compte' ?></span></a>
+    <?php if (!empty($withCart)): ?><button type="button" class="btn shop-cart-btn" data-open-cart aria-label="Panier"><i class="bi bi-bag"></i><span class="d-none d-sm-inline ms-1">Panier</span><span class="shop-badge" data-cart-count hidden>0</span></button><?php endif; ?>
   </div>
   <?php if (!empty($withSearch)): ?><div class="container d-md-none pb-2"><div class="shop-search"><i class="bi bi-search"></i><input type="search" class="form-control" placeholder="Rechercher un article…" data-search aria-label="Rechercher"></div></div><?php endif; ?>
 </header>

@@ -15,7 +15,7 @@ final class ShopController extends Controller
     {
         return ['shopTitle' => ShopService::title(), 'tagline' => ShopService::setting('tagline'), 'color' => self::color(),
             'logo' => upload_url(setting('company_logo')), 'phone' => (string) (setting('company_phone') ?? ''), 'whatsapp' => preg_replace('/[^\d]/', '', ShopService::setting('whatsapp')),
-            'address' => (string) (setting('company_address') ?? ''), 'open' => ShopService::isOpen()];
+            'address' => (string) (setting('company_address') ?? ''), 'open' => ShopService::isOpen(), 'account' => ShopAccount::current()];
     }
 
     private static function color(): string
@@ -52,7 +52,8 @@ final class ShopController extends Controller
         $c = currency();
         return ['base' => base_path_prefix(), 'csrf' => csrf_token(), 'currency' => $c, 'stock' => ShopService::setting('stock_display', 'badge'),
             'delivery' => ShopService::setting('delivery', '1') === '1', 'fee' => (float) ShopService::setting('delivery_fee', '0'),
-            'min' => (float) ShopService::setting('min_order', '0'), 'open' => ShopService::isOpen()];
+            'min' => (float) ShopService::setting('min_order', '0'), 'open' => ShopService::isOpen(),
+            'account' => ($a = ShopAccount::current()) ? ['name' => $a['name'], 'phone' => $a['phone'], 'email' => (string) $a['email'], 'address' => (string) $a['address']] : null];
     }
 
     /** Disponibilités et prix à jour des articles du panier. */
@@ -71,6 +72,69 @@ final class ShopController extends Controller
             json_response(['ok' => false, 'error' => $e->getMessage()], 422);
         }
         json_response(['ok' => true, 'number' => $r['number'], 'total' => $r['total'], 'url' => url('/boutique/commande/' . $r['id'], ['t' => $r['token']])]);
+    }
+
+    // ------------------------------------------------------------------ compte client
+
+    private function msg(string $type, string $text): void
+    {
+        \App\Core\Session::set('shop_msg', [$type, $text]);
+    }
+
+    private function accountAction(callable $fn, string $ok): never
+    {
+        try {
+            $fn();
+            $this->msg('success', $ok);
+        } catch (BusinessException $e) {
+            $this->msg('danger', $e->getMessage());
+        }
+        redirect('/boutique/compte');
+    }
+
+    public function account(): void
+    {
+        $this->guard();
+        header('Cache-Control: no-store');
+        $a = ShopAccount::current();
+        $msg = \App\Core\Session::get('shop_msg');
+        \App\Core\Session::forget('shop_msg');
+        view('boutique::account', $this->shared() + ['msg' => $msg, 'orders' => $a ? ShopAccount::orders((int) $a['id']) : [], 'stats' => $a ? ShopAccount::stats((int) $a['id']) : null,
+            'statuses' => ShopService::STATUSES], null);
+    }
+
+    public function accountRegister(): void
+    {
+        $this->accountAction(fn () => ShopAccount::register($_POST), 'Votre compte est créé. Vos prochaines commandes apparaîtront ici.');
+    }
+
+    public function accountLogin(): void
+    {
+        $this->accountAction(fn () => ShopAccount::login(Request::str('phone'), (string) Request::input('password', '')), 'Bienvenue !');
+    }
+
+    public function accountLogout(): void
+    {
+        ShopAccount::logout();
+        redirect('/boutique');
+    }
+
+    public function accountUpdate(): void
+    {
+        $a = ShopAccount::current();
+        if (!$a) {
+            redirect('/boutique/compte');
+        }
+        $this->accountAction(fn () => ShopAccount::update((int) $a['id'], $_POST), 'Vos informations sont enregistrées.');
+    }
+
+    public function accountDelete(): void
+    {
+        $a = ShopAccount::current();
+        if (!$a) {
+            redirect('/boutique/compte');
+        }
+        $this->accountAction(fn () => ShopAccount::delete((int) $a['id'], (string) Request::input('password', '')), 'Votre compte a été supprimé.');
     }
 
     /** Reçu de commande et suivi (lien secret envoyé au client). */

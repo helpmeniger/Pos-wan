@@ -281,7 +281,7 @@ final class ShopService
                 'delivery' => $delivery, 'address' => $delivery === 'delivery' ? $address : null,
                 'note' => trim(mb_substr((string) ($d['note'] ?? ''), 0, 500)) ?: null,
                 'subtotal' => $subtotal, 'delivery_fee' => $fee, 'total' => round($subtotal + $fee, 2),
-                'warehouse_id' => self::warehouseId(), 'ip' => $ip,
+                'warehouse_id' => self::warehouseId(), 'ip' => $ip, 'account_id' => ShopAccount::current()['id'] ?? null,
             ]);
             foreach ($lines as $l) {
                 DB::insert('shop_order_items', $l + ['order_id' => $id]);

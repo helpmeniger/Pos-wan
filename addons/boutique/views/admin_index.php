@@ -8,6 +8,7 @@ foreach ($statuses as $k => [$label, $color, $icon]) {
 <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
   <div class="input-group input-group-sm w-auto"><span class="input-group-text"><i class="bi bi-globe2"></i> Votre boutique</span><input class="form-control" value="<?= e($shopUrl) ?>" readonly size="34" aria-label="Adresse de la boutique"><a class="btn btn-outline-primary" href="<?= e($shopUrl) ?>" target="_blank" rel="noopener" data-no-progress><i class="bi bi-box-arrow-up-right"></i> Ouvrir</a></div>
   <span class="badge text-bg-light border ms-auto">Aujourd'hui : <?= (int) $stats['today'] ?> commande(s) · <?= e(money($stats['sales_today'])) ?> encaissé(s)</span>
+  <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('/boutique-admin/clients')) ?>"><i class="bi bi-people"></i> Clients</a>
   <?php if (can('boutique.manage')): ?><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('/boutique-admin/reglages')) ?>"><i class="bi bi-sliders"></i> Réglages</a><?php endif; ?>
 </div>
 <div class="row g-2 mb-3">

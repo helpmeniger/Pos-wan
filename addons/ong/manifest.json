@@ -1,7 +1,7 @@
 {
     "code": "ong",
     "name": "ONG — projets, bailleurs et terrain",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "requires": "3.5.0",
     "author": "POS Marwa",
     "description": "Gestion d'une ONG ou d'une association : bailleurs, projets, conventions de financement et lignes budgétaires, fonds reçus, dépenses avec circuit d'approbation et contrôle du budget, comptes bancaires et caisses, missions terrain (ordre de mission, avance, justification), personnel, logistique (véhicules et carnet de bord, équipements, stocks et distributions), indicateurs et rapport financier par bailleur.",
