@@ -5774,6 +5774,22 @@ test('Pressing (HTTP) : « Livré » depuis l\'écran, ticket de livraison, rég
     ok(str_contains($t, 'porte bleue') && str_contains($t, 'LIVRAISON'), 'ticket : adresse de livraison');
     eq(403, $h->req('POST', "$B/pressing/reglages", http_build_query(['_csrf' => $m[1] ?? '', 'express_pourcent' => '10']))['code'], 'réglages réservés au responsable');
 });
+test('Fiscal Connect (phase 3) : migration sûre, pays sans règle inventée, réinstallation sans effet', function () {
+    actingAs('admin');
+    $sales = (int) DB::value('SELECT COUNT(*) FROM sales');
+    eq(['0001_fiscal'], App\Core\Addons::install('fiscal', false), 'installation');
+    App\Core\Addons::reset();
+    foreach (['fiscal_connectors', 'fiscal_countries', 'fiscal_profiles', 'fiscal_devices', 'fiscal_api_credentials', 'fiscal_certifications', 'fiscal_invoice_logs', 'fiscal_pending_queue', 'fiscal_certificates', 'fiscal_tax_rates', 'fiscal_webhooks', 'fiscal_audit_logs'] as $t) {
+        ok((int) DB::value('SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [$t]) === 1, "table $t");
+    }
+    eq(11, (int) DB::value('SELECT COUNT(*) FROM fiscal_countries'), '11 pays listés');
+    eq(0, (int) DB::value('SELECT COUNT(*) FROM fiscal_countries WHERE configured = 1 OR homologated = 1 OR certification_mode <> "unknown"'), 'aucune règle fiscale préremplie');
+    eq(0, (int) DB::value('SELECT COUNT(*) FROM fiscal_tax_rates'), 'aucun taux inventé');
+    eq([], App\Core\Addons::install('fiscal', false), 'réinstallation : rien à rejouer');
+    eq($sales, (int) DB::value('SELECT COUNT(*) FROM sales'), 'ventes intactes');
+    ok(is_file(BASE_PATH . '/addons/fiscal/sql/down.sql') && !glob(BASE_PATH . '/addons/fiscal/migrations/*down*'), 'retour arrière fourni hors des migrations automatiques');
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

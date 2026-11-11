@@ -1,0 +1,28 @@
+{
+    "code": "fiscal",
+    "name": "Marwa Fiscal Connect",
+    "version": "1.0.0",
+    "requires": "3.6.0",
+    "author": "POS Marwa",
+    "description": "Connexion des factures aux dispositifs fiscaux (MCF) et aux plateformes de facturation normalisée : connecteurs, pilotes, profils pays à configurer d'après les textes officiels, file d'attente, preuves de certification, journaux. Aucun pilote n'est déclaré compatible sans vérification du protocole officiel.",
+    "icon": "bi-shield-check",
+    "color": "#0f766e",
+    "permissions": {
+        "fiscal.view": "Fiscal Connect : voir le tableau de bord et l'état fiscal des factures",
+        "fiscal.configure": "Fiscal Connect : configurer pays, profils, connecteurs",
+        "fiscal.secrets": "Fiscal Connect : saisir les clés d'API et certificats (jamais les relire)",
+        "fiscal.queue": "Fiscal Connect : relancer les factures en attente",
+        "fiscal.reports": "Fiscal Connect : rapports fiscaux et clôtures",
+        "fiscal.logs": "Fiscal Connect : journaux techniques et d'audit"
+    },
+    "roles": {
+        "owner": ["fiscal.view", "fiscal.configure", "fiscal.secrets", "fiscal.queue", "fiscal.reports", "fiscal.logs"],
+        "store_manager": ["fiscal.view", "fiscal.queue", "fiscal.reports"],
+        "accountant": ["fiscal.view", "fiscal.reports"],
+        "auditor": ["fiscal.view", "fiscal.reports", "fiscal.logs"]
+    },
+    "menu": [],
+    "settings": {
+        "fiscal_sync_timeout": "8"
+    }
+}
