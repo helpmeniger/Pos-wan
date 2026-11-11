@@ -5790,6 +5790,93 @@ test('Fiscal Connect (phase 3) : migration sûre, pays sans règle inventée, r�
     ok(is_file(BASE_PATH . '/addons/fiscal/sql/down.sql') && !glob(BASE_PATH . '/addons/fiscal/migrations/*down*'), 'retour arrière fourni hors des migrations automatiques');
 });
 
+test('Fiscal Connect (phase 4) : moteur et simulation — certification, refus, panne, réponse perdue, doublon, secrets masqués', function () {
+    actingAs('admin');
+    $E = Addons\Fiscal\FiscalEngine::class;
+    $ne = (int) DB::value("SELECT id FROM fiscal_countries WHERE code = 'NE'");
+    $store = (int) DB::value('SELECT id FROM stores ORDER BY id LIMIT 1');
+    $sales = array_map('intval', array_column(DB::all("SELECT id FROM sales WHERE status = 'completed' AND store_id = ? ORDER BY id LIMIT 8", [$store]), 'id'));
+    ok(count($sales) >= 6, 'ventes disponibles');
+    eq('not_required', $E::certifySale($sales[0])['status'], 'sans profil actif : rien n\'est envoyé');
+    $cid = DB::insert('fiscal_connectors', ['name' => 'Simu', 'kind' => 'simulation', 'driver' => 'simulation', 'environment' => 'test', 'is_default' => 1, 'active' => 1, 'max_retries' => 3, 'config_json' => '{"scenario":"accept"}']);
+    $pid = DB::insert('fiscal_profiles', ['name' => 'Test NE', 'country_id' => $ne, 'environment' => 'test', 'seller_nif' => '123456/P', 'active' => 1]);
+    Addons\Fiscal\Secrets::put($cid, 'api_key', 'CLE-SECRETE-XYZ-987654');
+    ok(!str_contains((string) DB::value('SELECT value_enc FROM fiscal_api_credentials WHERE connector_id = ?', [$cid]), 'CLE-SECRETE'), 'secret chiffré en base');
+    eq('CLE-SECRETE-XYZ-987654', Addons\Fiscal\Secrets::get($cid, 'api_key'));
+    eq(['api_key' => '…7654'], Addons\Fiscal\Secrets::hints($cid), 'seul un repère est montré');
+
+    // 1. Réponse positive
+    $r = $E::certifySale($sales[0]);
+    eq('certified', $r['status'], $r['message']);
+    $c = $r['certification'];
+    ok(str_starts_with($c['fiscal_number'], 'SIMU-') && (int) $c['is_simulation'] === 1 && $c['signature'] && $c['proof_json'], 'preuve enregistrée, marquée simulation');
+    // 2. Double envoi : aucun second envoi
+    $logs = (int) DB::value('SELECT COUNT(*) FROM fiscal_invoice_logs WHERE certification_id = ?', [$c['id']]);
+    $r2 = $E::certifySale($sales[0]);
+    eq(['certified', $c['fiscal_number']], [$r2['status'], $r2['certification']['fiscal_number']], 'même numéro');
+    eq($logs, (int) DB::value('SELECT COUNT(*) FROM fiscal_invoice_logs WHERE certification_id = ?', [$c['id']]), 'aucun nouvel appel au dispositif');
+    // 3. Ligne certifiée non modifiable par le moteur
+    eq(0, DB::run("UPDATE fiscal_certifications SET status = 'pending' WHERE id = ? AND status <> 'certified'", [$c['id']])->rowCount(), 'garde « status <> certified »');
+
+    // 4. Réponse négative → rejetée, jamais certifiée
+    DB::update('fiscal_connectors', ['config_json' => '{"scenario":"reject"}'], 'id = ?', [$cid]);
+    $r = $E::certifySale($sales[1]);
+    eq('rejected', $r['status']);
+    ok($r['certification']['fiscal_number'] === null, 'aucun numéro');
+    // 5. Dispositif injoignable → file d'attente, puis épuisement des tentatives
+    DB::update('fiscal_connectors', ['config_json' => '{"scenario":"unreachable"}'], 'id = ?', [$cid]);
+    $r = $E::certifySale($sales[2]);
+    eq('pending', $r['status']);
+    ok(str_contains($r['message'], 'NON CERTIFIÉE'), 'message clair');
+    $q = $r['certification']['id'];
+    eq(1, (int) DB::value('SELECT COUNT(*) FROM fiscal_pending_queue WHERE certification_id = ?', [$q]), 'en file d\'attente');
+    DB::run('UPDATE fiscal_pending_queue SET next_attempt_at = NOW() - INTERVAL 1 MINUTE');
+    eq(['processed' => 1, 'certified' => 0], $E::processQueue(), 'file traitée, toujours en panne');
+    DB::run('UPDATE fiscal_pending_queue SET next_attempt_at = NOW() - INTERVAL 1 MINUTE');
+    $E::processQueue();
+    eq('failed', DB::value('SELECT status FROM fiscal_certifications WHERE id = ?', [$q]), 'tentatives épuisées → échec, action manuelle');
+    eq(0, (int) DB::value('SELECT COUNT(*) FROM fiscal_pending_queue WHERE certification_id = ?', [$q]));
+    // Relance manuelle après retour du réseau
+    DB::update('fiscal_connectors', ['config_json' => '{"scenario":"accept"}'], 'id = ?', [$cid]);
+    eq('certified', $E::attempt($q, true)['status'], 'relance manuelle réussie');
+    // 6. Réponse perdue : le dispositif a certifié mais la caisse n'a rien reçu → au second essai, on demande l'état, pas de nouvel envoi
+    DB::update('fiscal_connectors', ['config_json' => '{"scenario":"lost_response"}'], 'id = ?', [$cid]);
+    $r = $E::certifySale($sales[3]);
+    eq('pending', $r['status'], 'réponse perdue → non certifiée');
+    DB::update('fiscal_connectors', ['config_json' => '{"scenario":"accept"}'], 'id = ?', [$cid]);
+    DB::run('UPDATE fiscal_pending_queue SET next_attempt_at = NOW() - INTERVAL 1 MINUTE');
+    $E::processQueue();
+    $c3 = $E::forSale($sales[3]);
+    eq('certified', $c3['status']);
+    $acts = array_column(DB::all('SELECT action FROM fiscal_invoice_logs WHERE certification_id = ? ORDER BY id', [$c3['id']]), 'action');
+    eq(['certifyInvoice', 'getInvoiceStatus'], $acts, 'état demandé au dispositif, aucun second envoi');
+    $sim = json_decode((string) file_get_contents(STORAGE_PATH . "/fiscal/simulation-$cid.json"), true);
+    ok(!isset($sim['invoices'][$c3['idempotency_key']]['duplicate_hits']), 'le dispositif n\'a reçu la facture qu\'une fois');
+    // 7. Réponse positive incomplète → refusée par le contrôle
+    DB::update('fiscal_connectors', ['config_json' => '{"scenario":"invalid"}', 'max_retries' => 1], 'id = ?', [$cid]);
+    $r = $E::certifySale($sales[4]);
+    ok($r['status'] !== 'certified' && str_contains($r['message'], 'Numéro de certification absent'), 'réponse incomplète refusée : ' . $r['message']);
+    // 8. Authentification refusée → échec, pas de nouvel essai automatique
+    DB::update('fiscal_connectors', ['config_json' => '{"scenario":"auth_fail"}', 'max_retries' => 3], 'id = ?', [$cid]);
+    eq('failed', $E::certifySale($sales[5])['status']);
+    // 9. Séparation TEST / PROD : un profil de production n'utilise jamais la simulation
+    DB::update('fiscal_profiles', ['environment' => 'prod'], 'id = ?', [$pid]);
+    eq(null, $E::connectorFor(DB::one('SELECT * FROM fiscal_profiles WHERE id = ?', [$pid]), $store, null), 'simulation interdite en production');
+    DB::update('fiscal_profiles', ['environment' => 'test'], 'id = ?', [$pid]);
+    // 10. Taux non rattaché à un groupe fiscal configuré → non envoyé
+    DB::insert('fiscal_tax_rates', ['country_id' => $ne, 'group_code' => 'Z', 'label' => 'Taux test', 'rate' => 99, 'official_source' => 'test automatisé']);
+    DB::update('fiscal_connectors', ['config_json' => '{"scenario":"accept"}'], 'id = ?', [$cid]);
+    $r = $E::certifySale($sales[6] ?? $sales[5]);
+    ok($r['status'] !== 'certified', 'taux non configuré : non certifiée');
+    DB::run('DELETE FROM fiscal_tax_rates WHERE group_code = ?', ['Z']);
+    // 11. Annulation : bloquée pour une facture certifiée
+    ok(str_contains((string) $E::cancelBlocker($sales[0]), 'avoir'), 'annulation locale refusée');
+    // Secrets jamais dans les journaux
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM fiscal_invoice_logs WHERE request_redacted LIKE '%CLE-SECRETE%' OR response_redacted LIKE '%CLE-SECRETE%'"));
+    eq('{"api_key":"***","a":"Authorization: ***"}', json_encode(Addons\Fiscal\Secrets::redact(['api_key' => 'x', 'a' => 'Authorization: Bearer abc'])));
+    $GLOBALS['FISCAL_SIMU'] = $cid;
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });
