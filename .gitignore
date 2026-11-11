@@ -37,3 +37,6 @@ storage/tenants/
 storage/saas/
 storage/imports/*
 windows/installateur/*.exe
+
+# Documents déposés dans le module Archives (jamais versionnés)
+storage/archives/
