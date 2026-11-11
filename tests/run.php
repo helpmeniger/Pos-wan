@@ -5877,6 +5877,120 @@ test('Fiscal Connect (phase 4) : moteur et simulation — certification, refus, 
     $GLOBALS['FISCAL_SIMU'] = $cid;
 });
 
+test('Fiscal Connect (phase 5) : pilotes REST, OAuth2, SOAP, TCP, série, squelettes pays (sur une fausse API locale)', function () use ($port) {
+    actingAs('admin');
+    $E = Addons\Fiscal\FiscalEngine::class;
+    $R = Addons\Fiscal\DriverResult::class;
+    $fport = $port + 11;
+    @unlink(sys_get_temp_dir() . "/fake-fiscal-$fport.json");
+    $api = proc_open(sprintf('exec php -S 127.0.0.1:%d %s', $fport, escapeshellarg(BASE_PATH . '/tests/fake-fiscal-api.php')), [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $ap);
+    usleep(500000);
+    try {
+        $profile = DB::one('SELECT * FROM fiscal_profiles WHERE active = 1 ORDER BY id LIMIT 1');
+        $free = array_map('intval', array_column(DB::all("SELECT id FROM sales WHERE status = 'completed' AND id NOT IN (SELECT sale_id FROM fiscal_certifications) ORDER BY id LIMIT 6"), 'id'));
+        ok(count($free) >= 5, 'ventes non certifiées disponibles');
+        DB::run('UPDATE fiscal_connectors SET active = 0, is_default = 0');
+        $cfg = fn(string $mode, array $extra = []) => json_encode($extra + ['base_url' => "http://127.0.0.1:$fport/$mode", 'auth' => ['type' => 'api_key', 'header' => 'X-Api-Key'],
+            'endpoints' => ['test' => ['method' => 'GET', 'path' => '/status'], 'certify' => ['method' => 'POST', 'path' => '/invoices'], 'status' => ['method' => 'GET', 'path' => '/invoices/{{idempotency_key}}']],
+            'response_map' => ['fiscal_number' => 'data.code', 'device_id' => 'data.mcf', 'signature' => 'data.sig', 'qr_payload' => 'data.qr'], 'success' => ['path' => 'result', 'values' => ['ACCEPTED']]]);
+        $rid = DB::insert('fiscal_connectors', ['name' => 'API REST test', 'kind' => 'api', 'driver' => 'generic_rest', 'transport' => 'rest', 'environment' => 'test', 'is_default' => 1, 'active' => 1, 'timeout_s' => 2, 'max_retries' => 3, 'config_json' => $cfg('ok')]);
+        $conn = fn() => DB::one('SELECT * FROM fiscal_connectors WHERE id = ?', [$rid]);
+        $drv = fn() => Addons\Fiscal\DriverRegistry::make($conn());
+        eq($R::CONFIG_ERROR, $drv()->testConnection()->code, 'clé absente : erreur de configuration explicite');
+        Addons\Fiscal\Secrets::put($rid, 'api_key', 'BAD-KEY-000000');
+        eq($R::AUTH_FAILED, $drv()->testConnection()->code, 'mauvaise clé : authentification refusée');
+        Addons\Fiscal\Secrets::put($rid, 'api_key', 'GOOD-KEY-123456');
+        ok($drv()->testConnection()->isOk(), 'connexion et authentification');
+        // Certification réelle par le moteur via HTTP
+        $r = $E::certifySale($free[0]);
+        eq('certified', $r['status'], $r['message']);
+        ok(str_starts_with($r['certification']['fiscal_number'], 'API-') && $r['certification']['device_id'] === 'DEV-01' && (int) $r['certification']['is_simulation'] === 0, 'données officielles de la (fausse) API stockées');
+        eq(0, (int) DB::value("SELECT COUNT(*) FROM fiscal_invoice_logs WHERE connector_id = ? AND (request_redacted LIKE '%GOOD-KEY%' OR request_redacted LIKE '%BAD-KEY%')", [$rid]), 'clé absente des journaux');
+        ok(str_contains((string) DB::value("SELECT request_redacted FROM fiscal_invoice_logs WHERE connector_id = ? AND action = 'certifyInvoice'", [$rid]), 'X-Api-Key: ***'), 'en-tête masqué');
+        ok(!str_contains((string) $r['certification']['proof_json'], 'GOOD-KEY'), 'clé absente de la preuve');
+        // État d'une facture : connue / inconnue
+        eq($R::CERTIFIED, $drv()->getInvoiceStatus($r['certification']['idempotency_key'])->code, 'facture retrouvée');
+        eq($R::NOT_FOUND, $drv()->getInvoiceStatus(str_repeat('a', 64))->code, 'facture inconnue');
+        eq($R::UNSUPPORTED, $drv()->closeDay(date('Y-m-d'))->code, 'point d\'accès non configuré : non pris en charge');
+        // Refus, panne, réponse illisible, délai
+        DB::update('fiscal_connectors', ['config_json' => $cfg('reject')], 'id = ?', [$rid]);
+        eq('rejected', $E::certifySale($free[1])['status'], 'HTTP 422 → rejetée');
+        DB::update('fiscal_connectors', ['config_json' => $cfg('down')], 'id = ?', [$rid]);
+        eq('pending', $E::certifySale($free[2])['status'], 'HTTP 503 → file d\'attente');
+        DB::update('fiscal_connectors', ['config_json' => $cfg('garbage')], 'id = ?', [$rid]);
+        eq($R::INVALID_RESPONSE, $drv()->testConnection()->code, 'réponse non JSON');
+        DB::update('fiscal_connectors', ['config_json' => $cfg('slow'), 'timeout_s' => 1], 'id = ?', [$rid]);
+        eq($R::TIMEOUT, $drv()->testConnection()->code, 'délai dépassé');
+        // Retour du service : la facture en attente est certifiée par la file
+        DB::update('fiscal_connectors', ['config_json' => $cfg('ok'), 'timeout_s' => 2], 'id = ?', [$rid]);
+        DB::run('UPDATE fiscal_pending_queue SET next_attempt_at = NOW() - INTERVAL 1 MINUTE');
+        $E::processQueue();
+        eq('certified', $E::forSale($free[2])['status'], 'certifiée au retour du service');
+        // Production : HTTPS obligatoire, vérification SSL non désactivable
+        DB::update('fiscal_connectors', ['environment' => 'prod', 'config_json' => $cfg('ok', ['verify_ssl' => false])], 'id = ?', [$rid]);
+        eq($R::CONFIG_ERROR, $drv()->testConnection()->code, 'http refusé en production');
+        DB::update('fiscal_connectors', ['environment' => 'test'], 'id = ?', [$rid]);
+
+        // OAuth2 client credentials : jeton obtenu, chiffré, réutilisé
+        $oid = DB::insert('fiscal_connectors', ['name' => 'API OAuth2', 'kind' => 'api', 'driver' => 'generic_rest', 'environment' => 'test', 'active' => 0, 'timeout_s' => 3,
+            'config_json' => $cfg('oa', ['auth' => ['type' => 'oauth2', 'token_url' => "http://127.0.0.1:$fport/oauth/token"]])]);
+        Addons\Fiscal\Secrets::put($oid, 'client_id', 'client-1');
+        Addons\Fiscal\Secrets::put($oid, 'client_secret', 'SECRET-CLIENT-777');
+        $od = Addons\Fiscal\DriverRegistry::make(DB::one('SELECT * FROM fiscal_connectors WHERE id = ?', [$oid]));
+        $inv = Addons\Fiscal\InvoiceNormalizer::fromSale($free[3], $profile);
+        $c = $od->certifyInvoice($inv);
+        eq($R::CERTIFIED, $c->code, $c->message);
+        ok($od->testConnection()->isOk(), 'second appel');
+        $hits = json_decode(file_get_contents(sys_get_temp_dir() . "/fake-fiscal-$fport.json"), true)['hits'];
+        eq(1, count(array_filter($hits, fn($h) => $h === 'POST /oauth/token')), 'jeton OAuth2 demandé une seule fois (cache)');
+        ok(!str_contains((string) DB::value("SELECT value_enc FROM fiscal_api_credentials WHERE connector_id = ? AND ckey = 'oauth_token'", [$oid]), 'TOKEN-OAUTH'), 'jeton chiffré');
+        ok(!str_contains((string) $c->request, 'SECRET-CLIENT'), 'secret client absent de la requête rapportée');
+
+        // SOAP / XML
+        $tpl = '<?xml version="1.0"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><Certify><Number>{{local_number}}</Number><Buyer>{{buyer.name}}</Buyer><Total>{{totals.ttc}}</Total></Certify></s:Body></s:Envelope>';
+        $sid = DB::insert('fiscal_connectors', ['name' => 'SOAP', 'kind' => 'api', 'driver' => 'generic_soap', 'environment' => 'test', 'active' => 0, 'config_json' => json_encode([
+            'base_url' => "http://127.0.0.1:$fport/soap", 'endpoints' => ['certify' => ['action' => 'urn:Certify', 'template' => $tpl]],
+            'response_map' => ['fiscal_number' => "//*[local-name()='Code']", 'signature' => "//*[local-name()='Signature']"], 'success' => ['xpath' => "//*[local-name()='Status']", 'values' => ['OK']]])]);
+        $sd = Addons\Fiscal\DriverRegistry::make(DB::one('SELECT * FROM fiscal_connectors WHERE id = ?', [$sid]));
+        $inv['buyer'] = ['name' => 'Société <A&B>'];
+        $c = $sd->certifyInvoice($inv);
+        eq([$R::CERTIFIED, 'SOAP-' . $inv['local_number'], 'SIG-SOAP'], [$c->code, $c->data['fiscal_number'] ?? null, $c->data['signature'] ?? null], $c->message);
+        ok(str_contains((string) $c->request, 'Société &lt;A&amp;B&gt;'), 'valeurs échappées en XML');
+        DB::update('fiscal_connectors', ['config_json' => json_encode(['base_url' => "http://127.0.0.1:$fport/soap", 'endpoints' => ['certify' => ['template' => str_replace('<Certify>', '<Certify><Reject>1</Reject>', $tpl)]]])], 'id = ?', [$sid]);
+        eq($R::REJECTED, Addons\Fiscal\DriverRegistry::make(DB::one('SELECT * FROM fiscal_connectors WHERE id = ?', [$sid]))->certifyInvoice($inv)->code, 'SOAP Fault → rejetée');
+    } finally {
+        proc_terminate($api);
+    }
+
+    // TCP (JSON par ligne) : faux dispositif réseau
+    $tport = 22000 + random_int(0, 80);
+    $script = '$l=stream_socket_server("tcp://127.0.0.1:' . $tport . '");$c=stream_socket_accept($l,10);$m=json_decode(fgets($c),true);'
+        . 'fwrite($c,json_encode(["ok"=>"1","n"=>"TCP-".$m["local_number"],"sig"=>"S1","mcf"=>"MCF-TCP"])."\n");fclose($c);';
+    $srv = proc_open([PHP_BINARY, '-r', $script], [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $pp);
+    usleep(400000);
+    $tc = ['id' => 0, 'name' => 'TCP', 'kind' => 'mcf', 'driver' => 'generic_tcp', 'environment' => 'test', 'timeout_s' => 3, 'config_json' => json_encode(['host' => '127.0.0.1', 'port' => $tport,
+        'endpoints' => ['certify' => ['template' => '{"op":"certify","local_number":"{{local_number}}","ttc":{{json:totals.ttc}}}']], 'response_map' => ['fiscal_number' => 'n', 'signature' => 'sig', 'device_id' => 'mcf'], 'success' => ['path' => 'ok', 'values' => ['1']]])];
+    $c = Addons\Fiscal\DriverRegistry::make($tc)->certifyInvoice($inv);
+    proc_terminate($srv);
+    eq([$R::CERTIFIED, 'TCP-' . $inv['local_number'], 'MCF-TCP'], [$c->code, $c->data['fiscal_number'] ?? null, $c->data['device_id'] ?? null], $c->message);
+    eq($R::UNREACHABLE, Addons\Fiscal\DriverRegistry::make($tc)->certifyInvoice($inv)->code, 'dispositif TCP éteint → injoignable');
+    // Série : validation stricte du port ; port absent → injoignable (pas de matériel ici)
+    $se = ['id' => 0, 'kind' => 'mcf', 'driver' => 'generic_serial', 'environment' => 'test', 'config_json' => json_encode(['port' => '/dev/sda; rm -rf /', 'endpoints' => ['test' => []]])];
+    eq($R::CONFIG_ERROR, Addons\Fiscal\DriverRegistry::make($se)->testConnection()->code, 'port série invalide refusé');
+    $se['config_json'] = json_encode(['port' => PHP_OS_FAMILY === 'Windows' ? 'COM98' : '/dev/ttyUSB97', 'endpoints' => ['test' => []]]);
+    eq($R::UNREACHABLE, Addons\Fiscal\DriverRegistry::make($se)->testConnection()->code, 'port série absent → injoignable');
+    // Squelettes pays : jamais de certification
+    foreach (['ne_secef', 'bj_skeleton', 'tg_skeleton'] as $code) {
+        $d = Addons\Fiscal\DriverRegistry::make(['id' => 0, 'kind' => 'mcf', 'driver' => $code, 'environment' => 'test']);
+        eq([$R::UNSUPPORTED, $R::UNSUPPORTED], [$d->testConnection()->code, $d->certifyInvoice($inv)->code], "$code non pris en charge");
+    }
+    foreach (Addons\Fiscal\DriverRegistry::all() as $code => $i) {
+        ok($i['verified'] === false, "$code non déclaré vérifié");
+    }
+    DB::run('UPDATE fiscal_connectors SET active = 0, is_default = 0');
+    DB::update('fiscal_connectors', ['active' => 1, 'is_default' => 1, 'config_json' => '{"scenario":"accept"}'], 'id = ?', [$GLOBALS['FISCAL_SIMU']]);
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });
