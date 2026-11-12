@@ -6247,6 +6247,25 @@ test('Fiscal Connect (phase 8) : sécurité — XSS, CSRF, droits, traversée de
     eq(1, (int) DB::value("SELECT COUNT(*) FROM fiscal_audit_logs WHERE action = 'device.close_day' AND entity_id = ?", [$sim]), 'clôture inscrite au journal d\'audit');
 });
 
+test('Marwa Pay (phase 3) : migration sûre, devises sans taux, prestataires non déclarés intégrés', function () {
+    actingAs('admin');
+    $sales = (int) DB::value('SELECT COUNT(*) FROM sales');
+    $pays = (int) DB::value('SELECT COUNT(*) FROM sale_payments');
+    eq(['0001_pay'], App\Core\Addons::install('pay', false), 'installation');
+    App\Core\Addons::reset();
+    App\Core\Events::reset();
+    foreach (['payment_providers', 'payment_connectors', 'payment_api_credentials', 'payment_terminals', 'payment_methods', 'payment_transactions', 'payment_transaction_logs', 'payment_refunds', 'payment_webhooks', 'payment_currencies', 'payment_exchange_rates', 'payment_reconciliation', 'payment_settings'] as $t) {
+        ok((int) DB::value('SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [$t]) === 1, "table $t");
+    }
+    eq(['EUR', 'GHS', 'MAD', 'NGN', 'USD', 'XOF'], array_column(DB::all('SELECT code FROM payment_currencies ORDER BY code'), 'code'));
+    eq(0, (int) DB::value('SELECT COUNT(*) FROM payment_exchange_rates'), 'aucun taux de change inventé');
+    eq(0, (int) DB::value('SELECT COUNT(*) FROM payment_providers WHERE verified = 1'), 'aucun prestataire déclaré intégré');
+    eq(0, (int) DB::value('SELECT COUNT(*) FROM payment_methods WHERE active = 1'), 'aucun moyen de paiement actif d\'office');
+    eq([], App\Core\Addons::install('pay', false), 'réinstallation sans effet');
+    eq([$sales, $pays], [(int) DB::value('SELECT COUNT(*) FROM sales'), (int) DB::value('SELECT COUNT(*) FROM sale_payments')], 'ventes et règlements intacts');
+    ok(DB::value("SELECT prefix FROM sequences WHERE name = 'pay_transaction'") === 'PAY', 'numérotation des transactions');
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

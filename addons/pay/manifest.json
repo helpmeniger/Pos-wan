@@ -1,0 +1,29 @@
+{
+    "code": "pay",
+    "name": "Marwa Pay Connect",
+    "version": "1.0.0",
+    "requires": "3.7.0",
+    "author": "POS Marwa",
+    "description": "Paiements électroniques à la caisse : prestataires et API, terminaux de paiement (TPE), transactions vérifiées serveur à serveur, remboursements transmis au prestataire, rapprochement, rapports. Aucune donnée de carte n'est stockée ; aucun connecteur n'est déclaré compatible sans documentation officielle.",
+    "icon": "bi-credit-card-2-front",
+    "color": "#1d4ed8",
+    "permissions": {
+        "pay.use": "Marwa Pay : encaisser un paiement électronique à la caisse",
+        "pay.view": "Marwa Pay : consulter le tableau de bord et les transactions",
+        "pay.configure": "Marwa Pay : configurer prestataires, moyens de paiement et terminaux",
+        "pay.secrets": "Marwa Pay : saisir les clés d'API et certificats (jamais les relire)",
+        "pay.refund": "Marwa Pay : rembourser ou annuler une transaction",
+        "pay.reconcile": "Marwa Pay : rapprochement des paiements",
+        "pay.reports": "Marwa Pay : rapports et exportations",
+        "pay.logs": "Marwa Pay : journaux techniques"
+    },
+    "roles": {
+        "owner": ["pay.use", "pay.view", "pay.configure", "pay.secrets", "pay.refund", "pay.reconcile", "pay.reports", "pay.logs"],
+        "store_manager": ["pay.use", "pay.view", "pay.refund", "pay.reports"],
+        "cashier": ["pay.use"],
+        "accountant": ["pay.view", "pay.reconcile", "pay.reports"],
+        "auditor": ["pay.view", "pay.reports", "pay.logs"]
+    },
+    "menu": [],
+    "settings": {}
+}
