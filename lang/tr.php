@@ -1284,6 +1284,7 @@ return [
     'Remboursements' => 'İadeler',
     'Remettre en stock (produit revendable)' => 'Stoğa geri koy (yeniden satılabilir ürün)',
     'Remise' => 'İndirim',
+    'remise' => 'indirim',
     'Remise (F7)' => 'İndirim (F7)',
     'Remise (montant)' => 'İndirim (tutar)',
     'Remise : une autorisation sera demandée.' => 'İndirim: yetki istenecek.',

@@ -1278,6 +1278,7 @@ return [
     'Remboursements' => 'Mayar da kuɗi',
     'Remettre en stock (produit revendable)' => 'Mayar da shi cikin ajiya (kayan da za a iya sake sayarwa)',
     'Remise' => 'Ragi',
+    'remise' => 'ragi',
     'Remise (F7)' => 'Ragi (F7)',
     'Remise (montant)' => 'Ragi (adadin kuɗi)',
     'Remise : une autorisation sera demandée.' => 'Ragi : za a nemi izini.',

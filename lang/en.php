@@ -1251,6 +1251,7 @@ return [
     'Remboursements' => 'Refunds',
     'Remettre en stock (produit revendable)' => 'Return to stock (resellable product)',
     'Remise' => 'Discount',
+    'remise' => 'discount',
     'Remise (F7)' => 'Discount (F7)',
     'Remise (montant)' => 'Discount (amount)',
     'Remise : une autorisation sera demandée.' => 'Discount: authorization will be requested.',

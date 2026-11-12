@@ -125,8 +125,8 @@
         const lt = up * l.qty - (l.discount || 0);
         const subs = [];
         if (l.packName) subs.push(l.packName);
-        if (l.unitPrice !== null && l.unitPrice !== undefined) subs.push('prix modifié');
-        if (l.discount > 0) subs.push('remise ' + fmt(l.discount));
+        if (l.unitPrice !== null && l.unitPrice !== undefined) subs.push(__('prix modifié'));
+        if (l.discount > 0) subs.push(__('remise') + ' ' + fmt(l.discount));
         if (cart.wholesale && !l.packId && l.wholesale > 0 && up === l.wholesale) subs.push('prix de gros');
         if (l.rx) subs.push('ordonnance');
         if (l.track && l.qty * (l.factor || 1) > l.stock) subs.push('⚠ stock ' + fmtQ(l.stock));
@@ -139,7 +139,7 @@
     const t = totals();
     $('#totalOut').textContent = fmt(t.total);
     $('#summary').innerHTML = `<div><span>${cart.lines.length} ${esc(__('ligne(s)'))} · ${fmtQ(t.items)} ${esc(__('article(s)'))}</span><span>${esc(__('Sous-total'))} ${fmt(t.gross)}</span></div>` +
-      (t.discount > 0 ? `<div><span>Remises</span><span>− ${fmt(t.discount)}</span></div>` : '') +
+      (t.discount > 0 ? `<div><span>${esc(__('Remises'))}</span><span>− ${fmt(t.discount)}</span></div>` : '') +
       (cart.note ? `<div><span>Note : ${esc(cart.note)}</span></div>` : '');
     const c = cart.customer;
     $('#customerBadge span').textContent = c ? `${c.name}${c.phone ? ' · ' + c.phone : ''} — ${__('encours')} ${fmt(c.balance)}` : __('Client comptoir');
@@ -991,7 +991,7 @@
       <div class="prov">TICKET PROVISOIRE<br>vente hors connexion${CFG.fiscal ? '<br>FACTURE NON CERTIFIÉE' : ''}</div>
       <div>N° ${esc(x.number)}<br>${esc(new Date(x.at).toLocaleString('fr-FR'))}<br>${esc(__('Caissier'))} : ${esc(CFG.userName || '')}${x.customer ? '<br>' + esc(__('Client')) + ' : ' + esc(x.customer) : ''}</div><hr>
       <table>${x.lines.map((l) => row(esc(l.name) + '<br>' + fmtQ(l.qty) + ' × ' + plain(l.price), plain(l.total))).join('')}</table><hr>
-      <table>${x.discount > 0 ? row('Remises', '− ' + plain(x.discount)) : ''}${row('<b>TOTAL</b>', '<b>' + fmt(x.total) + '</b>')}
+      <table>${x.discount > 0 ? row(__('Remises'), '− ' + plain(x.discount)) : ''}${row('<b>TOTAL</b>', '<b>' + fmt(x.total) + '</b>')}
       ${x.payments.map((p) => row(esc(p.method) + (p.provider ? ' · ' + esc(p.provider) : ''), plain(p.amount))).join('')}${row('Rendu', fmt(x.change))}</table><hr>
       <div class="c">Ce ticket sera remplacé par le ticket définitif<br>après enregistrement sur le serveur.</div>
       </body></html>`;

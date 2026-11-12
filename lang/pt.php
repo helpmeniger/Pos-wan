@@ -1279,6 +1279,7 @@ return [
     'Remboursements' => 'Reembolsos',
     'Remettre en stock (produit revendable)' => 'Repor em stock (produto revendável)',
     'Remise' => 'Desconto',
+    'remise' => 'desconto',
     'Remise (F7)' => 'Desconto (F7)',
     'Remise (montant)' => 'Desconto (valor)',
     'Remise : une autorisation sera demandée.' => 'Desconto: será pedida uma autorização.',

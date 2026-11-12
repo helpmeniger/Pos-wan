@@ -1292,6 +1292,7 @@ return [
     'Remboursements' => 'المبالغ المستردة',
     'Remettre en stock (produit revendable)' => 'إعادة إلى المخزون (منتج قابل لإعادة البيع)',
     'Remise' => 'الخصم',
+    'remise' => 'خصم',
     'Remise (F7)' => 'الخصم (F7)',
     'Remise (montant)' => 'الخصم (مبلغ)',
     'Remise : une autorisation sera demandée.' => 'الخصم: سيُطلب تفويض.',
