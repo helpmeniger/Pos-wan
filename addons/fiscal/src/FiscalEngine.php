@@ -220,6 +220,11 @@ final class FiscalEngine
             self::dequeue($certId);
             return self::result($cert, 'Profil fiscal ou vente introuvable.');
         }
+        if ($cert['doc_type'] === 'invoice' && $sale['status'] === 'cancelled') {
+            self::touch($certId, ['status' => 'failed', 'attempts' => max(0, (int) $cert['attempts'] - 1), 'last_error' => 'Vente annulée : facture non transmise.']);
+            self::dequeue($certId);
+            return self::result($cert, 'Vente annulée : la facture n\'est pas transmise.');
+        }
         $connector = self::connectorFor($profile, (int) $sale['store_id'], $sale['register_id'] !== null ? (int) $sale['register_id'] : null);
         if (!$connector) {
             return self::notSent($cert, 'Aucun connecteur fiscal actif pour cet environnement (' . $profile['environment'] . ').');

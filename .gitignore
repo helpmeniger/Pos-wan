@@ -40,3 +40,5 @@ windows/installateur/*.exe
 
 # Documents déposés dans le module Archives (jamais versionnés)
 storage/archives/
+storage/fiscal/
+storage/fiscal-queue.lock

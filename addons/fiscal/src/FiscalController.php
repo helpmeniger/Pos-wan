@@ -23,9 +23,9 @@ final class FiscalController extends Controller
     public function dashboard(): void
     {
         $by = [];
-        foreach (DB::all('SELECT status, is_simulation, COUNT(*) n FROM fiscal_certifications GROUP BY status, is_simulation') as $r) {
-            $k = $r['status'] . ((int) $r['is_simulation'] ? '_sim' : '');
-            $by[$k] = (int) $r['n'];
+        foreach (DB::all('SELECT status, environment, is_simulation, COUNT(*) n FROM fiscal_certifications GROUP BY status, environment, is_simulation') as $r) {
+            $k = $r['status'] === 'certified' ? 'certified_' . ((int) $r['is_simulation'] ? 'sim' : $r['environment']) : $r['status'];
+            $by[$k] = ($by[$k] ?? 0) + (int) $r['n'];
         }
         $today = DB::one("SELECT SUM(status = 'certified') ok, SUM(status IN ('pending','sending')) wait, SUM(status IN ('rejected','failed')) ko FROM fiscal_certifications WHERE created_at >= CURDATE()");
         $warnings = [];
@@ -246,7 +246,7 @@ final class FiscalController extends Controller
             $params[] = $st;
         }
         $sql = 'FROM fiscal_certifications x LEFT JOIN fiscal_connectors c ON c.id = x.connector_id LEFT JOIN sales s ON s.id = x.sale_id LEFT JOIN fiscal_pending_queue q ON q.certification_id = x.id WHERE ' . implode(' AND ', $where);
-        $sel = 'x.*, c.name AS connector, s.total, q.next_attempt_at';
+        $sel = 'x.*, c.name AS connector, s.total, s.status AS sale_status, q.next_attempt_at';
         if (Export::requested() && can('fiscal.reports')) {
             Export::download('certifications-fiscales', $title, ['Document', 'Type', 'Numéro local', 'Statut', 'Numéro fiscal', 'Dispositif', 'Simulation', 'Montant TTC', 'Date', 'Certifiée le', 'Erreur'],
                 array_map(fn($r) => [$r['id'], $r['doc_type'] === 'invoice' ? 'Facture' : 'Avoir', $r['local_number'], A::STATUSES[$r['status']], $r['fiscal_number'], $r['device_id'], (int) $r['is_simulation'] ? 'OUI – NON CERTIFIÉ' : 'non',
@@ -268,7 +268,7 @@ final class FiscalController extends Controller
 
     public function certification(int $id): void
     {
-        $c = DB::one('SELECT x.*, f.name AS connector, f.driver, p.name AS profile FROM fiscal_certifications x LEFT JOIN fiscal_connectors f ON f.id = x.connector_id LEFT JOIN fiscal_profiles p ON p.id = x.profile_id WHERE x.id = ?', [$id]);
+        $c = DB::one('SELECT x.*, f.name AS connector, f.driver, p.name AS profile, (SELECT status FROM sales WHERE id = x.sale_id) AS sale_status FROM fiscal_certifications x LEFT JOIN fiscal_connectors f ON f.id = x.connector_id LEFT JOIN fiscal_profiles p ON p.id = x.profile_id WHERE x.id = ?', [$id]);
         if (!$c) {
             throw new HttpException(404);
         }
@@ -295,11 +295,11 @@ final class FiscalController extends Controller
     public function reports(): void
     {
         [$from, $to] = date_range();
-        $days = DB::all("SELECT DATE(x.created_at) d, x.is_simulation sim,
+        $days = DB::all("SELECT DATE(x.created_at) d, x.is_simulation sim, x.environment env,
                 SUM(x.doc_type = 'invoice' AND x.status = 'certified') inv_ok, SUM(CASE WHEN x.doc_type = 'invoice' AND x.status = 'certified' THEN s.total ELSE 0 END) inv_total,
                 SUM(CASE WHEN x.doc_type = 'invoice' AND x.status = 'certified' THEN s.tax_total ELSE 0 END) inv_tax,
                 SUM(x.doc_type = 'credit_note' AND x.status = 'certified') cn_ok, SUM(x.status <> 'certified') not_ok
-            FROM fiscal_certifications x JOIN sales s ON s.id = x.sale_id WHERE x.created_at BETWEEN ? AND ? GROUP BY DATE(x.created_at), x.is_simulation ORDER BY d DESC", ["$from 00:00:00", "$to 23:59:59"]);
+            FROM fiscal_certifications x JOIN sales s ON s.id = x.sale_id WHERE x.created_at BETWEEN ? AND ? GROUP BY DATE(x.created_at), x.is_simulation, x.environment ORDER BY d DESC", ["$from 00:00:00", "$to 23:59:59"]);
         $uncovered = (int) DB::value("SELECT COUNT(*) FROM sales s WHERE s.created_at BETWEEN ? AND ? AND s.status <> 'cancelled' AND NOT EXISTS (SELECT 1 FROM fiscal_certifications x WHERE x.doc_type = 'invoice' AND x.doc_id = s.id)", ["$from 00:00:00", "$to 23:59:59"]);
         $conns = array_values(array_filter(DB::all('SELECT * FROM fiscal_connectors WHERE active = 1 ORDER BY name'), fn($c) => DriverRegistry::supports($c, 'getDailyReport') || DriverRegistry::supports($c, 'closeDay')));
         $this->show('reports', 'Rapports fiscaux', 'reports', ['days' => $days, 'from' => $from, 'to' => $to, 'uncovered' => $uncovered, 'conns' => $conns]);

@@ -6173,6 +6173,8 @@ test('Fiscal Connect (phase 7) : intégration ventes, tickets, factures A4, ESC/
     S\SaleService::cancel($r4['sale_id'], 'erreur de saisie');
     eq('failed', $E::forSale($r4['sale_id'])['status'], 'demande retirée');
     eq(0, (int) DB::value('SELECT COUNT(*) FROM fiscal_pending_queue WHERE certification_id = ?', [$E::forSale($r4['sale_id'])['id']]));
+    $E::attempt((int) $E::forSale($r4['sale_id'])['id'], true);
+    ok($E::forSale($r4['sale_id'])['status'] !== 'certified' && (int) $E::forSale($r4['sale_id'])['attempts'] === 0, 'vente annulée : jamais transmise, même en relance manuelle');
     DB::update('fiscal_connectors', ['active' => 1], 'id = ?', [$sim]);
     $setSc('accept');
     // 8. Un module en erreur n'empêche jamais la vente
@@ -6191,6 +6193,58 @@ test('Fiscal Connect (phase 7) : intégration ventes, tickets, factures A4, ESC/
     App\Core\Addons::setActive('fiscal', true);
     App\Core\Addons::reset();
     App\Core\Events::reset();
+});
+
+test('Fiscal Connect (phase 8) : sécurité — XSS, CSRF, droits, traversée de chemin, masquage, intégrité des certifiées', function () use ($B) {
+    $a = new Http(); $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $t = $a->token("$B/fiscal/connecteurs/nouveau?type=api");
+    // XSS : un nom piégé est affiché échappé
+    $x = Addons\Fiscal\FiscalAdmin::saveConnector(['name' => '<script>alert(1)</script>', 'kind' => 'api', 'driver' => 'generic_rest', 'environment' => 'test']);
+    $html = $a->req('GET', "$B/fiscal/connecteurs?type=api")['body'];
+    ok(!str_contains($html, '<script>alert(1)</script>') && str_contains($html, '&lt;script&gt;'), 'nom échappé');
+    // CSRF : POST sans jeton refusé
+    eq(419, $a->req('POST', "$B/fiscal/connecteurs/$x/activer", '')['code'], 'jeton CSRF exigé');
+    // Droits : le gérant voit, mais ne saisit pas de secret ni ne configure
+    $g = new Http(); $g->login($B, 'gerant', 'Mot-de-passe-2026');
+    eq(200, $g->req('GET', "$B/fiscal")['code'], 'gérant : tableau de bord');
+    $gt = $g->token("$B/fiscal/attente");
+    eq(403, $g->req('POST', "$B/fiscal/connecteurs/$x/secrets", http_build_query(['_csrf' => $gt, 'secret' => ['api_key' => 'PIRATE']]))['code'], 'gérant : secrets interdits');
+    eq(403, $g->req('GET', "$B/fiscal/connecteurs/$x")['code'], 'gérant : configuration interdite');
+    eq(null, Addons\Fiscal\Secrets::get($x, 'api_key'));
+    // Traversée de chemin dans la documentation
+    $d = $a->req('GET', "$B/fiscal/documentation?doc=" . urlencode('../../../.env'))['body'];
+    ok(!str_contains($d, 'APP_KEY') && !str_contains($d, 'DB_PASSWORD'), 'aucun fichier hors liste');
+    // Masquage : Basic, Bearer, JSON, formulaire
+    $red = Addons\Fiscal\Secrets::redact("Authorization: Basic dXNlcjpwYXNz\nX-Api-Key: abc\n{\"client_secret\":\"s3\",\"password\":\"p4\"}\ngrant_type=x&client_secret=zz&token=tt", ['MONSECRET']);
+    foreach (['dXNlcjpwYXNz', 'abc', 's3', 'p4', 'zz', 'tt'] as $leak) {
+        ok(!preg_match('/\b' . preg_quote($leak, '/') . '\b/', $red), "masqué : $leak");
+    }
+    eq('***', Addons\Fiscal\Secrets::redact('MONSECRET', ['MONSECRET']), 'valeur connue masquée');
+    // Intégrité : une facture certifiée n'est ni renvoyée ni modifiée par une relance
+    $c = DB::one("SELECT * FROM fiscal_certifications WHERE status = 'certified' ORDER BY id LIMIT 1");
+    $r = Addons\Fiscal\FiscalEngine::attempt((int) $c['id'], true);
+    $after = DB::one('SELECT * FROM fiscal_certifications WHERE id = ?', [$c['id']]);
+    eq([$c['fiscal_number'], $c['signature'], $c['attempts'], $c['proof_json']], [$after['fiscal_number'], $after['signature'], $after['attempts'], $after['proof_json']], 'certification inchangée');
+    ok(str_contains($r['message'], 'Déjà certifiée'), $r['message']);
+    // Clé de chiffrement : un secret chiffré ne se lit pas avec une autre APP_KEY
+    $enc = Addons\Fiscal\Secrets::encrypt('valeur');
+    $old = (string) App\Core\Env::get('APP_KEY', '');
+    App\Core\Env::set('APP_KEY', str_repeat('z', 40));
+    throws(fn() => Addons\Fiscal\Secrets::decrypt($enc), 'illisible');
+    App\Core\Env::set('APP_KEY', (string) $old);
+    eq('valeur', Addons\Fiscal\Secrets::decrypt($enc));
+    // Certificats hors du dossier public
+    ok(!str_starts_with(Addons\Fiscal\FiscalAdmin::certDir(), PUBLIC_PATH), 'certificats hors public/');
+    DB::run('DELETE FROM fiscal_connectors WHERE id = ?', [$x]);
+    // Rapports du dispositif : rapport et clôture (simulation), clôture tracée
+    $sim = $GLOBALS['FISCAL_SIMU'];
+    $page = $a->req('GET', "$B/fiscal/rapports")['body'];
+    ok(str_contains($page, 'Rapport du jour') && str_contains($page, 'Clôture journalière') && str_contains($page, 'data-confirm'), 'boutons proposés seulement si pris en charge, clôture confirmée');
+    $r = $a->req('POST', "$B/fiscal/rapports/dispositif/$sim", http_build_query(['_csrf' => $t, 'action' => 'report', 'date' => date('Y-m-d')]));
+    eq(302, $r['code']);
+    ok(str_contains($a->req('GET', "$B/fiscal/rapports")['body'], 'invoices'), 'rapport du dispositif affiché');
+    $a->req('POST', "$B/fiscal/rapports/dispositif/$sim", http_build_query(['_csrf' => $t, 'action' => 'close', 'date' => date('Y-m-d')]));
+    eq(1, (int) DB::value("SELECT COUNT(*) FROM fiscal_audit_logs WHERE action = 'device.close_day' AND entity_id = ?", [$sim]), 'clôture inscrite au journal d\'audit');
 });
 
 test('Installateur désactivé après installation', function () use ($B) {

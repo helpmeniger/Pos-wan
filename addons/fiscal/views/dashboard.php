@@ -2,8 +2,8 @@
 <?php foreach ($warnings as $w): ?><div class="alert alert-warning py-2 small mb-2"><i class="bi bi-exclamation-triangle"></i> <?= e(t($w)) ?></div><?php endforeach; ?>
 <div class="alert alert-light border small py-2"><i class="bi bi-info-circle"></i> <?= e(t('Marwa Fiscal Connect transmet les factures au dispositif ou à la plateforme configurés. Il ne rend pas POS Marwa homologué : l\'homologation relève de l\'administration fiscale de chaque pays. Aucun pilote n\'est déclaré compatible sans vérification du protocole officiel.')) ?></div>
 <div class="row g-2 mb-3">
-<?php foreach ([['Certifiées (réel)', $by['certified'] ?? 0, 'success'], ['Simulation (sans valeur)', $by['certified_sim'] ?? 0, 'dark'], ['En file d\'attente', $queue, 'warning'], ['Refusées / échecs', ($by['rejected'] ?? 0) + ($by['failed'] ?? 0) + ($by['rejected_sim'] ?? 0) + ($by['failed_sim'] ?? 0), 'danger']] as [$l, $v, $c]): ?>
-  <div class="col-6 col-lg-3"><div class="card border-<?= $c ?>"><div class="card-body py-2"><div class="small text-secondary"><?= e(t($l)) ?></div><div class="fs-4 fw-bold text-<?= $c ?>"><?= (int) $v ?></div></div></div></div>
+<?php foreach ([['Certifiées en PRODUCTION', $by['certified_prod'] ?? 0, 'success'], ['Certifiées en TEST (sans valeur)', $by['certified_test'] ?? 0, 'secondary'], ['Simulation (sans valeur)', $by['certified_sim'] ?? 0, 'dark'], ['En file d\'attente', $queue, 'warning'], ['Refusées / échecs', ($by['rejected'] ?? 0) + ($by['failed'] ?? 0), 'danger']] as [$l, $v, $c]): ?>
+  <div class="col-6 col-lg"><div class="card border-<?= $c ?>"><div class="card-body py-2"><div class="small text-secondary"><?= e(t($l)) ?></div><div class="fs-4 fw-bold text-<?= $c ?>"><?= (int) $v ?></div></div></div></div>
 <?php endforeach; ?>
 </div>
 <p class="small text-secondary"><?= e(t('Aujourd\'hui')) ?> : <?= (int) ($today['ok'] ?? 0) ?> <?= e(t('certifiée(s)')) ?> · <?= (int) ($today['wait'] ?? 0) ?> <?= e(t('en attente')) ?> · <?= (int) ($today['ko'] ?? 0) ?> <?= e(t('refusée(s) ou en échec')) ?></p>
