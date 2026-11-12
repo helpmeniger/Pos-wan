@@ -1,0 +1,6 @@
+<?php /* $owner (connector|terminal), $id, $hints, $fields */ if (!can('pay.secrets')) return; ?>
+<div class="card mb-3"><div class="card-header fw-semibold"><i class="bi bi-key"></i> <?= e(t('Secrets (chiffrés, jamais réaffichés)')) ?></div><div class="card-body">
+<form method="post" action="<?= e(url('/pay/connecteurs/' . $id . '/secrets')) ?>" class="row g-2" autocomplete="off"><?= csrf_field() ?><input type="hidden" name="owner" value="<?= e($owner) ?>">
+<?php foreach ($fields as $k => $l): ?><div class="col-12"><label class="form-label small mb-0"><?= e(t($l)) ?> <?= isset($hints[$k]) ? '<span class="badge text-bg-success">' . e(t('enregistré')) . ' ' . e($hints[$k]) . '</span>' : '' ?></label>
+  <div class="input-group input-group-sm"><input type="password" name="secret[<?= e($k) ?>]" class="form-control" autocomplete="new-password" placeholder="<?= e(t(isset($hints[$k]) ? 'Laisser vide pour conserver' : 'Non renseigné')) ?>"><?php if (isset($hints[$k])): ?><span class="input-group-text"><input class="form-check-input mt-0 me-1" type="checkbox" name="clear[]" value="<?= e($k) ?>"><?= e(t('effacer')) ?></span><?php endif; ?></div></div><?php endforeach; ?>
+<div class="col-12"><button class="btn btn-sm btn-outline-primary"><?= e(t('Enregistrer les secrets')) ?></button></div></form></div></div>

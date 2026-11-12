@@ -1,0 +1,22 @@
+<?php $ed = $edit ?? []; $cats = ['card' => 'Cartes', 'wallet' => 'Portefeuille', 'mobile_money' => 'Mobile Money', 'bank' => 'Banque', 'terminal' => 'Terminal', 'local' => 'Local / régional', 'other' => 'Autre']; ?>
+<?= App\Core\View::partial('pay::_nav', ['tab' => $tab]) ?>
+<div class="alert alert-warning small py-2"><?= e(t('Cette liste est un catalogue. Un prestataire n\'est utilisable qu\'à travers une connexion API (ou un terminal) configurée d\'après sa documentation officielle et son contrat marchand. Aucun n\'est déclaré intégré par défaut.')) ?></div>
+<div class="card mb-3"><div class="table-responsive"><table class="table table-sm table-hover mb-0 align-middle">
+<thead><tr><th><?= e(t('Fournisseur')) ?></th><th><?= e(t('Catégorie')) ?></th><th><?= e(t('Pays')) ?></th><th><?= e(t('Connexions')) ?></th><th><?= e(t('Intégration')) ?></th><th><?= e(t('Remarques')) ?></th></tr></thead><tbody>
+<?php foreach ($rows as $r): ?><tr class="<?= (int) $r['active'] ? '' : 'text-secondary' ?>"><td><?= can('pay.configure') ? '<a href="' . e(url('/pay/prestataires', ['modifier' => $r['id']])) . '">' . e($r['name']) . '</a>' : e($r['name']) ?> <code class="small"><?= e($r['code']) ?></code></td>
+  <td><?= e(t($cats[$r['category']])) ?></td><td><?= e($r['country'] ?? '') ?></td><td><?= (int) $r['connectors'] ?></td>
+  <td><?= (int) $r['verified'] ? '<span class="badge text-bg-success">' . e(t('vérifiée')) . '</span>' : '<span class="badge text-bg-light border">' . e(t('non vérifiée')) . '</span>' ?></td><td class="small"><?= e($r['notes'] ?? '') ?></td></tr><?php endforeach; ?>
+</tbody></table></div></div>
+<?php if (can('pay.configure')): ?><div class="card"><div class="card-header fw-semibold"><?= e(t($ed ? 'Modifier le fournisseur' : 'Ajouter un fournisseur')) ?></div><div class="card-body">
+<form method="post" action="<?= e(url($ed ? '/pay/prestataires/' . $ed['id'] : '/pay/prestataires')) ?>" class="row g-2"><?= csrf_field() ?>
+  <div class="col-md-4"><label class="form-label small mb-0"><?= e(t('Nom')) ?></label><input name="name" value="<?= e($ed['name'] ?? '') ?>" maxlength="120" class="form-control form-control-sm" required></div>
+  <div class="col-md-2"><label class="form-label small mb-0"><?= e(t('Code')) ?></label><input name="code" value="<?= e($ed['code'] ?? '') ?>" maxlength="40" class="form-control form-control-sm" required <?= $ed ? 'readonly' : '' ?>></div>
+  <div class="col-md-3"><label class="form-label small mb-0"><?= e(t('Catégorie')) ?></label><select name="category" class="form-select form-select-sm"><?php foreach ($cats as $k => $l): ?><option value="<?= $k ?>" <?= ($ed['category'] ?? '') === $k ? 'selected' : '' ?>><?= e(t($l)) ?></option><?php endforeach; ?></select></div>
+  <div class="col-md-1"><label class="form-label small mb-0"><?= e(t('Pays')) ?></label><input name="country" value="<?= e($ed['country'] ?? '') ?>" maxlength="2" class="form-control form-control-sm"></div>
+  <div class="col-md-2"><label class="form-label small mb-0"><?= e(t('Site')) ?></label><input name="website" value="<?= e($ed['website'] ?? '') ?>" maxlength="200" class="form-control form-control-sm"></div>
+  <div class="col-md-6"><label class="form-label small mb-0"><?= e(t('Documentation officielle et contrat (références, versions, dates)')) ?></label><textarea name="official_doc_ref" rows="2" class="form-control form-control-sm"><?= e($ed['official_doc_ref'] ?? '') ?></textarea></div>
+  <div class="col-md-6"><label class="form-label small mb-0"><?= e(t('Remarques')) ?></label><textarea name="notes" rows="2" class="form-control form-control-sm"><?= e($ed['notes'] ?? '') ?></textarea></div>
+  <div class="col-md-8 d-flex gap-3 align-items-center"><div class="form-check"><input class="form-check-input" type="checkbox" name="verified" value="1" id="pv" <?= !empty($ed['verified']) ? 'checked' : '' ?>><label class="form-check-label small" for="pv"><?= e(t('Intégration vérifiée (essais réussis sur l\'environnement de test officiel)')) ?></label></div>
+    <div class="form-check"><input class="form-check-input" type="checkbox" name="active" value="1" id="pa" <?= !$ed || (int) $ed['active'] ? 'checked' : '' ?>><label class="form-check-label small" for="pa"><?= e(t('Actif')) ?></label></div></div>
+  <div class="col-md-4 text-end"><button class="btn btn-sm btn-primary"><?= e(t('Enregistrer')) ?></button></div>
+</form></div></div><?php endif; ?>

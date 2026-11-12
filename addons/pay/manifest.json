@@ -18,12 +18,125 @@
         "pay.logs": "Marwa Pay : journaux techniques"
     },
     "roles": {
-        "owner": ["pay.use", "pay.view", "pay.configure", "pay.secrets", "pay.refund", "pay.reconcile", "pay.reports", "pay.logs"],
-        "store_manager": ["pay.use", "pay.view", "pay.refund", "pay.reports"],
-        "cashier": ["pay.use"],
-        "accountant": ["pay.view", "pay.reconcile", "pay.reports"],
-        "auditor": ["pay.view", "pay.reports", "pay.logs"]
+        "owner": [
+            "pay.use",
+            "pay.view",
+            "pay.configure",
+            "pay.secrets",
+            "pay.refund",
+            "pay.reconcile",
+            "pay.reports",
+            "pay.logs"
+        ],
+        "store_manager": [
+            "pay.use",
+            "pay.view",
+            "pay.refund",
+            "pay.reports"
+        ],
+        "cashier": [
+            "pay.use"
+        ],
+        "accountant": [
+            "pay.view",
+            "pay.reconcile",
+            "pay.reports"
+        ],
+        "auditor": [
+            "pay.view",
+            "pay.reports",
+            "pay.logs"
+        ]
     },
-    "menu": [],
+    "menu": [
+        {
+            "group": "MARWA PAY",
+            "label": "Tableau de bord des paiements",
+            "icon": "bi-speedometer2",
+            "url": "/pay",
+            "permission": "pay.view",
+            "color": "#1d4ed8"
+        },
+        {
+            "group": "MARWA PAY",
+            "label": "Fournisseurs de paiement",
+            "icon": "bi-building",
+            "url": "/pay/prestataires",
+            "permission": "pay.view",
+            "color": "#1d4ed8"
+        },
+        {
+            "group": "MARWA PAY",
+            "label": "Gestion des API",
+            "icon": "bi-plug",
+            "url": "/pay/connecteurs",
+            "permission": "pay.configure",
+            "color": "#1d4ed8"
+        },
+        {
+            "group": "MARWA PAY",
+            "label": "Gestion des terminaux",
+            "icon": "bi-credit-card-2-front",
+            "url": "/pay/terminaux",
+            "permission": "pay.configure",
+            "color": "#1d4ed8"
+        },
+        {
+            "group": "MARWA PAY",
+            "label": "Moyens de paiement",
+            "icon": "bi-wallet2",
+            "url": "/pay/moyens",
+            "permission": "pay.configure",
+            "color": "#1d4ed8"
+        },
+        {
+            "group": "MARWA PAY",
+            "label": "Transactions",
+            "icon": "bi-list-check",
+            "url": "/pay/transactions",
+            "permission": "pay.view",
+            "color": "#1d4ed8"
+        },
+        {
+            "group": "MARWA PAY",
+            "label": "Remboursements",
+            "icon": "bi-arrow-counterclockwise",
+            "url": "/pay/remboursements",
+            "permission": "pay.view",
+            "color": "#b45309"
+        },
+        {
+            "group": "MARWA PAY",
+            "label": "Rapprochement bancaire",
+            "icon": "bi-check2-square",
+            "url": "/pay/rapprochement",
+            "permission": "pay.reconcile",
+            "color": "#1d4ed8"
+        },
+        {
+            "group": "MARWA PAY",
+            "label": "Rapports de paiement",
+            "icon": "bi-file-earmark-bar-graph",
+            "url": "/pay/rapports",
+            "permission": "pay.reports",
+            "color": "#1d4ed8"
+        },
+        {
+            "group": "MARWA PAY",
+            "label": "Journaux techniques des paiements",
+            "icon": "bi-terminal",
+            "url": "/pay/journaux",
+            "permission": "pay.logs",
+            "color": "#475569"
+        },
+        {
+            "group": "MARWA PAY",
+            "label": "Paramètres des paiements",
+            "icon": "bi-sliders",
+            "url": "/pay/parametres",
+            "permission": "pay.configure",
+            "color": "#475569"
+        }
+    ],
     "settings": {}
 }

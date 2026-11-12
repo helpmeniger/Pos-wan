@@ -87,7 +87,7 @@ final class Menu
      */
     public const CATEGORIES = [
         'Assistant' => 'bi-stars', 'Établissement' => 'bi-mortarboard', 'Gestion des ventes' => 'bi-cart3', 'Restaurant' => 'bi-cup-hot', 'Hôtel' => 'bi-building', 'Clinique' => 'bi-hospital',
-        'Pressing' => 'bi-basket2', 'ONG' => 'bi-globe-europe-africa', 'Ressources humaines' => 'bi-person-vcard', 'Archives' => 'bi-archive', 'FISCAL CONNECT' => 'bi-shield-check', 'Gestion des articles' => 'bi-box-seam', 'Achats & fournisseurs' => 'bi-truck',
+        'Pressing' => 'bi-basket2', 'ONG' => 'bi-globe-europe-africa', 'Ressources humaines' => 'bi-person-vcard', 'Archives' => 'bi-archive', 'FISCAL CONNECT' => 'bi-shield-check', 'MARWA PAY' => 'bi-credit-card-2-front', 'Gestion des articles' => 'bi-box-seam', 'Achats & fournisseurs' => 'bi-truck',
         'Trésorerie & banques' => 'bi-bank', 'Comptabilité' => 'bi-journal-bookmark', 'Finances & rapports' => 'bi-graph-up',
         'Configuration' => 'bi-gear', 'Système & maintenance' => 'bi-tools',
     ];

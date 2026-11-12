@@ -6485,6 +6485,93 @@ test('Marwa Pay (phase 5) : connecteurs REST (centimes, attente, refus, panne, s
     }
 });
 
+test('Marwa Pay (phase 6) : interface — écrans, droits, secrets jamais affichés, formulaires, webhook HTTP signé, rapprochement, rapports', function () use ($B) {
+    $a = new Http(); $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $sim = $GLOBALS['PAY_SIM'];
+    $tx = (int) DB::value('SELECT id FROM payment_transactions ORDER BY id LIMIT 1');
+    $pages = ['/pay', '/pay/prestataires', '/pay/connecteurs', '/pay/connecteurs/nouveau', "/pay/connecteurs/$sim", '/pay/moyens', '/pay/transactions', '/pay/transactions?test=tous',
+        "/pay/transactions/$tx", '/pay/remboursements', '/pay/rapprochement', '/pay/rapports', '/pay/journaux', '/pay/parametres', '/pay/transactions?export=csv', '/pay/rapports?rapport=prestataire&export=csv'];
+    foreach (array_keys(Addons\Pay\PayController::REPORTS) as $rk) {
+        $pages[] = "/pay/rapports?rapport=$rk";
+    }
+    foreach ($pages as $u) {
+        $r = $a->req('GET', $B . $u);
+        eq(200, $r['code'], $u);
+        ok(!str_contains($r['body'], 'Fatal') && !str_contains($r['body'], 'Warning:'), "$u sans erreur PHP");
+    }
+    ok(str_contains($a->req('GET', "$B/pay")['body'], 'MARWA PAY'), 'menu MARWA PAY');
+    $k = new Http(); $k->login($B, 'caissier', 'Mot-de-passe-2026');
+    foreach (['/pay', '/pay/connecteurs', '/pay/transactions', '/pay/parametres'] as $u) {
+        eq(403, $k->req('GET', $B . $u)['code'], "caissier : $u interdit");
+    }
+    // Secrets jamais renvoyés
+    $rest = (int) DB::value("SELECT id FROM payment_connectors WHERE driver = 'generic_rest' ORDER BY id LIMIT 1");
+    $html = $a->req('GET', "$B/pay/connecteurs/$rest")['body'];
+    ok(str_contains($html, 'enregistré') && !str_contains($html, 'PAY-KEY-123456'), 'clé d\'API : repère seulement');
+    $t = $a->token("$B/pay/connecteurs/nouveau");
+    // Création, validations
+    $a->req('POST', "$B/pay/connecteurs", http_build_query(['_csrf' => $t, 'name' => 'Simu prod', 'driver' => 'simulation', 'environment' => 'prod']));
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM payment_connectors WHERE name = 'Simu prod'"), 'simulation en production refusée');
+    $a->req('POST', "$B/pay/connecteurs", http_build_query(['_csrf' => $t, 'name' => 'API avec secret', 'driver' => 'generic_rest', 'environment' => 'test', 'config_json' => '{"base_url":"https://x","api_key":"abc"}']));
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM payment_connectors WHERE name = 'API avec secret'"), 'secret dans la configuration refusé');
+    $a->req('POST', "$B/pay/connecteurs", http_build_query(['_csrf' => $t, 'name' => 'My NiTA (à développer)', 'driver' => 'ne_mynita', 'environment' => 'test']));
+    $sk = (int) DB::value("SELECT id FROM payment_connectors WHERE name = 'My NiTA (à développer)'");
+    ok($sk > 0, 'squelette enregistrable (pour préparer)');
+    $a->req('POST', "$B/pay/connecteurs/$sk/activer", http_build_query(['_csrf' => $t]));
+    eq(0, (int) DB::value('SELECT active FROM payment_connectors WHERE id = ?', [$sk]), 'squelette non activable');
+    $a->req('POST', "$B/pay/connecteurs/$sk/supprimer", http_build_query(['_csrf' => $t]));
+    eq(0, (int) DB::value('SELECT COUNT(*) FROM payment_connectors WHERE id = ?', [$sk]), 'connexion inutilisée supprimée');
+    $a->req('POST', "$B/pay/connecteurs/$sim/supprimer", http_build_query(['_csrf' => $t]));
+    eq(1, (int) DB::value('SELECT COUNT(*) FROM payment_connectors WHERE id = ?', [$sim]), 'connexion avec transactions conservée');
+    $a->req('POST', "$B/pay/connecteurs/$sim/tester", http_build_query(['_csrf' => $t]));
+    eq('ok', DB::value('SELECT status FROM payment_connectors WHERE id = ?', [$sim]), 'test depuis l\'écran');
+    // Moyen de paiement
+    $a->req('POST', "$B/pay/moyens", http_build_query(['_csrf' => $t, 'label' => 'My NiTA (test)', 'kind' => 'mobile_money', 'sale_method' => 'mobile_money', 'connector_id' => $sim, 'currency' => 'XOF', 'expiry_minutes' => 5]));
+    $mm = (int) DB::value("SELECT id FROM payment_methods WHERE label = 'My NiTA (test)'");
+    eq(0, (int) DB::value('SELECT active FROM payment_methods WHERE id = ?', [$mm]), 'créé inactif');
+    $a->req('POST', "$B/pay/moyens/$mm/activer", http_build_query(['_csrf' => $t]));
+    eq(1, (int) DB::value('SELECT active FROM payment_methods WHERE id = ?', [$mm]), 'activé');
+    // Paramètres : taux sans source refusé
+    $a->req('POST', "$B/pay/parametres/taux", http_build_query(['_csrf' => $t, 'from_currency' => 'XOF', 'to_currency' => 'USD', 'rate' => '0.0016', 'source' => '']));
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM payment_exchange_rates WHERE to_currency = 'USD'"), 'taux sans source refusé');
+    // Remboursement depuis l'écran, par un gérant (permission pay.refund)
+    actingAs('caissier');
+    DB::update('payment_connectors', ['config_json' => '{"scenario":"success"}'], 'id = ?', [$sim]);
+    $t1 = Addons\Pay\PayEngine::initiate(['method_id' => $mm, 'amount' => '3000', 'cart_uuid' => uuid(), 'request_key' => uuid()]);
+    $g = new Http(); $g->login($B, 'gerant', 'Mot-de-passe-2026');
+    $gt = $g->token("$B/pay/transactions/{$t1['id']}");
+    $g->req('POST', "$B/pay/transactions/{$t1['id']}/rembourser", http_build_query(['_csrf' => $gt, 'amount' => '3000', 'reason' => 'Annulation de la commande', 'request_key' => uuid()]));
+    eq('refunded', DB::value('SELECT status FROM payment_transactions WHERE id = ?', [$t1['id']]), 'remboursé par le gérant');
+    // Webhook HTTP : jeton, signature, doublon
+    actingAs('admin');
+    $w = Addons\Pay\PayAdmin::createWebhook($sim);
+    DB::update('payment_connectors', ['config_json' => '{"scenario":"pending_forever"}'], 'id = ?', [$sim]);
+    actingAs('caissier');
+    $t2 = Addons\Pay\PayEngine::initiate(['method_id' => $mm, 'amount' => '4000', 'cart_uuid' => uuid(), 'request_key' => uuid()]);
+    $body = json_encode(['reference' => $t2['provider_reference'], 'status' => 'succeeded', 'amount' => 4000, 'currency' => 'XOF', 'event_id' => 'evt-77']);
+    $hook = "$B/pay/webhook/{$w['id']}?t={$w['token']}";
+    eq(404, (new Http())->req('POST', "$B/pay/webhook/{$w['id']}?t=faux", $body, ['Content-Type: application/json'])['code'], 'jeton faux');
+    eq(401, (new Http())->req('POST', $hook, $body, ['Content-Type: application/json', 'X-Pay-Signature: sha256=00'])['code'], 'signature fausse');
+    $sig = 'X-Pay-Signature: sha256=' . hash_hmac('sha256', $body, $w['secret']);
+    $r = json_decode((new Http())->req('POST', $hook, $body, ['Content-Type: application/json', $sig])['body'], true);
+    eq('pending', $r['status'] ?? null, 'webhook « réussi » non cru : le prestataire (simulé) dit encore en attente');
+    $r2 = json_decode((new Http())->req('POST', $hook, $body, ['Content-Type: application/json', $sig])['body'], true);
+    ok(!empty($r2['duplicate']), 'double notification ignorée');
+    // Rapprochement : TPE autonome « à vérifier » confirmé par le relevé
+    actingAs('admin');
+    $tv = DB::insert('payment_transactions', ['number' => 'PAYTEST-REC-1', 'idempotency_key' => hash('sha256', 'rec'), 'method_id' => $mm, 'driver' => 'terminal_standalone', 'environment' => 'prod', 'is_test' => 0,
+        'amount' => 12500, 'currency' => 'XOF', 'provider_amount' => 12500, 'provider_currency' => 'XOF', 'status' => 'to_verify', 'authorization_code' => 'AUT987']);
+    $csv = sys_get_temp_dir() . '/releve-' . getmypid() . '.csv';
+    file_put_contents($csv, "référence;montant;date;statut\nAUT987;12 500;" . date('d/m/Y') . ";Approuvé\nINCONNU-1;5000;" . date('d/m/Y') . ";ok\n");
+    $a->req('POST', "$B/pay/rapprochement", ['_csrf' => $t, 'file' => new CURLFile($csv, 'text/csv', 'releve.csv')]);
+    eq(['succeeded', 'reconciliation'], array_values(DB::one('SELECT status, verified_by FROM payment_transactions WHERE id = ?', [$tv])), 'confirmé par le relevé');
+    eq(1, (int) DB::value("SELECT COUNT(*) FROM payment_reconciliation WHERE result = 'missing_local' AND provider_reference = 'INCONNU-1'"), 'ligne inconnue signalée');
+    $rid = (int) DB::value("SELECT id FROM payment_reconciliation WHERE provider_reference = 'INCONNU-1'");
+    $a->req('POST', "$B/pay/rapprochement/$rid/traiter", http_build_query(['_csrf' => $t, 'note' => 'Paiement d\'une autre boutique']));
+    eq(1, (int) DB::value('SELECT resolved FROM payment_reconciliation WHERE id = ?', [$rid]), 'écart traité');
+    DB::update('payment_connectors', ['config_json' => '{"scenario":"success"}'], 'id = ?', [$sim]);
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });
