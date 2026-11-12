@@ -42,3 +42,5 @@ windows/installateur/*.exe
 storage/archives/
 storage/fiscal/
 storage/fiscal-queue.lock
+storage/pay/
+storage/pay-sweep.lock

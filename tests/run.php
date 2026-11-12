@@ -6266,6 +6266,130 @@ test('Marwa Pay (phase 3) : migration sûre, devises sans taux, prestataires non
     ok(DB::value("SELECT prefix FROM sequences WHERE name = 'pay_transaction'") === 'PAY', 'numérotation des transactions');
 });
 
+test('Marwa Pay (phase 4) : moteur et simulation — réussi, refusé, attente, expiration, perte de connexion, incohérence, annulation, remboursements, ventes, devises', function () {
+    $P = Addons\Pay\PayEngine::class;
+    actingAs('admin');
+    $cid = DB::insert('payment_connectors', ['name' => 'Simulation', 'driver' => 'simulation', 'environment' => 'test', 'active' => 1, 'config_json' => '{"scenario":"success"}',
+        'provider_id' => DB::value("SELECT id FROM payment_providers WHERE code = 'simulation'")]);
+    $mid = DB::insert('payment_methods', ['label' => 'Visa / Mastercard (test)', 'kind' => 'card', 'sale_method' => 'card', 'connector_id' => $cid, 'currency' => 'XOF', 'active' => 1, 'expiry_minutes' => 10]);
+    $GLOBALS['PAY_SIM'] = $cid; $GLOBALS['PAY_METHOD'] = $mid;
+    $sc = fn(string $s, array $x = []) => DB::update('payment_connectors', ['config_json' => json_encode(['scenario' => $s] + $x)], 'id = ?', [$cid]);
+    actingAs('caissier');
+    $reg = (int) DB::value('SELECT register_id FROM users WHERE username = ?', ['caissier']);
+    if (!S\CashService::openSessionForRegister($reg)) {
+        S\CashService::open($reg, 0);
+    }
+    $methods = $P::methodsFor($reg, (int) DB::value('SELECT store_id FROM cash_registers WHERE id = ?', [$reg]));
+    ok(in_array($mid, array_column($methods, 'id'), true) && $methods[0]['test'] === true, 'moyen proposé à la caisse, marqué TEST');
+    $pay = fn(string $amount = '5000', ?string $cart = null, ?string $rk = null) => $P::initiate(['method_id' => $mid, 'amount' => $amount, 'cart_uuid' => $cart ?? uuid(), 'request_key' => $rk ?? uuid()]);
+    $simState = fn() => json_decode((string) file_get_contents(STORAGE_PATH . "/pay/simulation-$cid.json"), true);
+
+    // 1. Réussi + idempotence (même demande renvoyée : aucun second débit)
+    $cart = uuid(); $rk = uuid();
+    $t = $pay('5000', $cart, $rk);
+    eq(['succeeded', 1, 'api'], [$t['status'], (int) $t['is_test'], $t['verified_by']], $t['message']);
+    ok(str_starts_with((string) $t['provider_reference'], 'SIMU-') && $t['proof_json'], 'référence et preuve');
+    $n = $simState()['n'];
+    eq($t['id'], $pay('5000', $cart, $rk)['id'], 'même transaction');
+    eq($n, $simState()['n'], 'prestataire non sollicité deux fois');
+    // 2. Refusé
+    $sc('decline');
+    eq('declined', $pay()['status']);
+    // 3. En attente puis réussi après vérification serveur à serveur
+    $sc('pending', ['pending_polls' => 2]);
+    $p3 = $pay();
+    eq('pending', $p3['status']);
+    eq('pending', $P::refresh($p3['id'])['status'], '1re vérification');
+    eq('succeeded', $P::refresh($p3['id'])['status'], 'confirmé par le prestataire');
+    // 4. Expiration : annulée chez le prestataire, puis paiement tardif impossible
+    $sc('pending_forever');
+    $p4 = $pay();
+    DB::run('UPDATE payment_transactions SET expires_at = NOW() - INTERVAL 1 MINUTE WHERE id = ?', [$p4['id']]);
+    eq('expired', $P::refresh($p4['id'])['status'], 'expirée');
+    // 5. Perte de connexion après envoi : en cours, puis confirmé sans second débit
+    $sc('network_loss');
+    $p5 = $pay();
+    eq('processing', $p5['status'], 'issue inconnue : en cours, pas réussi');
+    $n = $simState()['n'];
+    $sc('success');
+    eq('succeeded', $P::refresh($p5['id'])['status'], 'état réel récupéré');
+    eq($n, $simState()['n'], 'aucun second débit');
+    // 6. Réponse positive incohérente (montant) : jamais « réussi »
+    $sc('invalid');
+    $p6 = $pay();
+    ok($p6['status'] === 'to_verify' && str_contains($p6['message'], 'Montant'), 'à vérifier : ' . $p6['message']);
+    // 7. Annulation par le caissier (confirmée par le prestataire)
+    $sc('pending_forever');
+    $p7 = $pay();
+    eq('cancelled', $P::cancel($p7['id'])['status']);
+    throws(fn() => $P::cancel($p7['id']), 'ne peut plus');
+    // 8. Montant invalide, simulation en production
+    throws(fn() => $pay('-5'), 'Montant');
+    DB::update('payment_connectors', ['environment' => 'prod'], 'id = ?', [$cid]);
+    throws(fn() => $pay(), 'production');
+    DB::update('payment_connectors', ['environment' => 'test'], 'id = ?', [$cid]);
+    $sc('success');
+
+    // 9. Vente : transaction TEST refusée tant que l'option n'est pas activée
+    $sell = fn(string $cart, array $payments) => S\SaleService::create(['client_uuid' => $cart, 'items' => [['product_id' => (int) DB::value("SELECT product_id FROM sale_items ORDER BY id DESC LIMIT 1"), 'quantity' => 1]], 'payments' => $payments]);
+    $total = (float) DB::value('SELECT unit_price FROM sale_items ORDER BY id DESC LIMIT 1');
+    $c9 = uuid();
+    $t9 = $pay((string) $total, $c9);
+    throws(fn() => $sell($c9, [['method' => 'card', 'amount' => $total, 'transaction' => $t9['id']]]), 'TEST');
+    DB::run("INSERT INTO payment_settings (skey, value) VALUES ('test_sales', '1') ON DUPLICATE KEY UPDATE value = '1'");
+    throws(fn() => $sell($c9, [['method' => 'card', 'amount' => $total - 1, 'transaction' => $t9['id']], ['method' => 'cash', 'amount' => 1]]), 'ne correspond pas');
+    throws(fn() => $sell(uuid(), [['method' => 'card', 'amount' => $total, 'transaction' => $t9['id']]]), 'autre panier');
+    $sale = $sell($c9, [['method' => 'card', 'amount' => $total, 'transaction' => $t9['id']]]);
+    eq($sale['sale_id'], (int) DB::value('SELECT sale_id FROM payment_transactions WHERE id = ?', [$t9['id']]), 'transaction liée à la vente');
+    eq('card', DB::value('SELECT method FROM sale_payments WHERE sale_id = ?', [$sale['sale_id']]), 'règlement enregistré en carte (méthode existante)');
+    throws(fn() => $sell(uuid(), [['method' => 'card', 'amount' => $total, 'transaction' => $t9['id']]]), 'autre');
+    // Règlement mixte : espèces + électronique, reste calculé par la vente
+    $c10 = uuid();
+    $half = round($total / 2);
+    $t10 = $pay((string) $half, $c10);
+    $s10 = $sell($c10, [['method' => 'cash', 'amount' => $total - $half], ['method' => 'card', 'amount' => $half, 'transaction' => $t10['id']]]);
+    eq(2, (int) DB::value('SELECT COUNT(*) FROM sale_payments WHERE sale_id = ?', [$s10['sale_id']]), 'paiement multiple');
+    // Paiement en attente refusé à la vente
+    $sc('pending_forever');
+    $c11 = uuid(); $t11 = $pay((string) $total, $c11);
+    throws(fn() => $sell($c11, [['method' => 'card', 'amount' => $total, 'transaction' => $t11['id']]]), 'pas confirmé');
+    $sc('success');
+
+    // 10. Remboursements : justification, autorisation, partiel puis total, refus, en attente
+    $tx = $P::tx($t9['id']);
+    throws(fn() => $P::refund($tx['id'], '100', 'non', uuid()), 'Justification');
+    throws(fn() => $P::refund($tx['id'], '100', 'Client mécontent', uuid()), 'AUTH_REQUIRED');
+    $r1 = $P::refund($tx['id'], (string) ($total / 2), 'Client mécontent', uuid(), ['username' => 'gerant', 'secret' => 'Mot-de-passe-2026']);
+    eq('succeeded', $r1['status']);
+    eq('partially_refunded', $P::tx($tx['id'])['status']);
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM cash_movements WHERE ref_type = 'pay_refund'"), 'transaction TEST : aucun mouvement de caisse réel');
+    actingAs('admin');
+    throws(fn() => $P::refund($tx['id'], (string) $total, 'Trop rembourser', uuid()), 'maximum');
+    $sc('refund_decline');
+    $rd = $P::refund($tx['id'], '1', 'Essai refusé', uuid());
+    eq('failed', $rd['status']);
+    eq('partially_refunded', $P::tx($tx['id'])['status'], 'refus : transaction inchangée');
+    $sc('refund_pending');
+    $rp = $P::refund($tx['id'], (string) ($total - $total / 2), 'Reste du remboursement', uuid());
+    eq('pending', $rp['status'], 'remboursement en attente : non compté');
+    eq('partially_refunded', $P::tx($tx['id'])['status']);
+    eq('succeeded', $P::refreshRefund($rp['id'])['status']);
+    eq('refunded', $P::tx($tx['id'])['status'], 'remboursé en totalité après confirmation');
+    $sc('success');
+    // 11. Devises : aucun taux, aucune conversion
+    actingAs('caissier');
+    $eur = DB::insert('payment_methods', ['label' => 'Carte EUR', 'kind' => 'card', 'sale_method' => 'card', 'connector_id' => $cid, 'currency' => 'EUR', 'active' => 1]);
+    throws(fn() => $P::initiate(['method_id' => $eur, 'amount' => '6559', 'cart_uuid' => uuid(), 'request_key' => uuid()]), 'taux');
+    DB::insert('payment_exchange_rates', ['from_currency' => 'XOF', 'to_currency' => 'EUR', 'rate' => 1 / 655.957, 'source' => 'Parité fixe BCEAO (test)', 'valid_from' => date('Y-m-d')]);
+    $te = $P::initiate(['method_id' => $eur, 'amount' => '6559.57', 'cart_uuid' => uuid(), 'request_key' => uuid()]);
+    eq(['EUR', 10.0, 'succeeded'], [$te['provider_currency'], (float) $te['provider_amount'], $te['status']], 'montant débité en EUR selon le taux saisi');
+    DB::update('payment_methods', ['active' => 0], 'id = ?', [$eur]); // historique protégé : désactivé, jamais supprimé
+    // 12. Aucune donnée de carte dans les journaux
+    eq('Carte [NUMÉRO MASQUÉ] CVV',  Addons\Pay\Secrets::redact('Carte 4111 1111 1111 1111 CVV'));
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM payment_transaction_logs WHERE request_redacted REGEXP '(^|[^0-9a-zA-Z])[0-9]{13,19}([^0-9a-zA-Z]|$)'"), 'aucune suite de chiffres de carte');
+    DB::run("UPDATE payment_settings SET value = '0' WHERE skey = 'test_sales'");
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

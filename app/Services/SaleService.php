@@ -235,7 +235,8 @@ final class SaleService
                 $nonCash += $a;
             }
             $payments[] = ['method' => $m, 'amount' => $a, 'reference' => mb_substr(trim((string) ($pay['reference'] ?? '')), 0, 100) ?: null,
-                'provider' => $m === 'mobile_money' ? mobile_money_provider($pay['provider'] ?? null) : null];
+                'provider' => $m === 'mobile_money' ? mobile_money_provider($pay['provider'] ?? null) : null,
+                'transaction' => (int) ($pay['transaction'] ?? 0) ?: null]; // paiement électronique vérifié par un module
         }
         if ($nonCash - $total > 0.009) {
             throw new BusinessException('Les paiements par carte / mobile / virement ne peuvent pas dépasser le total.');
@@ -270,6 +271,10 @@ final class SaleService
         }
 
         // ------- Écriture transactionnelle -------
+        // Modules de paiement : contrôle (et réservation) des paiements électroniques avant tout enregistrement
+        if ($refused = \App\Core\Events::ask('sale.payments', ['cart_uuid' => $uuid, 'payments' => $payments, 'register_id' => (int) $register['id']])) {
+            throw new BusinessException($refused);
+        }
         $result = DB::transaction(function () use ($uuid, $user, $storeId, $warehouseId, $register, $session, $customer, $wholesale, $subtotal, $discountTotal, $taxTotal, $total, $paid, $tendered, $change, $credit, $supervisorId, $lines, $payments, $prescription, $data, $options) {
             // Re-vérification sous verrou (protection contre deux soumissions simultanées)
             $dup = DB::one('SELECT id, number, change_due, total FROM sales WHERE client_uuid = ? FOR UPDATE', [$uuid]);
@@ -372,7 +377,7 @@ final class SaleService
         // Après validation de la transaction : les modules (ex. certification fiscale) réagissent ;
         // une erreur de leur part n'annule jamais la vente enregistrée.
         if (!$result['duplicate']) {
-            $result += \App\Core\Events::collect('sale.created', ['sale_id' => $result['sale_id']]);
+            $result += \App\Core\Events::collect('sale.created', ['sale_id' => $result['sale_id'], 'client_uuid' => $uuid]);
         }
         return $result;
     }
