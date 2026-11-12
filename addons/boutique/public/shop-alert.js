@@ -23,7 +23,7 @@
       pill = document.createElement('a');
       pill.href = base + '/boutique-admin?f=new';
       pill.className = 'btn btn-danger shadow rounded-pill d-print-none';
-      Object.assign(pill.style, { position: 'fixed', left: '1rem', bottom: '1rem', zIndex: '1080', fontWeight: '600' });
+      Object.assign(pill.style, { position: 'fixed', left: '50%', top: '4.5rem', transform: 'translateX(-50%)', zIndex: '1080', whiteSpace: 'nowrap', fontWeight: '600' });
       document.body.appendChild(pill);
     }
     pill.innerHTML = '<i class="bi bi-bag-check"></i> ' + n + ' nouvelle' + (n > 1 ? 's' : '') + ' commande' + (n > 1 ? 's' : '') + ' en ligne';

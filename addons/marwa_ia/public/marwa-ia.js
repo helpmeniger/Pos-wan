@@ -150,11 +150,11 @@
     }
     if (!st.ok || !st.bubble) return;
     const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'mia-bubble'; btn.title = 'MARWA IA — votre assistant';
-    btn.innerHTML = '<i class="bi bi-stars"></i><span>MARWA IA</span>';
+    btn.type = 'button'; btn.className = 'mia-bubble'; btn.title = 'MARWA AI — votre assistant';
+    btn.innerHTML = '<i class="bi bi-stars"></i><span>MARWA AI</span>';
     const panel = document.createElement('div');
     panel.className = 'mia-panel d-none';
-    panel.innerHTML = `<div class="mia-head"><b><i class="bi bi-stars"></i> MARWA IA</b><a href="${esc(st.page)}" title="Ouvrir en grand"><i class="bi bi-arrows-fullscreen"></i></a><button type="button" data-mia-new title="Nouvelle conversation"><i class="bi bi-arrow-counterclockwise"></i></button><button type="button" data-mia-close title="Fermer"><i class="bi bi-x-lg"></i></button></div>`
+    panel.innerHTML = `<div class="mia-head"><b><i class="bi bi-stars"></i> MARWA AI</b><a href="${esc(st.page)}" title="Ouvrir en grand"><i class="bi bi-arrows-fullscreen"></i></a><button type="button" data-mia-new title="Nouvelle conversation"><i class="bi bi-arrow-counterclockwise"></i></button><button type="button" data-mia-close title="Fermer"><i class="bi bi-x-lg"></i></button></div>`
       + '<div class="mia-chat" data-mia-chat><div class="mia-log" data-mia-log></div><form class="mia-form" data-mia-form data-no-lock><input class="form-control" data-mia-input maxlength="500" autocomplete="off" placeholder="Votre question…" aria-label="Question pour MARWA IA"><button class="btn btn-primary" type="submit" aria-label="Envoyer"><i class="bi bi-send"></i></button></form></div>';
     document.body.append(btn, panel);
     const chat = Chat(panel.querySelector('[data-mia-chat]'));

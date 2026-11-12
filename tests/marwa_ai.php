@@ -366,7 +366,8 @@ test('MARWA AI : actions préparées puis confirmées (jeton, délai, droits, mo
         $mvt = DB::one('SELECT type, amount FROM cash_movements ORDER BY id DESC LIMIT 1');
         ok($mvt['type'] === 'cash_out' && abs((float) $mvt['amount']) === 1500.0, 'sortie de 1 500 F enregistrée par CashService après authentification');
     }
-    $r = ai_ask('admin', 'Prépare un inventaire du dépôt', $cv);
+    $r = ai_ask('admin', 'Prépare un inventaire du magasin principal', $cv);
+    ok((bool) $r['proposal'], 'proposition : ' . $r['text']);
     AI\Actions::cancel($r['proposal']['id'], AI\UserContext::current());
     eq('cancelled', DB::value('SELECT status FROM ai_action_logs WHERE id = ?', [$r['proposal']['id']]), 'annulation');
 });
@@ -538,9 +539,10 @@ test('MARWA AI (HTTP) : page, flux SSE réel, conversations, avis, actions, admi
     eq(1, (int) DB::value("SELECT COUNT(*) FROM ai_intent_examples WHERE text = 'combien dort dans mes rayons'"), 'exemple ajouté depuis l\'écran');
     $tr = $a->token("$B/ia/reglages");
     $a->req('POST', "$B/ia/reglages", http_build_query(['_csrf' => $tr, 'bubble' => '1', 'retention' => '0']));
-    eq('90', (string) setting('ai_retention_days'), 'durée de conservation invalide refusée');
+    $ret = fn() => (string) DB::value("SELECT svalue FROM settings WHERE skey = 'ai_retention_days'");
+    eq('90', $ret(), 'durée de conservation invalide refusée');
     $a->req('POST', "$B/ia/reglages", http_build_query(['_csrf' => $tr, 'bubble' => '1', 'retention' => '120']));
-    eq('120', (string) setting('ai_retention_days'), 'durée de conservation enregistrée');
+    eq('120', $ret(), 'durée de conservation enregistrée');
     setting_set('ai_retention_days', '90');
     $td = $a->token("$B/ia");
     $a->req('POST', "$B/ia/conversations/supprimer-tout", http_build_query(['_csrf' => $td]));

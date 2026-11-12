@@ -7,7 +7,7 @@ foreach ($examples as $g => $list) {
 ?>
 <div class="mai" data-mai-app data-user="<?= e($who['name'] ?? '') ?>">
   <aside class="mai-side" data-mai-side>
-    <button type="button" class="btn btn-primary w-100 mb-2" data-mai-new><i class="bi bi-plus-lg"></i> Nouvelle conversation</button>
+    <div class="d-flex gap-2 mb-2"><button type="button" class="btn btn-primary flex-grow-1" data-mai-new><i class="bi bi-plus-lg"></i> Nouvelle conversation</button><button type="button" class="btn btn-outline-secondary d-lg-none" data-mai-toggle aria-label="Fermer la liste"><i class="bi bi-x-lg"></i></button></div>
     <div class="mai-convs" data-mai-convs>
       <?php foreach ($conversations as $c): ?>
         <div class="mai-conv" data-id="<?= (int) $c['id'] ?>"><button type="button" class="mai-conv-open" data-mai-open="<?= (int) $c['id'] ?>"><span><?= e($c['title']) ?></span><small><?= e(fdate($c['updated_at'] ?? '')) ?></small></button></div>

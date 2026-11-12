@@ -215,6 +215,7 @@
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
   input.addEventListener('input', () => { input.style.height = ''; input.style.height = Math.min(160, input.scrollHeight) + 'px'; });
   stopBtn.addEventListener('click', () => { if (ctrl) ctrl.abort(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') app.classList.remove('side-open'); });
   app.addEventListener('click', async (e) => {
     let b;
     if ((b = e.target.closest('[data-mai-ask]'))) { e.preventDefault(); ask(b.dataset.maiAsk); return; }
