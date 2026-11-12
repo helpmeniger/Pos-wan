@@ -2,6 +2,21 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.9.0] — 2026-11-12
+
+### Ajouté
+- **MARWA AI 2.0** (évolution de l'assistant MARWA IA, `addons/marwa_ia`) : réponses affichées **en continu** (Server-Sent Events), **conversations** conservées par utilisateur (liste, renommer, supprimer, durée de conservation réglable), compréhension des fautes de frappe, des synonymes, des questions de suite et de plusieurs demandes dans une même question.
+- 56 types d'informations lus en direct, **en lecture seule** (transaction READ ONLY, délai limité) et **selon les droits** de l'utilisateur (ventes personnelles sans `sales.view_all`, boutique de rattachement) ; tableaux, indicateurs, graphiques, sources et liens dans les réponses ; détection d'anomalies présentées comme points à vérifier, jamais comme preuves.
+- Opérations préparées par l'assistant (ouverture d'inventaire, brouillon de commande fournisseur, sortie de caisse, annulation de vente) : exécutées par les fonctions existantes du logiciel **uniquement après confirmation**, mot de passe exigé pour les opérations financières, journal et audit.
+- Connaissance automatique de l'application (modules, menus, routes, droits, tables, documentation), reconstruite quand le logiciel change ; dictionnaire de données.
+- Écrans de pilotage (droit `ia.manage`) : questions à enseigner, avis, banc de tests, fiches de connaissance, exemples d'intentions, modèles de langage.
+- Modèles de langage facultatifs : Ollama (réseau local), OpenAI, Anthropic Claude, Google Gemini, API compatible OpenAI ; clé chiffrée, modèle par défaut et de secours, limites par jour, coûts estimés. Un fournisseur externe reste inactif sans l'accord explicite de l'administrateur ; la base de données n'est jamais envoyée ; une reformulation qui modifie un chiffre est rejetée.
+- Cœur : `Router::routes()` (liste des routes, pour l'inventaire automatique).
+
+### Modifié
+- La page `/ia` devient la page de conversation de MARWA AI ; la bulle d'assistance utilise le même moteur. Les rapports PDF / Excel, la formation, le marketing, les conseils et le contrôle de configuration 1.x sont conservés.
+- Les réglages Ollama 1.x sont repris automatiquement comme modèle local dans les nouveaux réglages.
+
 ## [3.8.0] — 2026-11-12
 
 ### Ajouté

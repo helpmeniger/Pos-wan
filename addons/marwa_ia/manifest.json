@@ -1,30 +1,83 @@
 {
     "code": "marwa_ia",
-    "name": "MARWA IA — assistant intelligent",
-    "version": "1.2.0",
-    "requires": "2.14.0",
+    "name": "MARWA AI — votre administrateur intelligent",
+    "version": "2.0.0",
+    "requires": "3.9.0",
     "author": "Mahamadou Hamidou (Mohamed) — POS Marwa",
-    "description": "Assistant intégré : posez vos questions en français (« rapport du client Moussa en PDF », « ventes d'hier », « que dois-je commander ? », « comment vendre au carton ? »). Il prépare les rapports (aperçu, PDF, Excel), fait le bilan avec conseils, prévoit le mois, propose le réapprovisionnement et répond sur l'utilisation de tout le logiciel. Fonctionne en local, sans Internet ; modèle de langage local (Ollama) facultatif.",
+    "description": "Assistant intégré qui comprend le français courant (fautes, synonymes, questions de suite, plusieurs demandes à la fois), lit vos données en direct avec vos droits (lecture seule), explique le logiciel pas à pas, détecte les anomalies sans accuser, prépare les opérations courantes (avec confirmation) et garde vos conversations. Réponses affichées en continu. Fonctionne sans Internet ; modèles de langage facultatifs (Ollama local, ou OpenAI, Claude, Gemini après accord de l'administrateur).",
     "icon": "bi-stars",
     "color": "#6f42c1",
     "permissions": {
-        "ia.use": "Utiliser l'assistant MARWA IA (les rapports restent soumis aux droits de chacun)",
-        "ia.manage": "Régler MARWA IA (bulle d'assistance, modèle de langage local)"
+        "ia.use": "Utiliser l'assistant MARWA AI (les réponses restent soumises aux droits de chacun)",
+        "ia.manage": "Piloter MARWA AI (modèles, connaissances, apprentissage, réglages)"
     },
     "roles": {
-        "owner": ["ia.use", "ia.manage"],
-        "store_manager": ["ia.use", "ia.manage"],
-        "cashier": ["ia.use"],
-        "stock_manager": ["ia.use"],
-        "buyer": ["ia.use"],
-        "accountant": ["ia.use"],
-        "pharmacist": ["ia.use"],
-        "auditor": ["ia.use"]
+        "owner": [
+            "ia.use",
+            "ia.manage"
+        ],
+        "store_manager": [
+            "ia.use",
+            "ia.manage"
+        ],
+        "cashier": [
+            "ia.use"
+        ],
+        "stock_manager": [
+            "ia.use"
+        ],
+        "buyer": [
+            "ia.use"
+        ],
+        "accountant": [
+            "ia.use"
+        ],
+        "pharmacist": [
+            "ia.use"
+        ],
+        "auditor": [
+            "ia.use"
+        ]
     },
     "menu": [
-        { "group": "Assistant", "label": "MARWA IA", "icon": "bi-stars", "url": "/ia", "permission": "ia.use", "color": "#6f42c1" },
-        { "group": "Assistant", "label": "Réglages de MARWA IA", "icon": "bi-sliders", "url": "/ia/reglages", "permission": "ia.manage", "color": "#6f42c1" }
+        {
+            "group": "Assistant",
+            "label": "MARWA AI",
+            "icon": "bi-stars",
+            "url": "/ia",
+            "permission": "ia.use",
+            "color": "#6f42c1"
+        },
+        {
+            "group": "Assistant",
+            "label": "Pilotage de MARWA AI",
+            "icon": "bi-speedometer2",
+            "url": "/ia/admin",
+            "permission": "ia.manage",
+            "color": "#6f42c1"
+        },
+        {
+            "group": "Assistant",
+            "label": "Réglages de MARWA AI",
+            "icon": "bi-sliders",
+            "url": "/ia/reglages",
+            "permission": "ia.manage",
+            "color": "#6f42c1"
+        }
     ],
-    "assets": { "js": ["marwa-ia.js"], "css": ["marwa-ia.css"] },
-    "settings": { "ia_bubble": "1", "ia_llm_url": "", "ia_llm_model": "" }
+    "assets": {
+        "js": [
+            "marwa-ia.js"
+        ],
+        "css": [
+            "marwa-ia.css"
+        ]
+    },
+    "settings": {
+        "ia_bubble": "1",
+        "ia_llm_url": "",
+        "ia_llm_model": "",
+        "ai_retention_days": "90",
+        "ai_llm_phrasing": "0"
+    }
 }

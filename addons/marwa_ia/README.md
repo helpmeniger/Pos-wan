@@ -1,12 +1,32 @@
-# MARWA IA — assistant intelligent de POS Marwa
+# MARWA AI — votre administrateur intelligent (POS Marwa)
 
-MARWA IA répond en français, dans une conversation, aux questions de gestion et d'utilisation du
-logiciel. Il fonctionne **sur le serveur de la boutique, sans Internet** : aucune question ni
-donnée ne sort.
+MARWA AI (anciennement MARWA IA) répond en français, dans une conversation, aux questions de gestion et
+d'utilisation du logiciel. **Par défaut il fonctionne sur le serveur de la boutique, sans Internet** : aucune
+question ni donnée ne sort. Un modèle de langage est facultatif : Ollama sur le réseau local, ou un fournisseur
+externe (OpenAI, Claude, Gemini…) **seulement** si l'administrateur l'ajoute et coche l'accord d'envoi des
+questions (loi n° 2017-28). Même alors, la base de données n'est jamais envoyée et les chiffres restent calculés
+par POS Marwa.
+
+## Nouveautés 2.0
+- **Réponses en continu** et **conversations** conservées (liste, renommer, supprimer, durée de conservation),
+  visibles par leur seul auteur.
+- **Compréhension** des fautes de frappe, des synonymes, des questions de suite (« et hier ? », « et dans le
+  dépôt ? », « fais la comparaison ») et de plusieurs demandes dans une même question.
+- **56 types d'informations** lus en direct (stock par boutique / magasin, ventes, caisse, clients, fournisseurs,
+  bénéfice, anomalies, Marwa Pay, Fiscal Connect…), toujours **en lecture seule** et **selon les droits** : un
+  caissier ne voit que ses ventes, un responsable rattaché à une boutique ne voit que sa boutique.
+- **Opérations préparées** (inventaire, brouillon de commande fournisseur, sortie de caisse, annulation de vente) :
+  rien n'est fait sans votre confirmation ; mot de passe demandé pour les opérations financières.
+- **Connaissance automatique** de l'application (modules, menus, routes, droits, tables), mise à jour quand le
+  logiciel change ; **dictionnaire de données**.
+- **Pilotage** (Assistant → Pilotage de MARWA AI) : questions non comprises à enseigner, avis, banc de tests,
+  fiches de connaissance, exemples, modèles (clé chiffrée, secours, limites, coûts).
+
+Documentation technique : `docs/ia/02_DOCUMENTATION_TECHNIQUE.md`.
 
 ## Installation
-Système & maintenance → Modules complémentaires → **MARWA IA → Installer**. Le menu
-**Assistant → MARWA IA** apparaît, ainsi qu'une bulle « MARWA IA » en bas à gauche de chaque page
+Système & maintenance → Modules complémentaires → **MARWA AI → Installer**. Le menu
+**Assistant → MARWA AI** apparaît, ainsi qu'une bulle « MARWA IA » en bas à gauche de chaque page
 (pas sur l'écran de caisse). Droits : « Utiliser l'assistant » (gérant, responsable, caissier,
 stock, achats, comptable, pharmacien, auditeur) et « Régler MARWA IA » (gérant, responsable).
 

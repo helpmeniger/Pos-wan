@@ -214,6 +214,13 @@ final class Text
         return null;
     }
 
+    /** « 2026-09 » → « septembre 2026 ». */
+    public static function monthLabelOf(string $ym): string
+    {
+        [$y, $m] = array_map('intval', explode('-', $ym) + [0, 1]);
+        return self::monthLabel(max(1, min(12, $m))) . ' ' . $y;
+    }
+
     public static function monthLabel(int $m): string
     {
         return ['', 'janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'][$m];

@@ -30,23 +30,63 @@ final class IaController extends Controller
         json_response(['ok' => true, 'bubble' => setting('ia_bubble', '1') === '1', 'name' => explode(' ', (string) ($u['full_name'] ?? ''))[0], 'page' => url('/ia'), 'ask' => url('/ia/ask')]);
     }
 
+    /**
+     * Question posée par la bulle (réponse en un bloc). Même moteur que la page /ia (MARWA AI), même mémoire :
+     * la bulle garde sa conversation en session. Format de réponse 1.x conservé (html, kpis, table, actions, open).
+     */
     public function ask(): void
     {
-        $q = trim((string) (Request::json()['q'] ?? Request::input('q', '')));
-        $q = mb_substr($q, 0, 500);
-        $ctx = Session::get('marwa_ia_ctx');
-        $r = Engine::answer($q, is_array($ctx) ? $ctx : null);
-        if (!empty($r['spec'])) {
-            Session::set('marwa_ia_ctx', $r['spec']);
+        $q = mb_substr(trim((string) (Request::json()['q'] ?? Request::input('q', ''))), 0, 500);
+        $cid = (int) Session::get('marwa_ai_conv', 0) ?: null;
+        if ($cid && !DB::value('SELECT 1 FROM ai_conversations WHERE id = ? AND user_id = ?', [$cid, Auth::id()])) {
+            $cid = null;
         }
+        $r = \Addons\MarwaIa\Brain\Brain::handle($q, $cid, static function (string $e, array $d): void {
+        });
+        Session::set('marwa_ai_conv', $r['conversation_id']);
         if ($q !== '') {
-            DB::insert('ia_history', ['user_id' => Auth::id(), 'question' => $q, 'kind' => $r['spec']['kind'] ?? ($r['type'] ?? null)]);
+            DB::insert('ia_history', ['user_id' => Auth::id(), 'question' => $q, 'kind' => $r['legacy']['spec']['kind'] ?? ($r['legacy']['type'] ?? $r['intent'])]);
             if (random_int(1, 50) === 1) {
                 DB::run('DELETE FROM ia_history WHERE created_at < NOW() - INTERVAL 90 DAY');
+                \Addons\MarwaIa\Brain\Memory::purge();
             }
         }
-        unset($r['spec']);
-        json_response($r);
+        json_response(self::compat($r));
+    }
+
+    /** Réponse MARWA AI → format de la bulle 1.x (texte échappé ici ; le HTML du moteur est déjà échappé côté serveur). */
+    public static function compat(array $r): array
+    {
+        if ($r['legacy']) {
+            $out = $r['legacy'];
+            unset($out['spec']);
+            $out['message_id'] = $r['message_id'];
+            return $out;
+        }
+        $html = $r['html'] ?? '';
+        if ($html === '' || $html === null) {
+            $html = implode('', array_map(fn($p) => '<p>' . nl2br(e($p)) . '</p>', array_filter(preg_split('/\n{2,}/', (string) $r['text']))));
+        }
+        $out = ['ok' => true, 'type' => $r['intent'] ? 'answer' : 'help', 'title' => '', 'html' => $html, 'kpis' => [], 'table' => null, 'actions' => [], 'suggestions' => array_values(array_unique($r['suggestions'])),
+            'message_id' => $r['message_id'], 'intent' => $r['intent'], 'sources' => array_values(array_unique($r['sources']))];
+        foreach ($r['blocks'] as $b) {
+            if ($b['type'] === 'cards') {
+                foreach ($b['items'] as $c) {
+                    $out['kpis'][] = ['label' => $c['label'], 'value' => $c['value']];
+                }
+            } elseif ($b['type'] === 'table' && !$out['table']) {
+                $out['table'] = ['headers' => $b['headers'], 'rows' => $b['rows'], 'more' => $b['more'] ?? 0];
+            } elseif ($b['type'] === 'note') {
+                $out['html'] .= '<p class="small text-secondary">' . e($b['text']) . '</p>';
+            }
+        }
+        foreach ($r['links'] as $l) {
+            $out['actions'][] = ['kind' => 'link', 'label' => $l[0], 'url' => url($l[1])];
+        }
+        if ($r['proposal']) {
+            $out['html'] .= '<p class="small"><a href="' . e(url('/ia')) . '">Ouvrez MARWA AI en grand</a> pour confirmer cette opération.</p>';
+        }
+        return $out;
     }
 
     /** Plan marketing personnalisé (PDF affiché avec view=1, sinon téléchargé). */
@@ -100,29 +140,34 @@ final class IaController extends Controller
     {
         DB::run('DELETE FROM ia_history WHERE user_id = ?', [Auth::id()]);
         Session::forget('marwa_ia_ctx');
+        Session::forget('marwa_ai_conv');
         flash('success', t('Historique de vos questions effacé.'));
         redirect('/ia');
     }
 
     public function settings(): void
     {
-        view('marwa_ia::reglages', ['title' => 'MARWA IA — réglages', 'url' => (string) setting('ia_llm_url', ''), 'model' => (string) setting('ia_llm_model', ''), 'bubble' => setting('ia_bubble', '1') === '1']);
+        view('marwa_ia::reglages', ['title' => 'MARWA AI — réglages', 'bubble' => setting('ia_bubble', '1') === '1', 'retention' => \Addons\MarwaIa\Brain\Memory::retentionDays(),
+            'phrasing' => setting('ai_llm_phrasing', '0') === '1', 'models' => \Addons\MarwaIa\Brain\Providers::chain()]);
     }
 
     public function settingsSave(): void
     {
         $this->attempt(function () {
-            $url = Llm::validateUrl(Request::str('llm_url'));
-            $model = mb_substr(preg_replace('/[^A-Za-z0-9_.:\/-]/', '', Request::str('llm_model')), 0, 80);
-            setting_set('ia_llm_url', $url);
-            setting_set('ia_llm_model', $url === '' ? '' : $model);
+            $days = (int) Request::input('retention', '90');
+            if ($days < 1 || $days > 3650) {
+                throw new BusinessException('Durée de conservation : entre 1 et 3650 jours.');
+            }
             setting_set('ia_bubble', Request::input('bubble') === '1' ? '1' : '0');
-            Audit::log('ia.settings', null, null, ['llm' => $url !== '', 'bubble' => Request::input('bubble') === '1']);
-            if ($url !== '' && Request::input('test') === '1') {
-                flash('info', t('Réponse du modèle local') . ' : ' . Llm::test());
+            setting_set('ai_retention_days', (string) $days);
+            setting_set('ai_llm_phrasing', Request::input('phrasing') === '1' ? '1' : '0');
+            Audit::log('ia.settings', null, null, ['bubble' => Request::input('bubble') === '1', 'retention' => $days, 'phrasing' => Request::input('phrasing') === '1']);
+            $purged = \Addons\MarwaIa\Brain\Memory::purge();
+            if ($purged) {
+                flash('info', $purged . ' ' . t('conversation(s) plus ancienne(s) que la durée de conservation effacée(s).'));
             }
         }, '/ia/reglages');
-        flash('success', t('Réglages de MARWA IA enregistrés.'));
+        flash('success', t('Réglages de MARWA AI enregistrés.'));
         redirect('/ia/reglages');
     }
 

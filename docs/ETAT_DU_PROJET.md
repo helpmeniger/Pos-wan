@@ -131,3 +131,6 @@
 
 ## Paiements électroniques (3.8.0)
 Module Marwa Pay Connect : moteur, caisse, terminaux, remboursements, rapprochement. Aucun prestataire ni TPE réel n'est encore intégré : contrat marchand, documentation officielle et essais en sandbox requis pour chaque prestataire.
+
+## Assistant MARWA AI (3.9.0)
+MARWA AI 2.0 : moteur de compréhension, outils de données en lecture seule filtrés par les droits, mémoire des conversations, actions confirmées, réponses en continu, pilotage et apprentissage par exemples validés. Testé sur un banc de 114 questions dont les chiffres attendus sont recalculés en SQL (voir `docs/ia/03_RAPPORT_DE_TESTS.md`). Les fournisseurs de modèles (OpenAI, Claude, Gemini, Ollama) n'ont été essayés que contre une fausse API locale : à valider avec de vrais comptes. Aucun module de tickets Wi-Fi n'existe.

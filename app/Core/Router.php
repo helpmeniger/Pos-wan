@@ -37,6 +37,13 @@ final class Router
         $this->routes[] = compact('method', 'pattern', 'regex', 'action', 'perm', 'public', 'csrf');
     }
 
+    /** Liste des routes déclarées (lecture seule : méthode, chemin, permission, publique) — utilisée par l'inventaire de MARWA AI. */
+    public function routes(): array
+    {
+        return array_map(fn($r) => ['method' => $r['method'], 'pattern' => $r['pattern'], 'perm' => $r['perm'], 'public' => $r['public'],
+            'action' => is_array($r['action']) ? implode('::', $r['action']) : ''], $this->routes);
+    }
+
     public function dispatch(string $method, string $path): void
     {
         $allowed = false;

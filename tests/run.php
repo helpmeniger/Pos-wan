@@ -1729,7 +1729,7 @@ test('Écran client 3.1 : photos JPEG légères, sens EXIF, transparence, fichie
 });
 test('MARWA IA : compréhension du français (périodes, intentions, noms), rapports, droits, aide, modèle local', function () {
     actingAs('admin');
-    eq(['0001_marwa_ia', '0002_formation'], App\Core\Addons::install('marwa_ia', false), 'installation');
+    eq(['0001_marwa_ia', '0002_formation', '0003_marwa_ai'], App\Core\Addons::install('marwa_ia', false), 'installation');
     App\Core\Addons::registerAutoload();
     $T = Addons\MarwaIa\Text::class;
     $E = Addons\MarwaIa\Engine::class;
@@ -2608,7 +2608,7 @@ test('MARWA IA (HTTP) : questions, PDF affiché, PDF et Excel téléchargés, dr
     $a = new Http();
     $a->login($B, 'admin', 'Essai-Niamey-2026');
     $pg = $a->req('GET', "$B/ia");
-    ok($pg['code'] === 200 && str_contains($pg['body'], 'data-mia-full') && str_contains($pg['body'], 'data-no-lock'), 'page de l\'assistant');
+    ok($pg['code'] === 200 && str_contains($pg['body'], 'data-mai-app') && str_contains($pg['body'], 'data-no-lock'), 'page de l\'assistant');
     $t = $a->token("$B/ia");
     $ask = fn(Http $c, string $tok, string $q) => json_decode($c->req('POST', "$B/ia/ask", json_encode(['q' => $q]), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $tok])['body'], true);
     $r = $ask($a, $t, 'rapport du client Moussa Garba');
@@ -6806,6 +6806,9 @@ test('Marwa Pay (phase 9) : sécurité — XSS, CSRF, cloisonnement des caisses,
     ok(!str_contains((string) $ph['payer_hint'], '901234') && str_ends_with((string) $ph['payer_hint'], '56'), 'téléphone du payeur masqué : ' . $ph['payer_hint']);
     DB::run('DELETE FROM payment_providers WHERE id = ?', [$x]);
 });
+
+// MARWA AI 2.0 (assistant) : tests dans un fichier séparé
+require __DIR__ . '/marwa_ai.php';
 
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);

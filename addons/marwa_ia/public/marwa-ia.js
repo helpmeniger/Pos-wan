@@ -1,5 +1,5 @@
 /* =====================================================================
-   MARWA IA — conversation avec l'assistant (page /ia et bulle sur toutes les pages).
+   MARWA AI — bulle d'assistance sur toutes les pages (la page /ia a son propre script, marwa-ai.js).
    Les réponses viennent du serveur de la boutique (aucun service Internet).
    ===================================================================== */
 (function () {
@@ -135,7 +135,8 @@
     chat.focus();
     return;
   }
-  // Bulle sur les autres pages (jamais sur l'écran de caisse ni les impressions)
+  // Bulle sur les autres pages (jamais sur l'écran de caisse, les impressions ni la page MARWA AI elle-même)
+  if (document.querySelector('[data-mai-app]')) return;
   if (document.body.classList.contains('pos-body') || !document.querySelector('.sidebar, nav, .app')) return;
   (async () => {
     let st = null;
