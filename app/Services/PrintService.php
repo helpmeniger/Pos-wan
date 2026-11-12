@@ -193,8 +193,24 @@ final class PrintService
         if ((float) $s['credit_amount'] > 0) {
             $d->pair(t('Reste dû (crédit)'), money($s['credit_amount']));
         }
+        // Bloc fiscal (module de certification) : mentions et QR officiel seulement s'ils ont été reçus
+        $f = \App\Core\Events::collect('document.sale', ['sale_id' => $saleId])['fiscal'] ?? null;
+        if (is_array($f)) {
+            $d->sep()->align('center')->bold()->wrap((string) ($f['title'] ?? ''))->bold(false)->align('left');
+            foreach ((array) ($f['lines'] ?? []) as [$k, $v]) {
+                $d->wrap($k . ' : ' . $v);
+            }
+            foreach ((array) ($f['mentions'] ?? []) as $m) {
+                $d->wrap((string) $m);
+            }
+            if (!empty($f['note'])) {
+                $d->wrap((string) $f['note']);
+            }
+        }
         $d->sep()->align('center')->wrap((string) setting('ticket_footer', ''));
-        if (setting('receipt_qr', '1') === '1') {
+        if (!empty($f['qr'])) {
+            $d->feed(1)->qr((string) $f['qr'], $printer['paper'] === '58' ? 4 : 5)->line($s['number']);
+        } elseif (setting('receipt_qr', '1') === '1') {
             $d->feed(1)->qr(DocumentRef::saleQr($s), $printer['paper'] === '58' ? 4 : 5)->line($s['number']);
         }
         $d->align('left')->cut();
@@ -247,6 +263,9 @@ final class PrintService
     /** Ticket de caisse sur l'imprimante serveur de la caisse (si configurée). */
     public static function printReceipt(int $saleId, bool $duplicate = false): array
     {
+        if ($blocked = \App\Core\Events::ask('document.print', ['sale_id' => $saleId, 'kind' => 'ticket'])) {
+            return ['printed' => 0, 'errors' => [$blocked]];
+        }
         $reg = DB::value('SELECT register_id FROM sales WHERE id = ?', [$saleId]);
         $r = self::dispatch('receipt', $reg ? (int) $reg : null, fn($p) => self::receipt($saleId, $p, $duplicate));
         if ($r['printed'] > 0) {

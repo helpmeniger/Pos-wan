@@ -87,9 +87,18 @@ final class SaleController extends Controller
      * Ticket thermique. Première impression libre ; toute réimpression exige
      * la permission pos.reprint, est journalisée et porte la mention DUPLICATA.
      */
+    /** Un module (certification fiscale) peut interdire l'impression d'un document non certifié. */
+    private function printAllowed(int $id, string $kind): void
+    {
+        if ($blocked = \App\Core\Events::ask('document.print', ['sale_id' => $id, 'kind' => $kind])) {
+            throw new HttpException(409, $blocked);
+        }
+    }
+
     public function ticket(int $id): void
     {
         $s = $this->scopedSale($id);
+        $this->printAllowed($id, 'ticket');
         $dup = (int) $s['print_count'] > 0;
         if ($dup && !can('pos.reprint')) {
             throw new HttpException(403, 'Réimpression non autorisée : demandez à un responsable.');
@@ -156,6 +165,7 @@ final class SaleController extends Controller
     public function invoice(int $id): void
     {
         $s = $this->scopedSale($id);
+        $this->printAllowed($id, 'invoice');
         view('sales/invoice', [
             'title' => 'Facture ' . $s['number'], 's' => $s, 'bodyClass' => 'a4',
             'items' => DB::all('SELECT si.*, p.reference FROM sale_items si JOIN products p ON p.id = si.product_id WHERE si.sale_id = ?', [$id]),

@@ -16,6 +16,7 @@
   <table><?php foreach ($doc['payments'] as $r): ?><tr><td class="<?= !empty($r[2]) ? 'b' : '' ?>"><?= e($r[0]) ?></td><td class="num <?= !empty($r[2]) ? 'b' : '' ?>"><?= e($r[1]) ?></td></tr><?php endforeach; ?></table>
   <hr>
   <div class="c"><?= nl2br(e($doc['footer'])) ?></div>
+  <?= App\Core\View::partial('documents/_fiscal', ['doc' => $doc]) ?>
   <?php if ($doc['qr']): ?><div class="c qr-box"><div data-qr="<?= e($doc['qr']) ?>" data-qr-size="3" class="qr"></div><div class="small"><?= e($doc['number']) ?></div></div><?php endif; ?>
   <div class="c" style="font-size:.85em"><?= e(t('Articles')) ?> : <?= qty($doc['count']) ?> · POS Marwa</div>
 </div>

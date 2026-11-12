@@ -7,5 +7,6 @@
   </div>
   <?php if ($doc['totals']): ?><table class="totals"><?php foreach ($doc['totals'] as $r): ?><tr class="<?= !empty($r[2]) ? 'grand' : '' ?>"><td><?= e($r[0]) ?></td><td class="num"><?= e($r[1]) ?></td></tr><?php endforeach; ?></table><?php endif; ?>
 </div>
+<?= App\Core\View::partial('documents/_fiscal', ['doc' => $doc]) ?>
 <?php if (!empty($doc['signatures'])): ?><div class="sign"><?php foreach ($doc['signatures'] as $s): ?><div><?= e($s) ?></div><?php endforeach; ?></div><?php endif; ?>
 <div class="foot"><?= e($doc['footer'] ?? '') ?></div>

@@ -10,6 +10,7 @@
   </tbody></table>
   <?php foreach ($doc['totals'] as $r): if (!empty($r[2])): ?><div class="total-box"><span><?= e($r[0]) ?></span><span><?= e($r[1]) ?></span></div><?php else: ?><div class="row2"><span><?= e($r[0]) ?></span><span><?= e($r[1]) ?></span></div><?php endif; endforeach; ?>
   <?php foreach ($doc['payments'] as $r): ?><div class="row2 <?= !empty($r[2]) ? 'b' : '' ?>"><span><?= e($r[0]) ?></span><span><?= e($r[1]) ?></span></div><?php endforeach; ?>
+  <?= App\Core\View::partial('documents/_fiscal', ['doc' => $doc]) ?>
   <?php if ($doc['qr']): ?><div class="c qr-box"><div data-qr="<?= e($doc['qr']) ?>" data-qr-size="4" class="qr big-qr"></div><div class="small"><?= e(t('Scannez pour vérifier ce ticket')) ?></div></div><?php endif; ?>
   <div class="c footer-msg"><?= nl2br(e($doc['footer'])) ?></div>
 </div>

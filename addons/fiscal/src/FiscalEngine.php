@@ -222,25 +222,25 @@ final class FiscalEngine
         }
         $connector = self::connectorFor($profile, (int) $sale['store_id'], $sale['register_id'] !== null ? (int) $sale['register_id'] : null);
         if (!$connector) {
-            return self::retryLater($cert, 'Aucun connecteur fiscal actif pour cet environnement (' . $profile['environment'] . ').', 99);
+            return self::notSent($cert, 'Aucun connecteur fiscal actif pour cet environnement (' . $profile['environment'] . ').');
         }
         // Avoir : la facture d'origine doit être certifiée
         $original = null;
         if ($cert['doc_type'] === 'credit_note') {
             $original = self::forSale((int) $cert['sale_id']);
             if (!$original || $original['status'] !== 'certified') {
-                return self::retryLater($cert, 'En attente de la certification de la facture d\'origine.', 99);
+                return self::notSent($cert, 'En attente de la certification de la facture d\'origine.');
             }
         }
         try {
             $invoice = $cert['doc_type'] === 'invoice' ? InvoiceNormalizer::fromSale((int) $cert['doc_id'], $profile) : InvoiceNormalizer::fromReturn((int) $cert['doc_id'], $profile, $original);
         } catch (\Throwable $e) {
-            self::touch($certId, ['status' => 'failed', 'last_error' => mb_substr($e->getMessage(), 0, 255)]);
+            self::touch($certId, ['status' => 'failed', 'attempts' => max(0, (int) $cert['attempts'] - 1), 'last_error' => mb_substr($e->getMessage(), 0, 255)]);
             self::dequeue($certId);
             return self::result($cert, $e->getMessage());
         }
         if ($invoice['unmapped_rates']) {
-            self::touch($certId, ['status' => 'failed', 'connector_id' => $connector['id'], 'last_error' => 'Taux de TVA sans groupe fiscal configuré : ' . implode(', ', $invoice['unmapped_rates']) . ' %.']);
+            self::touch($certId, ['status' => 'failed', 'attempts' => max(0, (int) $cert['attempts'] - 1), 'connector_id' => $connector['id'], 'last_error' => 'Taux de TVA sans groupe fiscal configuré : ' . implode(', ', $invoice['unmapped_rates']) . ' %.']);
             self::dequeue($certId);
             return self::result($cert, 'Taux de TVA sans groupe fiscal configuré : facture non envoyée.');
         }
@@ -279,6 +279,15 @@ final class FiscalEngine
         self::touch($certId, ['status' => 'failed', 'last_error' => mb_substr($r->message, 0, 255)]);
         self::dequeue($certId);
         return self::result($cert, $r->message);
+    }
+
+    /** Rien n'a été transmis : l'essai ne compte pas, nouvelle tentative dans 5 minutes. */
+    private static function notSent(array $cert, string $message): array
+    {
+        DB::run("UPDATE fiscal_certifications SET status = 'pending', attempts = GREATEST(attempts - 1, 0), last_error = ?, updated_at = NOW() WHERE id = ? AND status = 'sending'", [mb_substr($message, 0, 255), $cert['id']]);
+        DB::run('INSERT INTO fiscal_pending_queue (certification_id, next_attempt_at, locked_until) VALUES (?, NOW() + INTERVAL 5 MINUTE, NULL)
+                 ON DUPLICATE KEY UPDATE next_attempt_at = VALUES(next_attempt_at), locked_until = NULL', [$cert['id']]);
+        return self::result($cert, $message . ' Facture en file d\'attente : NON CERTIFIÉE pour l\'instant.');
     }
 
     private static function retryLater(array $cert, string $message, int $maxRetries): array

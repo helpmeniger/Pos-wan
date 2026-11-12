@@ -6089,6 +6089,110 @@ test('Fiscal Connect (phase 6) : interface — 11 écrans, permissions, secrets 
     }
 });
 
+test('Fiscal Connect (phase 7) : intégration ventes, tickets, factures A4, ESC/POS, avoirs, annulation, panne, blocage', function () use ($B) {
+    $E = Addons\Fiscal\FiscalEngine::class;
+    $sim = $GLOBALS['FISCAL_SIMU'];
+    App\Core\Addons::reset();
+    App\Core\Events::reset();
+    actingAs('caissier');
+    $reg = (int) DB::value('SELECT id FROM cash_registers ORDER BY id LIMIT 1');
+    if (!S\CashService::openSessionForRegister($reg)) {
+        S\CashService::open($reg, 0);
+    }
+    $wh = (int) DB::value('SELECT warehouse_id FROM cash_registers WHERE id = ?', [$reg]);
+    $cands = array_column(DB::all("SELECT p.id FROM products p JOIN stock_levels l ON l.product_id = p.id AND l.warehouse_id = ? WHERE p.status = 'active' AND l.quantity > 30 ORDER BY l.quantity DESC LIMIT 15", [$wh]), 'id');
+    $pid = 0;
+    foreach ($cands as $cand) {
+        try {
+            S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => (int) $cand, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 1000000]]]);
+            $pid = (int) $cand;
+            break;
+        } catch (Throwable) {
+        }
+    }
+    ok($pid > 0, 'produit vendable trouvé');
+    $sell = fn() => S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $pid, 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 1000000]]]);
+    $setSc = fn(string $sc) => DB::update('fiscal_connectors', ['config_json' => json_encode(['scenario' => $sc])], 'id = ?', [$sim]);
+    $setSc('accept');
+    DB::update('fiscal_profiles', ['print_uncertified' => 'mark'], 'active = 1');
+    $prof = DB::one('SELECT * FROM fiscal_profiles WHERE active = 1 LIMIT 1');
+    ok($prof && $prof['environment'] === 'test', 'profil de test actif');
+
+    // 1. Vente → certification immédiate (simulation)
+    $r = $sell();
+    eq('certified', $r['fiscal_status'] ?? null, $r['fiscal_message'] ?? 'aucun statut fiscal');
+    $c = $E::forSale($r['sale_id']);
+    ok(str_starts_with((string) $c['fiscal_number'], 'SIMU-'), 'numéro de simulation');
+    // 2. Ticket et facture A4 : mention « NON CERTIFIÉ – TEST » + données reçues
+    $h = new Http(); $h->login($B, 'admin', 'Essai-Niamey-2026');
+    $tk = $h->req('GET', "$B/sales/{$r['sale_id']}/ticket")['body'];
+    ok(str_contains($tk, 'NON CERTIFIÉ – TEST') && str_contains($tk, $c['fiscal_number']), 'ticket : simulation clairement marquée');
+    $inv = $h->req('GET', "$B/sales/{$r['sale_id']}/invoice")['body'];
+    ok(str_contains($inv, 'NON CERTIFIÉ – TEST') && str_contains($inv, $c['fiscal_number']) && str_contains($inv, '123456/P'), 'facture A4 : bloc fiscal et NIF');
+    $esc = S\PrintService::receipt($r['sale_id'], ['paper' => '80', 'open_drawer' => 0]);
+    ok(str_contains($esc, $c['fiscal_number']) && str_contains($esc, 'NON CERTIFI'), 'ticket ESC/POS : bloc fiscal');
+    // 3. Annulation locale refusée pour une facture certifiée
+    actingAs('admin');
+    throws(fn() => S\SaleService::cancel($r['sale_id'], 'erreur'), 'avoir');
+    eq('completed', DB::value('SELECT status FROM sales WHERE id = ?', [$r['sale_id']]), 'vente intacte');
+    // 4. Retour → avoir certifié, rattaché à la facture d'origine
+    $item = (int) DB::value('SELECT id FROM sale_items WHERE sale_id = ?', [$r['sale_id']]);
+    $ret = S\SaleService::createReturn($r['sale_id'], [$item => 1], 'cash', 'Produit défectueux', true);
+    $cn = $E::forReturn($ret);
+    eq('certified', $cn['status'] ?? null, 'avoir certifié');
+    ok(str_contains((string) DB::value("SELECT request_redacted FROM fiscal_invoice_logs WHERE certification_id = ? AND action = 'issueCreditNote'", [$cn['id']]), $c['fiscal_number']), 'l\'avoir référence la facture certifiée');
+
+    // 5. Panne : la vente est enregistrée, le ticket porte « NON CERTIFIÉE », rien n'est inventé
+    actingAs('caissier');
+    $setSc('unreachable');
+    $r2 = $sell();
+    ok($r2['sale_id'] > 0 && ($r2['fiscal_status'] ?? '') === 'pending', 'vente enregistrée malgré la panne, facture en attente');
+    $tk2 = $h->req('GET', "$B/sales/{$r2['sale_id']}/ticket")['body'];
+    ok(str_contains($tk2, 'FACTURE NON CERTIFIÉE') && !str_contains($tk2, 'SIMU-'), 'ticket non certifié : aucun numéro fiscal');
+    // Retour du dispositif : la file certifie, le ticket est alors complet
+    $setSc('accept');
+    DB::run('UPDATE fiscal_pending_queue SET next_attempt_at = NOW() - INTERVAL 1 MINUTE');
+    $E::processQueue();
+    $c2 = $E::forSale($r2['sale_id']);
+    eq('certified', $c2['status']);
+    ok(str_contains($h->req('GET', "$B/sales/{$r2['sale_id']}/ticket")['body'], $c2['fiscal_number']), 'réimpression : numéro reçu');
+    // 6. Mode « bloquer l'impression » d'une facture non certifiée
+    DB::update('fiscal_profiles', ['print_uncertified' => 'block'], 'id = ?', [$prof['id']]);
+    $setSc('unreachable');
+    $r3 = $sell();
+    eq(409, $h->req('GET', "$B/sales/{$r3['sale_id']}/ticket")['code'], 'ticket bloqué');
+    eq(409, $h->req('GET', "$B/sales/{$r3['sale_id']}/invoice")['code'], 'facture bloquée');
+    $pr = S\PrintService::printReceipt($r3['sale_id']);
+    ok($pr['printed'] === 0 && str_contains(implode(' ', $pr['errors']), 'pas encore certifiée'), 'impression serveur bloquée');
+    DB::update('fiscal_profiles', ['print_uncertified' => 'mark'], 'id = ?', [$prof['id']]);
+    // 7. Vente annulée avant toute transmission : demande retirée (rien n'avait été envoyé)
+    DB::update('fiscal_connectors', ['active' => 0], 'id = ?', [$sim]);
+    $r4 = $sell();
+    eq(0, (int) $E::forSale($r4['sale_id'])['attempts'], 'aucun connecteur : rien transmis');
+    actingAs('admin');
+    S\SaleService::cancel($r4['sale_id'], 'erreur de saisie');
+    eq('failed', $E::forSale($r4['sale_id'])['status'], 'demande retirée');
+    eq(0, (int) DB::value('SELECT COUNT(*) FROM fiscal_pending_queue WHERE certification_id = ?', [$E::forSale($r4['sale_id'])['id']]));
+    DB::update('fiscal_connectors', ['active' => 1], 'id = ?', [$sim]);
+    $setSc('accept');
+    // 8. Un module en erreur n'empêche jamais la vente
+    actingAs('caissier');
+    App\Core\Events::on('sale.created', function () { throw new RuntimeException('module défaillant'); });
+    $r5 = $sell();
+    ok($r5['sale_id'] > 0 && DB::value('SELECT id FROM sales WHERE id = ?', [$r5['sale_id']]), 'vente enregistrée malgré un écouteur en erreur');
+    // 9. Module désactivé : ventes et documents inchangés
+    App\Core\Addons::setActive('fiscal', false);
+    App\Core\Addons::reset();
+    App\Core\Events::reset();
+    $r6 = $sell();
+    ok(!isset($r6['fiscal_status']) && $E::forSale($r6['sale_id']) === null, 'module inactif : aucune certification');
+    $tk6 = $h->req('GET', "$B/sales/{$r6['sale_id']}/ticket")['body'];
+    ok(!str_contains($tk6, 'CERTIFI'), 'module inactif : ticket inchangé');
+    App\Core\Addons::setActive('fiscal', true);
+    App\Core\Addons::reset();
+    App\Core\Events::reset();
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

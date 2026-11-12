@@ -49,6 +49,7 @@ final class PosController extends Controller
             'shop' => (string) setting('company_name', 'POS Marwa'),
             'shortcuts' => is_array($shortcuts) ? $shortcuts : self::defaultShortcuts(),
             'autoPrint' => setting('pos_auto_print', '1') === '1',
+            'fiscal' => \App\Core\Addons::isActive('fiscal'),
             'quickValidate' => setting('pos_quick_validate', '1') === '1',
             'mobileProviders' => mobile_money_providers(),
             'serverPrinter' => \App\Services\PrintService::targets('receipt', $register ? (int) $register['id'] : null) !== [],

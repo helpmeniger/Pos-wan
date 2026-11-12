@@ -83,6 +83,27 @@ final class Documents
         return setting('receipt_qr', '1') === '1' ? $code : null;
     }
 
+    /**
+     * Bloc fiscal fourni par un module (ex. Marwa Fiscal Connect) : mentions, numéro de certification,
+     * QR officiel. Sans module, le document est inchangé.
+     */
+    private static function withFiscal(array $doc, array $s): array
+    {
+        if (empty($s['id'])) {
+            return $doc + ['fiscal' => null];
+        }
+        $f = \App\Core\Events::collect('document.sale', ['sale_id' => (int) $s['id']])['fiscal'] ?? null;
+        if (is_array($f)) {
+            if (!empty($f['qr'])) {
+                $doc['qr'] = $f['qr']; // QR officiel uniquement s'il a été reçu du dispositif
+            }
+            if (!empty($f['banner'])) {
+                $doc['banner'] = trim(($doc['banner'] ? $doc['banner'] . ' · ' : '') . $f['banner']);
+            }
+        }
+        return $doc + ['fiscal' => $f];
+    }
+
     private static function paymentLabel(array $p): string
     {
         return t(method_label($p['method'])) . (!empty($p['provider']) ? ' ' . $p['provider'] : '') . (!empty($p['reference']) ? ' (' . $p['reference'] . ')' : '');
@@ -133,13 +154,14 @@ final class Documents
         if (!empty($s['customer_name'])) {
             $meta[] = [t('Client'), $s['customer_name']];
         }
-        return [
+        $doc = [
             'title' => t('Ticket'), 'number' => $s['number'], 'date' => fdate($s['created_at']), 'store' => $s['store_name'] ?? '', 'meta' => $meta, 'dup' => $dup,
             'banner' => $s['status'] === 'cancelled' ? t('VENTE ANNULÉE') : null,
             'items' => array_map(fn($i) => ['name' => $i['product_name'], 'qty' => (float) $i['quantity'], 'price' => (float) $i['unit_price'], 'discount' => (float) $i['discount'], 'total' => (float) $i['line_total']], $items),
             'totals' => $totals, 'payments' => $pay, 'footer' => (string) setting('ticket_footer', 'Merci de votre visite !'), 'qr' => self::qr(DocumentRef::saleQr($s)),
             'count' => array_sum(array_column($items, 'quantity')),
         ];
+        return self::withFiscal($doc, $s);
     }
 
     private static function customerParty(array $s, string $label): array
@@ -169,7 +191,7 @@ final class Documents
                 }
             }
         }
-        return [
+        $doc = [
             'title' => $isInvoice ? ($s['status'] === 'cancelled' ? t('FACTURE ANNULÉE') : t('FACTURE')) : t('BON DE LIVRAISON'),
             'number' => $isInvoice ? $s['number'] : 'BL-' . $s['number'], 'date' => $s['created_at'],
             'banner' => $s['status'] === 'cancelled' ? t('VENTE ANNULÉE') : null,
@@ -183,6 +205,7 @@ final class Documents
             'signatures' => $isInvoice ? [t('Le client'), t('Pour') . ' ' . setting('company_name')] : [t('Livré par'), t('Reçu par (nom, date, signature)')],
             'footer' => (string) setting('invoice_footer', setting('ticket_footer', '')), 'qr' => self::qr(DocumentRef::saleQr($s)),
         ];
+        return $isInvoice ? self::withFiscal($doc, $s) : $doc + ['fiscal' => null];
     }
 
     public static function quoteA4(array $q, array $items): array

@@ -600,6 +600,7 @@
     if ($('#optTicket').checked && CFG.autoPrint && d.offline) printProvisional(d.entry);
     else if ($('#optTicket').checked && CFG.autoPrint && !d.duplicate && !(d.printed_server > 0)) printInFrame(d.ticket_url);
     if (d.print_errors && d.print_errors.length) toast(__('Imprimante de caisse') + ' : ' + d.print_errors.join(' '), 'warning');
+    if (d.fiscal_status && d.fiscal_status !== 'certified') toast(__('Facture NON CERTIFIÉE') + ' : ' + (d.fiscal_message || d.fiscal_status), 'warning');
     emit(d.offline ? 'pos.sale.offline' : 'pos.sale.saved', { total: d.total, change: d.change, duplicate: !!d.duplicate });
     if (d.print_errors && d.print_errors.length) emit('pos.print.failed', { errors: d.print_errors });
     else if (d.printed_server > 0) emit('pos.print.sent', {});
@@ -961,7 +962,7 @@
       table{width:100%;border-collapse:collapse}.c{text-align:center}.b{font-weight:bold}hr{border:0;border-top:1px dashed #000}
       .prov{border:1px solid #000;padding:3px;text-align:center;font-weight:bold;margin:4px 0}</style></head><body>
       <h1>${esc(CFG.shop || 'POS Marwa')}</h1>
-      <div class="prov">TICKET PROVISOIRE<br>vente hors connexion</div>
+      <div class="prov">TICKET PROVISOIRE<br>vente hors connexion${CFG.fiscal ? '<br>FACTURE NON CERTIFIÉE' : ''}</div>
       <div>N° ${esc(x.number)}<br>${esc(new Date(x.at).toLocaleString('fr-FR'))}<br>${esc(__('Caissier'))} : ${esc(CFG.userName || '')}${x.customer ? '<br>' + esc(__('Client')) + ' : ' + esc(x.customer) : ''}</div><hr>
       <table>${x.lines.map((l) => row(esc(l.name) + '<br>' + fmtQ(l.qty) + ' × ' + plain(l.price), plain(l.total))).join('')}</table><hr>
       <table>${x.discount > 0 ? row('Remises', '− ' + plain(x.discount)) : ''}${row('<b>TOTAL</b>', '<b>' + fmt(x.total) + '</b>')}

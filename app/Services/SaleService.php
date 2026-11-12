@@ -369,6 +369,11 @@ final class SaleService
             Audit::log('sale.create', 'sale', $saleId, ['number' => $number, 'total' => $total, 'credit' => $credit, 'authorized_by' => $supervisorId]);
             return ['sale_id' => $saleId, 'number' => $number, 'duplicate' => false, 'change' => $change, 'total' => $total];
         });
+        // Après validation de la transaction : les modules (ex. certification fiscale) réagissent ;
+        // une erreur de leur part n'annule jamais la vente enregistrée.
+        if (!$result['duplicate']) {
+            $result += \App\Core\Events::collect('sale.created', ['sale_id' => $result['sale_id']]);
+        }
         return $result;
     }
 
@@ -380,6 +385,9 @@ final class SaleService
     {
         if (trim($reason) === '') {
             throw new BusinessException('Le motif d\'annulation est obligatoire.');
+        }
+        if ($blocked = \App\Core\Events::ask('sale.cancelling', ['sale_id' => $saleId])) {
+            throw new BusinessException($blocked);
         }
         DB::transaction(function () use ($saleId, $reason) {
             $sale = DB::one('SELECT * FROM sales WHERE id = ? FOR UPDATE', [$saleId]);
@@ -428,6 +436,7 @@ final class SaleService
             DB::update('sales', ['status' => 'cancelled', 'cancelled_by' => Auth::id(), 'cancelled_at' => date('Y-m-d H:i:s'), 'cancel_reason' => mb_substr($reason, 0, 255)], 'id = ?', [$saleId]);
             Audit::log('sale.cancel', 'sale', $saleId, ['number' => $sale['number'], 'reason' => $reason, 'total' => $sale['total']]);
         });
+        \App\Core\Events::fire('sale.cancelled', ['sale_id' => $saleId]);
     }
 
     /**
@@ -442,7 +451,7 @@ final class SaleService
         if (!in_array($refundMethod, ['cash', 'credit_note', 'card', 'mobile_money', 'transfer'], true)) {
             throw new BusinessException('Mode de remboursement invalide.');
         }
-        return DB::transaction(function () use ($saleId, $items, $refundMethod, $reason, $restock) {
+        $retId = DB::transaction(function () use ($saleId, $items, $refundMethod, $reason, $restock) {
             $sale = DB::one('SELECT * FROM sales WHERE id = ? FOR UPDATE', [$saleId]);
             if (!$sale || $sale['status'] === 'cancelled' || $sale['status'] === 'returned') {
                 throw new BusinessException('Cette vente ne peut pas faire l\'objet d\'un retour.');
@@ -529,5 +538,7 @@ final class SaleService
             Audit::log('sale.return', 'sale_return', $retId, ['sale' => $sale['number'], 'total' => $total, 'method' => $refundMethod, 'restock' => $restock]);
             return $retId;
         });
+        \App\Core\Events::fire('sale.returned', ['return_id' => $retId, 'sale_id' => $saleId]);
+        return $retId;
     }
 }

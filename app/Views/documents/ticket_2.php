@@ -9,6 +9,7 @@
   <table><?php foreach ($doc['items'] as $i): ?><tr><td><?= qty($i['qty']) ?>×</td><td><span class="t-item"><?= e($i['name']) ?></span><?= $i['discount'] > 0 ? ' (-' . money($i['discount'], false) . ')' : '' ?></td><td class="num"><?= money($i['total'], false) ?></td></tr><?php endforeach; ?></table>
   <hr>
   <table><?php foreach (array_merge($doc['totals'], $doc['payments']) as $r): ?><tr><td class="<?= !empty($r[2]) ? 'b big' : '' ?>"><?= e($r[0]) ?></td><td class="num <?= !empty($r[2]) ? 'b big' : '' ?>"><?= e($r[1]) ?></td></tr><?php endforeach; ?></table>
+  <?= App\Core\View::partial('documents/_fiscal', ['doc' => $doc]) ?>
   <?php if ($doc['qr']): ?><div class="c qr-box"><div data-qr="<?= e($doc['qr']) ?>" data-qr-size="2" class="qr small-qr"></div></div><?php endif; ?>
   <div class="c"><?= e(strtok((string) $doc['footer'], "\n")) ?></div>
 </div>
