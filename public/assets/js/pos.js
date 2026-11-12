@@ -419,7 +419,7 @@
     $('#payTotal').textContent = fmt(t);
     $('#payRemaining').textContent = fmt(Math.max(0, t - paid));
     $('#payChange').textContent = fmt(Math.max(0, paid - t));
-    $('#payLines').innerHTML = payments.map((p, i) => `<tr><td>${esc(CFG.methods[p.method] || p.method)}${p.provider ? ' · ' + esc(p.provider) : ''}${p.reference ? ' <small class="text-secondary">' + esc(p.reference) + '</small>' : ''}</td><td class="text-end fw-bold">${fmt(p.amount)}</td><td class="text-end"><button class="btn btn-sm btn-link text-danger" data-del-pay="${i}"><i class="bi bi-x-circle"></i></button></td></tr>`).join('');
+    $('#payLines').innerHTML = payments.map((p, i) => `<tr><td>${p.transaction ? '<i class="bi bi-shield-check text-success" title="' + esc(__('Paiement électronique confirmé')) + '"></i> ' + esc(p.label || CFG.methods[p.method] || p.method) : esc(CFG.methods[p.method] || p.method)}${p.provider ? ' · ' + esc(p.provider) : ''}${p.reference ? ' <small class="text-secondary">' + esc(p.reference) + '</small>' : ''}</td><td class="text-end fw-bold">${fmt(p.amount)}</td><td class="text-end"><button class="btn btn-sm btn-link text-danger" data-del-pay="${i}"><i class="bi bi-x-circle"></i></button></td></tr>`).join('');
     $('#payCustomer').textContent = cart.customer ? cart.customer.name : __('comptoir');
     const rx = cart.lines.some((l) => l.rx);
     $('#rxBox').classList.toggle('d-none', !rx);
@@ -468,9 +468,35 @@
     return true;
   }
   $('#payAdd').addEventListener('click', () => addPayment($('#payAmount').value));
+  // Interface pour les modules de paiement électronique (Marwa Pay) : lecture du panier, ajout d'un règlement confirmé
+  window.PosPay = {
+    cartUuid: () => cart.uuid,
+    customerId: () => (cart.customer ? cart.customer.id : null),
+    remaining: () => Math.max(0, Math.round((totals().total - paidSum()) * 100) / 100),
+    online: () => netUp(),
+    csrf: () => CFG.csrf,
+    toast,
+    add(p) {
+      if (payments.some((x) => x.transaction === p.transaction)) return;
+      const line = { method: p.method, amount: p.amount, reference: p.reference || null, provider: null, transaction: p.transaction, label: p.label };
+      cart.epay = (cart.epay || []).concat([line]); save();
+      payments.push(line); refreshPay();
+      const rest = Math.max(0, totals().total - paidSum());
+      $('#payAmount').value = rest ? String(Math.round(rest)) : '';
+    },
+  };
   $('#payAmount').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); if ($('#payAmount').value) addPayment($('#payAmount').value); else $('#payConfirm').click(); } });
   $('#quickCash').addEventListener('click', (e) => { const b = e.target.closest('[data-qc]'); if (b) { selectMethod('cash'); addPayment(b.dataset.qc); } });
-  $('#payLines').addEventListener('click', (e) => { const b = e.target.closest('[data-del-pay]'); if (b) { payments.splice(Number(b.dataset.delPay), 1); refreshPay(); } });
+  $('#payLines').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-del-pay]'); if (!b) return;
+    const p = payments[Number(b.dataset.delPay)];
+    if (p && p.transaction) {
+      // Paiement électronique déjà encaissé : il ne disparaît pas en retirant la ligne
+      if (!confirm(__('Ce paiement électronique est déjà encaissé chez le prestataire. Le retirer de cette vente ne le rembourse pas : il faudra l\'annuler ou le rembourser (Marwa Pay > Transactions). Continuer ?'))) return;
+      cart.epay = (cart.epay || []).filter((x) => x.transaction !== p.transaction); save();
+    }
+    payments.splice(Number(b.dataset.delPay), 1); refreshPay();
+  });
   $('#payKeypad').addEventListener('click', (e) => {
     const k = e.target.closest('[data-k]'); if (!k) return;
     const inp = $('#payAmount');
@@ -480,7 +506,7 @@
   function openPay(opts = {}) {
     if (!cart.lines.length) { toast(__('Le panier est vide.'), 'warning'); return; }
     if (CFG.requireSession && !CFG.sessionOpen) { toast(__('La caisse est fermée.'), 'danger'); emit('pos.register.closed'); return; }
-    payments = [];
+    payments = (cart.epay || []).slice(); // paiements électroniques déjà confirmés pour ce panier
     supervisor = null;
     $('#payError').classList.add('d-none');
     const tendered = num($('#tenderedInput').value);
@@ -514,7 +540,7 @@
     if (busy) return;
     if (!cart.lines.length) { toast(__('Le panier est vide.'), 'warning'); return; }
     if (CFG.requireSession && !CFG.sessionOpen) { toast(__('La caisse est fermée.'), 'danger'); emit('pos.register.closed'); return; }
-    if (!CFG.methods.cash || cart.lines.some((l) => l.rx)) { openPay(); return; }
+    if (!CFG.methods.cash || cart.lines.some((l) => l.rx) || (cart.epay || []).length) { openPay(); return; }
     const t = totals().total;
     const tendered = num($('#tenderedInput').value);
     if (tendered > 0 && tendered + 0.009 < t) {
@@ -1012,6 +1038,7 @@
   });
   async function hold() {
     if (!cart.lines.length) { toast(__('Panier vide.'), 'warning'); return; }
+    if ((cart.epay || []).length) { toast(__('Un paiement électronique est déjà encaissé pour ce panier : terminez la vente.'), 'warning'); return; }
     const label = prompt(__('Nom de la vente en attente :'), cart.customer ? cart.customer.name : 'Client ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
     if (label === null) return;
     const d = await api('/pos/hold', { method: 'POST', body: { _csrf: CFG.csrf, label, cart } });
@@ -1025,7 +1052,7 @@
       case 'customer': $('#customerSearch').value = ''; searchCustomers(); modal('customerModal').show(); setTimeout(() => $('#customerSearch').focus(), 300); break;
       case 'quantity': case 'price': case 'discount': openNum(a); break;
       case 'remove': if (selected >= 0) { cart.lines.splice(selected, 1); selected = Math.min(selected, cart.lines.length - 1); render(); } break;
-      case 'clear': if (cart.lines.length && confirm(__('Vider le panier ?'))) { cart = newCart(); selected = -1; render(); } break;
+      case 'clear': if (cart.lines.length && confirm((cart.epay || []).length ? __('Un paiement électronique est déjà encaissé pour ce panier : vider le panier ne le rembourse pas. Vider quand même ?') : __('Vider le panier ?'))) { cart = newCart(); selected = -1; render(); } break;
       case 'hold': hold(); break;
       case 'held': showHeld(); break;
       case 'recent': showRecent(); break;

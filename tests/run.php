@@ -6572,6 +6572,64 @@ test('Marwa Pay (phase 6) : interface — écrans, droits, secrets jamais affich
     DB::update('payment_connectors', ['config_json' => '{"scenario":"success"}'], 'id = ?', [$sim]);
 });
 
+test('Marwa Pay (phase 7) : caisse — bouton, moyens de la caisse, demande, suivi, vente réglée en mixte, reçu, double usage refusé', function () use ($B) {
+    DB::run("INSERT INTO payment_settings (skey, value) VALUES ('test_sales', '1') ON DUPLICATE KEY UPDATE value = '1'");
+    DB::update('payment_connectors', ['config_json' => '{"scenario":"success"}'], 'id = ?', [$GLOBALS['PAY_SIM']]);
+    $k = new Http(); $k->login($B, 'caissier', 'Mot-de-passe-2026');
+    $pos = $k->req('GET', "$B/pos")['body'];
+    ok(str_contains($pos, 'PAIEMENT ÉLECTRONIQUE') && str_contains($pos, 'addons/pay/pay-pos.js'), 'bouton et script présents en caisse');
+    preg_match('#src="([^"]*addons/pay/pay-pos\.js[^"]*)"#', $pos, $js);
+    eq(200, $k->req('GET', (str_starts_with($js[1], 'http') ? '' : $B) . html_entity_decode($js[1]))['code'], 'script servi');
+    preg_match('/"csrf":"([^"]+)"/', $pos, $m);
+    $csrf = $m[1] ?? '';
+    $h = ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $csrf];
+    $methods = json_decode($k->req('GET', "$B/pay/caisse/moyens", null, ['Accept: application/json'])['body'], true)['methods'];
+    ok(count($methods) >= 1 && $methods[0]['test'] === true, 'moyens actifs de la caisse');
+    $mid = $GLOBALS['PAY_METHOD'];
+    $pid = (int) DB::value('SELECT product_id FROM sale_items ORDER BY id DESC LIMIT 1');
+    $price = (float) DB::value('SELECT unit_price FROM sale_items ORDER BY id DESC LIMIT 1');
+    $qty = 3;
+    $total = $price * $qty;
+    $cart = uuid(); $rk = uuid();
+    // Montant supérieur au reste ou invalide : refusé côté serveur
+    $bad = json_decode($k->req('POST', "$B/pay/caisse/payer", json_encode(['_csrf' => $csrf, 'method_id' => $mid, 'amount' => '-1', 'cart_uuid' => $cart, 'request_key' => uuid()]), $h)['body'], true);
+    ok(!$bad['ok'], 'montant invalide refusé');
+    $part = round($total / 3);
+    $d = json_decode($k->req('POST', "$B/pay/caisse/payer", json_encode(['_csrf' => $csrf, 'method_id' => $mid, 'amount' => $part, 'cart_uuid' => $cart, 'request_key' => $rk]), $h)['body'], true);
+    ok($d['ok'] && $d['transaction']['usable'] && $d['transaction']['status'] === 'succeeded', 'paiement confirmé : ' . json_encode($d));
+    ok(!isset($d['transaction']['proof_json']) && str_starts_with($d['transaction']['reference'], 'TEST '), 'aucune donnée interne exposée, référence marquée TEST');
+    $again = json_decode($k->req('POST', "$B/pay/caisse/payer", json_encode(['_csrf' => $csrf, 'method_id' => $mid, 'amount' => $part, 'cart_uuid' => $cart, 'request_key' => $rk]), $h)['body'], true);
+    eq($d['transaction']['id'], $again['transaction']['id'], 'renvoi réseau : même transaction');
+    $st = json_decode($k->req('GET', "$B/pay/caisse/transactions/{$d['transaction']['id']}", null, ['Accept: application/json'])['body'], true);
+    eq('succeeded', $st['transaction']['status']);
+    // Vente : espèces + paiement électronique (comme la caisse l'envoie)
+    $body = ['_csrf' => $csrf, 'client_uuid' => $cart, 'items' => [['product_id' => $pid, 'quantity' => $qty]],
+        'payments' => [['method' => 'cash', 'amount' => $total - $part], ['method' => $d['transaction']['sale_method'], 'amount' => $part, 'reference' => $d['transaction']['reference'], 'transaction' => $d['transaction']['id']]]];
+    $sale = json_decode($k->req('POST', "$B/pos/checkout", json_encode($body), $h)['body'], true);
+    ok($sale['ok'], 'vente enregistrée : ' . json_encode($sale));
+    eq($sale['sale_id'], (int) DB::value('SELECT sale_id FROM payment_transactions WHERE id = ?', [$d['transaction']['id']]), 'transaction liée');
+    $ticket = $k->req('GET', "$B/sales/{$sale['sale_id']}/ticket")['body'];
+    ok(str_contains($ticket, $d['transaction']['reference']), 'référence du paiement sur le reçu');
+    // La même transaction ne peut pas régler une autre vente
+    $body2 = $body; $body2['client_uuid'] = uuid();
+    $r2 = json_decode($k->req('POST', "$B/pos/checkout", json_encode($body2), $h)['body'], true);
+    ok(!$r2['ok'] && str_contains($r2['error'], 'autre'), 'double usage refusé : ' . ($r2['error'] ?? ''));
+    // Annulation d'une demande en attente depuis la caisse
+    DB::update('payment_connectors', ['config_json' => '{"scenario":"pending_forever"}'], 'id = ?', [$GLOBALS['PAY_SIM']]);
+    $p = json_decode($k->req('POST', "$B/pay/caisse/payer", json_encode(['_csrf' => $csrf, 'method_id' => $mid, 'amount' => 100, 'cart_uuid' => uuid(), 'request_key' => uuid()]), $h)['body'], true);
+    eq('pending', $p['transaction']['status']);
+    $c = json_decode($k->req('POST', "$B/pay/caisse/transactions/{$p['transaction']['id']}/annuler", json_encode(['_csrf' => $csrf]), $h)['body'], true);
+    eq('cancelled', $c['transaction']['status'], 'annulée (confirmée par le prestataire)');
+    DB::update('payment_connectors', ['config_json' => '{"scenario":"success"}'], 'id = ?', [$GLOBALS['PAY_SIM']]);
+    // Sans le droit pay.use : rien n'est proposé
+    ok(in_array((new Http())->req('GET', "$B/pay/caisse/moyens")['code'], [302, 401], true), 'non connecté : aucun accès');
+    $m2 = new Http(); $m2->login($B, 'magasin', 'Mot-de-passe-2026');
+    eq(403, $m2->req('GET', "$B/pay/caisse/moyens", null, ['Accept: application/json'])['code'], 'sans le droit pay.use : refusé');
+    DB::run("UPDATE payment_settings SET value = '0' WHERE skey = 'test_sales'");
+    $r3 = json_decode($k->req('POST', "$B/pos/checkout", json_encode(array_merge($body2, ['client_uuid' => uuid(), 'payments' => [['method' => 'cash', 'amount' => $total]]])), $h)['body'], true);
+    ok($r3['ok'], 'vente en espèces inchangée');
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

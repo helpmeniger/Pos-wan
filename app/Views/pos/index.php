@@ -159,6 +159,7 @@
           <div class="col-lg-7">
             <div class="pay-total"><div><small>Total à payer</small><output id="payTotal"><?= e(money(0)) ?></output></div><div><small>Reste</small><output id="payRemaining"><?= e(money(0)) ?></output></div><div><small>À rendre</small><output id="payChange" class="text-success"><?= e(money(0)) ?></output></div></div>
             <div class="pay-methods" id="payMethods"></div>
+            <?php $payElectronic = App\Core\Addons::isActive('pay') && can('pay.use'); if ($payElectronic): ?><button type="button" class="btn btn-outline-primary w-100 fw-bold my-2" id="payElectronic"><i class="bi bi-credit-card-2-front"></i> PAIEMENT ÉLECTRONIQUE</button><?php endif; ?>
             <div class="pay-providers d-none" id="payProviders" aria-label="Opérateur mobile money"></div>
             <div class="input-group input-group-lg my-2">
               <span class="input-group-text" id="payMethodLabel">Espèces</span>
@@ -268,6 +269,7 @@
 <script src="<?= e(asset('js/scanner.js')) ?>"></script>
 <?php foreach ($addonAssets['js'] as $s): ?><script src="<?= e(asset($s)) ?>"></script><?php endforeach; ?>
 <script src="<?= e(asset('js/pos.js')) ?>"></script>
+<?php if (!empty($payElectronic)): ?><script src="<?= e(asset('addons/pay/pay-pos.js')) ?>"></script><?php endif; ?>
 <?php if ($cdCfg['enabled'] || $cdCfg['vfd']['enabled']): ?><script type="application/json" id="pm-display-config"><?= json_encode($cdCfg, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?></script>
 <script src="<?= e(asset('js/customer-display-link.js')) ?>"></script><?php endif; ?>
 <script src="<?= e(asset('js/pwa.js')) ?>"></script>
