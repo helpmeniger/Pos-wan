@@ -30,6 +30,11 @@ final class WebhookController
         }
         $body = (string) file_get_contents('php://input', false, null, 0, 1_000_000);
         $headers = function_exists('getallheaders') ? (array) getallheaders() : [];
+        foreach ($_SERVER as $k => $v) { // serveurs sans getallheaders (FastCGI)
+            if (str_starts_with((string) $k, 'HTTP_')) {
+                $headers[str_replace('_', '-', substr((string) $k, 5))] ??= $v;
+            }
+        }
         $driver = DriverRegistry::make($connector);
         if (!method_exists($driver, 'webhookSignatureValid') || !$driver->webhookSignatureValid($body, $headers, Secrets::decrypt((string) $w['secret_enc']))) {
             PayEngine::log(null, null, (int) $connector['id'], null, 'webhook', 'auth_failed', 401, null, 'Signature de notification invalide.');

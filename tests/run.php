@@ -6740,6 +6740,73 @@ test('Marwa Pay (phase 8) : terminaux — écrans, validations, TPE simulé, TPE
     $A::toggleMethod($tm);
 });
 
+test('Marwa Pay (phase 9) : sécurité — XSS, CSRF, cloisonnement des caisses, remboursement réel et clôture de caisse, tâche planifiée, PCI', function () use ($B) {
+    $P = Addons\Pay\PayEngine::class;
+    $A = Addons\Pay\PayAdmin::class;
+    actingAs('admin');
+    $a = new Http(); $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $t = $a->token("$B/pay/connecteurs/nouveau");
+    // XSS
+    $x = $A::saveProvider(['name' => '<img src=x onerror=alert(1)>', 'code' => 'xss_test', 'category' => 'other']);
+    $html = $a->req('GET', "$B/pay/prestataires")['body'];
+    ok(!str_contains($html, '<img src=x onerror') && str_contains($html, '&lt;img'), 'nom échappé');
+    // CSRF
+    eq(419, $a->req('POST', "$B/pay/moyens", http_build_query(['label' => 'x']))['code'], 'jeton CSRF exigé');
+    // Prestataire « vérifié » sans documentation : refusé
+    throws(fn() => $A::saveProvider(['name' => 'PSP', 'code' => 'psp_x', 'category' => 'wallet', 'verified' => 1]), 'documentation officielle');
+    // Cloisonnement : un caissier d'une autre caisse ne voit pas la transaction
+    $reg1 = (int) DB::value('SELECT register_id FROM users WHERE username = ?', ['caissier']);
+    $store = (int) DB::value('SELECT store_id FROM cash_registers WHERE id = ?', [$reg1]);
+    $reg2 = DB::insert('cash_registers', ['store_id' => $store, 'warehouse_id' => (int) DB::value('SELECT warehouse_id FROM cash_registers WHERE id = ?', [$reg1]), 'name' => 'Caisse 2 (test)']);
+    DB::insert('users', ['username' => 'caissier2', 'full_name' => 'Caissier deux', 'role_id' => (int) DB::value("SELECT id FROM roles WHERE code = 'cashier'"), 'register_id' => $reg2,
+        'password_hash' => App\Core\Auth::hash('Mot-de-passe-2026'), 'password_changed_at' => date('Y-m-d H:i:s')]);
+    $other = (int) DB::value('SELECT id FROM payment_transactions WHERE register_id = ? ORDER BY id DESC LIMIT 1', [$reg1]);
+    $c2 = new Http(); $c2->login($B, 'caissier2', 'Mot-de-passe-2026');
+    eq(404, $c2->req('GET', "$B/pay/caisse/transactions/$other", null, ['Accept: application/json'])['code'], 'transaction d\'une autre caisse invisible');
+    // Remboursement RÉEL (terminal de production simulé par un faux TPE réseau) : mouvement de caisse en carte, espèces inchangées
+    $tport = 22300 + random_int(0, 80);
+    $script = '$l=stream_socket_server("tcp://127.0.0.1:' . $tport . '");for($i=0;$i<2;$i++){$c=stream_socket_accept($l,10);if(!$c)break;$m=json_decode(fgets($c),true);'
+        . 'fwrite($c,json_encode(["result"=>"APPROVED","stan"=>"R-".$m["op"],"auth"=>"OK1","amount"=>$m["amount"]])."\n");fclose($c);}';
+    $srv = proc_open([PHP_BINARY, '-r', $script], [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $pp);
+    usleep(400000);
+    $tcp = $A::saveTerminal(['name' => 'TPE production', 'driver' => 'terminal_tcp', 'connection' => 'tcp', 'ip_address' => '127.0.0.1', 'port' => $tport, 'register_id' => $reg1, 'environment' => 'prod', 'timeout_s' => 10,
+        'config_json' => json_encode(['requests' => ['sale' => '{"op":"sale","amount":{{json:amount}}}', 'refund' => '{"op":"refund","amount":{{json:amount}}}'], 'response' => ['status' => 'result', 'reference' => 'stan', 'authorization_code' => 'auth', 'amount' => 'amount'], 'status_map' => ['APPROVED' => 'succeeded']])]);
+    $A::toggleTerminal($tcp);
+    $tm = (int) DB::value("SELECT id FROM payment_methods WHERE kind = 'terminal' LIMIT 1");
+    $A::toggleMethod($tm);
+    actingAs('caissier');
+    $session = S\CashService::openSessionForRegister($reg1);
+    $cashBefore = S\CashService::expectedCash((int) $session['id']);
+    $tx = $P::initiate(['method_id' => $tm, 'amount' => '6000', 'cart_uuid' => uuid(), 'request_key' => uuid()]);
+    eq([0, 'succeeded'], [(int) $tx['is_test'], $tx['status']], 'transaction réelle');
+    actingAs('admin');
+    $f = $P::refund($tx['id'], '6000', 'Remboursement client', uuid());
+    proc_terminate($srv);
+    eq('succeeded', $f['status']);
+    eq(-6000.0, (float) DB::value("SELECT amount FROM cash_movements WHERE ref_type = 'pay_refund' AND ref_id = ?", [$f['id']]), 'sortie enregistrée');
+    eq('card', DB::value("SELECT method FROM cash_movements WHERE ref_type = 'pay_refund' AND ref_id = ?", [$f['id']]), 'en carte, jamais en espèces');
+    eq($cashBefore, S\CashService::expectedCash((int) $session['id']), 'espèces attendues à la clôture inchangées');
+    $A::toggleTerminal($tcp);
+    $A::toggleMethod($tm);
+    // Tâche planifiée : vérifie et fait expirer
+    DB::update('payment_connectors', ['config_json' => '{"scenario":"pending_forever"}'], 'id = ?', [$GLOBALS['PAY_SIM']]);
+    actingAs('caissier');
+    $pe = $P::initiate(['method_id' => $GLOBALS['PAY_METHOD'], 'amount' => '500', 'cart_uuid' => uuid(), 'request_key' => uuid()]);
+    DB::run('UPDATE payment_transactions SET expires_at = NOW() - INTERVAL 1 MINUTE, created_at = NOW() - INTERVAL 1 MINUTE, updated_at = NOW() - INTERVAL 1 MINUTE WHERE id = ?', [$pe['id']]);
+    $out = shell_exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(BASE_PATH . '/addons/pay/bin/pay-sweep.php') . ' 2>&1');
+    ok(str_contains((string) $out, 'vérifiés'), 'tâche planifiée exécutée : ' . trim((string) $out));
+    eq('expired', $P::tx($pe['id'])['status'], 'demande expirée par la tâche planifiée');
+    DB::update('payment_connectors', ['config_json' => '{"scenario":"success"}'], 'id = ?', [$GLOBALS['PAY_SIM']]);
+    // PCI : aucune colonne de carte, aucun numéro de carte dans les journaux, payeur masqué
+    $cols = array_column(DB::all("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'payment\_%'"), 'COLUMN_NAME');
+    eq([], array_values(array_filter($cols, fn($c) => preg_match('/(pan|card_number|cvv|cvc|pin|track)/i', $c))), 'aucune colonne de données de carte');
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM payment_transaction_logs WHERE CONCAT_WS(' ', request_redacted, response_redacted) REGEXP '(^|[^0-9a-zA-Z])4[0-9]{12,18}([^0-9a-zA-Z]|$)'"), 'aucun numéro de carte Visa dans les journaux');
+    actingAs('caissier');
+    $ph = $P::initiate(['method_id' => $GLOBALS['PAY_METHOD'], 'amount' => '200', 'cart_uuid' => uuid(), 'request_key' => uuid(), 'payer_phone' => '+227 90 12 34 56']);
+    ok(!str_contains((string) $ph['payer_hint'], '901234') && str_ends_with((string) $ph['payer_hint'], '56'), 'téléphone du payeur masqué : ' . $ph['payer_hint']);
+    DB::run('DELETE FROM payment_providers WHERE id = ?', [$x]);
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });
