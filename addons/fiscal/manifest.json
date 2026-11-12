@@ -2,7 +2,7 @@
     "code": "fiscal",
     "name": "Marwa Fiscal Connect",
     "version": "1.0.0",
-    "requires": "3.6.0",
+    "requires": "3.7.0",
     "author": "POS Marwa",
     "description": "Connexion des factures aux dispositifs fiscaux (MCF) et aux plateformes de facturation normalisée : connecteurs, pilotes, profils pays à configurer d'après les textes officiels, file d'attente, preuves de certification, journaux. Aucun pilote n'est déclaré compatible sans vérification du protocole officiel.",
     "icon": "bi-shield-check",
