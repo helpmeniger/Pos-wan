@@ -5991,6 +5991,104 @@ test('Fiscal Connect (phase 5) : pilotes REST, OAuth2, SOAP, TCP, série, squele
     DB::update('fiscal_connectors', ['active' => 1, 'is_default' => 1, 'config_json' => '{"scenario":"accept"}'], 'id = ?', [$GLOBALS['FISCAL_SIMU']]);
 });
 
+test('Fiscal Connect (phase 6) : interface — 11 écrans, permissions, secrets jamais affichés, validations, webhook signé, OpenAPI, certificat', function () use ($B) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $sim = $GLOBALS['FISCAL_SIMU'];
+    $cert = (int) DB::value("SELECT id FROM fiscal_certifications WHERE status = 'certified' ORDER BY id LIMIT 1");
+    $ne = (int) DB::value("SELECT id FROM fiscal_countries WHERE code = 'NE'");
+    $log = (int) DB::value('SELECT MAX(id) FROM fiscal_invoice_logs');
+    $pages = ['/fiscal', '/fiscal/connecteurs?type=mcf', '/fiscal/connecteurs?type=api', '/fiscal/pays', '/fiscal/parametres', '/fiscal/certificats', '/fiscal/historique', '/fiscal/attente',
+        '/fiscal/rapports', '/fiscal/journaux', '/fiscal/journaux?vue=audit', '/fiscal/documentation', '/fiscal/connecteurs/nouveau?type=api', "/fiscal/connecteurs/$sim", "/fiscal/pays/$ne",
+        "/fiscal/certifications/$cert", "/fiscal/journaux/$log", '/fiscal/historique?export=csv', '/fiscal/documentation?doc=CONFIGURATION'];
+    foreach ($pages as $u) {
+        $r = $a->req('GET', $B . $u);
+        eq(200, $r['code'], $u);
+        ok(!str_contains($r['body'], 'Fatal') && !str_contains($r['body'], 'Warning:'), "$u sans erreur PHP");
+    }
+    $menu = $a->req('GET', "$B/fiscal")['body'];
+    ok(str_contains($menu, 'FISCAL CONNECT') && str_contains($menu, 'Documentation des connecteurs'), 'menu FISCAL CONNECT');
+    // Permissions : le caissier n'a pas accès
+    $k = new Http(); $k->login($B, 'caissier', 'Mot-de-passe-2026');
+    foreach (['/fiscal', '/fiscal/parametres', '/fiscal/journaux'] as $u) {
+        eq(403, $k->req('GET', $B . $u)['code'], "caissier : $u interdit");
+    }
+    // Les secrets ne sont jamais renvoyés au navigateur
+    $rest = (int) DB::value("SELECT id FROM fiscal_connectors WHERE driver = 'generic_rest' ORDER BY id LIMIT 1");
+    $html = $a->req('GET', "$B/fiscal/connecteurs/$rest")['body'];
+    ok(str_contains($html, 'enregistré') && !str_contains($html, 'GOOD-KEY-123456'), 'clé d\'API : repère seulement');
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM fiscal_audit_logs WHERE after_json LIKE '%GOOD-KEY%' OR after_json LIKE '%SECRET-CLIENT%'"), 'secrets absents du journal d\'audit');
+    // Création d'un connecteur par le formulaire
+    $t = $a->token("$B/fiscal/connecteurs/nouveau?type=api");
+    $a->req('POST', "$B/fiscal/connecteurs", http_build_query(['_csrf' => $t, 'name' => 'API formulaire', 'kind' => 'api', 'driver' => 'generic_rest', 'environment' => 'test', 'timeout_s' => 5, 'max_retries' => 3,
+        'config_json' => '{"base_url":"https://api.exemple.test","auth":{"type":"bearer"}}']));
+    $nid = (int) DB::value("SELECT id FROM fiscal_connectors WHERE name = 'API formulaire'");
+    ok($nid > 0 && (int) DB::value('SELECT active FROM fiscal_connectors WHERE id = ?', [$nid]) === 0, 'créé inactif');
+    $a->req('POST', "$B/fiscal/connecteurs/$nid", http_build_query(['_csrf' => $t, 'name' => 'API formulaire', 'kind' => 'api', 'driver' => 'generic_rest', 'environment' => 'test', 'config_json' => '{"base_url":"https://x","password":"abc"}']));
+    ok(!str_contains((string) DB::value('SELECT config_json FROM fiscal_connectors WHERE id = ?', [$nid]), 'abc'), 'secret glissé dans la configuration refusé');
+    $a->req('POST', "$B/fiscal/connecteurs", http_build_query(['_csrf' => $t, 'name' => 'Simu prod', 'kind' => 'simulation', 'driver' => 'simulation', 'environment' => 'prod']));
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM fiscal_connectors WHERE name = 'Simu prod'"), 'simulation en production refusée');
+    $a->req('POST', "$B/fiscal/connecteurs/$nid/secrets", http_build_query(['_csrf' => $t, 'secret' => ['bearer_token' => 'JETON-FORMULAIRE-555']]));
+    eq('JETON-FORMULAIRE-555', Addons\Fiscal\Secrets::get($nid, 'bearer_token'), 'secret enregistré par le formulaire');
+    // Squelette : activation impossible
+    $sk = Addons\Fiscal\FiscalAdmin::saveConnector(['name' => 'Niger squelette', 'kind' => 'mcf', 'driver' => 'ne_secef', 'environment' => 'test']);
+    $a->req('POST', "$B/fiscal/connecteurs/$sk/activer", http_build_query(['_csrf' => $t]));
+    eq(0, (int) DB::value('SELECT active FROM fiscal_connectors WHERE id = ?', [$sk]), 'squelette non activable');
+    // Test de connexion depuis l'écran (simulation)
+    $a->req('POST', "$B/fiscal/connecteurs/$sim/tester", http_build_query(['_csrf' => $t]));
+    eq('ok', DB::value('SELECT status FROM fiscal_connectors WHERE id = ?', [$sim]), 'test enregistré');
+    eq('SIMU-MCF-0001', DB::value('SELECT device_id FROM fiscal_devices WHERE connector_id = ?', [$sim]), 'informations du dispositif lues');
+    // Suppression refusée pour un connecteur ayant servi
+    $a->req('POST', "$B/fiscal/connecteurs/$sim/supprimer", http_build_query(['_csrf' => $t]));
+    ok((bool) DB::value('SELECT 1 FROM fiscal_connectors WHERE id = ?', [$sim]), 'connecteur utilisé conservé');
+    $a->req('POST', "$B/fiscal/connecteurs/$sk/supprimer", http_build_query(['_csrf' => $t]));
+    ok(!DB::value('SELECT 1 FROM fiscal_connectors WHERE id = ?', [$sk]), 'connecteur inutilisé supprimé');
+    // Pays : aucune règle sans source officielle
+    $a->req('POST', "$B/fiscal/pays/$ne", http_build_query(['_csrf' => $t, 'currency' => 'XOF', 'certification_mode' => 'mcf', 'configured' => 1]));
+    eq(0, (int) DB::value('SELECT configured FROM fiscal_countries WHERE id = ?', [$ne]), 'règles sans source refusées');
+    $a->req('POST', "$B/fiscal/pays/$ne/taux", http_build_query(['_csrf' => $t, 'group_code' => 'T', 'label' => 'Test', 'rate' => '5']));
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM fiscal_tax_rates WHERE group_code = 'T'"), 'taux sans source refusé');
+    // Profil de production refusé tant que le pays n'est pas configuré
+    $pid = Addons\Fiscal\FiscalAdmin::saveProfile(['name' => 'Prod NE', 'country_id' => $ne, 'environment' => 'prod', 'seller_nif' => '1']);
+    $a->req('POST', "$B/fiscal/parametres/$pid/activer", http_build_query(['_csrf' => $t]));
+    eq(0, (int) DB::value('SELECT active FROM fiscal_profiles WHERE id = ?', [$pid]), 'production refusée : pays non configuré');
+    DB::run('DELETE FROM fiscal_profiles WHERE id = ?', [$pid]);
+    // Import OpenAPI
+    $spec = sys_get_temp_dir() . '/openapi-' . getmypid() . '.json';
+    file_put_contents($spec, json_encode(['openapi' => '3.0.0', 'info' => ['title' => 'API Test', 'version' => '1'], 'servers' => [['url' => 'https://api.exemple.test/v2']], 'paths' => ['/invoices' => ['post' => ['summary' => 'Certifier']], '/invoices/{id}' => ['get' => ['operationId' => 'status']]]]));
+    $a->req('POST', "$B/fiscal/connecteurs/$nid/openapi", ['_csrf' => $t, 'openapi' => new CURLFile($spec, 'application/json', 'api.json')]);
+    $cfg = json_decode((string) DB::value('SELECT config_json FROM fiscal_connectors WHERE id = ?', [$nid]), true);
+    eq(2, count($cfg['openapi']['operations'] ?? []), 'opérations lues');
+    // Certificat CA (auto-signé de test)
+    $key = openssl_pkey_new(['private_key_bits' => 2048]);
+    $x509 = openssl_csr_sign(openssl_csr_new(['commonName' => 'ca.test'], $key), null, $key, 30);
+    openssl_x509_export($x509, $pem);
+    $pf = sys_get_temp_dir() . '/ca-' . getmypid() . '.pem';
+    file_put_contents($pf, $pem);
+    $a->req('POST', "$B/fiscal/certificats", ['_csrf' => $t, 'connector_id' => $nid, 'kind' => 'ca', 'file' => new CURLFile($pf, 'application/x-pem-file', 'ca.pem')]);
+    $c = DB::one('SELECT * FROM fiscal_certificates WHERE connector_id = ?', [$nid]);
+    ok($c && str_contains((string) $c['subject'], 'ca.test') && !str_starts_with($c['path'], PUBLIC_PATH) && is_file($c['path']), 'certificat stocké hors du dossier public');
+    // Webhook : signature exigée, contenu non cru sur parole
+    $w = Addons\Fiscal\FiscalAdmin::createWebhook($sim);
+    $pending = DB::one("SELECT * FROM fiscal_certifications WHERE status IN ('pending','failed') AND connector_id = ? ORDER BY id LIMIT 1", [$sim]);
+    $body = json_encode(['idempotency_key' => $pending['idempotency_key'] ?? str_repeat('0', 64), 'status' => 'certified', 'fiscal_number' => 'FAUX-123']);
+    $hook = "$B/fiscal/webhook/{$w['id']}?t={$w['token']}";
+    eq(401, (new Http())->req('POST', $hook, $body, ['Content-Type: application/json', 'X-Fiscal-Signature: sha256=00'])['code'], 'signature invalide refusée');
+    eq(404, (new Http())->req('POST', "$B/fiscal/webhook/{$w['id']}?t=mauvais", $body, ['Content-Type: application/json'])['code'], 'jeton invalide');
+    $r = (new Http())->req('POST', $hook, $body, ['Content-Type: application/json', 'X-Fiscal-Signature: sha256=' . hash_hmac('sha256', $body, $w['secret'])]);
+    eq(200, $r['code'], $r['body']);
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM fiscal_certifications WHERE fiscal_number = 'FAUX-123'"), 'numéro du webhook jamais recopié');
+    if ($pending) {
+        ok(DB::value('SELECT status FROM fiscal_certifications WHERE id = ?', [$pending['id']]) !== 'certified', 'webhook sans confirmation du dispositif : non certifiée');
+    }
+    // Relance manuelle depuis l'écran
+    $f = (int) DB::value("SELECT id FROM fiscal_certifications WHERE status = 'failed' AND connector_id = ? ORDER BY id LIMIT 1", [$sim]);
+    if ($f) {
+        $a->req('POST', "$B/fiscal/certifications/$f/relancer", http_build_query(['_csrf' => $t]));
+        eq('certified', DB::value('SELECT status FROM fiscal_certifications WHERE id = ?', [$f]), 'relancée et certifiée');
+    }
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

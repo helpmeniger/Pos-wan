@@ -1,0 +1,29 @@
+<?php use Addons\Fiscal\FiscalAdmin as A; $ta = fn(string $k, string $label, string $help = '') => '<div class="col-md-6"><label class="form-label small mb-0">' . e(t($label)) . '</label><textarea name="' . $k . '" rows="2" class="form-control form-control-sm">' . e($c[$k] ?? '') . '</textarea>' . ($help ? '<div class="form-text">' . e(t($help)) . '</div>' : '') . '</div>';
+$in = fn(string $k, string $label, int $max) => '<div class="col-md-4"><label class="form-label small mb-0">' . e(t($label)) . '</label><input name="' . $k . '" maxlength="' . $max . '" value="' . e($c[$k] ?? '') . '" class="form-control form-control-sm"></div>'; ?>
+<?= App\Core\View::partial('fiscal::_nav', ['tab' => $tab]) ?>
+<h2 class="h6"><?= e($c['name']) ?> (<?= e($c['code']) ?>)</h2>
+<div class="card mb-3"><div class="card-body"><form method="post" action="<?= e(url('/fiscal/pays/' . $c['id'])) ?>" class="row g-2"><?= csrf_field() ?>
+  <div class="col-12"><label class="form-label small mb-0 fw-semibold"><?= e(t('Textes officiels de référence (obligatoire pour toute règle)')) ?></label><textarea name="official_sources" rows="3" class="form-control form-control-sm" placeholder="<?= e(t('Ex. : intitulé de la loi / de l\'arrêté, numéro, date, article ; spécification technique de l\'administration, version, date.')) ?>"><?= e($c['official_sources'] ?? '') ?></textarea></div>
+  <div class="col-md-2"><label class="form-label small mb-0"><?= e(t('Devise')) ?></label><input name="currency" maxlength="3" value="<?= e($c['currency']) ?>" class="form-control form-control-sm"></div>
+  <div class="col-md-4"><label class="form-label small mb-0"><?= e(t('Mode de certification')) ?></label><select name="certification_mode" class="form-select form-select-sm"><?php foreach (A::CERT_MODES as $k => $l): ?><option value="<?= $k ?>" <?= $c['certification_mode'] === $k ? 'selected' : '' ?>><?= e(t($l)) ?></option><?php endforeach; ?></select></div>
+  <?= $in('tax_id_label', 'Libellé de l\'identifiant fiscal (ex. NIF, IFU)', 40) ?>
+  <div class="col-md-2"><label class="form-label small mb-0"><?= e(t('Conservation (années)')) ?></label><input type="number" min="1" max="99" name="retention_years" value="<?= e((string) ($c['retention_years'] ?? '')) ?>" class="form-control form-control-sm"></div>
+  <?= $in('invoice_format', 'Format de facture', 120) ?><?= $in('authorized_provider', 'Fournisseur / dispositif agréé', 160) ?><?= $in('qr_format', 'Format du QR officiel', 160) ?><?= $in('signature_format', 'Format de signature', 160) ?>
+  <?= $ta('tax_regimes', 'Régimes fiscaux') ?><?= $ta('numbering_rules', 'Règles de numérotation') ?><?= $ta('legal_mentions', 'Mentions légales obligatoires', 'Imprimées sur les factures certifiées.') ?><?= $ta('archiving_rules', 'Règles d\'archivage') ?><?= $ta('notes', 'Notes') ?>
+  <div class="col-md-6 d-flex flex-column justify-content-end">
+    <div class="form-check"><input class="form-check-input" type="checkbox" name="configured" value="1" id="cCfg" <?= (int) $c['configured'] ? 'checked' : '' ?>><label class="form-check-label small" for="cCfg"><?= e(t('Règles configurées d\'après les textes officiels cités (exigé pour la production)')) ?></label></div>
+    <div class="form-check"><input class="form-check-input" type="checkbox" name="homologated" value="1" id="cHom" <?= (int) $c['homologated'] ? 'checked' : '' ?>><label class="form-check-label small" for="cHom"><?= e(t('Homologation obtenue — à cocher uniquement sur décision écrite de l\'administration, citée dans les sources')) ?></label></div></div>
+  <div class="col-12"><button class="btn btn-sm btn-primary"><?= e(t('Enregistrer')) ?></button></div></form></div></div>
+<div class="card"><div class="card-header fw-semibold"><?= e(t('Taux et groupes de taxe officiels')) ?></div><div class="card-body">
+<p class="small text-secondary"><?= e(t('Chaque taux de TVA utilisé dans POS Marwa (colonne « taux local ») doit être rattaché à un groupe officiel. Une facture dont un taux n\'est rattaché à aucun groupe n\'est pas envoyée.')) ?></p>
+<table class="table table-sm align-middle"><thead><tr><th><?= e(t('Groupe')) ?></th><th><?= e(t('Libellé')) ?></th><th><?= e(t('Taux officiel')) ?></th><th><?= e(t('Taux local POS')) ?></th><th><?= e(t('Source')) ?></th><th></th></tr></thead><tbody>
+<?php foreach ($rates as $r): ?><tr><td><b><?= e($r['group_code']) ?></b></td><td><?= e($r['label']) ?></td><td><?= e(rtrim(rtrim((string) $r['rate'], '0'), '.')) ?> %</td><td><?= $r['local_rate'] !== null ? e(rtrim(rtrim((string) $r['local_rate'], '0'), '.')) . ' %' : '<span class="text-secondary">=</span>' ?></td><td class="small"><?= e($r['official_source']) ?></td>
+  <td><form method="post" action="<?= e(url('/fiscal/taux/' . $r['id'] . '/supprimer')) ?>" data-confirm="<?= e(t('Supprimer ce taux ?')) ?>"><?= csrf_field() ?><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form></td></tr><?php endforeach; ?>
+</tbody></table>
+<form method="post" action="<?= e(url('/fiscal/pays/' . $c['id'] . '/taux')) ?>" class="row g-2"><?= csrf_field() ?>
+  <div class="col-md-1"><input name="group_code" maxlength="10" class="form-control form-control-sm" placeholder="A" required></div>
+  <div class="col-md-3"><input name="label" maxlength="120" class="form-control form-control-sm" placeholder="<?= e(t('Libellé officiel')) ?>" required></div>
+  <div class="col-md-1"><input name="rate" class="form-control form-control-sm" placeholder="%" required></div>
+  <div class="col-md-2"><input name="local_rate" class="form-control form-control-sm" placeholder="<?= e(t('Taux local (si différent)')) ?>"></div>
+  <div class="col-md-3"><input name="official_source" maxlength="255" class="form-control form-control-sm" placeholder="<?= e(t('Texte, article, date')) ?>" required></div>
+  <div class="col-md-2"><button class="btn btn-sm btn-outline-primary w-100"><?= e(t('Ajouter / modifier')) ?></button></div></form></div></div>

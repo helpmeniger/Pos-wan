@@ -22,10 +22,19 @@ final class Router
         $this->add('POST', $pattern, $action, $perm, $public);
     }
 
-    private function add(string $method, string $pattern, array $action, ?string $perm, bool $public): void
+    /**
+     * Point d'entrée appelé par un service externe (webhook) : public et sans jeton CSRF.
+     * L'action DOIT authentifier elle-même la requête (signature HMAC, jeton secret).
+     */
+    public function webhook(string $pattern, array $action): void
+    {
+        $this->add('POST', $pattern, $action, null, true, false);
+    }
+
+    private function add(string $method, string $pattern, array $action, ?string $perm, bool $public, bool $csrf = true): void
     {
         $regex = '#^' . preg_replace('#\{(\w+)\}#', '(?P<$1>[0-9]+)', $pattern) . '$#';
-        $this->routes[] = compact('method', 'pattern', 'regex', 'action', 'perm', 'public');
+        $this->routes[] = compact('method', 'pattern', 'regex', 'action', 'perm', 'public', 'csrf');
     }
 
     public function dispatch(string $method, string $path): void
@@ -39,7 +48,7 @@ final class Router
             if ($r['method'] !== $method) {
                 continue;
             }
-            if ($method === 'POST') {
+            if ($method === 'POST' && $r['csrf']) {
                 Csrf::verify();
             }
             if (!$r['public']) {

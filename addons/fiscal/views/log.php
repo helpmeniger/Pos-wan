@@ -1,0 +1,4 @@
+<?= App\Core\View::partial('fiscal::_nav', ['tab' => $tab]) ?>
+<p class="small"><code><?= e($l['action']) ?></code> → <b><?= e($l['result_code']) ?></b> · <?= e(fdate($l['created_at'])) ?> <?= $l['http_status'] ? '· HTTP ' . (int) $l['http_status'] : '' ?> <?= $l['duration_ms'] !== null ? '· ' . (int) $l['duration_ms'] . ' ms' : '' ?> · <?= e($l['message'] ?? '') ?></p>
+<div class="row g-3"><div class="col-lg-6"><div class="card"><div class="card-header small fw-semibold"><?= e(t('Requête (secrets masqués)')) ?></div><pre class="card-body small mb-0" style="white-space:pre-wrap;max-height:480px;overflow:auto"><?= e($l['request_redacted'] ?? '—') ?></pre></div></div>
+<div class="col-lg-6"><div class="card"><div class="card-header small fw-semibold"><?= e(t('Réponse (secrets masqués)')) ?></div><pre class="card-body small mb-0" style="white-space:pre-wrap;max-height:480px;overflow:auto"><?= e($l['response_redacted'] ?? '—') ?></pre></div></div></div>

@@ -1,0 +1,16 @@
+<?= App\Core\View::partial('fiscal::_nav', ['tab' => $tab]) ?>
+<p class="small text-secondary"><?= e(t('Certificats d\'autorité (CA) et certificats clients (mTLS) des connexions API. Fichiers rangés hors du dossier public, mots de passe chiffrés.')) ?></p>
+<div class="card mb-3"><div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+<thead><tr><th><?= e(t('Connecteur')) ?></th><th><?= e(t('Type')) ?></th><th><?= e(t('Fichier')) ?></th><th><?= e(t('Sujet')) ?></th><th><?= e(t('Validité')) ?></th><th><?= e(t('Empreinte SHA-256')) ?></th><th></th></tr></thead><tbody>
+<?php foreach ($rows as $r): $exp = $r['valid_to'] && strtotime($r['valid_to']) < time() + 30 * 86400; ?><tr>
+  <td><a href="<?= e(url('/fiscal/connecteurs/' . $r['connector_id'])) ?>"><?= e($r['connector']) ?></a></td><td><?= e(['ca' => t('Autorité (CA)'), 'client_cert' => t('Certificat client'), 'client_key' => t('Clé privée')][$r['kind']]) ?></td>
+  <td class="small"><?= e($r['filename']) ?></td><td class="small"><?= e($r['subject']) ?></td>
+  <td class="small <?= $exp ? 'text-danger fw-semibold' : '' ?>"><?= e(fdate($r['valid_from'], false)) ?> → <?= e(fdate($r['valid_to'], false)) ?></td><td><code class="small"><?= e(substr($r['fingerprint_sha256'], 0, 24)) ?>…</code></td>
+  <td><?php if (can('fiscal.secrets')): ?><form method="post" action="<?= e(url('/fiscal/certificats/' . $r['id'] . '/supprimer')) ?>" data-confirm="<?= e(t('Supprimer ce certificat ?')) ?>"><?= csrf_field() ?><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form><?php endif; ?></td></tr>
+<?php endforeach; ?><?php if (!$rows): ?><tr><td colspan="7" class="small text-secondary"><?= e(t('Aucun certificat.')) ?></td></tr><?php endif; ?></tbody></table></div></div>
+<?php if (can('fiscal.secrets') && $connectors): ?><div class="card"><div class="card-body"><form method="post" action="<?= e(url('/fiscal/certificats')) ?>" enctype="multipart/form-data" class="row g-2 align-items-end"><?= csrf_field() ?>
+  <div class="col-md-3"><label class="form-label small mb-0"><?= e(t('Connecteur')) ?></label><select name="connector_id" class="form-select form-select-sm"><?php foreach ($connectors as $c): ?><option value="<?= (int) $c['id'] ?>"><?= e($c['name']) ?> (<?= $c['environment'] === 'prod' ? 'PROD' : 'TEST' ?>)</option><?php endforeach; ?></select></div>
+  <div class="col-md-2"><label class="form-label small mb-0"><?= e(t('Type')) ?></label><select name="kind" class="form-select form-select-sm"><option value="ca"><?= e(t('Autorité (CA)')) ?></option><option value="client_cert"><?= e(t('Certificat client')) ?></option><option value="client_key"><?= e(t('Clé privée client')) ?></option></select></div>
+  <div class="col-md-3"><label class="form-label small mb-0"><?= e(t('Fichier PEM')) ?></label><input type="file" name="file" accept=".pem,.crt,.key,.cer" class="form-control form-control-sm" required></div>
+  <div class="col-md-2"><label class="form-label small mb-0"><?= e(t('Mot de passe de la clé')) ?></label><input type="password" name="password" class="form-control form-control-sm" autocomplete="new-password"></div>
+  <div class="col-md-2"><button class="btn btn-sm btn-primary w-100"><?= e(t('Téléverser')) ?></button></div></form></div></div><?php endif; ?>

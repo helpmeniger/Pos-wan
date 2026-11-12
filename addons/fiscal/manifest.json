@@ -16,12 +16,119 @@
         "fiscal.logs": "Fiscal Connect : journaux techniques et d'audit"
     },
     "roles": {
-        "owner": ["fiscal.view", "fiscal.configure", "fiscal.secrets", "fiscal.queue", "fiscal.reports", "fiscal.logs"],
-        "store_manager": ["fiscal.view", "fiscal.queue", "fiscal.reports"],
-        "accountant": ["fiscal.view", "fiscal.reports"],
-        "auditor": ["fiscal.view", "fiscal.reports", "fiscal.logs"]
+        "owner": [
+            "fiscal.view",
+            "fiscal.configure",
+            "fiscal.secrets",
+            "fiscal.queue",
+            "fiscal.reports",
+            "fiscal.logs"
+        ],
+        "store_manager": [
+            "fiscal.view",
+            "fiscal.queue",
+            "fiscal.reports"
+        ],
+        "accountant": [
+            "fiscal.view",
+            "fiscal.reports"
+        ],
+        "auditor": [
+            "fiscal.view",
+            "fiscal.reports",
+            "fiscal.logs"
+        ]
     },
-    "menu": [],
+    "menu": [
+        {
+            "group": "FISCAL CONNECT",
+            "label": "Tableau de bord fiscal",
+            "icon": "bi-speedometer2",
+            "url": "/fiscal",
+            "permission": "fiscal.view",
+            "color": "#0f766e"
+        },
+        {
+            "group": "FISCAL CONNECT",
+            "label": "Dispositifs MCF",
+            "icon": "bi-cpu",
+            "url": "/fiscal/connecteurs?type=mcf",
+            "permission": "fiscal.view",
+            "color": "#0f766e"
+        },
+        {
+            "group": "FISCAL CONNECT",
+            "label": "Connexions API",
+            "icon": "bi-plug",
+            "url": "/fiscal/connecteurs?type=api",
+            "permission": "fiscal.view",
+            "color": "#0f766e"
+        },
+        {
+            "group": "FISCAL CONNECT",
+            "label": "Pays et règles fiscales",
+            "icon": "bi-globe2",
+            "url": "/fiscal/pays",
+            "permission": "fiscal.view",
+            "color": "#0f766e"
+        },
+        {
+            "group": "FISCAL CONNECT",
+            "label": "Paramètres fiscaux",
+            "icon": "bi-sliders",
+            "url": "/fiscal/parametres",
+            "permission": "fiscal.configure",
+            "color": "#0f766e"
+        },
+        {
+            "group": "FISCAL CONNECT",
+            "label": "Certificats",
+            "icon": "bi-file-earmark-lock",
+            "url": "/fiscal/certificats",
+            "permission": "fiscal.configure",
+            "color": "#0f766e"
+        },
+        {
+            "group": "FISCAL CONNECT",
+            "label": "Historique des certifications",
+            "icon": "bi-clock-history",
+            "url": "/fiscal/historique",
+            "permission": "fiscal.view",
+            "color": "#0f766e"
+        },
+        {
+            "group": "FISCAL CONNECT",
+            "label": "Factures en attente",
+            "icon": "bi-hourglass-split",
+            "url": "/fiscal/attente",
+            "permission": "fiscal.view",
+            "color": "#b45309"
+        },
+        {
+            "group": "FISCAL CONNECT",
+            "label": "Rapports fiscaux",
+            "icon": "bi-file-earmark-bar-graph",
+            "url": "/fiscal/rapports",
+            "permission": "fiscal.reports",
+            "color": "#0f766e"
+        },
+        {
+            "group": "FISCAL CONNECT",
+            "label": "Journaux techniques",
+            "icon": "bi-terminal",
+            "url": "/fiscal/journaux",
+            "permission": "fiscal.logs",
+            "color": "#475569"
+        },
+        {
+            "group": "FISCAL CONNECT",
+            "label": "Documentation des connecteurs",
+            "icon": "bi-book",
+            "url": "/fiscal/documentation",
+            "permission": "fiscal.view",
+            "color": "#475569"
+        }
+    ],
     "settings": {
         "fiscal_sync_timeout": "8"
     }

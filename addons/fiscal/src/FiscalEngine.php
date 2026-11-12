@@ -313,6 +313,33 @@ final class FiscalEngine
         return self::result($cert, $message);
     }
 
+    /**
+     * Confirmation demandée après un webhook : on n'en croit pas le contenu, on interroge le dispositif.
+     * Aucun envoi de facture ici ; si le dispositif ne confirme pas, l'état précédent est rétabli.
+     */
+    public static function confirm(int $certId): array
+    {
+        $cert = DB::one('SELECT * FROM fiscal_certifications WHERE id = ?', [$certId]);
+        if (!$cert || $cert['status'] === 'certified' || $cert['status'] === 'rejected') {
+            return ['status' => $cert['status'] ?? 'unknown', 'message' => 'Rien à confirmer.', 'certification' => $cert];
+        }
+        $prev = $cert['status'] === 'sending' ? 'pending' : $cert['status'];
+        $claimed = DB::run("UPDATE fiscal_certifications SET status = 'sending', updated_at = NOW() WHERE id = ? AND status IN ('pending', 'failed')", [$certId])->rowCount();
+        if (!$claimed) {
+            return self::result($cert, 'Envoi en cours : confirmation ignorée.');
+        }
+        $connector = $cert['connector_id'] ? DB::one('SELECT * FROM fiscal_connectors WHERE id = ?', [$cert['connector_id']]) : null;
+        if ($connector && DriverRegistry::supports($connector, 'getInvoiceStatus')) {
+            $driver = DriverRegistry::make($connector);
+            $st = self::call($driver, $connector, $certId, 'getInvoiceStatus', fn() => $driver->getInvoiceStatus($cert['idempotency_key']));
+            if ($st->code === DriverResult::CERTIFIED && !self::validate($st, $connector)) {
+                return self::store($cert, $connector, $st, 'Certification confirmée par le dispositif.');
+            }
+        }
+        self::touch($certId, ['status' => $prev]);
+        return self::result($cert, 'Le dispositif n\'a pas confirmé la certification.');
+    }
+
     // ------------------------------------------------------------------ journaux
 
     /** Toutes les valeurs secrètes du connecteur, pour les effacer des journaux. */
