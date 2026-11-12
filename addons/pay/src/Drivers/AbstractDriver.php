@@ -55,4 +55,16 @@ abstract class AbstractDriver implements PaymentDriver
     public function refund(array $tx, array $r): GatewayResult { return $this->no('refund'); }
     public function getRefundStatus(array $tx, array $refund): GatewayResult { return $this->no('getRefundStatus'); }
     public function parseWebhook(string $body, array $headers): ?array { return null; }
+
+    /** Signature par défaut : en-tête X-Pay-Signature = « sha256= » + HMAC-SHA256 du corps (secret du webhook). */
+    public function webhookSignatureValid(string $body, array $headers, string $defaultSecret): bool
+    {
+        $sent = '';
+        foreach ($headers as $k => $v) {
+            if (strtolower((string) $k) === 'x-pay-signature') {
+                $sent = trim((string) $v);
+            }
+        }
+        return $sent !== '' && hash_equals('sha256=' . hash_hmac('sha256', $body, $defaultSecret), $sent);
+    }
 }

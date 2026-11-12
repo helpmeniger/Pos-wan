@@ -6390,6 +6390,101 @@ test('Marwa Pay (phase 4) : moteur et simulation — réussi, refusé, attente, 
     DB::run("UPDATE payment_settings SET value = '0' WHERE skey = 'test_sales'");
 });
 
+test('Marwa Pay (phase 5) : connecteurs REST (centimes, attente, refus, panne, statut inconnu, remboursement), webhook signé, SOAP, squelettes — sur une fausse API locale', function () use ($port) {
+    $P = Addons\Pay\PayEngine::class;
+    $R = Addons\Pay\GatewayResult::class;
+    actingAs('admin');
+    $fport = $port + 13;
+    @unlink(sys_get_temp_dir() . "/fake-pay-$fport.json");
+    $api = proc_open(sprintf('exec php -S 127.0.0.1:%d %s', $fport, escapeshellarg(BASE_PATH . '/tests/fake-pay-api.php')), [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $ap);
+    usleep(500000);
+    try {
+        $cfg = fn(string $mode) => json_encode(['base_url' => "http://127.0.0.1:$fport/$mode", 'amount_unit' => 'minor', 'auth' => ['type' => 'api_key', 'header' => 'X-Api-Key'],
+            'endpoints' => ['test' => ['method' => 'GET', 'path' => '/ping'], 'initiate' => ['method' => 'POST', 'path' => '/payments', 'body' => '{"amount":{{json:amount}},"currency":"{{currency}}","order":"{{number}}"}'],
+                'status' => ['method' => 'GET', 'path' => '/payments/{{reference}}'], 'cancel' => ['method' => 'POST', 'path' => '/payments/{{reference}}/cancel'],
+                'refund' => ['method' => 'POST', 'path' => '/payments/{{reference}}/refunds', 'body' => '{"amount":{{json:amount}}}']],
+            'response' => ['reference' => 'id', 'status' => 'status', 'amount' => 'amount', 'currency' => 'currency', 'fees' => 'fee', 'authorization_code' => 'auth', 'refund_reference' => 'refund_id', 'refund_status' => 'refund_status'],
+            'status_map' => ['SUCCESS' => 'succeeded', 'PENDING' => 'pending', 'FAILED' => 'declined', 'CANCELLED' => 'cancelled'], 'refund_status_map' => ['DONE' => 'refunded', 'WAIT' => 'pending']]);
+        $cid = DB::insert('payment_connectors', ['name' => 'PSP test', 'driver' => 'generic_rest', 'environment' => 'test', 'active' => 1, 'timeout_s' => 3, 'config_json' => $cfg('ok')]);
+        $mid = DB::insert('payment_methods', ['label' => 'Mobile Money (PSP test)', 'kind' => 'mobile_money', 'sale_method' => 'mobile_money', 'connector_id' => $cid, 'currency' => 'XOF', 'active' => 1]);
+        $drv = fn() => Addons\Pay\DriverRegistry::make(DB::one('SELECT * FROM payment_connectors WHERE id = ?', [$cid]));
+        eq($R::CONFIG_ERROR, $drv()->testConnection()->code, 'clé absente');
+        Addons\Pay\Secrets::put('connector', $cid, 'api_key', 'BAD-KEY-999999');
+        eq($R::AUTH_FAILED, $drv()->testConnection()->code, 'mauvaise clé');
+        Addons\Pay\Secrets::put('connector', $cid, 'api_key', 'PAY-KEY-123456');
+        ok($drv()->testConnection()->isOk(), 'connexion');
+        actingAs('caissier');
+        $pay = fn() => $P::initiate(['method_id' => $mid, 'amount' => '5000', 'cart_uuid' => uuid(), 'request_key' => uuid()]);
+        $t = $pay();
+        eq(['succeeded', 'PSP-1', 1.5, 'A1B2C3', 0], [$t['status'], $t['provider_reference'], (float) $t['fees'], $t['authorization_code'], (int) DB::value("SELECT COUNT(*) FROM payment_transaction_logs WHERE request_redacted LIKE '%PAY-KEY%'")], $t['message']);
+        ok(str_contains((string) DB::value("SELECT request_redacted FROM payment_transaction_logs WHERE transaction_id = ? AND action = 'initiate'", [$t['id']]), '"amount":500000'), 'montant envoyé en centimes');
+        // Remboursement par l'API d'origine
+        actingAs('admin');
+        $rf = $P::refund($t['id'], '2000', 'Article retourné', uuid());
+        eq(['succeeded', 'RF-1', 'partially_refunded'], [$rf['status'], $rf['provider_reference'], $P::tx($t['id'])['status']]);
+        actingAs('caissier');
+        // Attente (paiement poussé sur le téléphone) puis confirmation serveur à serveur
+        DB::update('payment_connectors', ['config_json' => $cfg('push')], 'id = ?', [$cid]);
+        $t2 = $pay();
+        eq('pending', $t2['status']);
+        eq('pending', $P::refresh($t2['id'])['status']);
+        eq('succeeded', $P::refresh($t2['id'])['status'], 'confirmé par l\'API');
+        // Refus, panne, statut inconnu
+        DB::update('payment_connectors', ['config_json' => $cfg('decline')], 'id = ?', [$cid]);
+        eq('declined', $pay()['status'], 'HTTP 402 → refusé');
+        DB::update('payment_connectors', ['config_json' => $cfg('down')], 'id = ?', [$cid]);
+        eq('processing', $pay()['status'], 'HTTP 503 → issue inconnue, pas réussi');
+        DB::update('payment_connectors', ['config_json' => $cfg('weird')], 'id = ?', [$cid]);
+        $tw = $pay();
+        ok($tw['status'] === 'processing' && str_contains($tw['message'], 'non reconnu'), 'statut inconnu jamais pris pour un succès');
+        // Production : HTTPS exigé
+        DB::update('payment_connectors', ['environment' => 'prod', 'config_json' => $cfg('ok')], 'id = ?', [$cid]);
+        eq($R::CONFIG_ERROR, $drv()->testConnection()->code, 'http refusé en production');
+        DB::update('payment_connectors', ['environment' => 'test', 'active' => 0], 'id = ?', [$cid]);
+        DB::update('payment_methods', ['active' => 0], 'id = ?', [$mid]);
+
+        // SOAP
+        $sd = Addons\Pay\DriverRegistry::make(['id' => 0, 'driver' => 'generic_soap', 'environment' => 'test', 'config_json' => json_encode(['base_url' => "http://127.0.0.1:$fport/soap",
+            'endpoints' => ['initiate' => ['action' => 'urn:Pay', 'template' => '<Envelope><Body><Pay><Amount>{{amount}}</Amount><Order>{{number}}</Order></Pay></Body></Envelope>']],
+            'response' => ['status' => "//*[local-name()='Result']", 'reference' => "//*[local-name()='Ref']", 'amount' => "//*[local-name()='Amount']"], 'status_map' => ['OK' => 'succeeded']])]);
+        $sr = $sd->initiate(['number' => 'PAY-X<&>', 'amount' => 1200, 'currency' => 'XOF', 'idempotency_key' => str_repeat('a', 64)]);
+        eq([$R::SUCCEEDED, 'SOAP-1', 1200.0], [$sr->code, $sr->data['provider_reference'] ?? null, $sr->data['amount'] ?? null], $sr->message);
+        ok(str_contains((string) $sr->request, 'PAY-X&lt;&amp;&gt;'), 'XML échappé');
+    } finally {
+        proc_terminate($api);
+    }
+    // Page de paiement + notification signée (aucune API de consultation)
+    actingAs('admin');
+    $wc = DB::insert('payment_connectors', ['name' => 'Lien de paiement', 'driver' => 'generic_webhook', 'environment' => 'test', 'active' => 1, 'config_json' => json_encode([
+        'payment_url_template' => 'https://paiement.exemple.test/pay?order={{number}}&amount={{amount_decimal}}', 'status_map' => ['PAID' => 'succeeded', 'FAILED' => 'declined'],
+        'webhook' => ['reference' => 'order', 'status' => 'state', 'amount' => 'amount', 'currency' => 'currency', 'event_id' => 'event']])]);
+    $wm = DB::insert('payment_methods', ['label' => 'Paiement en ligne', 'kind' => 'wallet', 'sale_method' => 'transfer', 'connector_id' => $wc, 'currency' => 'XOF', 'active' => 1]);
+    actingAs('caissier');
+    $tl = $P::initiate(['method_id' => $wm, 'amount' => '7000', 'cart_uuid' => uuid(), 'request_key' => uuid()]);
+    ok($tl['status'] === 'pending' && str_starts_with((string) $tl['redirect_url'], 'https://paiement.exemple.test/pay?order=PAY'), 'lien de paiement, en attente');
+    $con = DB::one('SELECT * FROM payment_connectors WHERE id = ?', [$wc]);
+    $secret = 'secret-webhook-test';
+    $body = json_encode(['order' => $tl['number'], 'state' => 'PAID', 'amount' => 6000, 'currency' => 'XOF', 'event' => 'ev-1']);
+    $d = Addons\Pay\DriverRegistry::make($con);
+    ok(!$d->webhookSignatureValid($body, ['X-Pay-Signature' => 'sha256=faux'], $secret), 'signature fausse refusée');
+    ok($d->webhookSignatureValid($body, ['X-Pay-Signature' => 'sha256=' . hash_hmac('sha256', $body, $secret)], $secret), 'signature valide');
+    eq('to_verify', $P::webhook($con, $body, [])['status'], 'montant notifié incohérent → à vérifier');
+    $tl2 = $P::initiate(['method_id' => $wm, 'amount' => '7000', 'cart_uuid' => uuid(), 'request_key' => uuid()]);
+    $body2 = json_encode(['order' => $tl2['number'], 'state' => 'PAID', 'amount' => 7000, 'currency' => 'XOF', 'event' => 'ev-2']);
+    eq('succeeded', $P::webhook($con, $body2, [])['status'], 'notification signée cohérente → réussi');
+    ok(!empty($P::webhook($con, $body2, [])['duplicate']), 'double notification ignorée');
+    eq('webhook', $P::tx($tl2['id'])['verified_by']);
+    DB::update('payment_methods', ['active' => 0], 'id = ?', [$wm]);
+    // Squelettes : jamais de faux succès
+    foreach (['card_visa', 'card_mastercard', 'card_generic', 'wallet_paypal', 'wallet_mobile_money', 'ne_mynita', 'ne_amana', 'bank_api'] as $code) {
+        $s = Addons\Pay\DriverRegistry::make(['id' => 0, 'driver' => $code, 'environment' => 'test']);
+        eq([$R::UNSUPPORTED, $R::UNSUPPORTED], [$s->testConnection()->code, $s->initiate(['amount' => 1])->code], "$code non pris en charge");
+    }
+    foreach (Addons\Pay\DriverRegistry::gateways() as $code => $i) {
+        ok($i['verified'] === false, "$code non déclaré vérifié");
+    }
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });
