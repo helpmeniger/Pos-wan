@@ -128,3 +128,6 @@
 3. Codes-barres balance (poids/prix variable) et afficheur client.
 4. Utilisation des points de fidélité.
 5. Export XLSX natif des rapports.
+
+## Paiements électroniques (3.8.0)
+Module Marwa Pay Connect : moteur, caisse, terminaux, remboursements, rapprochement. Aucun prestataire ni TPE réel n'est encore intégré : contrat marchand, documentation officielle et essais en sandbox requis pour chaque prestataire.

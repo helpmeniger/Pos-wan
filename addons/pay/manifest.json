@@ -2,7 +2,7 @@
     "code": "pay",
     "name": "Marwa Pay Connect",
     "version": "1.0.0",
-    "requires": "3.7.0",
+    "requires": "3.8.0",
     "author": "POS Marwa",
     "description": "Paiements électroniques à la caisse : prestataires et API, terminaux de paiement (TPE), transactions vérifiées serveur à serveur, remboursements transmis au prestataire, rapprochement, rapports. Aucune donnée de carte n'est stockée ; aucun connecteur n'est déclaré compatible sans documentation officielle.",
     "icon": "bi-credit-card-2-front",

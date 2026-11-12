@@ -2,6 +2,16 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.8.0] — 2026-11-12
+
+### Ajouté
+- **Marwa Pay Connect** (`addons/pay`, menu « MARWA PAY ») : bouton **PAIEMENT ÉLECTRONIQUE** dans la fenêtre d'encaissement ; connexions aux API des prestataires (REST/JSON, SOAP/XML, page de paiement + notification signée ; API Key, Bearer, Basic, OAuth 2.0, SSL, mTLS, OpenAPI) ; terminaux de paiement (simulé, autonome, réseau TCP, USB/COM/Bluetooth via le pont local Windows « Marwa Pay Bridge », Android) ; historique des paiements, remboursements totaux ou partiels transmis au prestataire, rapprochement par relevé CSV, rapports (journaliers, mensuels, par fournisseur, caisse, établissement, frais, échecs, remboursements) en Excel (CSV) et PDF, multidevise avec taux sourcés.
+- Un paiement électronique n'est accepté que sur confirmation authentifiée du prestataire ou du terminal ; il ne règle qu'une seule vente ; les transactions TEST ne sont jamais comptées comme encaissements. Aucun numéro de carte, CVV ni code PIN n'est saisi ni conservé.
+- Squelettes (non compatibles en l'état) pour Visa, Mastercard, cartes EMV, PayPal, Mobile Money, My NiTA, AMANA et API bancaires : documentation officielle et contrat marchand requis.
+
+### Modifié
+- Écran de caisse : un paiement électronique déjà encaissé reste attaché au panier (même après rechargement) ; la mise en attente d'un tel panier est refusée.
+
 ## [3.7.0] — 2026-11-12
 
 ### Ajouté
