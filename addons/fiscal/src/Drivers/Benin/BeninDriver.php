@@ -11,7 +11,7 @@ use Addons\Fiscal\Drivers\AbstractDriver;
  * Aucune spécification officielle n'a été fournie ni vérifiée pour ce pays. Toutes les fonctions
  * répondent « non prise en charge » ; rien n'est envoyé, rien n'est certifié.
  * Pour le développer : obtenir la spécification officielle (protocole, formats, environnement de test)
- * auprès de l'administration fiscale ou du fournisseur agréé, puis suivre docs/fiscal/AJOUTER_UN_MCF.md.
+ * auprès de l'administration fiscale ou du fournisseur agréé, puis suivre addons/fiscal/docs/AJOUTER_UN_MCF.md.
  * En attendant, si le pays expose une API documentée, le pilote générique REST/SOAP peut être configuré.
  */
 final class BeninDriver extends AbstractDriver

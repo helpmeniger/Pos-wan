@@ -104,7 +104,7 @@
 | Restaurant : modificateurs payants (suppléments), menus/formules à prix fixe, réservations | Notes libres ; suppléments à saisir comme articles | Options d'articles et réservations |
 | HTTPS | Documenté (certificat local), non configuré automatiquement ; nécessaire pour la caméra en direct sur smartphone (sinon « Photo du code ») | — |
 | Conformité réglementaire pharmacie / fiscale (Niger) | Fonctions de traçabilité fournies, **non certifiées** | Validation par un pharmacien et un expert-comptable |
-| Factures normalisées / dispositifs fiscaux éventuels exigés par l'administration | Non implémenté | À étudier selon la réglementation en vigueur |
+| Factures normalisées / dispositifs fiscaux exigés par l'administration | Module Marwa Fiscal Connect (3.7.0) : moteur, file d'attente, pilotes génériques et simulation | Aucun pilote officiel vérifié (SECeF, e-MECeF…) : spécification officielle et essais sur l'environnement de test requis ; règles du pays à configurer d'après les textes |
 | Établissement : emploi du temps, cahier de textes, envoi de SMS aux parents, portail parents, examens officiels | Non implémenté | Modules complémentaires |
 | Établissement : détection d'une photo présentée à la caméra (« visage vivant ») | Non implémenté : la reconnaissance n'est pas un contrôle d'accès | Caméra 3D / infrarouge |
 | Établissement : formalité biométrique auprès de la HAPDP | À la charge de l'établissement | — |

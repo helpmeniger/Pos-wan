@@ -2,6 +2,17 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.7.0] — 2026-11-12
+
+### Ajouté
+- **Marwa Fiscal Connect** (`addons/fiscal`, menu « FISCAL CONNECT », 11 écrans) : transmission des factures et avoirs à un dispositif fiscal (MCF) ou à une plateforme de facturation normalisée, file d'attente en cas de panne, idempotence (jamais deux certifications pour une facture), preuves conservées, journaux techniques et d'audit, profils par pays et par boutique, séparation TEST / PRODUCTION.
+- Pilotes : simulation (documents « NON CERTIFIÉ – TEST »), REST/JSON (clé d'API, Bearer, Basic, OAuth2, SSL, mTLS), SOAP/XML, TCP, série ; squelettes Niger, Bénin, Togo **non compatibles** en l'état. Aucun pilote n'est déclaré vérifié sur un dispositif officiel ; aucune règle fiscale n'est préremplie.
+- Tickets, factures A4 et tickets ESC/POS : bloc fiscal (NIF, numéro de certification, dispositif, signature, compteurs, QR officiel) imprimé seulement après une réponse valide ; sinon mention « FACTURE NON CERTIFIÉE ».
+- Cœur : système d'événements pour les modules (`App\Core\Events`, fichier `boot.php` des modules) et route de webhook signée.
+
+### Modifié
+- Une facture certifiée ne peut plus être annulée localement quand le module est actif : un retour (avoir certifié) est demandé.
+
 ## [3.6.0] — 2026-11-11
 
 ### Ajouté
