@@ -40,6 +40,15 @@ $router->get('/pay/parametres', [P::class, 'settings'], 'pay.configure');
 $router->post('/pay/parametres', [P::class, 'settingsSave'], 'pay.configure');
 $router->post('/pay/parametres/devise', [P::class, 'currencyAdd'], 'pay.configure');
 $router->post('/pay/parametres/taux', [P::class, 'rateAdd'], 'pay.configure');
+$router->get('/pay/terminaux', [P::class, 'terminals'], 'pay.configure');
+$router->get('/pay/terminaux/nouveau', [P::class, 'terminalForm'], 'pay.configure');
+$router->post('/pay/terminaux', [P::class, 'terminalSave'], 'pay.configure');
+$router->get('/pay/terminaux/{id}', [P::class, 'terminalForm'], 'pay.configure');
+$router->post('/pay/terminaux/{id}', [P::class, 'terminalSave'], 'pay.configure');
+$router->post('/pay/terminaux/{id}/tester', [P::class, 'terminalTest'], 'pay.configure');
+$router->post('/pay/terminaux/{id}/activer', [P::class, 'terminalToggle'], 'pay.configure');
+$router->post('/pay/terminaux/{id}/supprimer', [P::class, 'terminalDelete'], 'pay.configure');
+$router->post('/pay/terminaux/{id}/pont', [P::class, 'terminalPair'], 'pay.secrets');
 // Caisse (JSON)
 $router->get('/pay/caisse/moyens', [K::class, 'methods'], 'pay.use');
 $router->post('/pay/caisse/payer', [K::class, 'initiate'], 'pay.use');

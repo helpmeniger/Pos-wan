@@ -1,0 +1,6 @@
+{
+    "listen": "127.0.0.1:8765",
+    "secret": "REMPLACEZ-PAR-LE-SECRET-GENERE-DANS-POS-MARWA-(32-caracteres-minimum)",
+    "allowed_devices": ["COM3"],
+    "log_file": "marwa-pay-bridge.log"
+}

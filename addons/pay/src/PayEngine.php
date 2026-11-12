@@ -259,6 +259,9 @@ final class PayEngine
         // Un paiement expiré ne peut évoluer que vers « réussi » (paiement tardif confirmé)
         $from = $status === 'succeeded' ? self::OPEN : ['pending', 'processing', 'to_verify'];
         if ($status === 'succeeded') {
+            if ($verifiedBy === 'api' && $tx['terminal_id']) {
+                $verifiedBy = 'terminal'; // confirmation reçue du terminal lui-même
+            }
             $known = self::knownSecrets($tx);
             $set += ['verified_by' => $verifiedBy, 'succeeded_at' => date('Y-m-d H:i:s'),
                 'proof_json' => json_encode(['source' => $source, 'driver' => $tx['driver'], 'received_at' => date('c'), 'http_status' => $r->httpStatus,

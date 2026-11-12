@@ -391,4 +391,59 @@ final class PayController extends Controller
         flash('success', 'Taux enregistré (utilisé à partir de sa date).');
         redirect('/pay/parametres');
     }
+
+    // ------------------------------------------------------------------ 4. terminaux
+
+    public function terminals(): void
+    {
+        $this->show('terminals', 'Gestion des terminaux', 'terminals', ['rows' => DB::all("SELECT pt.*, s.name store, r.name register,
+                (SELECT COUNT(*) FROM payment_transactions t WHERE t.terminal_id = pt.id) n,
+                (SELECT COUNT(*) FROM payment_transactions t WHERE t.terminal_id = pt.id AND t.status IN ('succeeded','refunded','partially_refunded')) ok,
+                (SELECT COUNT(*) FROM payment_transaction_logs l WHERE l.terminal_id = pt.id AND l.result_code IN ('unreachable','timeout','invalid_response') AND l.created_at > NOW() - INTERVAL 7 DAY) errors
+            FROM payment_terminals pt LEFT JOIN stores s ON s.id = pt.store_id LEFT JOIN cash_registers r ON r.id = pt.register_id ORDER BY pt.active DESC, pt.name")]);
+    }
+
+    public function terminalForm(int $id = 0): void
+    {
+        $t = $id ? $this->attempt(fn() => A::terminal($id), '/pay/terminaux') : null;
+        $this->show('terminal', $t ? 'Terminal : ' . $t['name'] : 'Nouveau terminal', 'terminals', ['t' => $t, 'drivers' => DriverRegistry::terminals(),
+            'stores' => DB::all('SELECT id, name FROM stores WHERE active = 1 ORDER BY name'), 'registers' => DB::all('SELECT id, name FROM cash_registers WHERE active = 1 ORDER BY name'),
+            'hints' => $t ? Secrets::hints('terminal', $id) : [],
+            'errors' => $t ? DB::all("SELECT * FROM payment_transaction_logs WHERE terminal_id = ? AND result_code NOT IN ('ok','succeeded') ORDER BY id DESC LIMIT 10", [$id]) : []]);
+    }
+
+    public function terminalSave(int $id = 0): void
+    {
+        $new = $this->attempt(fn() => A::saveTerminal($_POST, $id ?: null), $id ? "/pay/terminaux/$id" : '/pay/terminaux/nouveau');
+        flash('success', 'Terminal enregistré (inactif tant que vous ne l\'activez pas). Testez la communication.');
+        redirect("/pay/terminaux/$new");
+    }
+
+    public function terminalTest(int $id): void
+    {
+        $r = $this->attempt(fn() => A::test('terminal', $id), "/pay/terminaux/$id");
+        flash($r->isOk() ? 'success' : 'danger', ($r->isOk() ? 'Communication établie : ' : 'Échec de communication (' . $r->code . ') : ') . $r->message);
+        redirect("/pay/terminaux/$id");
+    }
+
+    public function terminalToggle(int $id): void
+    {
+        $on = $this->attempt(fn() => A::toggleTerminal($id), "/pay/terminaux/$id");
+        flash('success', $on ? 'Terminal activé.' : 'Terminal désactivé.');
+        redirect("/pay/terminaux/$id");
+    }
+
+    public function terminalDelete(int $id): void
+    {
+        $this->attempt(fn() => A::deleteTerminal($id), "/pay/terminaux/$id");
+        flash('success', 'Terminal supprimé.');
+        redirect('/pay/terminaux');
+    }
+
+    public function terminalPair(int $id): void
+    {
+        $s = $this->attempt(fn() => A::pairBridge($id), "/pay/terminaux/$id");
+        flash('warning', 'Secret du pont local (affiché une seule fois, à recopier dans bridge.json, champ « secret ») : ' . $s);
+        redirect("/pay/terminaux/$id");
+    }
 }

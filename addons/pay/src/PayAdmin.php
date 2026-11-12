@@ -386,4 +386,107 @@ final class PayAdmin
         self::audit('rate.add', 'payment_exchange_rate', $id, null, ['from' => $from, 'to' => $to, 'rate' => $rate, 'source' => $src]);
         return $id;
     }
+
+    // ------------------------------------------------------------------ terminaux (TPE)
+
+    public const CONNECTIONS = ['standalone' => 'Autonome (aucune liaison)', 'usb' => 'USB', 'serial' => 'COM / RS232', 'bluetooth' => 'Bluetooth', 'ethernet' => 'Ethernet',
+        'tcp' => 'TCP/IP', 'wifi' => 'Wi-Fi', 'http_local' => 'API HTTP locale', 'android_sdk' => 'SDK Android (API locale)'];
+
+    public static function terminal(int $id): array
+    {
+        $t = DB::one('SELECT * FROM payment_terminals WHERE id = ?', [$id]);
+        if (!$t) {
+            throw new BusinessException('Terminal introuvable.');
+        }
+        return $t;
+    }
+
+    public static function saveTerminal(array $in, ?int $id = null): int
+    {
+        $before = $id ? self::terminal($id) : null;
+        $name = trim((string) ($in['name'] ?? ''));
+        $driver = (string) ($in['driver'] ?? '');
+        $conn = (string) ($in['connection'] ?? 'standalone');
+        $env = (string) ($in['environment'] ?? 'test');
+        $info = DriverRegistry::terminals()[$driver] ?? null;
+        if ($name === '' || !$info || !isset(self::CONNECTIONS[$conn]) || !in_array($env, ['test', 'prod'], true)) {
+            throw new BusinessException('Nom, pilote, mode de connexion et environnement obligatoires.');
+        }
+        if ($driver !== 'terminal_simulation' && !in_array($conn, $info['transports'], true)) {
+            throw new BusinessException('Ce pilote ne gère pas la connexion « ' . self::CONNECTIONS[$conn] . ' » (modes possibles : ' . implode(', ', array_map(fn($c) => self::CONNECTIONS[$c] ?? $c, $info['transports'])) . ').');
+        }
+        if ($driver === 'terminal_simulation' && $env === 'prod') {
+            throw new BusinessException('Le terminal simulé est réservé à l\'environnement de TEST.');
+        }
+        $ip = trim((string) ($in['ip_address'] ?? ''));
+        $port = (int) ($in['port'] ?? 0) ?: null;
+        if ($ip !== '' && !filter_var($ip, FILTER_VALIDATE_IP) && !preg_match('/^[a-z0-9.-]{1,253}$/i', $ip) || ($port !== null && ($port < 1 || $port > 65535))) {
+            throw new BusinessException('Adresse IP ou port invalide.');
+        }
+        if (in_array($driver, ['terminal_tcp'], true) && ($ip === '' || !$port)) {
+            throw new BusinessException('Adresse IP et port du terminal obligatoires.');
+        }
+        $dev = trim((string) ($in['device_path'] ?? ''));
+        if ($dev !== '' && !preg_match('#^(COM[1-9][0-9]?|/dev/tty(USB|ACM|S|rfcomm)[0-9]{1,2})$#', $dev)) {
+            throw new BusinessException('Port invalide (ex. COM3, /dev/ttyUSB0, /dev/rfcomm0).');
+        }
+        $bridge = rtrim(trim((string) ($in['bridge_url'] ?? '')), '/');
+        if ($bridge !== '' && !preg_match('#^https?://[a-z0-9.-]+(:\d{1,5})?$#i', $bridge)) {
+            throw new BusinessException('Adresse du pont invalide (ex. http://192.168.1.20:8765).');
+        }
+        if ($driver === 'terminal_usb' && ($dev === '' || $bridge === '')) {
+            throw new BusinessException('Terminal USB / COM / Bluetooth : port et adresse du pont local obligatoires.');
+        }
+        $store = (int) ($in['store_id'] ?? 0) ?: null;
+        $reg = (int) ($in['register_id'] ?? 0) ?: null;
+        if ($reg && !DB::value('SELECT 1 FROM cash_registers WHERE id = ?', [$reg])) {
+            throw new BusinessException('Caisse inconnue.');
+        }
+        $cfg = self::json((string) ($in['config_json'] ?? ''));
+        if ($driver === 'terminal_simulation') {
+            $cfg['scenario'] = in_array($in['scenario'] ?? '', ['pending', 'success', 'decline', 'pending_forever', 'network_loss', 'invalid'], true) ? $in['scenario'] : ($cfg['scenario'] ?? 'pending');
+        }
+        $data = ['name' => mb_substr($name, 0, 120), 'manufacturer' => mb_substr(trim((string) ($in['manufacturer'] ?? '')), 0, 80) ?: null, 'model' => mb_substr(trim((string) ($in['model'] ?? '')), 0, 80) ?: null,
+            'serial_number' => mb_substr(trim((string) ($in['serial_number'] ?? '')), 0, 80) ?: null, 'driver' => $driver, 'connection' => $conn, 'ip_address' => $ip ?: null, 'port' => $port,
+            'device_path' => $dev ?: null, 'bridge_url' => $bridge ?: null, 'environment' => $env, 'store_id' => $store, 'register_id' => $reg,
+            'config_json' => $cfg ? json_encode($cfg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) : null,
+            'timeout_s' => max(10, min(300, (int) ($in['timeout_s'] ?? 90))), 'updated_at' => date('Y-m-d H:i:s')];
+        if ($id) {
+            DB::update('payment_terminals', $data + ['status' => 'unknown'], 'id = ?', [$id]);
+        } else {
+            $id = DB::insert('payment_terminals', $data + ['active' => 0]);
+        }
+        self::audit($before ? 'terminal.update' : 'terminal.create', 'payment_terminal', $id, $before, $data);
+        return $id;
+    }
+
+    public static function toggleTerminal(int $id): bool
+    {
+        $t = self::terminal($id);
+        $on = !(int) $t['active'];
+        DB::update('payment_terminals', ['active' => $on ? 1 : 0, 'updated_at' => date('Y-m-d H:i:s')], 'id = ?', [$id]);
+        self::audit($on ? 'terminal.enable' : 'terminal.disable', 'payment_terminal', $id);
+        return $on;
+    }
+
+    public static function deleteTerminal(int $id): void
+    {
+        $t = self::terminal($id);
+        if (DB::value('SELECT 1 FROM payment_transactions WHERE terminal_id = ? LIMIT 1', [$id])) {
+            throw new BusinessException('Ce terminal a des transactions (historique à conserver) : désactivez-le.');
+        }
+        DB::run('DELETE FROM payment_api_credentials WHERE terminal_id = ?', [$id]);
+        DB::run('DELETE FROM payment_terminals WHERE id = ?', [$id]);
+        self::audit('terminal.delete', 'payment_terminal', $id, $t);
+    }
+
+    /** Génère le secret partagé avec le pont local (affiché une seule fois, à recopier dans bridge.json). */
+    public static function pairBridge(int $id): string
+    {
+        self::terminal($id);
+        $secret = bin2hex(random_bytes(24));
+        Secrets::put('terminal', $id, 'bridge_secret', $secret, Auth::id());
+        self::audit('terminal.bridge_pair', 'payment_terminal', $id);
+        return $secret;
+    }
 }

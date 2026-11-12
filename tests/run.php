@@ -6630,6 +6630,116 @@ test('Marwa Pay (phase 7) : caisse — bouton, moyens de la caisse, demande, sui
     ok($r3['ok'], 'vente en espèces inchangée');
 });
 
+test('Marwa Pay (phase 8) : terminaux — écrans, validations, TPE simulé, TPE autonome, TPE réseau, pont local USB/COM signé, terminal Android', function () use ($B, $port) {
+    $P = Addons\Pay\PayEngine::class;
+    $A = Addons\Pay\PayAdmin::class;
+    $R = Addons\Pay\GatewayResult::class;
+    actingAs('admin');
+    $a = new Http(); $a->login($B, 'admin', 'Essai-Niamey-2026');
+    foreach (['/pay/terminaux', '/pay/terminaux/nouveau'] as $u) {
+        eq(200, $a->req('GET', $B . $u)['code'], $u);
+    }
+    $reg = (int) DB::value('SELECT register_id FROM users WHERE username = ?', ['caissier']);
+    // Validations
+    throws(fn() => $A::saveTerminal(['name' => 'X', 'driver' => 'terminal_usb', 'connection' => 'usb', 'device_path' => 'COM3; del', 'bridge_url' => 'http://127.0.0.1:1']), 'Port invalide');
+    throws(fn() => $A::saveTerminal(['name' => 'X', 'driver' => 'terminal_usb', 'connection' => 'usb']), 'pont local obligatoires');
+    throws(fn() => $A::saveTerminal(['name' => 'X', 'driver' => 'terminal_tcp', 'connection' => 'usb', 'ip_address' => '10.0.0.5', 'port' => 9000]), 'ne gère pas');
+    throws(fn() => $A::saveTerminal(['name' => 'X', 'driver' => 'terminal_simulation', 'connection' => 'usb', 'environment' => 'prod']), 'TEST');
+    // 1. TPE simulé affecté à la caisse : en cours puis accepté par le terminal
+    $sim = $A::saveTerminal(['name' => 'TPE simulé caisse 1', 'driver' => 'terminal_simulation', 'connection' => 'usb', 'register_id' => $reg, 'scenario' => 'pending']);
+    $A::toggleTerminal($sim);
+    eq(200, $a->req('GET', "$B/pay/terminaux/$sim")['code']);
+    $tm = $A::saveMethod(['label' => 'Carte sur TPE', 'kind' => 'terminal', 'sale_method' => 'card', 'currency' => 'XOF']);
+    $A::toggleMethod($tm);
+    actingAs('caissier');
+    ok(in_array($tm, array_column($P::methodsFor($reg, (int) DB::value('SELECT store_id FROM cash_registers WHERE id = ?', [$reg])), 'id'), true), 'TPE proposé à la caisse');
+    $t = $P::initiate(['method_id' => $tm, 'amount' => '2500', 'cart_uuid' => uuid(), 'request_key' => uuid()]);
+    eq(['pending', $sim], [$t['status'], (int) $t['terminal_id']], 'demande envoyée au TPE de la caisse');
+    $P::refresh($t['id']);
+    $t = $P::refresh($t['id']);
+    eq(['succeeded', 'terminal'], [$t['status'], $t['verified_by']], 'accepté par le terminal');
+    // 2. TPE autonome : n° d'autorisation exigé, « à vérifier », utilisable pour la vente
+    actingAs('admin');
+    $A::toggleTerminal($sim);
+    $sa = $A::saveTerminal(['name' => 'TPE banque (autonome)', 'driver' => 'terminal_standalone', 'connection' => 'standalone', 'register_id' => $reg, 'environment' => 'prod']);
+    $A::toggleTerminal($sa);
+    actingAs('caissier');
+    eq('failed', $P::initiate(['method_id' => $tm, 'amount' => '1000', 'cart_uuid' => uuid(), 'request_key' => uuid()])['status'], 'sans n° d\'autorisation : refusé');
+    $ts = $P::initiate(['method_id' => $tm, 'amount' => '1000', 'cart_uuid' => uuid(), 'request_key' => uuid(), 'authorization_code' => 'ab1234']);
+    eq(['to_verify', 'AB1234', 0], [$ts['status'], $ts['authorization_code'], (int) $ts['is_test']], 'déclaré, à vérifier par rapprochement');
+    actingAs('admin');
+    $A::toggleTerminal($sa);
+    // 3. TPE réseau (TCP) : faux terminal local
+    $tport = 22100 + random_int(0, 80);
+    $script = '$l=stream_socket_server("tcp://127.0.0.1:' . $tport . '");for($i=0;$i<2;$i++){$c=stream_socket_accept($l,10);if(!$c)break;$m=json_decode(fgets($c),true);'
+        . 'fwrite($c,json_encode($m["op"]==="ping"?["result"=>"READY"]:["result"=>"APPROVED","stan"=>"000123","auth"=>"A77","amount"=>$m["amount"],"last4"=>"4242","pan"=>"4111111111114242"])."\n");fclose($c);}';
+    $srv = proc_open([PHP_BINARY, '-r', $script], [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $pp);
+    usleep(400000);
+    $proto = json_encode(['amount_unit' => 'minor', 'requests' => ['test' => '{"op":"ping"}', 'sale' => '{"op":"sale","amount":{{json:amount}},"ref":"{{number}}"}'],
+        'response' => ['status' => 'result', 'reference' => 'stan', 'authorization_code' => 'auth', 'amount' => 'amount', 'card_last4' => 'last4'], 'status_map' => ['APPROVED' => 'succeeded', 'DECLINED' => 'declined', 'READY' => 'processing']]);
+    $tcp = $A::saveTerminal(['name' => 'TPE réseau', 'driver' => 'terminal_tcp', 'connection' => 'ethernet', 'ip_address' => '127.0.0.1', 'port' => $tport, 'register_id' => $reg, 'config_json' => $proto, 'timeout_s' => 10]);
+    ok($A::test('terminal', $tcp)->isOk(), 'communication établie');
+    $A::toggleTerminal($tcp);
+    actingAs('caissier');
+    $tt = $P::initiate(['method_id' => $tm, 'amount' => '4200', 'cart_uuid' => uuid(), 'request_key' => uuid()]);
+    proc_terminate($srv);
+    eq(['succeeded', 'A77', 'Carte •••• 4242', 'terminal'], [$tt['status'], $tt['authorization_code'], $tt['payer_hint'], $tt['verified_by']], $tt['message']);
+    ok(str_contains((string) DB::value("SELECT request_redacted FROM payment_transaction_logs WHERE transaction_id = ? AND action = 'initiate'", [$tt['id']]), '"amount":420000'), 'montant en centimes');
+    ok(!str_contains((string) DB::value("SELECT response_redacted FROM payment_transaction_logs WHERE transaction_id = ?", [$tt['id']]), '4111111111114242'), 'numéro de carte jamais conservé dans les journaux');
+    actingAs('admin');
+    $A::toggleTerminal($tcp);
+    eq($R::UNREACHABLE, $A::test('terminal', $tcp)->code, 'terminal éteint : injoignable');
+    // 4. Pont local USB / COM : faux port série (pty) + pont signé
+    if (trim((string) shell_exec('command -v python3')) !== '') {
+        $py = proc_open(['python3', BASE_PATH . '/tests/fake-serial-terminal.py'], [['pipe', 'r'], ['pipe', 'w'], ['file', '/dev/null', 'w']], $pyp);
+        $dev = trim((string) fgets($pyp[1]));
+        $bport = 22200 + random_int(0, 80);
+        $secret = bin2hex(random_bytes(24));
+        $bcfg = sys_get_temp_dir() . '/bridge-' . getmypid() . '.json';
+        file_put_contents($bcfg, json_encode(['listen' => "127.0.0.1:$bport", 'secret' => $secret, 'allowed_devices' => [$dev]]));
+        $br = proc_open([PHP_BINARY, BASE_PATH . '/addons/pay/bridge/marwa-pay-bridge.php', $bcfg], [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $bp);
+        usleep(500000);
+        try {
+            $usb = DB::insert('payment_terminals', ['name' => 'TPE USB', 'driver' => 'terminal_usb', 'connection' => 'usb', 'device_path' => $dev, 'bridge_url' => "http://127.0.0.1:$bport", 'environment' => 'test',
+                'register_id' => $reg, 'timeout_s' => 10, 'config_json' => $proto, 'active' => 0]);
+            eq($R::UNREACHABLE, $A::test('terminal', $usb)->code, 'sans secret : refusé');
+            Addons\Pay\Secrets::put('terminal', $usb, 'bridge_secret', 'mauvais-secret-mauvais-secret-mauvais');
+            ok(str_contains($A::test('terminal', $usb)->message, 'authentification refusée'), 'mauvais secret refusé par le pont');
+            Addons\Pay\Secrets::put('terminal', $usb, 'bridge_secret', $secret);
+            ok($A::test('terminal', $usb)->isOk(), 'pont + terminal série joignables');
+            DB::update('payment_terminals', ['active' => 1], 'id = ?', [$usb]);
+            actingAs('caissier');
+            $tu = $P::initiate(['method_id' => $tm, 'amount' => '1500', 'cart_uuid' => uuid(), 'request_key' => uuid()]);
+            eq(['succeeded', 'U55', 'Carte •••• 1881'], [$tu['status'], $tu['authorization_code'], $tu['payer_hint']], $tu['message']);
+            ok(!str_contains((string) DB::value("SELECT request_redacted FROM payment_transaction_logs WHERE transaction_id = ?", [$tu['id']]), $secret), 'secret du pont absent des journaux');
+            // Rejeu d'une requête signée : refusé
+            $body = json_encode(['device' => $dev, 'payload' => '{"op":"ping"}', 'timeout' => 5]);
+            $ts = (string) time(); $nonce = bin2hex(random_bytes(12));
+            $hdr = ['Content-Type: application/json', "X-Bridge-Timestamp: $ts", "X-Bridge-Nonce: $nonce", 'X-Bridge-Signature: ' . hash_hmac('sha256', "$ts\n$nonce\n$body", $secret)];
+            eq(200, (new Http())->req('POST', "http://127.0.0.1:$bport/v1/terminal", $body, $hdr)['code'], 'requête signée acceptée');
+            eq(401, (new Http())->req('POST', "http://127.0.0.1:$bport/v1/terminal", $body, $hdr)['code'], 'rejeu refusé');
+            $body2 = json_encode(['device' => '/dev/sda', 'payload' => 'x']); $n2 = bin2hex(random_bytes(12));
+            $r2 = json_decode((new Http())->req('POST', "http://127.0.0.1:$bport/v1/terminal", $body2, ['Content-Type: application/json', "X-Bridge-Timestamp: $ts", "X-Bridge-Nonce: $n2", 'X-Bridge-Signature: ' . hash_hmac('sha256', "$ts\n$n2\n$body2", $secret)])['body'], true);
+            ok(!$r2['ok'] && str_contains($r2['error'], 'non autorisé'), 'port non déclaré refusé par le pont');
+            DB::update('payment_terminals', ['active' => 0], 'id = ?', [$usb]);
+        } finally {
+            proc_terminate($br);
+            proc_terminate($py);
+            @unlink($bcfg);
+        }
+    } else {
+        ok(true, 'python3 absent : test du pont série non exécuté');
+    }
+    // 5. Terminal Android (API HTTP locale) : HTTP refusé hors réseau privé en production
+    actingAs('admin');
+    $an = Addons\Pay\DriverRegistry::make(['id' => 0, 'driver' => 'terminal_android', 'connection' => 'http_local', 'environment' => 'prod', 'config_json' => json_encode(['base_url' => 'http://8.8.8.8:8080', 'endpoints' => ['test' => ['path' => '/ping']]])]);
+    eq($R::CONFIG_ERROR, $an->testConnection()->code, 'HTTP public refusé en production');
+    $an2 = Addons\Pay\DriverRegistry::make(['id' => 0, 'driver' => 'terminal_android', 'connection' => 'http_local', 'environment' => 'prod', 'ip_address' => '192.168.200.199', 'port' => 9, 'timeout_s' => 2, 'config_json' => json_encode(['endpoints' => ['test' => ['path' => '/ping']]])]);
+    ok($an2->testConnection()->code !== $R::CONFIG_ERROR, 'HTTP accepté vers une adresse privée du réseau local');
+    actingAs('admin');
+    $A::toggleMethod($tm);
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

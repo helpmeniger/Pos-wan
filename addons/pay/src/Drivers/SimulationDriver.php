@@ -12,7 +12,7 @@ use Addons\Pay\GatewayResult;
  * refund_decline (remboursement refusé), refund_pending (remboursement confirmé à la vérification suivante).
  * L'état du « prestataire » est conservé dans storage/pay/simulation-<id>.json.
  */
-final class SimulationDriver extends AbstractDriver
+class SimulationDriver extends AbstractDriver
 {
     public const MARK = 'TEST – AUCUN ENCAISSEMENT RÉEL';
 
@@ -27,7 +27,12 @@ final class SimulationDriver extends AbstractDriver
         return ['testConnection', 'initiate', 'getStatus', 'cancel', 'void', 'refund', 'getRefundStatus', 'webhook'];
     }
 
-    private function sc(): string
+    protected function stateName(): string
+    {
+        return 'simulation-' . (int) ($this->target['id'] ?? 0);
+    }
+
+    protected function sc(): string
     {
         return (string) ($this->config['scenario'] ?? 'success');
     }
@@ -38,7 +43,7 @@ final class SimulationDriver extends AbstractDriver
         if (!is_dir($dir)) {
             @mkdir($dir, 0770, true);
         }
-        $h = fopen($dir . '/simulation-' . (int) ($this->target['id'] ?? 0) . '.json', 'c+');
+        $h = fopen($dir . '/' . $this->stateName() . '.json', 'c+');
         flock($h, LOCK_EX);
         $s = json_decode(stream_get_contents($h) ?: '', true) ?: ['n' => 0, 'tx' => [], 'refunds' => []];
         if ($change) {
