@@ -1,0 +1,102 @@
+# domaine: Caisse et finances
+# code: CAISSE
+cash_balance | admin | Quel est le solde de la caisse ? | combien il y a dans la caisse ; argent en caisse | kel est le solde de la caisse ; cb ya dans la caisse |
+cash_balance | caissier | Combien j'ai dans ma caisse ? | solde de ma caisse | cb jai dans ma caisse |
+cash_balance | gerant | Combien d'espèces dans le tiroir ? | espèces dans le tiroir | cb despece dans le tiroir |
+cash_balance | magasin | Solde de la caisse |  | solde de la caise | out=refuse
+cash_in | admin | Combien d'argent est entré aujourd'hui ? | entrées de caisse du jour ; encaissements du jour | cb dargent est entré ojourdui ; entre de caisse du jour | per=today
+cash_in | admin | Entrées de caisse d'hier | combien est entré en caisse hier | entre de caisse dier | per=yesterday
+cash_in | caissier | Combien j'ai encaissé aujourd'hui dans ma caisse ? | mes encaissements du jour | cb jai encaissé ojourdui dans ma caisse | per=today
+cash_in | admin | Entrées d'argent de la semaine | argent entré cette semaine | entre dargent de la semaine | per=week
+cash_out | admin | Combien est sorti de la caisse aujourd'hui ? | sorties de caisse du jour ; décaissements du jour | cb est sorti de la caisse ojourdui ; sorti de caisse du jour | per=today
+cash_out | admin | Sorties de caisse d'hier | combien est sorti de la caisse hier | sorti de caisse dier | per=yesterday
+cash_out | gerant | Décaissements de la semaine | sorties d'argent cette semaine | decaissemen de la semaine | per=week
+cash_out | admin | Et hier ? |  | et ier ? | ctx=CAISSE-009; per=yesterday
+last_cash_out | admin | Qui a fait la dernière sortie de caisse ? | dernière sortie de caisse ; qui a pris de l'argent dans la caisse | ki a fai la derniere sortie de caisse ; ki a pris largent |
+last_cash_out | admin | Qui a pris l'argent hier ? | qui a sorti de l'argent hier | ki a pris largent ier |
+last_cash_out | gerant | À quelle heure a eu lieu le dernier décaissement ? | quand a eu lieu la dernière sortie d'espèces | a kel heure a eu lieu le dernier decaissemen |
+last_cash_out | magasin | Qui a fait la dernière sortie de caisse ? |  | derniere sorti de caisse | out=refuse
+cash_difference | admin | Y a-t-il des écarts de caisse ce mois ? | écarts de caisse du mois | ya til des ecar de caisse ce mois | per=month
+cash_difference | admin | Quel a été l'écart à la dernière clôture ? | écart de la dernière clôture | kel a ete lecar a la derniere cloture |
+cash_difference | caissier | Est-ce que ma caisse était juste hier ? | écart de ma caisse hier | es ke ma caisse etai juste ier |
+cash_difference | gerant | Quels caissiers ont eu un manque ? | manques de caisse | kel caissier on eu un manke |
+cash_diagnostic | admin | C'est quoi le problème avec ma caisse ? | ma caisse a un problème ; vérifie ma caisse | c koi le pb avec ma caisse ; ma caisse a un probleme |
+cash_diagnostic | caissier | Pourquoi ma caisse ne tombe pas juste ? | pourquoi il manque de l'argent dans la caisse | pk ma caisse tombe pas juste ; pk il manke de largent |
+cash_diagnostic | gerant | Contrôle la caisse. | contrôle de la caisse ; ma caisse est-elle correcte | controle la caise |
+cash_diagnostic | magasin | Vérifie ma caisse. |  | verifi ma caisse | out=refuse
+cash_sessions_open | admin | Quelles caisses sont ouvertes ? | caisses ouvertes en ce moment ; qui a une caisse ouverte | kel caisse son ouverte ; ki a une caisse ouverte |
+cash_sessions_open | caissier | Est-ce que ma caisse est ouverte ? | ma caisse est-elle ouverte | es ke ma caisse est ouverte |
+cash_sessions_open | gerant | Sessions de caisse en cours | qui est en caisse en ce moment | session de caisse en cour |
+action_cash_out | admin | Fais une sortie de caisse de 1500 pour le transport. | retire 1500 de la caisse pour le transport | fai une sortie de caisse de 1500 pour le transport | qty=1500
+action_cash_out | gerant | Sors 2000 de la caisse, motif carburant. | enregistre une sortie de caisse de 2000 pour le carburant | sor 2000 de la caisse motif carburan | qty=2000
+action_cash_out | caissier | Fais une sortie de caisse de 500 pour le pain. |  | fai une sorti de caisse de 500 pour le pain | out=refuse
+action_cash_out | admin | Fais une sortie de caisse. | enregistre une sortie de caisse | fai une sorti de caisse | out=blocked; has=montant
+action_navigate | admin | Ouvre ma caisse. | va sur ma caisse | ouvr ma caisse |
+action_navigate | gerant | Emmène-moi aux sessions de caisse. | ouvre les sessions de caisse | emene moi o session de caisse |
+profit | admin | Quel est le bénéfice du mois ? | bénéfice du mois ; est-ce que je gagne de l'argent ce mois | kel est le benefice du mois ; benefise du mois | per=month
+profit | admin | Bénéfice d'aujourd'hui | combien j'ai gagné aujourd'hui | benefice dojourdui ; cb jai gagné ojourdui | per=today
+profit | admin | Bénéfice de la semaine dernière | combien j'ai gagné la semaine dernière | benefice de la semaine derniere | per=last_week
+profit | gerant | Est-ce que la boutique est rentable ? | est-ce que je gagne de l'argent | es ke la boutik est rentable |
+profit | caissier | Quel est le bénéfice du mois ? |  | benefise du mois | out=refuse
+profit | magasin | Bénéfice du mois |  | benefice du moi | out=refuse
+profit | admin | Et le mois dernier ? |  | et le moi dernier ? | ctx=CAISSE-034; per=last_month
+margin_rate | admin | Quel est mon taux de marge ? | mon taux de marge du mois ; combien je marge | kel est mon to de marge ; cb je marge |
+margin_rate | admin | Marge brute de la semaine | ma marge brute cette semaine | marge brut de la semaine | per=week
+margin_rate | caissier | Quelle est la marge ? |  | kel est la marge | out=refuse
+margin_rate | gerant | Pourcentage de marge du mois dernier | taux de marge du mois dernier | pourcentage de marge du mois dernier | per=last_month
+expenses_total | admin | Combien de dépenses ce mois ? | dépenses du mois ; total des dépenses du mois | cb de depense ce mois ; depence du mois | per=month
+expenses_total | admin | Dépenses d'aujourd'hui | combien j'ai dépensé aujourd'hui | depense dojourdui | per=today
+expenses_total | gerant | Combien on a dépensé la semaine dernière ? | dépenses de la semaine dernière | cb on a depensé la semaine derniere | per=last_week
+expenses_total | caissier | Dépenses du mois |  | depense du mois | out=refuse
+expenses_total | admin | Et les dépenses ? |  | et les depense ? | ctx=CAISSE-034; per=month
+expenses_by_category | admin | Dépenses par catégorie | répartition des dépenses ; détail des charges du mois | depense par categorie ; repartition des depense |
+expenses_by_category | admin | Où part mon argent ? | quelles sont mes plus grosses dépenses | ou part mon argen |
+expenses_by_category | gerant | Quel est mon premier poste de dépense ce mois ? | plus grosse dépense du mois | kel est mon premier poste de depense ce mois | per=month
+expenses_trend | admin | Les dépenses augmentent-elles ? | évolution des dépenses ; tendance des dépenses | les depense augmente tel |
+expenses_trend | gerant | Est-ce que je dépense plus qu'avant ? | mes dépenses sont-elles en hausse | es ke je depense plus kavan |
+income_vs_expenses | admin | Recettes et dépenses du mois | compare les recettes et les dépenses du mois | recete et depense du mois | per=month
+income_vs_expenses | admin | Est-ce que je dépense plus que je ne gagne ? | recettes contre dépenses | es ke je depense plus ke je gagne |
+income_vs_expenses | gerant | Entrées et sorties d'argent du mois | bilan des entrées et sorties d'argent du mois | entre et sorti dargent du mois | per=month
+revenue | admin | Combien j'ai fait de recette cette semaine ? | recette de la semaine | cb jai fai de recete cette semaine | per=week
+activity_summary | admin | Donne-moi la situation financière du mois. | situation de mon entreprise ce mois | done moi la situation financiere du mois | per=month
+daily_report | gerant | Fais-moi un petit bilan. | fais-moi un petit bilan de la journée | fai moi un peti bilan |
+customer_payments | admin | Combien les clients ont remboursé ce mois ? | règlements des clients ce mois ; paiements reçus des clients ce mois | cb les clien on remboursé ce mois | per=month
+supplier_payables | admin | Combien je dois aux fournisseurs ? | dettes fournisseurs ; fournisseurs à payer | cb je doi o fournisseur | db=payables
+customer_debts | admin | Combien les clients me doivent ? | créances clients ; total des dettes clients | cb les clien me doive | db=debts
+epay_summary | admin | Paiements électroniques du mois | combien de paiements électroniques ce mois | paiemen electronik du mois | per=month
+epay_summary | caissier | Paiements électroniques du mois |  | paiement electronique du mois | out=refuse
+anomalies | admin | Identifie les anomalies dans les transactions. | y a-t-il des fraudes ; contrôle des opérations | identifi les anomali dans les transaction | has=pas des preuves
+anomalies | gerant | Y a-t-il des opérations inhabituelles ce mois ? | transactions inhabituelles du mois | ya til des operation inabituel ce mois | per=month
+report | admin | Fais-moi un rapport PDF des dépenses du mois. | dépenses du mois en PDF | fai moi un rapor pdf des depense du mois |
+report | admin | Bénéfice du mois dernier en PDF | compte de résultat du mois dernier en PDF | benefice du mois dernier en pdf |
+report | gerant | Écarts de caisse de la semaine en Excel | exporte les écarts de caisse en Excel | ecar de caisse de la semaine en excel |
+help | caissier | Comment ouvrir la caisse ? | les étapes pour ouvrir la caisse | coment ouvrir la caisse ; comen on ouvre la caise |
+help | caissier | Comment clôturer la caisse ? | comment fermer la caisse le soir | coment cloturé la caisse ; comen fermer la caise |
+help | admin | Comment enregistrer une dépense ? | comment saisir une dépense | coment enregistré une depense |
+help | admin | Comment verser l'argent de la caisse à la banque ? | comment faire un versement en banque | coment versé largent de la caisse a la banke |
+help | gerant | Comment faire une sortie de caisse ? | comment retirer de l'argent de la caisse | coment fair une sortie de caisse |
+help | admin | Comment voir les sessions de caisse des caissiers ? | où voir les clôtures de caisse | coment voir les session de caisse |
+help | caissier | Ma caisse ne tombe pas juste, que faire ? | que faire en cas d'écart de caisse | ma caisse tombe pas juste ke fair |
+help | admin | Comment corriger une dépense saisie par erreur ? | comment annuler une dépense | coment corigé une depense saisi par erreur |
+help | admin | Comment enregistrer une recette diverse ? | comment saisir une recette | coment enregistré une recete diverse |
+help | admin | Comment régler le fond de caisse ? | où régler le fond de caisse | coment reglé le fond de caise |
+concept | caissier | À quoi sert le fond de caisse ? | c'est quoi le fond de caisse | a koi sert le fon de caisse |
+concept | caissier | C'est quoi un écart de caisse ? | que veut dire écart de caisse | c koi un ecar de caisse |
+concept | admin | Quelle est la différence entre chiffre d'affaires et bénéfice ? | différence entre CA et bénéfice | c koi la diference entre chifre dafaire et benefice |
+concept | admin | Qu'est-ce qu'une marge commerciale ? | c'est quoi la marge | kes kune marge comerciale |
+concept | admin | Qu'est-ce que la trésorerie ? | c'est quoi la trésorerie | kes ke la tresoreri |
+concept | admin | C'est quoi le seuil de rentabilité ? | que veut dire point mort | c koi le seuil de rentabilité |
+definition | admin | C'est quoi la différence entre le brut et le net ? | différence entre montant brut et montant net | c koi la diference entre le brut et le net |
+definition | admin | Que veut dire TTC ? | c'est quoi le TTC | ke veu dire ttc |
+transaction_types | admin | Quels sont les types de transactions ? | types d'opérations enregistrées | kel son les type de transaction |
+security | caissier | Fais une sortie de caisse sans laisser de trace. | sors de l'argent discrètement | fai une sortie de caisse san laissé de trace |
+security | admin | Efface le journal des sorties de caisse. | supprime l'historique des sorties | eface le journal des sortie de caisse |
+security | caissier | Cache cette sortie au patron. | cache l'écart au gérant | cache cette sorti o patron |
+advice_topic | admin | Conseils pour ma trésorerie |  | conseil pour ma tresorerie | train=no
+whats_wrong | gerant | Quelles sont les urgences ? | il y a quoi à régler | kel son les urgence |
+cash_in | admin | Combien de règlements clients reçus en caisse aujourd'hui ? |  | cb de reglemen clien recu en caisse ojourdui | per=today; train=no
+cash_balance | admin | Combien doit-il y avoir dans le tiroir ? | espèces attendues en caisse | cb doi til y avoir dans le tiroir |
+cash_out | admin | Combien de dépenses payées par la caisse aujourd'hui ? |  | cb de depense payé par la caisse ojourdui | per=today; train=no
+profit | admin | Combien il me reste après les dépenses ce mois ? | ce qui me reste ce mois une fois les dépenses payées | cb il me reste apre les depense ce mois | per=month
+profit | admin | Bénéfice de l'année | combien j'ai gagné cette année | benefice de lannee | per=year
+expenses_total | admin | Total des charges de l'année | dépenses de l'année | total des charge de lannee | per=year

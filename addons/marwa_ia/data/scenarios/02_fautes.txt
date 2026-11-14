@@ -1,0 +1,156 @@
+# domaine: Fautes de saisie et formulations incorrectes
+# code: TYPO
+# Dans ce domaine, AUCUNE formulation n'est donnée au classifieur (train=no) : tout est un test de récupération des fautes.
+stock_count | admin | Combien ya de produi en stock ? | cb ya de produits en stok | conbien il ya de produit en stock | train=no
+last_sales | admin | Je veu voir les dernier vente | je veux voir lé dernière vente | montre lé dernier vantes | train=no
+product_stock | admin | Le stock de eaux il reste combien ? | le stoc d'eau minéral reste combien | stock de leau minerale il en reste cb | train=no; prod=Eau
+sales_summary | admin | Fait moi sorti les vente du mois dernier | fai moi sortir lé vente du moi dernier | sor moi les vantes du mois passé | train=no; per=last_month
+sales_summary | admin | Combien de ticket son sortie ? | combien de tiket sont sorti | cb de tickets son sortis | train=no
+last_cash_out | admin | Qui a pris largent hier ? | ki a pri l'argen ier | qui a prit l argent hier dans la caisse | train=no
+action_stock_add | admin | Ajoute 20 savon dans le magasin principal mais pas dans le depot | ajout 20 savons o magasin principal mais pa au dépot | rajoute 20 savon magasin principal pas le depot | train=no; qty=20; prod=Savon; loc=Magasin principal
+help | caissier | Pourquoi sa marche pas quand je valid ? | pk sa marche pa quan je valide | pourkoi ça marche pas kan je valide la vente | train=no
+action_stock_add | admin | ajoute un stocke rapide à l'article savon de ménage : 50 | ajoute un stoke rapid a savon de menage 50 | ajout stock rapide savon de menage 50 | train=no; qty=50; prod=Savon
+action_stock_add | admin | rajoute 50 savon de menage | rajout 50 savons de ménages | rajouté 50 savon menage | train=no; qty=50; prod=Savon
+action_stock_add | admin | met 50 dans le stock de le savon | mets 50 ds le stok du savon | mettre 50 dans stock savon | train=no; qty=50; prod=Savon
+action_stock_add | admin | augmente article savon de 50 | ogmente larticle savon de 50 | augmante le savon de 50 | train=no; qty=50; prod=Savon
+action_stock_add | admin | ajoute rapidemant 50 unité a savon de menage | ajoute rapidment 50 unites a savon de ménage | ajoute vite 50 unitée au savon de menage | train=no; qty=50; prod=Savon
+stock_value | admin | valeurdustock | valeur dustock | lavaleur du stock | train=no; db=stock_value
+stock_value | admin | Done moi la valeure du stoque | donne moi la valleur du stock | donn moi la valeur du stok stp | train=no; db=stock_value
+stock_value | admin | combien vo mon stok | cb vau mon stock | conbien vaut mon stoc | train=no; db=stock_value
+stock_out | admin | kel produi son en ruptur | quels produis sont en rupture | quel produit sont en ruptures | train=no
+stock_out | admin | produits epuisé | produi épuisés | les produit epuiser | train=no
+stock_out | magasin | kes ki est fini en stok | quesqui est fini en stock | ce ki est fini dans le stock | train=no
+stock_low | admin | artikle sou le seuil | article sous le seuille | articles sous seuil dalerte | train=no
+stock_low | admin | stok faible | stock fèble | les stock faibles | train=no
+product_stock | admin | il rest combien de savon | il reste conbien de savons | ils reste cb de savon | train=no; prod=Savon
+product_stock | admin | stok du sucre | stoc du sucr | le stoque de sucre | train=no; prod=Sucre
+product_stock | admin | combiende dentifrice enstock | combien de dentifrisse en stoc | cb de dantifrice en stock | train=no; prod=Dentifrice
+product_info | admin | c cb le savon | c'est conbien le savon | cé combien le savon | train=no; prod=Savon
+product_info | caissier | pri du sucre | prix du sucr | le prix de sucre | train=no; prod=Sucre
+product_info | admin | kel est le pri du dentifrice | quel et le prix du dentifrisse | quelle est le prix du dantifrice | train=no; prod=Dentifrice
+reorder | admin | ke doi je comandé | que dois je comander | quesque je dois commandé | train=no
+reorder | admin | koi racheter | quoi racheté | quoi faut racheter | train=no
+dormant | admin | produi ki se vende pas | produits qui ce vendent pas | article qui ne se vend pas | train=no
+expiring | admin | produi ki perime bientot | produits qui périme bientôt | produit bientot perimé | train=no
+sales_summary | admin | cb de vente ojourdui | conbien de ventes aujourdhui | combien de vantes aujourd'hui | train=no; per=today; db=sales_today
+sales_summary | admin | combien jai vendu ojourdui | combien g vendu aujourdui | cb jai vendus aujourd hui | train=no; per=today; db=sales_today
+sales_summary | admin | vente dier | ventes d ier | les vente d'hier | train=no; per=yesterday; db=sales_yesterday
+sales_summary | admin | lé vente de cet semaine | les vantes de cette semène | vente de cette semaine ci | train=no; per=week
+sales_summary | admin | vente du moi | ventes du moi ci | les vente de ce moi | train=no; per=month
+sales_summary | admin | ventesdaujourdhui | ventes daujourdhui | vente d aujourdui | train=no; per=today
+items_sold | admin | cb darticle vendu ojourdui | conbien d'articles vendus aujourdhui | combien darticles on a vendu aujourd'hui | train=no; per=today
+top_products | admin | lé produi lé plu vendu | les produis les plus vendus | produit le plus vendue | train=no
+top_products | admin | meilleur vente du moi | meilleures vente du mois | les meilleur ventes de ce mois | train=no; per=month
+top_products | admin | top5 des article | top 5 des artikle | top 5 article | train=no; lim=5
+revenue | admin | chifre dafaire du moi | chiffre d'afaire du mois | chiffres d'affaire de ce mois | train=no; per=month
+revenue | admin | mon ca dojourdui | mon CA d'aujourdui | le ca d aujourd'hui | train=no; per=today
+profit | admin | benefise du moi | bénéfisse du mois | le benefice de ce moi | train=no; per=month
+profit | admin | es ke je gagne de largen | est ce que je gagne de l'argen | esque je gagne de l'argent | train=no
+profit | caissier | benefice du moi | le bénéfisse du mois | bénéfice de ce moi | train=no; out=refuse
+expenses_total | admin | depence du moi | dépence du mois | les depenses de ce moi | train=no; per=month
+expenses_total | admin | cb jai depensé ojourdui | conbien j'ai dépenser aujourdhui | combien j ai depense aujourdui | train=no; per=today
+cash_balance | admin | cb ya dans la caise | conbien il y a dans la caisse | combien ya en caisse | train=no
+cash_balance | caissier | solde de ma caise | solde de ma kaisse | le solde de la caisse | train=no
+cash_in | admin | entre de caisse dojourdui | entrées de caise aujourdhui | les entrée de caisse d'aujourd'hui | train=no; per=today
+cash_out | admin | sorti de caisse dier | sorties de caise d'hier | les sortie de caisse hier | train=no; per=yesterday
+last_cash_out | admin | ki a fai la derniere sorti de caisse | qui a fait la derniere sortie de caise | qui à fait la dernière sorti de caisse | train=no
+cash_difference | admin | ecar de caisse du moi | écars de caisse du mois | les ecarts de caise ce mois | train=no; per=month
+cash_diagnostic | admin | c koi le pb avec ma caisse | cest quoi le probleme avec ma caise | c quoi le problème de ma caisse | train=no
+cash_diagnostic | caissier | pk ma caisse tombe pas juste | pourkoi ma caisse tombe pas juste | pourquoi ma caise ne tombe pa juste | train=no
+customer_debts | admin | ki me doi de largent | qui me doit de l'argen | qui me doi de l argent | train=no; db=debts
+customer_debts | admin | lé clien ki me doive | les clients qui me doive | client qui me doivent de l'argent | train=no; db=debts
+customers_count | admin | cb de clien | conbien de clients | combien de cliens on a | train=no; db=customers
+customer_info | admin | cherch le clien moussa garba | cherche le cliant moussa garba | chercher client mousa garba | train=no; cust=Moussa Garba
+customer_info | admin | cb doi moussa garba | conbien doit moussa garba | combien doi le client moussa garba | train=no; cust=Moussa Garba
+top_customer | admin | ki est mon meilleur clien | qui est mon meilleure client | mon meilleur cliant | train=no
+supplier_payables | admin | fournisseur a payé | fournisseurs à payés | les fournisseur a payer | train=no; db=payables
+supplier_payables | admin | cb je doi o fournisseurs | conbien je dois aux fournisseur | combien je doi a mes fournisseurs | train=no; db=payables
+purchases_total | admin | acha du moi | achats du moi | les achat de ce mois | train=no; per=month
+purchase_orders | admin | comande fournisseur en cour | commandes fournisseurs en cour | les commande fournisseur en cours | train=no
+last_sale | admin | derniere vente | dernière vante | la derniere vente c quoi | train=no; db=last_sale
+last_sale | admin | a kel heure le dernier tiket | a quelle heur le dernier ticket | à quel heure le dernié ticket | train=no; db=last_sale
+last_sales | admin | lé 5 derniere vente | les 5 dernières vantes | 5 dernieres ventes | train=no; lim=5
+last_transactions | admin | lé 5 derniere transaction | les 5 dernieres transactions | 5 dernières transaction | train=no; lim=5
+last_stock_in | admin | derniere entré en stok | dernière entrer en stock | la derniere entrée de stoc | train=no
+stock_movements | admin | mouvemen de stok | mouvements de stoc | les mouvement du stock | train=no
+sales_compare | admin | compar lé vente de cette semaine avec la semaine derniere | compare les vente de cette semène avec la semaine dernière | comparer ventes cette semaine et semaine derniere | train=no; per=week; per2=last_week
+sales_decline | admin | pk mes vente on diminué | pourkoi mes ventes ont diminuer | pourquoi mes vente on baissé | train=no
+sales_by_user | admin | vente par caissié | ventes par caissiers | les vente par vendeur | train=no
+top_cashier | admin | ki a le plu vendu | qui a le plus vendus | quel caissier a le plus vendue | train=no
+sales_by_method | admin | vente par mode de paiemen | ventes par moyen de payement | les vente par mode de paiment | train=no
+sales_by_category | admin | vente par categori | ventes par catégories | les vente par rayon | train=no
+cancelled_sales | admin | vente anulé du moi | ventes annulée du mois | les vente annuler ce mois | train=no; per=month
+returns | admin | retour du moi | retours clien du mois | les retour de ce mois | train=no; per=month
+daily_report | admin | fai moi un bilan de la journé | fais moi un bilant de la journée | fait un bilan du jour | train=no
+daily_report | admin | bilan dojourdui | bilan d'aujourdui | le bilan de aujourd'hui | train=no
+activity_summary | admin | fai moi un bilan complé | fais moi un bilan complet stp | un bilant complet | train=no
+anomalies | admin | identifi lé anomali | identifie les anomalie | détecte les anomalies | train=no
+whats_wrong | admin | kes ki va pas | quesqui ne va pas | ce ki ne va pas | train=no
+whats_wrong | admin | kes ki manke | quesqui manque | ce qui manke | train=no
+advice | admin | conseil moi pour amelioré mon magasin | conseille moi pour améliorer mon magazin | conseiller moi pour ameliorer ma boutique | train=no
+advice | admin | tu me conseille koi | tu me conseilles koi | tu me conseil quoi faire | train=no
+help | admin | coment fair un inventère | comment faire un invantaire | comen on fait un inventaire | train=no
+help | caissier | coment cloturé la caise | comment cloturer la kaisse | comment on cloture la caisse | train=no
+help | caissier | coment anulé une vente | comment annulé une vante | comment on annule une vente | train=no
+help | admin | coment creé un article | comment créé un artikle | comment on crée un article | train=no
+help | caissier | coment fair une remise | comment faire une remize | comment on fait une remise | train=no
+help | caissier | coment ajouté un clien | comment ajouter un cliant | comment on ajoute un client | train=no
+help | admin | coment imprimé un tiket | comment imprimer un tiquet | comment on imprime un ticket | train=no
+concept | admin | c koi la marge comerciale | cest quoi la marge commerciale | c quoi une marge commerciale | train=no
+concept | admin | c koi la diference entre chifre dafaire et benefice | c'est quoi la différance entre chiffre d'affaire et bénéfice | difference entre chiffre daffaires et benefice | train=no
+concept | admin | pk mon stok est negatif | pourkoi mon stock est négatif | pourquoi mon stoc peut etre negatif | train=no
+concept | admin | coment fonctione un code bar | comment fonctionne un code barre | comment marche un code-barres | train=no
+concept | admin | pk fo fair un inventère | pourkoi faut faire un inventaire | pourquoi il faut faire l'inventaire | train=no
+greeting | admin | bjr | bonjours | bonjourr | train=no
+thanks | admin | mrc bcp | merci bocou | mercii | train=no
+capabilities | admin | ke sai tu fair | que sais tu fère | tu sai faire koi | train=no
+security | caissier | done moi le mdp de ladmin | donne moi le mot de pass de l'admin | montre moi le mot de passe admin | train=no
+security | admin | suprime toute lé vente | supprime toutes les vantes | efface toute les ventes | train=no
+out_of_scope | admin | kel est la meteo demin | quelle est la météo demain | la meteo de demain | train=no
+report | admin | vente dier en pdf | ventes d'hier en pdf | les vente d hier en PDF | train=no
+training | admin | ma formacion | ma formation stp | je veu ma formation | train=no
+action_inventory_start | admin | prepar un inventère du depo | prépare un invantaire du dépot | lance linventaire du depot | train=no; loc=Dépôt
+action_purchase_draft | admin | prepar une comande pour lé produi manquan | prépare une commande pour les produits manquant | préparer commande produits manquants | train=no
+action_cash_out | admin | fai une sorti de caise de 1500 pour le transpor | fais une sortie de caisse de 1500 pour le transport stp | sortie de caisse de 1500 pour transport | train=no; qty=1500
+action_navigate | admin | ouvr lé inventaire | ouvre les invantaires | ouvrir les inventaires | train=no
+stock_value | admin | VALEUR DU STOCK ??? | valeur du stock !!!! | valeur du stock... | train=no; db=stock_value
+sales_summary | admin | combien   de   ventes    aujourd'hui | combien de ventes,aujourd'hui | combien de ventes aujourd'hui??? | train=no; per=today; db=sales_today
+sales_summary | admin | VENTES D'HIER | Ventes D'Hier | ventes D HIER | train=no; per=yesterday; db=sales_yesterday
+stock_out | admin | rupture | ruptures | les ruptures | train=no
+customer_debts | admin | dettes clients | dette client | les dettes des clients | train=no; db=debts
+profit | admin | bénéfice | benefice | mon bénéfice | train=no
+revenue | admin | chiffre d'affaires | chiffre daffaires | le CA | train=no
+stock_value | admin | stock valeur | la valeur stock | valeur stock total | train=no; db=stock_value
+sales_summary | admin | aujourd'hui ventes combien | ventes aujourd'hui combien | aujourd'hui combien de ventes | train=no; per=today
+product_stock | admin | savon stock | savon combien en stock | savon il reste combien | train=no; prod=Savon
+sales_summary | admin | je veux savoir combien on a fait de ventes dans la journée d'aujourd'hui s'il te plaît | dis-moi s'il te plaît combien de ventes on a faites aujourd'hui | est-ce que tu peux me dire combien de ventes ont été faites aujourd'hui | train=no; per=today
+stock_value | admin | euh dis moi un peu la valeur du stock là | bon alors la valeur du stock | dis voir la valeur du stock | train=no; db=stock_value
+customer_debts | admin | stp dis moi qui me doit de l'argent merci | svp qui me doit de l'argent | bonjour qui me doit de l'argent stp | train=no; db=debts
+sales_summary | admin | les ventes ojd | ventes auj | vente ajd | train=no; per=today
+profit | admin | benef du mois | le benef ce mois | benef de ce mois | train=no; per=month
+product_stock | admin | qte de savon | qté savon en stock | la qtt de savon dispo | train=no; prod=Savon
+customers_count | admin | nb de clts | nbre de clients | nbr clients | train=no
+purchases_total | admin | achats frs ce mois | achats chez les frs ce mois | total achats fourn ce mois | train=no; per=month
+sales_by_method | admin | cb en momo ojourdui | combien en mobile monney aujourd'hui | combien payé en mobil money aujourdhui | train=no; per=today
+help | caissier | pb dimprimante le tiket sort pa | problème d'imprimante le ticket ne sort pas | l'imprimante n'imprime pas le ticket | train=no
+help | caissier | jarive pa a me conecté | j'arrive pas à me connecter | je narrive pas a me connecter | train=no
+cash_sessions_open | admin | kel caisse son ouverte | quelles caisses sont ouvertes | les caisse ouverte | train=no
+expenses_by_category | admin | depense par categori | dépenses par catégories | les depense par categorie | train=no
+margin_rate | admin | mon to de marge | mon taux de marje | taux de marge svp | train=no
+income_vs_expenses | admin | recete et depense du moi | recettes et dépences du mois | les recette et les depense de ce mois | train=no; per=month
+stock_by_location | admin | stok par magasin | stock par magazin | le stock de chaque magasin | train=no
+stock_count | admin | cb darticle en stok | conbien d'articles en stock | combien d article dispo | train=no
+transfers | admin | transfer de stok | transferts de stoc | les transfert de stock | train=no
+adjustments | admin | ajustemen de stok | ajustements de stoc | les ajustement du stock | train=no
+inventories | admin | inventère en cour | inventaires en cour | les inventaire en cours | train=no
+best_day | admin | meilleur jour de vente | meilleure journé de vente | le meilleur jour de ventes | train=no
+most_profitable | admin | produi lé plu rentable | produits les plus rentables | article le plus rentable | train=no
+sales_by_hour | admin | heur de pointe | heure de pointes | les heure de pointe | train=no
+sales_by_store | admin | vente par boutik | ventes par boutiques | les vente par boutique | train=no
+compare_stores | admin | compar mes boutik | compare mes boutiques | comparer les boutique | train=no
+discounts_tax | admin | remise et tva du moi | remises et TVA du mois | les remise et la tva ce mois | train=no; per=month
+epay_summary | admin | paiemen electronik du moi | paiements électroniques du mois | les paiement electronique ce mois | train=no; per=month
+fiscal_summary | admin | facture certifié du moi | factures certifiées du mois | les facture certifiée ce mois | train=no; per=month
+users_count | admin | cb dutilisateur | conbien d'utilisateurs | combien d utilisateur | train=no
+whoami | admin | ki sui je | qui suis je | je suis qui | train=no
+app_purpose | admin | a koi sert cet aplication | à quoi sert cette aplication | a quoi ser cette application | train=no

@@ -28,10 +28,10 @@ final class UserContext
     public readonly string $role;
     private static ?self $current = null;
 
-    private function __construct(array $u)
+    private function __construct(array $u, ?array $perms = null)
     {
         $this->user = $u;
-        $this->perms = Auth::permissions();
+        $this->perms = $perms ?? Auth::permissions();
         $this->role = (string) (DB::value('SELECT name FROM roles WHERE id = ?', [$u['role_id']]) ?? '');
         $this->storeId = $u['store_id'] !== null ? (int) $u['store_id'] : null;
         $this->registerId = $u['register_id'] !== null ? (int) $u['register_id'] : null;
@@ -53,6 +53,17 @@ final class UserContext
     public static function reset(): void
     {
         self::$current = null;
+    }
+
+    /**
+     * Contexte de droits d'un autre compte, construit sans toucher à la session (banc de tests : rejouer une question
+     * « comme un caissier »). Réservé à l'évaluation : ne donne accès à rien de plus que le compte en question.
+     */
+    public static function forUser(array $u): self
+    {
+        $code = (string) DB::value('SELECT code FROM roles WHERE id = ?', [$u['role_id']]);
+        $perms = $code === 'admin' ? array_fill_keys(array_column(DB::all('SELECT code FROM permissions'), 'code'), true) : Auth::permissionsForRole((int) $u['role_id']);
+        return new self($u, $perms);
     }
 
     public function id(): int

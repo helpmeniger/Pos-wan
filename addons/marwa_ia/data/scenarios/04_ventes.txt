@@ -1,0 +1,123 @@
+# domaine: Ventes et facturation
+# code: VENTE
+sales_summary | admin | Combien de ventes aujourd'hui ? | ventes du jour ; combien ai-je vendu aujourd'hui | cb de vente ojourdui ; je veu voir les vente d'aujourdhui | per=today; db=sales_today
+sales_summary | admin | Montre-moi les ventes d'aujourd'hui. | affiche les ventes du jour | montr moi les vente dojourdui | per=today; db=sales_today
+sales_summary | admin | Combien j'ai vendu hier ? | ventes d'hier ; combien de ventes ont été réalisées hier | cb jai vendu ier ; vente d'hier | per=yesterday; db=sales_yesterday
+sales_summary | admin | Ventes de cette semaine | combien j'ai vendu cette semaine | vente de cette semène ; cb vendu cet semaine | per=week
+sales_summary | admin | Ventes de la semaine dernière | combien de ventes la semaine dernière | vente de la semaine derniere ; vente semaine pasé | per=last_week
+sales_summary | admin | Combien de ventes ce mois ? | ventes du mois | cb de vente ce moi | per=month; db=sales_month
+sales_summary | admin | Ventes du mois dernier | fais-moi sortir les ventes du mois dernier | fait moi sorti les vente du mois dernier ; vente du mois pasé | per=last_month
+sales_summary | admin | Ventes de l'année | combien j'ai vendu cette année | vente de lannee | per=year
+sales_summary | admin | Ventes de l'année 1999 | ventes en 1999 | vente de lanné 1999 | per=1999; has=Aucune vente
+sales_summary | admin | Et hier ? |  | et ier ? | ctx=VENTE-001; per=yesterday; db=sales_yesterday
+sales_summary | admin | Et la semaine dernière ? |  | et la semaine derniere | ctx=VENTE-004; per=last_week
+sales_summary | admin | Et le mois dernier ? |  | et le moi dernier ? | ctx=VENTE-006; per=last_month
+sales_summary | caissier | Combien j'ai vendu aujourd'hui ? | mes ventes du jour | cb jai vendu ojourdui | per=today; has=vos ventes
+sales_summary | caissier | Ventes de l'admin aujourd'hui |  | vente de ladmin ojourdui | out=refuse; has=propres ventes
+sales_summary | magasin | Combien de ventes aujourd'hui ? |  | cb de vente ojourdui | out=refuse
+sales_summary | admin | Ventes du caissier aujourd'hui | combien a vendu le caissier aujourd'hui | vente du caissier ojourdui | per=today; user=Caissier
+sales_summary | admin | Combien de tickets ont été émis aujourd'hui ? | nombre de tickets générés aujourd'hui ; combien de tickets sortis aujourd'hui | combien de ticket son sortie ojourdui ; cb de tiket emi aujourdhui | per=today
+sales_summary | admin | Donne-moi les chiffres du jour. | les chiffres d'aujourd'hui | done moi les chifre du jour | per=today
+sales_summary | gerant | Combien on a encaissé aujourd'hui ? | total encaissé aujourd'hui | cb on a encaissé ojourdui | per=today
+sales_summary | admin | Ventes d'hier au dépôt |  | vente dier o depot | per=yesterday; loc=Dépôt
+items_sold | admin | Combien d'articles avons-nous vendus aujourd'hui ? | nombre d'articles vendus aujourd'hui | cb darticle avon nou vendu ojourdui ; combien de piece vendu aujourdhui | per=today
+items_sold | admin | Et hier ? |  | et ier | ctx=VENTE-021; per=yesterday
+items_sold | admin | Quantité d'articles vendus ce mois | combien d'unités vendues ce mois | quantite darticle vendu ce mois | per=month
+items_sold | caissier | Combien d'articles j'ai vendus aujourd'hui ? |  | cb darticle jai vendu ojourdui | per=today
+top_products | admin | Et les 5 meilleurs ? |  | et les 5 meilleur ? | ctx=VENTE-021; per=today; lim=5
+top_products | admin | Quels sont les cinq produits les plus vendus ? | top 5 des articles ; les 5 meilleures ventes | kel son les 5 produi les plus vendu ; top 5 des article | lim=5
+top_products | admin | Quels produits ont le mieux marché cette semaine ? | ce qui s'est le mieux vendu cette semaine | kel produi on le mieu marché cette semaine | per=week
+top_products | admin | Meilleures ventes du mois | articles vedettes du mois | meilleur vente du moi | per=month
+top_products | admin | Top 10 des articles d'hier | les 10 articles les plus vendus hier | top 10 des article dier | per=yesterday; lim=10
+top_products | caissier | Quels sont les produits les plus vendus ? |  | produi les plus vendu | out=refuse
+top_products | gerant | Qu'est-ce qui se vend le mieux ? | ce qui se vend le mieux | kes ki se vend le mieu |
+product_sales | admin | Combien de savon a-t-on vendu ce mois ? | ventes du savon ce mois | cb de savon vendu ce moi | prod=Savon; per=month
+product_sales | admin | Est-ce que le sucre se vend bien ? | combien on a vendu de sucre | es ke le sucre se vend bien | prod=Sucre
+product_sales | admin | Ventes de l'eau minérale cette semaine | combien d'eau minérale vendue cette semaine | vente de leau mineral cette semaine | prod=Eau; per=week
+product_sales | admin | Et le dentifrice ? |  | et le dentifrisse ? | ctx=VENTE-032; prod=Dentifrice
+product_sales | admin | Combien on en a vendu ? | quantité vendue de l'article | cb on en a vendu | out=clarify
+product_sales | magasin | Combien de savon vendu ce mois ? |  | cb de savon vendu | out=refuse
+revenue | admin | Quel est le chiffre d'affaires du mois ? | chiffre d'affaires mensuel ; mon CA du mois | kel est le chifre dafaire du mois ; ca du moi | per=month
+revenue | admin | Chiffre d'affaires d'aujourd'hui | CA du jour | chifre dafaire dojourdui | per=today
+revenue | admin | Quel est mon chiffre d'affaires de l'année ? | CA de l'année | kel est mon chifr dafair de lannee | per=year
+revenue | magasin | Chiffre d'affaires du mois |  | chifre dafaire du mois | out=refuse
+revenue | gerant | Recette de la semaine | chiffre d'affaires de la semaine | recete de la semaine | per=week
+sales_compare | admin | Compare les ventes de cette semaine avec la semaine dernière. | ventes de cette semaine par rapport à la semaine dernière | compar les vente de cette semaine avec la semaine derniere | per=week; per2=last_week
+sales_compare | admin | Compare ce mois avec le mois dernier. | ventes de ce mois contre le mois dernier | compar ce mois avec le mois dernier | per=month; per2=last_month
+sales_compare | admin | Compare aujourd'hui et hier. | ventes d'aujourd'hui par rapport à hier | compar ojourdui et ier | per=today; per2=yesterday
+sales_compare | admin | Fais la comparaison. |  | fai la comparaison | ctx=VENTE-010
+sales_compare | admin | Compare avec la semaine dernière. |  | compar avec la semaine derniere | ctx=VENTE-004; per=week; per2=last_week
+sales_compare | admin | Est-ce que je vends plus que le mois dernier ? | les ventes sont-elles en hausse par rapport au mois dernier | es ke je vend plus ke le mois dernier |
+sales_decline | admin | Pourquoi mes ventes ont diminué ? | pourquoi les ventes baissent ; explique la baisse des ventes | pk mes vente on diminué ; pourkoi les vente baisse |
+sales_decline | gerant | Pourquoi je vends moins cette semaine ? | pourquoi mes ventes ont-elles diminué cette semaine | pk je vend moin cette semaine |
+best_day | admin | Quelle est la meilleure journée de vente du mois ? | meilleur jour de vente ; jour record | kel est la meilleur journé de vente du mois |
+best_day | admin | Quel jour j'ai le plus vendu ? | quel est mon jour record | kel jour jai le plus vendu |
+sales_by_user | admin | Donne-moi les ventes par caissier. | ventes par vendeur ; ventes par utilisateur | done moi les vente par caissié ; vente par vendeur |
+sales_by_user | admin | Ventes par vendeur cette semaine | chiffre par employé cette semaine | vente par vendeur cet semaine | per=week
+sales_by_user | caissier | Ventes par caissier |  | vente par caissier | out=refuse
+top_cashier | admin | Quel caissier a réalisé le plus de ventes ? | meilleur vendeur ; qui a le plus vendu | kel caissier a realisé le plus de vente ; ki a le plus vendu |
+top_cashier | gerant | Qui est mon meilleur vendeur ce mois ? | meilleur caissier du mois | ki est mon meilleur vendeur ce moi |
+sales_by_store | admin | Ventes par boutique ce mois | chiffre de chaque boutique ce mois | vente par boutik ce mois | per=month
+sales_by_store | admin | Combien a vendu chaque magasin ? | ventes de chaque magasin | cb a vendu chak magasin |
+compare_stores | admin | Compare les ventes de mes deux boutiques. | compare les performances de mes boutiques ; quelle boutique vend le plus | compar les vente de mes 2 boutik ; kel boutique vend le plus |
+compare_stores | admin | Quel magasin réalise le meilleur chiffre ? | classement des boutiques | kel magasin realise le meilleur chifre |
+sales_by_method | admin | Ventes par mode de paiement ce mois | répartition espèces, mobile money, carte ce mois | vente par mode de paiemen ce mois | per=month
+sales_by_method | admin | Combien en mobile money aujourd'hui ? | encaissements en mobile money du jour | cb en mobil money ojourdui ; cb en momo aujourdhui | per=today
+sales_by_method | gerant | Combien payé par carte cette semaine ? | paiements par carte de la semaine | cb payé par carte cette semaine | per=week
+sales_by_hour | admin | À quelle heure je vends le plus ? | heure de pointe ; affluence par heure | a kel heure je vend le plus ; heur de pointe |
+sales_by_hour | gerant | Quand est-ce qu'il y a le plus de monde ? | quelle est l'heure d'affluence | kan es kil ya le plus de monde |
+sales_by_category | admin | Ventes par catégorie | ventes par rayon ; quelle catégorie vend le plus | vente par categori ; vente par rayon |
+sales_by_category | admin | Quel rayon marche le mieux ce mois ? | meilleure catégorie du mois | kel rayon marche le mieu ce mois | per=month
+last_sale | admin | Quelle est la dernière vente ? | dernière vente ; dernier ticket créé | kel est la derniere vente ; dernier tiket | db=last_sale
+last_sale | admin | À quelle heure le dernier ticket a-t-il été créé ? | date et heure du dernier ticket | a kel heure le dernier ticket a ete creé | db=last_sale
+last_sale | admin | Qui a fait la dernière vente ? | quel utilisateur a généré le dernier ticket | ki a fai la derniere vente | db=last_sale
+last_sale | caissier | Ma dernière vente | quelle est ma dernière vente | ma derniere vente |
+last_sales | admin | Je veux voir les dernières ventes. | dernières ventes ; liste des derniers tickets | je veu voir les dernier vente ; les dernier ticket |
+last_sales | admin | Donne-moi les 5 dernières ventes. | les 5 derniers tickets | done moi les 5 dernier vente | lim=5
+last_sales | admin | Les 20 derniers tickets |  | les 20 dernier tiket | lim=20
+last_transactions | admin | Donne-moi les cinq dernières transactions. | les 5 dernières opérations | done moi les 5 derniere transaction | lim=5
+last_transactions | admin | Quelles sont les dernières opérations ? | dernières transactions | kel son les derniere operation |
+cancelled_sales | admin | Combien de ventes annulées ce mois ? | ventes annulées du mois ; annulations du mois | cb de vente anulé ce mois | per=month
+cancelled_sales | admin | Qui a annulé des ventes aujourd'hui ? | annulations d'aujourd'hui | ki a anulé des vente ojourdui | per=today
+cancelled_sales | gerant | Y a-t-il eu des annulations cette semaine ? | ventes annulées cette semaine | ya til eu des anulation cette semaine | per=week
+returns | admin | Combien de retours ce mois ? | retours clients du mois | cb de retour ce mois | per=month
+returns | admin | Quels articles ont été retournés cette semaine ? | retours de la semaine | kel article on ete retourné cette semaine | per=week
+returns | gerant | Montant des remboursements du mois | total des retours remboursés ce mois | montan des remboursemen du mois | per=month
+discounts_tax | admin | Combien de remises accordées ce mois ? | total des remises du mois | cb de remise acordé ce mois | per=month
+discounts_tax | admin | Remises et TVA du mois | TVA et remises du mois | remise et tva du mois | per=month
+discounts_tax | gerant | Quel est le montant brut et net des ventes ? | montant brut et net | kel est le montan brut et net des vente |
+daily_report | admin | Fais-moi un bilan de la journée. | bilan du jour ; résumé de la journée | fai moi un bilan de la journé ; bilan du jour |
+daily_report | admin | Fais-moi le point. | fais le point de la journée ; où on en est | fai moi le poin ; ou on en est |
+daily_report | gerant | Ça donne quoi aujourd'hui ? | qu'est-ce que ça donne aujourd'hui | sa done koi ojourdui |
+activity_summary | admin | Fais-moi un bilan complet. | résumé complet de mon activité ; bilan du mois | fai moi un bilan complé |
+activity_summary | admin | Comment va mon commerce ? | situation de mon entreprise | coment va mon comerce |
+anomalies | admin | Y a-t-il des ventes suspectes ? | opérations suspectes ; transactions inhabituelles | ya til des vente suspecte |
+anomalies | caissier | Identifie les anomalies. |  | identifi les anomali | out=refuse
+action_sale_cancel | admin | Annule la vente V2026-000001 pour erreur de saisie. |  | anule la vente V2026-000001 pour erreur de saisie | out=blocked
+action_sale_cancel | caissier | Annule la vente V2026-000002 pour erreur. |  | anule la vente V2026-000002 pour erreur | out=refuse
+action_sale_cancel | admin | Annule cette vente. | je veux annuler une vente | anul cette vente | out=blocked
+action_unsupported | admin | Rembourse le client de la dernière vente. | rembourse le client | rembours le client de la derniere vente |
+action_navigate | admin | Ouvre l'historique des ventes. | va sur l'historique des ventes | ouvr listorique des vente |
+security | caissier | Change le total de la vente d'hier. | modifie le montant du ticket | chang le total de la vente dier |
+security | admin | Supprime toutes les ventes du mois. | efface toutes les ventes | suprime toute les vente du mois |
+report | admin | Ventes d'hier en PDF | rapport des ventes d'hier en PDF | vente dier en pdf | per=yesterday
+report | admin | Exporte les ventes du mois en Excel. | ventes du mois en Excel | export les vente du mois en excel |
+report | caissier | Bénéfice du mois en PDF |  | benefice du mois en pdf | out=refuse
+help | admin | Comment faire une vente ? | comment vendre un article ; les étapes d'une vente | coment fair une vente ; comen vendre |
+help | caissier | Comment annuler une vente ? | procédure pour annuler un ticket | coment anulé une vente |
+help | caissier | Comment faire un retour client ? | comment enregistrer un retour | coment fair un retour clien |
+help | caissier | Comment faire une remise à la caisse ? | comment accorder une remise | coment fair une remise a la caisse |
+help | caissier | Comment changer le prix pendant la vente ? | comment modifier un prix à la caisse | coment changé le pri pendan la vente |
+help | caissier | Comment mettre une vente en attente ? | comment reprendre une vente en attente | coment metre une vente en atente |
+help | caissier | Comment vendre à crédit ? | comment faire une vente à crédit | coment vendr a credi |
+help | admin | Comment faire un devis ? | comment créer un devis | coment fair un devi |
+help | caissier | Pourquoi ça ne marche pas quand je valide ? | pourquoi je ne peux pas valider la vente | pourquoi sa marche pas quand je valid ; pk je peu pas validé |
+help | caissier | Comment encaisser en mobile money ? | comment enregistrer un paiement mobile money | coment encaissé en mobil money |
+help | caissier | Comment faire un paiement mixte espèces et carte ? | comment encaisser avec deux moyens de paiement | coment fair un paiemen mixte |
+help | admin | Que faire en cas de coupure d'Internet pendant une vente ? | la caisse fonctionne-t-elle hors connexion | ke fair en cas de coupure dinternet |
+concept | caissier | C'est quoi le panier moyen ? | que veut dire panier moyen | c koi le panié moyen |
+concept | admin | C'est quoi un avoir ? | à quoi sert un avoir | c koi un avoir |
+concept | caissier | C'est quoi le prix de gros ? | comment fonctionne le prix de gros | c koi le pri de gro |
+whats_wrong | admin | Regarde un peu ce qui se passe. | qu'est-ce qui se passe | regarde un peu ce ki se passe ; kes ki se passe |
+sales_summary | admin | Ventes du 1er au 5 janvier 2001 |  | vente du 1er o 5 janvier 2001 | has=Aucune vente
+sales_summary | admin | Combien de ventes à la boutique centre ce mois ? | ventes de la boutique centre ce mois | cb de vente a la boutik centre ce mois | per=month; loc=Boutique Centre

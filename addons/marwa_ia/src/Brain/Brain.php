@@ -24,7 +24,19 @@ final class Brain
     /** Intention « de base » d'une comparaison, pour les questions de suite (« et le mois dernier ? »). */
     private const BASE = ['sales_compare' => 'sales_summary', 'sales_decline' => 'sales_summary', 'stock_by_location' => 'stock_value'];
     private const PERIOD_INTENTS = ['sales_summary', 'revenue', 'profit', 'expenses_total', 'cash_in', 'cash_out', 'top_products', 'sales_by_user', 'sales_by_store', 'sales_by_method',
-        'sales_by_category', 'cancelled_sales', 'returns', 'discounts_tax', 'purchases_total', 'income_vs_expenses', 'daily_report', 'activity_summary', 'anomalies', 'top_cashier', 'epay_summary', 'fiscal_summary', 'transfers'];
+        'sales_by_category', 'cancelled_sales', 'returns', 'discounts_tax', 'purchases_total', 'income_vs_expenses', 'daily_report', 'activity_summary', 'anomalies', 'top_cashier', 'epay_summary', 'fiscal_summary', 'transfers', 'stock_in_total', 'product_sales', 'items_sold', 'customer_payments', 'expenses_by_category', 'margin_rate', 'most_profitable', 'best_day'];
+
+    /** Expressions courantes (texte normalisé) → intention. */
+    private const IDIOMS = [
+        '/^(alors )?(ou (on|nous) en (est|sommes)|ou en (est on|sommes nous)|on en est ou)\b/' => 'daily_report',
+        '/^(alors )?(ca|sa|cela) (donne|dit) quoi\b/' => 'daily_report',
+        '/^(fais|fait|faites|donne)( moi)? (le|un) (petit )?point\b/' => 'daily_report',
+        '/^(quoi de neuf|quelles nouvelles)\b.{0,25}\b(boutique|magasin|commerce|ventes?|affaires?)\b/' => 'daily_report',
+        '/^(donne|montre|sors)( moi)? (les|mes) chiffres$/' => 'daily_report',
+        '/^(regarde|vois|jette un oeil)( un peu)?( ce qui se passe| la situation)?$/' => 'whats_wrong',
+        '/^(qu est ce qui|kes ki) (se passe|cloche|ne va pas|bloque)\b/' => 'whats_wrong',
+        '/^(fais|fait) le necessaire$|^arrange( moi)? ca$/' => 'whats_wrong',
+    ];
 
     /** @var callable */
     private $emit;
@@ -33,6 +45,11 @@ final class Brain
     private array $state;
     private string $question;
     private int $seed;
+    /** Analyse à blanc (banc de tests, « tester une formulation ») : rien n'est enregistré, aucun modèle externe n'est appelé. */
+    private bool $dry = false;
+    /** Trace de la compréhension : route, issue, paramètres, corrections de saisie. */
+    private array $trace = ['outcome' => null, 'slots' => [], 'intents' => [], 'corrected' => [], 'tool' => null];
+    private bool $inherit = false;
     private array $out = ['text' => '', 'html' => null, 'blocks' => [], 'sources' => [], 'links' => [], 'suggestions' => [], 'intent' => null, 'confidence' => null, 'provider' => null, 'proposal' => null, 'open' => null, 'legacy' => null];
 
     /**
@@ -55,13 +72,13 @@ final class Brain
         try {
             $b->route($page);
         } catch (BusinessException $e) {
-            $msg = preg_replace('/^AUTH_REQUIRED:/', '', $e->getMessage());
+            $msg = preg_replace('/^(AUTH_REQUIRED|CLARIFY):/', '', $e->getMessage());
             $b->say($msg);
-            Learning::log($b->question, $b->out['intent'], 0, 'refused');
+            $this->log($b->question, $b->out['intent'], 0, 'refused');
         } catch (\Throwable $e) {
             \App\Core\Logger::error('marwa_ai', ['error' => $e->getMessage(), 'file' => basename($e->getFile()) . ':' . $e->getLine()]);
             $b->say('Je n\'ai pas pu terminer cette analyse (erreur technique). Aucun chiffre n\'est donc donné ; réessayez ou reformulez.');
-            Learning::log($b->question, $b->out['intent'], 0, 'error');
+            $this->log($b->question, $b->out['intent'], 0, 'error');
         }
         Memory::saveState((int) $b->conv['id'], $b->state);
         $payload = ['blocks' => $b->out['blocks'], 'html' => $b->out['html'], 'links' => $b->out['links'], 'suggestions' => array_values(array_unique($b->out['suggestions'])), 'open' => $b->out['open'], 'proposal' => $b->out['proposal'] ? ['id' => $b->out['proposal']['id'], 'label' => $b->out['proposal']['label'], 'summary' => $b->out['proposal']['summary'], 'sensitive' => $b->out['proposal']['sensitive']] : null];
@@ -69,7 +86,56 @@ final class Brain
             'payload_json' => json_encode($payload, JSON_UNESCAPED_UNICODE), 'intent' => $b->out['intent'], 'confidence' => $b->out['confidence'],
             'sources' => mb_substr(implode(',', array_unique($b->out['sources'])), 0, 500) ?: null, 'provider' => $b->out['provider'], 'duration_ms' => (int) round((microtime(true) - $t) * 1000)]);
         $emit('done', ['message_id' => $mid, 'sources' => array_values(array_unique($b->out['sources'])), 'links' => $b->out['links'], 'suggestions' => $payload['suggestions'], 'proposal' => $b->out['proposal']]);
-        return ['message_id' => $mid, 'conversation_id' => (int) $b->conv['id']] + $b->out;
+        return ['message_id' => $mid, 'conversation_id' => (int) $b->conv['id'], 'trace' => $b->trace] + $b->out;
+    }
+
+    /**
+     * Analyse à blanc d'une question : même compréhension et mêmes lectures que handle(), mais sans rien enregistrer
+     * (ni conversation, ni journal, ni proposition d'action) et sans appel à un modèle externe.
+     * @param array $state contexte de conversation (celui renvoyé par l'analyse précédente)
+     * @return array{intent: ?string, outcome: ?string, slots: array, intents: string[], text: string, state: array, corrected: array, ms: float}
+     */
+    public static function analyze(string $question, array $state = [], ?UserContext $u = null): array
+    {
+        $b = new self();
+        $b->dry = true;
+        $b->emit = static function (): void {
+        };
+        $b->u = $u ?? UserContext::current();
+        $b->conv = ['id' => 0, 'message_count' => 0, 'title' => ''];
+        $b->state = $state;
+        $b->question = mb_substr(trim($question), 0, 500);
+        $b->seed = crc32($b->question);
+        $t = microtime(true);
+        try {
+            $b->route(null);
+        } catch (BusinessException $e) {
+            $b->say(preg_replace('/^(AUTH_REQUIRED|CLARIFY):/', '', $e->getMessage()));
+            $b->trace['outcome'] ??= 'blocked';
+        } catch (\Throwable $e) {
+            $b->say('Erreur technique : ' . $e->getMessage() . ' (' . basename($e->getFile()) . ':' . $e->getLine() . ')');
+            $b->trace['outcome'] = 'error';
+        }
+        return ['intent' => $b->out['intent'], 'outcome' => $b->trace['outcome'], 'slots' => $b->trace['slots'], 'intents' => $b->trace['intents'], 'tool' => $b->trace['tool'],
+            'text' => $b->out['text'] !== '' ? $b->out['text'] : trim(strip_tags((string) $b->out['html'])), 'blocks' => $b->out['blocks'], 'proposal' => $b->out['proposal'], 'state' => $b->state,
+            'corrected' => $b->trace['corrected'], 'confidence' => $b->out['confidence'], 'ms' => round((microtime(true) - $t) * 1000, 1)];
+    }
+
+    /** Journal d'apprentissage (sauf à blanc) et issue de la compréhension. */
+    private function log(string $q, ?string $intent, float $conf, string $outcome): void
+    {
+        $this->trace['outcome'] = ['answered' => 'answer', 'fallback' => 'answer', 'refused' => 'refuse', 'clarify' => 'clarify', 'not_understood' => 'unknown', 'error' => 'error', 'proposed' => 'propose', 'blocked' => 'blocked'][$outcome] ?? $outcome;
+        if ($intent !== null) {
+            $this->trace['intents'][] = $intent;
+        }
+        if (!$this->dry) {
+            Learning::log($this->question, $intent, $conf, in_array($outcome, ['proposed', 'blocked'], true) ? 'answered' : $outcome);
+        }
+    }
+
+    private function llm(): bool
+    {
+        return !$this->dry && Providers::available();
     }
 
     private function status(string $s): void
@@ -94,63 +160,253 @@ final class Brain
 
     private function route(?string $page): void
     {
-        $q = $this->question;
-        $n = Text::norm($q);
-        if ($q === '') {
+        $raw = $this->question;
+        if ($raw === '') {
             $this->say('Posez-moi une question sur votre activité ou sur le logiciel, par exemple « valeur du stock », « bilan de la journée » ou « comment faire un inventaire ? ».');
+            $this->trace['outcome'] = 'clarify';
             return;
         }
-        // Hors domaine (garde-fou existant)
-        if ($r = Scope::guard($n)) {
-            $this->legacy($r);
-            Learning::log($q, 'hors_domaine', 1, 'refused');
+        // 0. Récupération des fautes : le moteur lit le texte remis en forme, la question d'origine reste affichée
+        $clean = Recover::clean($raw);
+        $q = $clean['text'] !== '' ? $clean['text'] : $raw;
+        $this->trace['corrected'] = $clean['changes'];
+        $n = Text::norm($q);
+        // 1. Tentative de manipulation : refus expliqué
+        if ($msg = Guard::check($n)) {
+            $this->out['intent'] = 'security';
+            $this->say($msg);
+            $this->log($q, 'security', 1, 'refused');
             return;
         }
-        // Action demandée
+        // 2. Action demandée explicitement
         if ($a = Actions::detect($q, $this->u)) {
-            $this->status('Je prépare l\'opération et vérifie vos droits…');
-            $r = Actions::propose($a[0], $a[1], $this->u, (int) $this->conv['id'], $q);
-            $this->out['intent'] = 'action_' . $a[0];
-            $this->say($r['text']);
-            if (!empty($r['link'])) {
-                $this->out['links'][] = $r['link'];
-            }
-            $this->out['proposal'] = $r['proposal'];
-            Learning::log($q, 'action_' . $a[0], 1, !empty($r['refused']) ? 'refused' : 'answered');
+            $this->action($a[0], $a[1], $q);
             return;
         }
-        // Domaines du moteur 1.x conservés : rapports PDF / Excel, marketing, formation, vérification, conseils
-        if (preg_match('/\b(pdf|excel|csv|imprime\w*|telecharg\w*)\b/', $n) || preg_match('/^rapport\b/', $n) || (Marketing::isMarketing($n) && !preg_match('/\b(valeur|combien|chiffre)\b/', $n))
-            || Trainer::isTraining($n) || Checkup::isCheckup($n) || (Advisor::isAdvice($n) && !preg_match('/\b(combien|valeur|quel est|quelle est|pourquoi)\b/', $n))) {
-            $this->legacyAsk($q);
+        $c = Nlu::classify($q);
+        $top = $c['score'] >= Nlu::THRESHOLD ? $c['intent'] : null;
+        $follow = !empty($this->state['intent']) && (preg_match('/^(et|puis|pareil|idem|aussi|alors|mais|sans|retire|enleve|hors|sauf)\b/', $n) || mb_strlen($n) <= 22);
+        // Formules de politesse reconnues sans ambiguïté (« comment vas-tu ? », « merci, c'est tout »)
+        if (preg_match('/^(comment (vas tu|va tu|allez vous|tu vas|ca va)|ca va( bien)?( marwa)?$|tu vas bien)/', $n) && $this->general('wellbeing', $q, $c)) {
+            return;
+        }
+        if (preg_match('/^((ok|super|parfait|top|bien|d accord) )?merci\b/', $n) && !preg_match('/\b(combien|quel|quelle|quels|montre|donne|affiche|fais|et (maintenant|les|le|la)|ventes?|stock|caisse|produits?|clients?|rapport)\b/', $n)
+            && $this->general('thanks', $q, $c)) {
+            return;
+        }
+        // 3. Conversation : salutations, remerciements, plaisanteries, notions de gestion
+        if ($top && General::isGeneral($top) && ($c['score'] >= 0.55 || count($c['tokens']) <= 4) && !($follow && $c['score'] < 0.7)) {
+            if ($top !== 'concept' || (($k = General::concept($q)) && ($k['hits'] >= 2 || $c['score'] >= 0.6))) {
+                if ($this->general($top, $q, $c)) {
+                    return;
+                }
+            }
+        }
+        // Notion de gestion demandée (« c'est quoi le stock minimum ? ») : explication, sauf intention de données très nette
+        if (!($top && isset(Catalog::TOOLS[$top]) && $c['score'] >= 0.9) && !$follow && General::concept($q)
+            && preg_match('/^(c est quoi|c quoi|qu est ce qu|que veu[tx] dire|que signifie|a quoi ser[tv]|pourquoi|comment fonctionne|quelle est la difference|difference entre)/', $n) && $this->general('concept', $q, $c)) {
+            return;
+        }
+        // 4. Hors domaine (garde-fou 1.x : météo, politique, santé…)
+        if ($r = Scope::guard($n)) {
+            $this->out['intent'] = 'out_of_scope';
+            $this->legacy($r);
+            $this->log($q, 'out_of_scope', 1, 'refused');
+            return;
+        }
+        // Expressions toutes faites que les mots seuls ne permettent pas de classer
+        if (true) {
+            foreach (self::IDIOMS as $re => $idiom) {
+                if (preg_match($re, $n)) {
+                    $this->answerIntent($q, ['intent' => $idiom, 'score' => 0.9, 'forced' => true] + $c);
+                    return;
+                }
+            }
+        }
+        // 5. Conseils calculés sur les données, alertes, diagnostic de caisse (moteur Expert)
+        if (in_array($top, ['advice', 'whats_wrong', 'cash_diagnostic'], true)) {
+            $this->answerIntent($q, $c);
+            return;
+        }
+        // 6. Domaines du moteur 1.x conservés : rapports PDF / Excel, formation, marketing, contrôle, conseils thématiques
+        $howTo = (bool) preg_match('/^(comment|pourquoi|ou |que faire|c est quoi|a quoi)\b/', $n);
+        if (!$howTo && (preg_match('/\b(pdf|excel|csv|imprime\w*|telecharg\w*|exporte\w*)\b/', $n) || preg_match('/^rapport\b/', $n))) {
+            $this->legacyAsk($q, 'report');
+            return;
+        }
+        if (Trainer::isTraining($n) && !($top && $top !== 'training' && $c['score'] >= 0.55)) {
+            $this->legacyAsk($q, 'training');
+            return;
+        }
+        if (Checkup::isCheckup($n) && !($top && $top !== 'checkup' && $c['score'] >= 0.55)) {
+            $this->legacyAsk($q, 'checkup');
+            return;
+        }
+        if (Marketing::isMarketing($n) && !preg_match('/\b(valeur|combien|chiffre)\b/', $n)) {
+            $this->legacyAsk($q, 'marketing');
+            return;
+        }
+        if (Advisor::isAdvice($n) && !preg_match('/\b(combien|valeur|quel est|quelle est|pourquoi)\b/', $n) && !($top && isset(Catalog::TOOLS[$top]) && $c['score'] >= 0.6)) {
+            $this->legacyAsk($q, 'advice_topic');
             return;
         }
         if (preg_match('/\b(que sais tu faire|que peux tu faire|tu sais faire quoi|tu peux faire quoi|qui es tu|tu es qui|presente toi|tes (capacites|fonctionnalites))\b|^aide( moi)?$/', $n)) {
             $this->capabilities();
             return;
         }
-        // Définitions (brut, net, TVA, marge…) et types de transactions
-        if (preg_match('/\b(c est quoi|qu est ce que|que veut dire|que signifie|definition|difference entre|quelle difference|explique moi (le|la|les) (terme|notion|difference))\b/', $n) && ($ex = Transactions::explain($q))) {
+        // 7. Définitions (brut, net, TVA, marge…) et types de transactions
+        if (preg_match('/\b(c est quoi|qu est ce que|que veu[tx] dire|que signifie|definition|difference entre|quelle difference|explique moi (le|la|les) (terme|notion|difference))\b/', $n) && ($ex = Transactions::explain($q))) {
             $this->out['intent'] = 'definition';
             $this->out['html'] = $ex['html'];
             ($this->emit)('html', ['html' => $ex['html']]);
             $this->out['text'] = strip_tags($ex['html']);
-            Learning::log($q, 'definition', 1, 'answered');
+            $this->log($q, 'definition', 1, 'answered');
             return;
         }
         if (preg_match('/\b(types? de (transactions?|mouvements?|operations?))\b/', $n)) {
             $this->say('Voici les types de mouvements que POS Marwa enregistre, avec leurs effets sur le stock, la caisse et les comptes.');
             $this->block('table', ['title' => 'Types de transactions'] + Transactions::listing());
             $this->out['intent'] = 'transaction_types';
+            $this->log($q, 'transaction_types', 1, 'answered');
             return;
         }
-        // Questions d'aide / de procédure
-        if (preg_match('/^(comment|explique|expliquez|aide moi|ou (se trouve|trouver|est)|ou puis je|que faire|quelle est la procedure|les etapes|pourquoi (je ne peux|ne puis|ca ne|le ticket ne|l imprimante))\b|\b(comment (on|je|faire|creer|ajouter|enregistrer|faire un|configurer|utiliser|annuler|cloturer|consulter))\b/', $n)
-            && !preg_match('/\b(combien|valeur de mon|quel est le (solde|chiffre|benefice))\b/', $n)) {
+        // Notion de gestion demandée sans que le classifieur l'ait reconnue (« c'est quoi la rotation du stock ? »)
+        if (preg_match('/^(c est quoi|qu est ce qu|que veu[tx] dire|que signifie|a quoi sert|a quoi servent|pourquoi (faut il|faire|mon|ma|mes|le|la|les|un|une)|comment fonctionne|quelle est la difference|difference entre|explique moi)\b/', $n)
+            && !($top && isset(Catalog::TOOLS[$top]) && $c['score'] >= 0.6) && General::concept($q) && $this->general('concept', $q, $c)) {
+            return;
+        }
+        // 8. Intention hors catalogue reconnue par le classifieur (aide, action, rapport, limites…)
+        if ($top && !isset(Catalog::TOOLS[$top]) && $c['score'] >= 0.5 && !$follow && !($howTo && str_starts_with($top, 'action_')) && $this->dispatch($top, $q, $c)) {
+            return;
+        }
+        // 9. Questions d'aide / de procédure (formulations en « comment… », « où se trouve… »)
+        if (preg_match('/^(comment|explique|expliquez|aide moi|ou (se trouve|trouver|est|voir|regler|changer|indiquer)|ou puis je|que faire|quelle est la procedure|les etapes|pourquoi (je ne peux|ne puis|ca ne|le ticket ne|l imprimante))\b|\b(comment (on|je|faire|creer|ajouter|enregistrer|faire un|configurer|utiliser|annuler|cloturer|consulter))\b|\b(que faire|quoi faire|comment faire|je fais quoi|on fait quoi)$/', $n)
+            && !preg_match('/\b(combien|valeur de mon|quel est le (solde|chiffre|benefice))\b/', $n) && !($top && isset(Catalog::TOOLS[$top]) && $c['score'] >= 0.7)) {
             $this->help($q);
             return;
         }
         $this->data($q, $page);
+    }
+
+    /** Conversation et notions (moteur General). Faux si rien d'adapté. */
+    private function general(string $intent, string $q, array $c): bool
+    {
+        $r = General::reply($intent, $q, $this->u, $this->seed);
+        if (!$r) {
+            return false;
+        }
+        $this->out['intent'] = $intent;
+        $this->out['confidence'] = $c['score'];
+        if (!empty($r['title'])) {
+            $this->trace['slots']['concept'] = $r['concept'];
+        }
+        $this->say($r['text']);
+        $this->out['suggestions'] = array_merge($this->out['suggestions'], $r['suggestions'] ?? []);
+        $this->log($q, $intent, $c['score'], 'answered');
+        return true;
+    }
+
+    /** Intentions hors catalogue de données reconnues par le classifieur. Faux si elle n'est pas traitée ici. */
+    private function dispatch(string $intent, string $q, array $c): bool
+    {
+        $this->out['confidence'] = $c['score'];
+        if (str_starts_with($intent, 'action_')) {
+            $tool = substr($intent, 7);
+            $n = Text::norm($q);
+            // Une question (« que dois-je commander ? ») n'est pas une demande d'opération
+            if (preg_match('/^(que|quoi|quel|quelle|quels|quelles|combien|est ce|qui|quand|ou|pourquoi|comment|y a t il)\b|\b(dois je|faut il|doit on)\b/', $n) && $tool !== 'navigate') {
+                return false;
+            }
+            $params = match ($tool) {
+                'stock_add' => Actions::stockAddParams($q, $n, $this->u),
+                'inventory_start' => ['location' => Nlu::location($n, $this->u)],
+                'cash_out' => ['amount' => preg_match('/(\d[\d ]*(?:[.,]\d+)?)/', $n, $m) ? (float) str_replace([' ', ','], ['', '.'], $m[1]) : 0.0, 'reason' => preg_match('/\b(?:pour|motif|raison)\s*:?\s+(.{3,120})$/u', $n, $r) ? trim($r[1]) : ''],
+                'sale_cancel' => ['number' => preg_match('/\b([a-z]{1,3}\d{4}[- ]\d{3,6})\b/i', $q, $m) ? strtoupper(str_replace(' ', '-', $m[1])) : '', 'reason' => preg_match('/\b(?:pour|motif|raison|car)\s*:?\s+(.{3,120})$/u', $n, $r) ? trim($r[1]) : ''],
+                'unsupported' => ['message' => 'Je ne fais pas cette opération moi-même : elle se fait dans l\'écran concerné du logiciel, pour que l\'historique soit tenu. Dites-moi « comment … ? » et je vous guide pas à pas.'],
+                default => [],
+            };
+            $this->action($tool, $params, $q);
+            return true;
+        }
+        switch ($intent) {
+            case 'help':
+                $this->help($q);
+                return true;
+            case 'capabilities':
+                $this->capabilities();
+                return true;
+            case 'report':
+            case 'training':
+            case 'marketing':
+            case 'checkup':
+            case 'advice_topic':
+                $this->legacyAsk($q, $intent);
+                return true;
+            case 'definition':
+                if ($ex = Transactions::explain($q)) {
+                    $this->out['intent'] = 'definition';
+                    $this->out['html'] = $ex['html'];
+                    ($this->emit)('html', ['html' => $ex['html']]);
+                    $this->out['text'] = strip_tags($ex['html']);
+                    $this->log($q, 'definition', $c['score'], 'answered');
+                    return true;
+                }
+                return General::concept($q) ? $this->general('concept', $q, $c) : false;
+            case 'transaction_types':
+                $this->say('Voici les types de mouvements que POS Marwa enregistre, avec leurs effets sur le stock, la caisse et les comptes.');
+                $this->block('table', ['title' => 'Types de transactions'] + Transactions::listing());
+                $this->out['intent'] = 'transaction_types';
+                $this->log($q, 'transaction_types', $c['score'], 'answered');
+                return true;
+            case 'security':
+                if ($c['score'] < 0.62) {
+                    return false;
+                }
+                $this->out['intent'] = 'security';
+                $this->say('Je ne peux pas faire cela : je travaille uniquement avec les droits du compte connecté, sans contourner les contrôles ni modifier ou masquer des opérations enregistrées.');
+                $this->log($q, 'security', $c['score'], 'refused');
+                return true;
+            case 'out_of_scope':
+                if ($c['score'] < 0.62) {
+                    return false;
+                }
+                $this->out['intent'] = 'out_of_scope';
+                $this->say('Ce sujet sort de ce que je connais : je suis l\'assistant de POS Marwa, à l\'aise avec votre gestion (ventes, stock, caisse, clients, fournisseurs) et l\'utilisation du logiciel. Sur ce terrain-là, je vous aide volontiers.');
+                $this->log($q, 'out_of_scope', $c['score'], 'refused');
+                return true;
+        }
+        if (General::isGeneral($intent)) {
+            return $this->general($intent, $q, $c);
+        }
+        return false;
+    }
+
+    /** Opération demandée : vérifications, clarification si besoin, proposition à confirmer (jamais d'exécution ici). */
+    private function action(string $tool, array $params, string $q): void
+    {
+        $this->status('Je prépare l\'opération et vérifie vos droits…');
+        $this->out['intent'] = 'action_' . $tool;
+        $this->trace['tool'] = $tool;
+        $slots = [];
+        foreach (['quantity', 'amount', 'number', 'reason'] as $k) {
+            if (isset($params[$k]) && $params[$k] !== '' && $params[$k] !== 0.0) {
+                $slots[$k] = $params[$k];
+            }
+        }
+        foreach (['product', 'location', 'exclude'] as $k) {
+            if (!empty($params[$k]['name'])) {
+                $slots[$k] = $params[$k]['name'];
+            }
+        }
+        $this->trace['slots'] = $slots;
+        $r = Actions::propose($tool, $params, $this->u, (int) $this->conv['id'] ?: null, $q, $this->dry);
+        $this->say($r['text']);
+        if (!empty($r['link'])) {
+            $this->out['links'][] = $r['link'];
+        }
+        $this->out['proposal'] = $r['proposal'];
+        $outcome = !empty($r['refused']) || $tool === 'unsupported' ? 'refused' : (!empty($r['clarify']) ? 'clarify' : (!empty($r['blocked']) ? 'blocked' : ($r['proposal'] ? 'proposed' : 'answered')));
+        $this->log($q, 'action_' . $tool, 1, $outcome);
     }
 
     // ------------------------------------------------------------------ données
@@ -159,12 +415,20 @@ final class Brain
     {
         $parts = Nlu::split($q);
         $multi = count($parts) > 1 ? array_map(fn($p) => [$p, Nlu::classify($p)], $parts) : [];
-        $confident = array_filter($multi, fn($x) => $x[1]['score'] >= Nlu::THRESHOLD);
+        // Une partie sans intention propre mais avec un mot de comparaison ou de suite reste rattachée à la précédente
+        $confident = array_values(array_filter($multi, fn($x) => $x[1]['score'] >= Nlu::THRESHOLD || preg_match('/^(compare|comparaison|et)\b/', $x[1]['norm'])));
         if (count($confident) > 1 && count(array_unique(array_map(fn($x) => $x[1]['intent'], $confident))) > 1) {
             $this->status('Votre question contient ' . count($confident) . ' demandes : je les traite une à une.');
+            $this->inherit = true;
+            $all = [];
             foreach ($confident as [$part, $c]) {
-                $this->answerIntent($part, $c);
+                $top = $c['score'] >= Nlu::THRESHOLD ? $c['intent'] : null;
+                if ($top && !isset(Catalog::TOOLS[$top]) ? $this->dispatch($top, $part, $c) : $this->answerIntent($part, $c)) {
+                    $all = array_merge($all, [$this->out['intent']]);
+                }
             }
+            $this->inherit = false;
+            $this->trace['intents'] = array_values(array_unique(array_filter($all)));
             return;
         }
         $c = Nlu::classify($q);
@@ -200,10 +464,24 @@ final class Brain
         if (in_array($intent, ['last_sales', 'last_sale'], true) && isset($slots['period']) && !preg_match('/\b(dernier|derniere|derniers|dernieres) (vente|ventes|ticket|tickets|transaction|transactions)\b|\b\d+ dernier/', $n)) {
             $intent = 'sales_summary';
         }
+        if (in_array($intent, ['last_sale', 'last_sales'], true)) {
+            $intent = preg_match('/\b(derniers|dernieres|les \d+|les dern\w*|\d+ dern\w*|liste|historique)\b/', $n) || isset($slots['limit']) ? 'last_sales' : (preg_match('/\b(dernier|derniere)\b/', $n) ? 'last_sale' : $intent);
+        }
+        // Question de suite : entre deux intentions proches, celle du même domaine que la question précédente
+        if ($prev && $startsEt && $intent && isset(Catalog::TOOLS[$prev], Catalog::TOOLS[$intent]) && !empty($c['second']) && isset(Catalog::TOOLS[$c['second']])
+            && ($c['second_score'] ?? 0) >= $c['score'] - 0.2 && ($c['second_score'] ?? 0) >= 0.35
+            && Catalog::TOOLS[$intent][1] !== Catalog::TOOLS[$prev][1] && Catalog::TOOLS[$c['second']][1] === Catalog::TOOLS[$prev][1]) {
+            $intent = $c['second'];
+        }
+        // « Et les 5 meilleurs ? » après une question sur les ventes : les articles les plus vendus
+        if ($prev && $startsEt && isset(Catalog::TOOLS[$prev]) && Catalog::TOOLS[$prev][1] === 'ventes' && preg_match('/\b(meilleur\w*|top|mieux vendu\w*|plus vendu\w*)\b/', $n)
+            && !preg_match('/\b(client|vendeur|caissier|jour|journee|boutique|magasin)\w*\b/', $n)) {
+            $intent = 'top_products';
+        }
         // Question trop vague (« combien ? ») : on demande au lieu de deviner
-        if (!($prev && $isFollow) && count(array_diff($c['tokens'], ['combien', 'quoi', 'total', 'montant', 'nombre'])) === 0) {
+        if (empty($c['forced']) && !($prev && $isFollow) && $c['tokens'] && count(array_diff($c['tokens'], ['combien', 'quoi', 'total', 'montant', 'nombre'])) === 0) {
             $this->say('Combien de quoi ? Précisez par exemple : « combien de ventes aujourd\'hui ? », « combien vaut mon stock ? », « combien me doivent les clients ? ».');
-            Learning::log($q, null, $c['score'], 'clarify');
+            $this->log($q, null, $c['score'], 'clarify');
             return true;
         }
         // Mention de tickets Wi-Fi / Marwa Connect
@@ -221,7 +499,15 @@ final class Brain
         }
         // Question de suite : on reprend la dernière intention et ses paramètres
         // Suite uniquement si la question s'y prête (« et hier ? », « et dans le dépôt ? ») : jamais pour une question sans rapport
-        $follow = $prev && $isFollow && ($intent === null || $intent === $prev || ($c['score'] < 0.6 && $hasSlot));
+        // « Et au dépôt ? », « et hier ? » : rien d'autre qu'un lieu ou une période → suite, quel que soit le score
+        $locWords = !empty($slots['location']['name']) ? Text::words($slots['location']['name']) : [];
+        $rest = array_filter(explode(' ', $n), fn($w) => !in_array($w, $locWords, true) && !preg_match('/^\d+(er|e|eme)?$/', $w) && !in_array($w, ['et', 'le', 'la', 'les', 'l', 'du', 'de', 'des', 'd', 'au', 'aux', 'a', 'dans',
+            'pour', 'sur', 'en', 'ce', 'cette', 'hier', 'avant', 'aujourd', 'hui', 'semaine', 'mois', 'annee', 'an', 'dernier', 'derniere', 'jour', 'journee', 'passe', 'passee', 'alors', 'puis', 'aussi', 'meme', 'chose',
+            'pareil', 'idem', 'mais', 'ou', 'magasin', 'boutique', 'depot', 'celui', 'celle', 'janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'], true));
+        $onlySlot = $startsEt && $hasSlot && !$rest;
+        // « Et le sucre ? » après une question sur un article : même question pour un autre article
+        $otherItem = $startsEt && in_array($prev, ['product_stock', 'product_info', 'product_sales'], true) && $intent !== $prev && $c['score'] < 0.8 && Nlu::named($q, 'product');
+        $follow = $prev && $isFollow && ($intent === null || $intent === $prev || ($c['score'] < 0.6 && $hasSlot) || $onlySlot || $otherItem);
         if ($follow && $intent !== 'sales_compare' && $intent !== 'wifi_tickets') {
             $base = (isset($slots['period']) && isset(self::BASE[$prev])) ? self::BASE[$prev] : $prev;
             $slots = array_merge($this->state['slots'] ?? [], array_filter($slots, fn($v) => $v !== null));
@@ -235,20 +521,78 @@ final class Brain
         } elseif ($intent && $isFollow && preg_match('/^et\b/', $n) && !isset($slots['period']) && !empty($this->state['slots']['period']) && in_array($intent, self::PERIOD_INTENTS, true)) {
             $slots['period'] = $this->state['slots']['period']; // « et les dépenses ? » garde la période
         }
+        // « Retire les produits de la boutique », « sans le dépôt » : même question, en excluant ce lieu
+        if ($prev && isset(Catalog::TOOLS[$prev]) && preg_match('/^(et )?(retire|enleve|sans|hors|sauf|exclu\w*|ne compte pas|en dehors)\b/', $n) && !empty($slots['location'])) {
+            if (!empty($slots['location']['ambiguous'])) {
+                $this->say('Lequel faut-il retirer : ' . implode(', ', $slots['location']['ambiguous']) . ' ?');
+                $this->log($q, $prev, $c['score'], 'clarify');
+                return true;
+            }
+            $intent = $prev;
+            $slots = array_merge($this->state['slots'] ?? [], ['exclude' => $slots['location']]);
+            unset($slots['location']);
+            $c['score'] = max($c['score'], 0.5);
+        }
+        // « Compare avec la semaine dernière » : la période citée est comparée à celle dont on vient de parler
+        if (($intent === 'sales_compare' || preg_match('/^(compare|comparaison|par rapport)\b/', $n)) && empty($slots['period2']) && !empty($slots['period']) && !empty($this->state['slots']['period'])
+            && $this->state['slots']['period']['from'] !== $slots['period']['from']) {
+            $slots['period2'] = $slots['period'];
+            $slots['period'] = $this->state['slots']['period'];
+            $intent = 'sales_compare';
+        }
+        // Plusieurs demandes dans une même question : les suivantes gardent la période de la première
+        if ($this->inherit && $intent && empty($slots['period']) && !empty($this->state['slots']['period']) && in_array($intent, self::PERIOD_INTENTS, true)) {
+            $slots['period'] = $this->state['slots']['period'];
+        }
         if (!$intent) {
             return false;
+        }
+        if (!isset(Catalog::TOOLS[$intent])) {
+            if ($this->dispatch($intent, $q, $c)) {
+                return true;
+            }
+            $alt = array_values(array_filter(array_keys($c['top'] ?? []), fn($k) => isset(Catalog::TOOLS[$k]) && $c['top'][$k] >= Nlu::THRESHOLD));
+            if (!$alt) {
+                return false;
+            }
+            $intent = $alt[0];
+        }
+        // « Qu'est-ce que je ne dois plus commander ? » : l'inverse du réapprovisionnement
+        if ($intent === 'reorder' && preg_match('/\b(ne|n)\b.{0,25}\b(plus|pas)\b.{0,12}\b(command|recommand|rachet|reapprovision)\w*|\bne plus (command|recommand|rachet)\w*/', $n)) {
+            $intent = 'dormant';
         }
         $this->out['intent'] = $intent;
         $this->out['confidence'] = $c['score'];
         $def = Catalog::TOOLS[$intent];
-        // Paramètres spécifiques
-        if ($intent === 'product_stock' && empty($slots['product'])) {
-            $slots['product'] = Nlu::product($q, $c['tokens']);
+        // Paramètres spécifiques : article, client ou fournisseur nommé
+        foreach (['product' => ['product_stock', 'product_info', 'product_sales', 'stock_movements'], 'customer' => ['customer_info'], 'supplier' => ['supplier_info']] as $kind => $for) {
+            if (!in_array($intent, $for, true)) {
+                continue;
+            }
+            $found = Nlu::named($q, $kind);
+            if ($found && !empty($found['ambiguous'])) {
+                $this->say('Plusieurs ' . ['product' => 'articles', 'customer' => 'clients', 'supplier' => 'fournisseurs'][$kind] . ' correspondent : ' . implode(', ', $found['ambiguous']) . '. Lequel voulez-vous ?');
+                $this->state = ['intent' => $intent, 'slots' => $slots, 'periods' => $this->state['periods'] ?? []];
+                $this->trace['slots'] = ['ambiguous' => $found['ambiguous']];
+                $this->log($q, $intent, $c['score'], 'clarify');
+                return true;
+            }
+            if (!$found && in_array($kind, ['customer', 'supplier'], true) && empty($slots[$kind]) && !preg_match('/\b(cherche\w*|trouve\w*|fiche|contact|numero|telephone|infos?|informations?|plafond|dernier achat|derniere)\b/', $n)) {
+                $intent = $kind === 'customer' ? 'customer_debts' : 'supplier_payables';   // « combien je dois au fournisseur » sans nom → tous
+                $this->out['intent'] = $intent;
+                $def = Catalog::TOOLS[$intent];
+                break;
+            }
+            if ($found) {
+                $slots[$kind] = $found;
+            } elseif ($kind === 'product' && $intent === 'product_stock' && empty($slots['product'])) {
+                $slots['product'] = Nlu::product($q, $c['tokens']);
+            }
         }
         if (in_array($intent, ['sales_summary', 'revenue', 'top_products'], true) && ($usr = Nlu::user($q))) {
             if ($usr['id'] !== $this->u->id() && !$this->u->seesAllSales()) {
                 $this->say('Je ne peux vous montrer que vos propres ventes : votre rôle ne donne pas accès aux ventes de ' . $usr['name'] . '.');
-                Learning::log($q, $intent, $c['score'], 'refused');
+                $this->log($q, $intent, $c['score'], 'refused');
                 return true;
             }
             $slots['user'] = $usr;
@@ -256,21 +600,25 @@ final class Brain
         if (!empty($slots['location']['ambiguous'])) {
             $this->say('Laquelle voulez-vous : ' . implode(', ', $slots['location']['ambiguous']) . ' ?');
             $this->state = ['intent' => $intent, 'slots' => array_diff_key($slots, ['location' => 1]), 'periods' => $this->state['periods'] ?? []];
-            Learning::log($q, $intent, $c['score'], 'clarify');
+            $this->log($q, $intent, $c['score'], 'clarify');
             return true;
         }
         // Droits (vérifiés côté serveur, à chaque question)
         if (!$this->u->allows($def[2])) {
             $this->say('Je ne peux pas vous donner « ' . mb_strtolower($def[0]) . ' » : votre rôle (' . $this->u->role . ') n\'a pas accès à ces données. Un responsable peut vous les communiquer ou vous accorder le droit.');
-            Learning::log($q, $intent, $c['score'], 'refused');
+            $this->log($q, $intent, $c['score'], 'refused');
             return true;
         }
         $this->status('Je consulte : ' . mb_strtolower($def[0]) . '…');
+        $this->trace['tool'] = $intent;
+        $this->trace['slots'] = array_filter(['period' => $slots['period'] ?? null, 'period2' => $slots['period2'] ?? null, 'location' => $slots['location']['name'] ?? null, 'exclude' => $slots['exclude']['name'] ?? null,
+            'product' => $slots['product']['name'] ?? null, 'customer' => $slots['customer']['name'] ?? null, 'supplier' => $slots['supplier']['name'] ?? null, 'user' => $slots['user']['name'] ?? null,
+            'limit' => $slots['limit'] ?? null], fn($v) => $v !== null);
         $r = Catalog::run($intent, $this->u, $slots);
         if (!empty($r['clarify'])) {
             $this->say($r['clarify']);
             $this->state = ['intent' => $intent, 'slots' => $slots, 'periods' => $this->state['periods'] ?? []];
-            Learning::log($q, $intent, $c['score'], 'clarify');
+            $this->log($q, $intent, $c['score'], 'clarify');
             return true;
         }
         $this->present($r, $q);
@@ -281,7 +629,7 @@ final class Brain
         }
         $this->state = ['intent' => $intent, 'slots' => array_diff_key($slots, ['period2' => 1]), 'periods' => array_slice($periods, -4)];
         $this->out['sources'] = array_merge($this->out['sources'], $r['sources']);
-        Learning::log($q, $intent, $c['score'], 'answered');
+        $this->log($q, $intent, $c['score'], 'answered');
         return true;
     }
 
@@ -289,7 +637,7 @@ final class Brain
     private function present(array $r, string $q): void
     {
         $text = Responder::pick($r['variants'] ?? [], $this->seed);
-        if (setting('ai_llm_phrasing', '0') === '1' && Providers::available() && $text !== '' && empty($r['empty'])) {
+        if (setting('ai_llm_phrasing', '0') === '1' && $this->llm() && $text !== '' && empty($r['empty'])) {
             $this->status('Je formule la réponse…');
             $buf = '';
             $gen = Providers::generate(Responder::phrasingPrompt(), [['role' => 'user', 'content' => "Question : $q\nRéponse calculée : $text"]], 'phrasing',
@@ -348,7 +696,7 @@ final class Brain
         }
         $this->block('table', ['title' => 'Ce que je peux consulter pour vous', 'headers' => ['Domaine', 'Exemples'], 'rows' => $rows, 'more' => 0]);
         $this->out['suggestions'] = ['Fais-moi un bilan de la journée', 'Quelle est la valeur de mon stock ?', 'Comment faire un inventaire ?', 'Ma formation'];
-        Learning::log($this->question, 'capabilities', 1, 'answered');
+        $this->log($this->question, 'capabilities', 1, 'answered');
     }
 
     private function help(string $q): void
@@ -374,10 +722,10 @@ final class Brain
         }
         if (!$extracts) {
             $this->say('Je n\'ai pas trouvé de procédure correspondante dans la connaissance de POS Marwa installée. Reformulez (ex. « comment faire un inventaire ? ») ou contactez l\'assistance : ' . (string) setting('support_contact', '+227 92 08 12 82') . '.');
-            Learning::log($q, 'help', 0, 'not_understood');
+            $this->log($q, 'help', 0, 'not_understood');
             return;
         }
-        if (Providers::available()) {
+        if ($this->llm()) {
             $this->status('Je rédige l\'explication…');
             // Historique : sans la question en cours (déjà enregistrée), commençant par l'utilisateur, rôles alternés
             $hist = Memory::recent((int) $this->conv['id'], 5);
@@ -394,7 +742,7 @@ final class Brain
                 $this->out['text'] = trim($gen['text']);
                 $this->out['provider'] = $gen['model'];
                 $this->out['sources'][] = 'documentation';
-                Learning::log($q, 'help', 1, 'answered');
+                $this->log($q, 'help', 1, 'answered');
                 return;
             }
         }
@@ -405,7 +753,7 @@ final class Brain
             foreach (json_decode((string) $best['links_json'], true) ?: [] as $l) {
                 $this->out['links'][] = $l;
             }
-            Learning::log($q, 'help', $best['score'], 'answered');
+            $this->log($q, 'help', $best['score'], 'answered');
             return;
         }
         $this->legacyAsk($q);
@@ -413,21 +761,51 @@ final class Brain
 
     // ------------------------------------------------------------------ moteur 1.x
 
-    private function legacyAsk(string $q): void
+    private function legacyAsk(string $q, ?string $label = null): void
     {
+        if ($label !== null) {
+            $this->out['intent'] ??= $label;
+        }
         $r = Engine::answer($q, $this->state['legacy_ctx'] ?? null);
         if ($this->wrongPeriod($q, $r)) {
             $asked = Nlu::slots($q, $this->u)['period'];
-            $this->out['intent'] = 'legacy:' . ($r['spec']['kind'] ?? 'rapport');
+            $this->out['intent'] ??= 'legacy:' . ($r['spec']['kind'] ?? 'rapport');
             $this->say('Je n\'ai pas pu appliquer la période « ' . $asked['label'] . ' » à ce rapport : pour ne pas vous donner les chiffres d\'une autre période, je préfère m\'arrêter. Indiquez les dates, par exemple « ventes du ' . date('d/m/Y', strtotime($asked['from'])) . ' au ' . date('d/m/Y', strtotime($asked['to'])) . ' en PDF ».');
-            Learning::log($q, $this->out['intent'], 0.3, 'clarify');
+            $this->log($q, $this->out['intent'], 0.3, 'clarify');
             return;
         }
         if (!empty($r['spec'])) {
             $this->state['legacy_ctx'] = $r['spec'];
         }
+        $type = (string) ($r['type'] ?? '');
+        $notFound = $type === 'help' && str_contains((string) ($r['html'] ?? ''), 'pas trouvé de réponse sûre');
+        if ($notFound && $label === 'report') {
+            // Pas de rapport PDF / Excel pour cette donnée : on donne au moins le résultat à l'écran
+            $plain = trim(preg_replace('/\b(en |au format |un |le |fais moi |sors moi )?(pdf|excel|csv|rapport|exporte\w*|imprime\w*|telecharge\w*)\b/u', ' ', Text::norm($q)));
+            $c2 = Nlu::classify($plain);
+            if ($c2['score'] >= Nlu::THRESHOLD && isset(Catalog::TOOLS[$c2['intent']])) {
+                $this->out['intent'] = null;
+                if ($this->answerIntent($plain, $c2)) {
+                    $this->out['intent'] = 'report';
+                    $this->block('note', ['text' => 'Il n\'existe pas d\'export PDF / Excel pour cette donnée : voici le résultat à l\'écran. L\'écran d\'origine (lien ci-dessous) propose ses propres exports.']);
+                    return;
+                }
+                $this->out['intent'] = 'report';
+            }
+        }
+        if ($notFound && ($menu = AppMap::search($q, $this->u, ['menu'], 3)) && $menu[0]['score'] >= 4.5) {
+            // Aucune fiche rédigée : on indique au moins l'écran où cela se fait (menus réels, filtrés par les droits)
+            $this->say('Je n\'ai pas de procédure détaillée pour cette question, mais cela se passe ici : ' . implode(' ; ', array_map(fn($m) => $m['body'] ?: $m['title'], array_slice($menu, 0, 2)))
+                . '. Ouvrez l\'écran avec le lien ci-dessous ; si un point reste flou, dites-moi ce que vous voyez à l\'écran.');
+            foreach (array_slice($menu, 0, 2) as $m) {
+                $this->out['links'][] = [$m['title'], explode('#', $m['ref'])[0]];
+            }
+            $this->log($q, $this->out['intent'] ?? 'help', 0.5, 'answered');
+            return;
+        }
         $this->legacy($r);
-        Learning::log($q, 'legacy:' . ($r['spec']['kind'] ?? ($r['type'] ?? 'aide')), 0.5, ($r['type'] ?? '') === 'help' ? 'not_understood' : 'fallback');
+        $this->trace['slots'] = array_filter(['period' => Nlu::slots($q, $this->u)['period'] ?? null]);
+        $this->log($q, $this->out['intent'] ?? 'legacy:' . ($r['spec']['kind'] ?? ($type ?: 'aide')), 0.5, $notFound ? 'not_understood' : ($type === 'error' ? 'refused' : 'fallback'));
     }
 
     /** Vrai si le moteur 1.x a retenu une autre période que celle demandée (il ne doit alors pas répondre). */
@@ -472,7 +850,7 @@ final class Brain
     /** Rien de sûr : modèle IA (classement), puis moteur 1.x, sinon aveu clair. */
     private function fallback(string $q, array $c): void
     {
-        if (Providers::available()) {
+        if ($this->llm()) {
             $codes = array_keys(Catalog::TOOLS);
             $gen = Providers::generate('Classe la question d\'un utilisateur de logiciel de gestion de commerce dans UNE intention de la liste, ou réponds « aucune ». Réponds uniquement par le code.',
                 [['role' => 'user', 'content' => 'Intentions : ' . implode(', ', array_map(fn($k) => $k . ' (' . Catalog::TOOLS[$k][0] . ')', $codes)) . "\nQuestion : " . $q]], 'nlu', null, 20);
@@ -488,12 +866,12 @@ final class Brain
         if (($r['type'] ?? '') !== 'help' && !empty($r['spec']) && !$this->wrongPeriod($q, $r)) {
             $this->state['legacy_ctx'] = $r['spec'];
             $this->legacy($r);
-            Learning::log($q, 'legacy:' . ($r['spec']['kind'] ?? 'rapport'), 0.5, 'fallback');
+            $this->log($q, 'legacy:' . ($r['spec']['kind'] ?? 'rapport'), 0.5, 'fallback');
             return;
         }
         $this->out['intent'] = null;
         $this->say('Je suis spécialisé dans la gestion de votre commerce et l\'utilisation de POS Marwa : cette question semble hors de ce domaine, ou je ne l\'ai pas comprise, et je préfère ne pas deviner un chiffre. Si elle concerne votre activité, reformulez-la ; Par exemple : « valeur du stock », « ventes d\'hier », « qui me doit de l\'argent ? », « comment faire un inventaire ? ».');
         $this->out['suggestions'] = ['Fais-moi un bilan de la journée', 'Quelle est la valeur de mon stock ?', 'Que sais-tu faire ?'];
-        Learning::log($q, $c['intent'], $c['score'], 'not_understood');
+        $this->log($q, $c['intent'], $c['score'], 'not_understood');
     }
 }

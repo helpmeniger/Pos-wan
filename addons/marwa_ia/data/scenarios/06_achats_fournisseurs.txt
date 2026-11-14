@@ -1,0 +1,72 @@
+# domaine: Achats et fournisseurs
+# code: ACHAT
+purchases_total | admin | Combien d'achats ce mois ? | achats du mois ; total des achats du mois | cb dachat ce mois ; acha du mois | per=month
+purchases_total | admin | Combien j'ai acheté de marchandise cette semaine ? | achats de la semaine | cb jai acheté de marchandise cette semaine | per=week
+purchases_total | magasin | Combien de réceptions ce mois ? | réceptions de marchandise du mois | cb de reception ce mois | per=month
+purchases_total | admin | Achats de l'année | total des achats cette année | acha de lannee | per=year
+purchases_total | admin | Achats du mois dernier | combien j'ai acheté le mois dernier | acha du mois dernier | per=last_month
+purchases_total | caissier | Achats du mois |  | acha du mois | out=refuse
+purchases_total | admin | Et le mois dernier ? |  | et le moi dernier | ctx=ACHAT-001; per=last_month
+purchase_orders | admin | Quelles commandes fournisseur sont en cours ? | commandes fournisseur en cours ; commandes en attente de livraison | kel comande fournisseur son en cour ; comande en atente |
+purchase_orders | magasin | Qu'est-ce qu'on attend comme livraison ? | livraisons attendues | kes kon aten come livraison |
+purchase_orders | admin | Y a-t-il des bons de commande non reçus ? | bons de commande en cours | ya til des bon de comande non recu |
+purchase_orders | caissier | Commandes fournisseur en cours |  | comande fournisseur en cour | out=refuse
+supplier_payables | admin | Quels fournisseurs doivent être payés ? | fournisseurs à payer ; à qui je dois de l'argent | kel fournisseur doive etre payé ; a ki je doi de largent | db=payables
+supplier_payables | admin | Combien je dois à mes fournisseurs ? | total des dettes fournisseurs | cb je doi a mes fournisseur | db=payables
+supplier_payables | magasin | Dettes fournisseurs | combien on doit aux fournisseurs | dete fournisseur |
+supplier_payables | caissier | Quels fournisseurs doivent être payés ? |  | fournisseur a payé | out=refuse
+supplier_info | admin | Combien je dois au Fournisseur test ? | solde du Fournisseur test | cb je doi o fournisseur test | sup=Fournisseur test
+supplier_info | admin | Cherche le fournisseur Grossiste. | fiche du fournisseur Grossiste | cherch le fournisseur grossiste | sup=Grossiste
+supplier_info | admin | Donne-moi le contact du fournisseur test. | numéro du fournisseur test | done moi le contac du fournisseur test | sup=Fournisseur test
+supplier_info | admin | Cherche un fournisseur. | fiche du fournisseur | cherch un fournisseur | out=clarify
+supplier_info | caissier | Combien on doit au Fournisseur test ? |  | cb on doi o fournisseur test | out=refuse
+reorder | admin | Quels produits dois-je recommander ? | que dois-je commander ; quoi racheter | kel produi doi je recomandé |
+reorder | admin | Prépare-moi la liste de ce qui manque. | liste de réapprovisionnement | prepar moi la liste de ce ki manke |
+action_purchase_draft | admin | Prépare une commande pour les produits manquants. | prépare un brouillon de commande fournisseur ; crée un bon de commande pour les ruptures | prepar une comande pour les produi manquan ; fai la comande de reaprovisionnemen |
+action_purchase_draft | gerant | Génère une commande fournisseur pour ce qui manque. | commande ce qui manque | genere une comande fournisseur pour ce ki manke |
+action_purchase_draft | magasin | Prépare un bon de commande. |  | prepar un bon de comande | out=refuse
+action_purchase_draft | caissier | Prépare une commande fournisseur. |  | prepar une comande fournisseur | out=refuse
+action_navigate | admin | Ouvre la liste des fournisseurs. | va sur les fournisseurs | ouvr la liste des fournisseur |
+action_navigate | magasin | Emmène-moi aux commandes fournisseur. | ouvre les commandes fournisseur | emene moi o comande fournisseur |
+last_stock_in | admin | Quelle est la dernière réception de marchandise ? | dernière réception fournisseur | kel est la derniere reception de marchandise |
+last_stock_in | magasin | Quand est arrivée la dernière livraison ? | date de la dernière livraison reçue | kan est arivé la derniere livraison |
+stock_in_total | admin | Combien de marchandise reçue ce mois ? | quantité reçue ce mois | cb de marchandise recu ce mois | per=month
+most_profitable | admin | Sur quels articles je gagne le plus ? | articles qui rapportent le plus | sur kel article je gagne le plus |
+dormant | admin | Qu'est-ce que je ne dois plus commander ? | articles à ne plus recommander | kes ke je doi plus comandé | train=no
+expiring | magasin | Quels lots faut-il écouler en premier ? | lots à vendre en priorité | kel lot fo til ecoulé en premier |
+report | admin | Combien je dois au fournisseur Grossiste, en PDF ? | relevé du fournisseur Grossiste en PDF | relevé du fournisseur grossiste en pdf |
+report | admin | Liste des achats du mois en Excel | exporte les achats du mois en Excel | liste des acha du mois en excel |
+help | admin | Comment créer une commande fournisseur ? | comment faire un bon de commande | coment creé une comande fournisseur |
+help | magasin | Comment recevoir une commande ? | comment enregistrer une réception de marchandise | coment recevoir une comande |
+help | admin | Comment payer un fournisseur ? | comment enregistrer un paiement fournisseur | coment payé un fournisseur |
+help | admin | Comment saisir une facture fournisseur ? | comment enregistrer la facture d'un fournisseur | coment saisir une facture fournisseur |
+help | admin | Comment ajouter un nouveau fournisseur ? | comment créer un fournisseur | coment ajouté un nouvo fournisseur |
+help | magasin | Comment faire un retour au fournisseur ? | comment renvoyer de la marchandise au fournisseur | coment fair un retour o fournisseur |
+help | admin | Comment voir ce que je dois à un fournisseur ? | où voir le solde d'un fournisseur | coment voir ce ke je doi a un fournisseur |
+help | magasin | La livraison ne correspond pas à la commande, que faire ? | que faire si la livraison est incomplète | la livraison corespon pas a la comande ke fair | train=no
+help | admin | Comment répartir les frais de transport sur le prix d'achat ? | comment ajouter des frais d'approche à une réception | coment repartir les frai de transpor sur le pri dachat |
+help | admin | Comment associer un fournisseur habituel à un article ? | où indiquer le fournisseur d'un article | coment associé un fournisseur a un article |
+concept | admin | À quoi sert un bon de commande ? | c'est quoi un bon de commande | a koi sert un bon de comande |
+concept | admin | C'est quoi le coût moyen pondéré d'un article ? | que veut dire coût moyen pondéré | c koi le cout moyen ponderé dun article |
+concept | magasin | Pourquoi faire des sauvegardes ? | à quoi sert une sauvegarde | pk fair des sauvegarde
+definition | admin | Que veut dire dette fournisseur ? | c'est quoi une dette fournisseur | ke veu dire dete fournisseur |
+security | magasin | Modifie la réception d'hier sans laisser de trace. | change la quantité reçue discrètement | modifi la reception dier san laissé de trace |
+security | admin | Supprime toutes les factures du fournisseur. | efface toutes les factures fournisseur | suprime toute les facture du fournisseur |
+purchases_total | gerant | Combien on a dépensé en marchandise ce mois ? | montant des achats de marchandise du mois | cb on a depensé en marchandise ce mois | per=month
+purchases_total | admin | Achats d'aujourd'hui | réceptions d'aujourd'hui | acha dojourdui | per=today
+purchases_total | admin | Achats d'hier | combien de réceptions hier | acha dier | per=yesterday
+supplier_payables | gerant | Quel fournisseur faut-il payer en premier ? | à quel fournisseur je dois le plus | kel fournisseur fo til payé en premier |
+supplier_info | gerant | Infos sur le fournisseur Grossiste | informations du fournisseur Grossiste | info sur le fournisseur grossiste | sup=Grossiste
+supplier_info | admin | Quand a-t-on reçu la dernière livraison du Fournisseur test ? | dernière réception du Fournisseur test | kan a ton recu la derniere livraison du fournisseur test | sup=Fournisseur test
+supplier_info | admin | Solde du fournisseur Sahel |  | solde du fournisseur sahel | out=clarify; train=no
+income_vs_expenses | admin | Est-ce que j'achète plus que je ne vends ? |  | es ke jachete plus ke je vend | train=no
+reorder | gerant | Qu'est-ce qui risque de manquer cette semaine ? | articles qui couvrent moins d'une semaine | kes ki riske de manké cette semaine |
+reorder | magasin | Fais-moi la liste de réapprovisionnement. | liste de réappro | fai moi la liste de reaprovisionnemen |
+purchase_orders | gerant | Combien de commandes en brouillon ? | commandes fournisseur au brouillon | cb de comande en brouillon |
+stock_low | magasin | Quels articles faut-il commander en urgence ? | articles urgents à commander | kel article fo til comandé en urgence |
+action_unsupported | admin | Rembourse le fournisseur. | rembourse cette facture | rembours le fournisseur |
+help | admin | Comment modifier le prix d'achat d'un article ? | où changer le prix d'achat | coment modifié le pri dachat dun article |
+help | admin | Comment annuler une réception saisie par erreur ? | comment corriger une réception | coment anulé une reception saisi par erreur |
+whats_wrong | magasin | Y a-t-il des alertes de stock ou d'achat ? | les points à surveiller | ya til des alerte |
+customer_debts | magasin | Qui nous doit de l'argent ? |  | ki nou doi de largent | out=refuse
+profit | magasin | Est-ce qu'on gagne de l'argent sur les achats ? |  | es kon gagne de largent | out=refuse

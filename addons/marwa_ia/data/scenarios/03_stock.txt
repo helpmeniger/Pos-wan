@@ -1,0 +1,123 @@
+# domaine: Stock et inventaire
+# code: STOCK
+action_stock_add | admin | Ajoute 50 unités à l'article Savon de ménage. | mets 50 dans le stock de savon ; augmente le stock du savon de 50 | rajoute 50 savon de menage ; ajoute rapidemant 50 unité a savon de menage | qty=50; prod=Savon
+action_stock_add | admin | Ajoute un stock rapide à l'article Dentifrice : 30. | il faut ajouter 30 dentifrices au stock | ajoute un stocke rapide a dentifrice 30 ; met 30 dans le stok du dentifrice | qty=30; prod=Dentifrice
+action_stock_add | magasin | J'ai reçu 20 sacs de ciment, ajoute-les au stock. | entre 20 ciment en stock | ajoute 20 sac de ciman au stock ; g recu 20 ciment ajoute les | qty=20; prod=Ciment
+action_stock_add | admin | Ajoute 12 sacs en pagne dans le dépôt. | mets 12 sac en pagne au dépôt | rajoute 12 sac en pagne ds le depot | qty=12; prod=Sac en pagne; loc=Dépôt
+action_stock_add | admin | Ajoute 20 savons dans le magasin principal mais pas dans le dépôt. | mets 20 savon au magasin principal, pas au dépôt | ajoute 20 savon dans le magasin principal mais pas dans le depot | qty=20; prod=Savon; loc=Magasin principal
+action_stock_add | admin | Ajoute du stock au savon. | rajoute du stock pour le savon de ménage | ajoute du stoke au savon | out=clarify; prod=Savon
+action_stock_add | admin | Ajoute 40 au stock. | mets 40 en stock | ajoute 40 o stock | out=clarify; qty=40
+action_stock_add | admin | Ajoute 10 cafés au stock. | mets 10 café en stock | rajoute 10 cafe dans le stok | out=clarify; qty=10
+action_stock_add | admin | Ajoute 50 à Savon de ménage. |  | ajoute 50 a savon de menage | out=clarify; qty=50
+action_stock_add | admin | Ajoute 50 bouteilles d'eau minérale au stock. | mets 50 eau minérale en stock | rajoute 50 eau mineral ; faut ajouter 50 eau minerale o stock | out=blocked; qty=50; prod=Eau; has=lot
+action_stock_add | caissier | Ajoute 15 savons au stock. | mets 15 savon en stock | ajoute 15 savon o stock | out=refuse
+action_stock_add | admin | Augmente l'article oignons de 25. | ajoute 25 kilos d'oignons au stock | augmente article oignon de 25 ; rajoute 25 oignons | qty=25; prod=Oignons
+action_stock_add | admin | Incrémente le stock du niébé de 8. | ajoute 8 niébé en stock | incremente le stock du niebe de 8 | qty=8; prod=Niébé
+stock_value | admin | Quelle est la valeur du stock ? | donne-moi la valeur du stock ; combien vaut mon stock | valeur du stok ; cb vaut mon stock | db=stock_value
+stock_value | admin | Combien d'argent dort dans mes rayons ? | mon stock représente combien d'argent | combien dargent dort dans mes rayon | db=stock_value
+stock_value | admin | Quelle est la valeur du stock du dépôt ? | valeur de la marchandise au dépôt | valeur du stock du depo | loc=Dépôt
+stock_value | admin | Valeur du stock du magasin principal | combien vaut le stock du magasin principal | valeur stok magasin principal | loc=Magasin principal
+stock_value | admin | Retire les produits du dépôt. | sans le dépôt | enleve le depot | ctx=STOCK-014; xloc=Dépôt
+stock_value | admin | Et dans le dépôt ? |  | et ds le depot ? | ctx=STOCK-014; loc=Dépôt
+stock_value | magasin | Quelle est la valeur de mon stock ? |  | valeur du stok | out=refuse
+stock_value | caissier | Combien vaut le stock ? |  | cb vaut le stok | out=refuse
+stock_value | gerant | Donne-moi la valeur de la marchandise. | valeur totale de ma marchandise | done moi la valeur de la marchandise | db=stock_value
+stock_value_sale | admin | Quelle est la valeur du stock au prix de vente ? | combien je gagne si je vends tout le stock | valeur du stock o prix de vente ; stock au pri de vente |
+stock_value_sale | admin | Si je vends tout, ça fait combien ? | le stock vaut combien en prix de vente | si je vend tout sa fait combien en prix de vente |
+stock_by_location | admin | Donne-moi la valeur du stock par magasin. | répartition du stock par boutique ; stock de chaque magasin | valeur du stok par magasin ; stock par depo |
+stock_by_location | admin | Où est rangée ma marchandise ? | dans quels magasins se trouve mon stock | ou est range ma marchandise |
+stock_count | admin | Combien d'articles sont disponibles ? | nombre d'articles en stock ; combien de produits en stock | combien ya de produi en stock ; cb d'article dispo |
+stock_count | magasin | Combien de références j'ai en stock ? | combien de références disponibles | combien de reference jai en stock |
+stock_count | admin | Combien d'unités au total dans le stock ? | quantité totale en stock | combien d unite o total dans le stok |
+stock_out | admin | Quels produits sont en rupture ? | articles en rupture ; ruptures de stock | kel produi son en ruptur ; produit en rupture de stok |
+stock_out | magasin | Qu'est-ce qui est fini en stock ? | quels articles sont finis ; produits épuisés | kes ki est fini en stock ; produits epuisé |
+stock_out | admin | Affiche les produits à zéro. | produits à zéro ; articles sans stock | afiche les produit a zero |
+stock_out | admin | Quels articles manquent dans le dépôt ? | ruptures du dépôt | kel article manque dans le depo | loc=Dépôt
+stock_out | caissier | Quels produits sont en rupture ? |  | produi en ruptur | out=refuse
+stock_low | admin | Quels produits ont un stock faible ? | articles sous le seuil ; alertes de stock | produi avec stock faible ; article sou le seuil |
+stock_low | magasin | Qu'est-ce qui va bientôt manquer ? | produits presque finis | kes ki va bientot manqué |
+stock_low | admin | Quels articles sont sous le seuil d'alerte ? | stock bas | article sous le seuille d'alerte |
+product_stock | admin | Combien reste-t-il de savon de ménage ? | stock du savon ; il reste combien de savon | le stock de savon il reste combien ; cb reste de savon | prod=Savon
+product_stock | magasin | Il reste combien de sucre ? | combien de sucre en stock | il reste cb de sucre ; stok du sucre | prod=Sucre
+product_stock | admin | Le stock de l'eau minérale, il en reste combien ? | combien d'eau minérale en stock | le stock de eaux il reste combien ; stock eau mineral | prod=Eau
+product_stock | admin | Combien de dentifrice au dépôt ? | stock du dentifrice au dépôt | cb de dentifrice o depot | prod=Dentifrice; loc=Dépôt
+product_stock | admin | Et le sucre ? |  | et le sucr ? | ctx=STOCK-038; prod=Sucre
+product_stock | admin | Combien reste-t-il de café ? | stock du café | il reste cb de cafe | out=clarify
+product_stock | admin | Combien reste-t-il de riz ? | stock du riz | il reste cb de ri | out=clarify
+product_stock | admin | Il en reste combien ? | combien il en reste | il en reste cb | out=clarify
+product_stock | caissier | Combien de savon en stock ? |  | cb de savon en stok | out=refuse
+product_stock | admin | Est-ce qu'on a encore des oignons ? | il reste des oignons | es kon a encore des oignon | prod=Oignons
+product_stock | admin | Vérifie le stock du ciment. | regarde le stock du ciment | verifi le stok du ciman | prod=Ciment
+product_info | admin | Quel est le prix du savon de ménage ? | combien coûte le savon ; c'est combien le savon | kel est le pri du savon ; c cb le savon | prod=Savon
+product_info | caissier | À combien on vend le sucre ? | prix de vente du sucre | a cb on vend le sucr | prod=Sucre
+product_info | admin | Donne-moi la fiche du dentifrice. | fiche de l'article dentifrice ; infos sur le dentifrice | done moi la fiche du dentifrisse | prod=Dentifrice
+product_info | admin | Quelle est la référence du ciment ? | référence de l'article ciment | kel est la reference du ciman | prod=Ciment
+product_info | admin | Quel est le prix ? | c'est combien | c cb le prix | out=clarify
+product_info | admin | Combien coûte l'huile ? | prix de l'huile | cb coute l'uile | out=clarify
+dormant | admin | Quels articles ne se vendent pas ? | produits invendus ; stock dormant | kel article ne se vende pas ; produi invendu |
+dormant | gerant | Qu'est-ce qui dort dans le magasin depuis un mois ? | articles sans vente depuis un mois | kes ki dort dans le magasin depui un mois |
+dormant | admin | Montre-moi le stock mort. | articles qui ne bougent pas | montre moi le stok mort |
+reorder | admin | Que dois-je commander ? | quels produits dois-je recommander ; liste de réapprovisionnement | ke doi je comandé ; koi racheter |
+reorder | magasin | Qu'est-ce qu'il faut racheter cette semaine ? | produits à commander chez le fournisseur | kes kil faut racheté |
+reorder | admin | Fais-moi la liste des achats à prévoir. | quoi réapprovisionner | fai moi la liste des achat a prevoir |
+expiring | admin | Quels produits périment bientôt ? | lots périmés ; dates de péremption proches | kel produi perime bientot ; lot perimé |
+expiring | magasin | Y a-t-il des produits périmés en stock ? | produits expirés | ya til des produi perimé en stok |
+expiring | admin | Quelles dates de péremption approchent ? | lots qui arrivent à expiration | kel date de peremption aproche |
+transfers | admin | Combien de transferts de stock ce mois ? | transferts de stock de ce mois ; transferts entre magasins ce mois-ci | cb de transfer de stok ce mois | per=month
+transfers | magasin | Quel est le dernier transfert entre magasins ? | mouvements entre dépôts | kel est le dernier transfer entre magasin |
+transfers | admin | Transferts de la semaine | transferts de stock cette semaine | transfer de la semaine | per=week
+adjustments | admin | Montre-moi les ajustements de stock. | pertes de stock ; casse et pertes | montre moi les ajustemen de stok |
+adjustments | magasin | Qu'est-ce qui a été déclaré en perte ? | corrections de stock | kes ki a ete declaré en perte |
+adjustments | admin | Combien de casse ce mois ? | pertes et casse du mois | cb de casse ce mois | per=month
+inventories | admin | Y a-t-il un inventaire en cours ? | inventaires en cours ; état des inventaires | ya til un inventair en cour |
+inventories | magasin | Quand a eu lieu le dernier inventaire ? | dernier inventaire | kan a eu lieu le dernier inventère |
+last_stock_in | admin | Quelle est la dernière entrée en stock ? | dernière réception de marchandise ; dernier ajout de stock | kel est la derniere entré en stok ; dernier ajou de stock |
+last_stock_in | magasin | Qui a fait la dernière entrée de stock ? | quand a-t-on reçu du stock pour la dernière fois | ki a fai la derniere entree de stok |
+last_stock_in | caissier | Quelle est la dernière entrée en stock ? |  | derniere entre en stock | out=refuse
+stock_movements | admin | Montre-moi les derniers mouvements de stock. | historique du stock ; entrées et sorties de stock | montre moi les dernier mouvemen de stok ; istorique du stock |
+stock_movements | admin | Qu'est-ce qui a bougé dans le stock aujourd'hui ? | mouvements de stock du jour | kes ki a bougé dans le stok ojourdui | per=today
+stock_movements | magasin | Donne-moi les 5 derniers mouvements de stock. | les 5 derniers mouvements | done moi les 5 dernier mouvement de stok | lim=5
+stock_movements | admin | Historique des mouvements du savon | mouvements de stock du savon de ménage | istorique des mouvement du savon | prod=Savon
+stock_in_total | admin | Combien d'entrées de stock ce mois ? | total des entrées en stock du mois | cb d'entre de stok ce mois | per=month
+stock_in_total | magasin | Combien on a reçu de marchandise cette semaine ? | quantité reçue cette semaine | cb on a recu de marchandise cette semène | per=week
+stock_in_total | admin | Entrées de stock d'hier | combien d'entrées en stock hier | entre de stok d'ier | per=yesterday
+action_inventory_start | admin | Prépare un inventaire du dépôt. | ouvre un inventaire au dépôt ; lance un inventaire du dépôt | prepar un inventair du depo ; lance linventaire du depot | loc=Dépôt
+action_inventory_start | magasin | Démarre un inventaire du magasin principal. | commence l'inventaire du magasin principal | demare un inventère du magasin principal | loc=Magasin principal
+action_inventory_start | caissier | Ouvre un inventaire. |  | ouvr un inventaire | out=refuse
+action_unsupported | admin | Valide l'inventaire en cours. | valide l'inventaire | valid linventaire en cour |
+action_unsupported | admin | Supprime l'article savon. | efface le produit savon | suprime larticle savon |
+action_unsupported | admin | Modifie le prix du sucre à 900. | change le prix du sucre | modifi le pri du sucre a 900 ; change le prix de vente du sucre |
+action_navigate | admin | Ouvre la page des inventaires. | ouvre les inventaires | ouvr la page des inventaire |
+action_navigate | magasin | Emmène-moi à l'état des stocks. | va sur l'état des stocks | emene moi a letat des stok |
+help | admin | Comment faire un inventaire ? | les étapes d'un inventaire ; procédure d'inventaire | coment fair un inventère ; comen on fait linventaire |
+help | magasin | Comment ajouter du stock à un article ? | comment faire une entrée de stock | coment ajouté du stok a un article |
+help | admin | Comment transférer du stock entre deux magasins ? | comment faire un transfert de stock | coment transferé du stok entre 2 magasin |
+help | admin | Comment déclarer une perte ou de la casse ? | comment enregistrer une perte de stock | coment declaré une perte ou de la casse |
+help | admin | Comment importer mon stock depuis Excel ? | comment importer le stock par fichier | coment importé mon stok depuis excel | train=no
+help | magasin | Comment créer un nouvel article ? | comment ajouter un produit | coment creé un nouvel article |
+help | admin | Comment imprimer des étiquettes code-barres ? | comment faire des étiquettes | coment imprimé des etiquette code barre |
+help | admin | Comment fixer un seuil d'alerte sur un article ? | où régler le stock minimum d'un article | coment fixé un seuil dalerte |
+help | admin | Comment vendre un article au carton et à l'unité ? | comment vendre au carton | coment vendr un article o carton |
+help | admin | Comment gérer les lots et les dates de péremption ? | comment saisir un lot | coment geré les lot et les date de peremtion |
+concept | admin | Pourquoi mon stock peut-il être négatif ? | comment un stock devient négatif | pk mon stok peu etre negatif |
+concept | magasin | Pourquoi faut-il faire un inventaire ? | à quoi sert un inventaire | pk fo til fair un inventère |
+concept | admin | C'est quoi la rotation du stock ? | qu'est-ce que la rotation des stocks | c koi la rotation du stok |
+concept | admin | À quoi sert un seuil d'alerte ? | c'est quoi le stock minimum | a koi sert un seuil dalerte |
+concept | admin | C'est quoi le coût moyen pondéré ? | que veut dire CMP | c koi le cout moyen ponderé |
+concept | admin | Quelle est la différence entre FIFO et FEFO ? | c'est quoi le FEFO | c koi la diference entre fifo et fefo |
+concept | admin | C'est quoi la démarque ? | qu'est-ce que la démarque inconnue | c koi la demark |
+whats_wrong | magasin | Qu'est-ce qui manque ? | qu'est-ce qui ne va pas dans le stock | kes ki manke |
+most_profitable | admin | Quels articles me rapportent le plus de marge ? | produits les plus rentables | kel article me raporte le plus de marge |
+most_profitable | magasin | Quels sont les produits les plus rentables ? |  | produi les plus rentable | out=refuse
+stock_value | admin | Valeur du stock par rapport au prix d'achat | valeur du stock au coût d'achat | valeur du stok o cout dachat | db=stock_value
+stock_count | admin | Et au dépôt ? |  | et o depot ? | ctx=STOCK-027; loc=Dépôt
+stock_out | admin | Et au magasin principal ? |  | et o magasin principal ? | ctx=STOCK-033; loc=Magasin principal
+product_stock | admin | Combien de savon reste-t-il au magasin principal ? | stock de savon au magasin principal | cb de savon reste til o magasin principal | prod=Savon; loc=Magasin principal
+product_stock | admin | Le niébé, il y en a encore ? | combien de niébé en stock | le niebe yen a encore | prod=Niébé
+product_stock | admin | Stock de la tomate concentrée | combien de tomate concentrée | stok de la tomate concentré | prod=Tomate
+product_stock | admin | Combien de spaghetti il nous reste ? | stock des spaghetti | cb de spageti il nous reste | prod=Spaghetti
+product_info | admin | Le jus de bissap est à combien ? | prix du jus de bissap | le ju de bisap est a cb | prod=bissap
+product_info | admin | Quel est le prix de gros du savon ? | prix de gros du savon de ménage | kel est le pri de gro du savon | prod=Savon
+action_stock_add | admin | Mets 100 dans le stock du dentifrice. | ajoute 100 dentifrices | met 100 dans le stok du dentifrice | qty=100; prod=Dentifrice
+action_stock_add | admin | Rajoute 5 cartons de savon au dépôt. | ajoute 5 savon au dépôt | rajout 5 carton de savon o depo | qty=5; prod=Savon; loc=Dépôt
+action_stock_add | magasin | Entre 60 kilos de niébé en stock. | ajoute 60 niébé au stock | entr 60 kilo de niebe en stok | qty=60; prod=Niébé

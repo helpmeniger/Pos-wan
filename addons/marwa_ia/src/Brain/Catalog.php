@@ -86,6 +86,22 @@ final class Catalog
         'users_count' => ['Utilisateurs du logiciel', 'utilisateurs', ['users.manage'], 'usersCount', '/users'],
         'whoami' => ['Mon profil et mes droits', 'utilisateurs', [], 'whoami', '/account/password'],
         'wifi_tickets' => ['Tickets Wi-Fi (Marwa Connect)', 'tickets', [], 'wifiTickets', null],
+        // Outils du moteur « Business Expert » (classe Expert)
+        'last_stock_in' => ['Dernière entrée en stock', 'stock', ['stock.view'], 'Expert::lastStockIn', '/stock/movements'],
+        'stock_movements' => ['Mouvements de stock', 'stock', ['stock.view'], 'Expert::stockMovements', '/stock/movements'],
+        'stock_in_total' => ['Entrées en stock de la période', 'stock', ['stock.view'], 'Expert::stockInTotal', '/stock/movements'],
+        'product_info' => ['Prix et fiche d\'un article', 'stock', ['products.view|pos.sell'], 'Expert::productInfo', '/products'],
+        'product_sales' => ['Ventes d\'un article', 'ventes', ['sales.view'], 'Expert::productSales', '/reports/sales'],
+        'items_sold' => ['Nombre d\'articles vendus', 'ventes', ['sales.view'], 'Expert::itemsSold', '/reports/sales'],
+        'customer_info' => ['Fiche et solde d\'un client', 'clients', ['customers.view'], 'Expert::customerInfo', '/customers'],
+        'supplier_info' => ['Fiche et solde d\'un fournisseur', 'fournisseurs', ['purchases.view'], 'Expert::supplierInfo', '/suppliers'],
+        'customer_payments' => ['Règlements des dettes clients', 'clients', ['customers.view'], 'Expert::customerPayments', '/customers'],
+        'expenses_by_category' => ['Dépenses par catégorie', 'finances', ['expenses.manage|reports.financial'], 'Expert::expensesByCategory', '/expenses'],
+        'margin_rate' => ['Marge brute et taux de marge', 'finances', ['reports.financial'], 'Expert::marginRate', '/reports/profit'],
+        'cash_sessions_open' => ['Caisses ouvertes', 'caisse', ['cash.view_all|cash.open_close'], 'Expert::cashSessionsOpen', '/cash/sessions'],
+        'cash_diagnostic' => ['Diagnostic de la caisse', 'caisse', ['cash.view_all|cash.open_close'], 'Expert::cashDiagnostic', '/cash'],
+        'whats_wrong' => ['Alertes et points à surveiller', 'synthèses', [], 'Expert::whatsWrong', null],
+        'advice' => ['Conseils de gestion calculés sur vos données', 'synthèses', [], 'Expert::advice', null],
     ];
 
     /** Délai maximal d'une requête de consultation (ms). */
@@ -107,7 +123,7 @@ final class Catalog
             $pdo->exec('START TRANSACTION READ ONLY'); // aucune écriture possible pendant la consultation
         }
         try {
-            $r = self::{$def[3]}($u, $slots);
+            $r = str_contains($def[3], '::') ? ('Addons\\MarwaIa\\Brain\\' . $def[3])($u, $slots) : self::{$def[3]}($u, $slots);
         } finally {
             if ($own && $pdo->inTransaction()) {
                 $pdo->rollBack();
@@ -218,6 +234,12 @@ final class Catalog
                 $p[] = $loc['id'];
                 $label = 'la boutique « ' . $loc['name'] . ' »';
             }
+        }
+        $ex = $s['exclude'] ?? null;
+        if ($ex) {
+            $w .= $ex['type'] === 'warehouse' ? " AND $whCol <> ?" : " AND ($storeCol IS NULL OR $storeCol <> ?)";
+            $p[] = $ex['id'];
+            $label .= ', sans ' . ($ex['type'] === 'warehouse' ? 'le magasin' : 'la boutique') . ' « ' . $ex['name'] . ' »';
         }
         return [$w, $p, $label];
     }

@@ -19,7 +19,7 @@ use App\Core\DB;
  */
 final class Learning
 {
-    public const SEED_VERSION = '2.0.0';
+    public const SEED_VERSION = '3.0.0';
 
     /** Remplit les bibliothèques intégrées (idempotent, mis à jour quand la version change). */
     public static function seed(bool $force = false): void
@@ -45,7 +45,20 @@ final class Learning
             DB::run("INSERT INTO ai_tool_registry (code, label, kind, permission, description) VALUES (?, ?, 'read', ?, 'Consultation en lecture seule')
                 ON DUPLICATE KEY UPDATE label = VALUES(label), permission = VALUES(permission)", ['data_' . $code, $label, implode(',', $perms) ?: null]);
         }
-        foreach (Knowledge::FAQ as [$keys, $title, $body, $links]) {
+        // Intentions hors catalogue (conversation, aide, actions, limites) : visibles et désactivables dans le centre d'entraînement
+        foreach (Dataset::intentCodes() as $code) {
+            if (!isset(Catalog::TOOLS[$code])) {
+                $i = Dataset::intent($code);
+                DB::run('INSERT INTO ai_intents (code, label, module, tool, permission, builtin) VALUES (?, ?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE label = VALUES(label), module = VALUES(module)',
+                    [$code, mb_substr($i['label'], 0, 160), $i['module'], mb_substr($code, 0, 60), implode(',', $i['permissions']) ?: null]);
+            }
+        }
+        try {
+            Dataset::sync();
+        } catch (\Throwable $e) {
+            \App\Core\Logger::error('marwa_ai_dataset', ['error' => $e->getMessage()]);
+        }
+        foreach (array_merge(Knowledge::FAQ, self::EXTRA_FAQ) as [$keys, $title, $body, $links]) {
             if (!DB::value("SELECT 1 FROM ai_knowledge_base WHERE source = 'builtin' AND title = ?", [$title])) {
                 DB::insert('ai_knowledge_base', ['kind' => 'faq', 'title' => $title, 'keywords' => $keys, 'body' => $body, 'links_json' => json_encode($links, JSON_UNESCAPED_UNICODE), 'source' => 'builtin']);
             }
@@ -58,6 +71,22 @@ final class Learning
         setting_set('ai_seed_version', self::SEED_VERSION);
         Nlu::reset();
     }
+
+    /** Fiches de dépannage ajoutées en 3.0 (questions « pourquoi ça ne marche pas ? »). */
+    public const EXTRA_FAQ = [
+        ['pourquoi valider vente impossible marche pas bloque refuse caisse valide encaisser erreur', 'Pourquoi je n\'arrive pas à valider une vente ?',
+            '<p>La caisse refuse une vente dans ces cas :</p><ol><li><b>Caisse fermée</b> : ouvrez-la (Ma caisse → Ouvrir, avec le fond de caisse).</li><li><b>Panier vide</b> ou quantité à zéro.</li><li><b>Stock insuffisant</b> : l\'article n\'a plus assez de stock et les ventes en stock négatif ne sont pas autorisées — enregistrez la réception ou corrigez le stock.</li><li><b>Paiement insuffisant</b> : la somme saisie est inférieure au total ; pour une vente à crédit, choisissez d\'abord un client.</li><li><b>Plafond de crédit</b> du client dépassé.</li><li><b>Remise ou prix modifié</b> au-delà de ce que votre rôle autorise : un responsable doit saisir son code.</li><li><b>Article sur ordonnance</b> (pharmacie) : les informations de l\'ordonnance sont obligatoires.</li></ol><p>Le message affiché en rouge dans la fenêtre d\'encaissement indique la cause exacte.</p>', [['Ma caisse', '/cash'], ['Écran de caisse', '/pos']]],
+        ['imprimante ticket imprime pas sort pas papier blanc thermique impression', 'Le ticket ne s\'imprime pas : que vérifier ?',
+            '<ol><li>L\'imprimante est allumée, branchée, et son voyant n\'est pas rouge (capot fermé, papier présent).</li><li>Le rouleau est dans le bon sens : le papier thermique ne noircit que d\'un côté — un ticket qui sort blanc est un rouleau à l\'envers.</li><li>La bonne imprimante est choisie dans la fenêtre d\'impression du navigateur, ou dans Configuration → Impression pour une imprimante réseau.</li><li>La largeur du ticket (58 ou 80 mm) correspond au papier.</li><li>Réimprimez depuis la caisse : bouton <b>Tickets</b> → la vente → Ticket.</li></ol>', [['Paramètres', '/settings']]],
+        ['connexion connecter mot passe oublie bloque compte identifiant login', 'Je n\'arrive pas à me connecter',
+            '<ol><li>Vérifiez l\'identifiant et les majuscules du mot de passe (touche Verr. Maj).</li><li>Après plusieurs essais ratés, le compte est bloqué quelques minutes : patientez.</li><li>Mot de passe oublié : un administrateur le réinitialise dans Configuration → Utilisateurs.</li><li>Si la page ne s\'ouvre pas du tout, le serveur de la boutique est peut-être éteint ou le réseau coupé.</li></ol>', [['Utilisateurs', '/users']]],
+        ['ecart caisse manque excedent cloture difference compte juste tombe pas', 'Ma caisse ne tombe pas juste : que faire ?',
+            '<ol><li>Recomptez les espèces, coupure par coupure.</li><li>Dans Ma caisse, relisez les mouvements de la session : une sortie ou une dépense oubliée, ou saisie deux fois.</li><li>Vérifiez les paiements saisis en espèces alors qu\'ils étaient en mobile money ou par carte.</li><li>Notez l\'écart et son explication à la clôture : il reste visible dans Sessions de caisse.</li></ol><p>Demandez-moi « c\'est quoi le problème avec ma caisse ? » pour un contrôle des enregistrements.</p>', [['Ma caisse', '/cash'], ['Sessions de caisse', '/cash/sessions']]],
+        ['stock negatif faux incorrect corriger erreur quantite mauvais', 'Le stock affiché est faux : comment le corriger ?',
+            '<ol><li>Une marchandise reçue mais pas saisie : enregistrez la réception (Achats) ou un <b>Ajout de stock rapide</b>.</li><li>Une perte ou de la casse : Gestion des articles → <b>Ajustement / pertes</b>, avec le motif.</li><li>Un doute sur plusieurs articles : faites un <b>inventaire</b> ; à sa validation, le logiciel corrige les écarts et en garde la trace.</li></ol><p>On ne modifie jamais une quantité « à la main » sans mouvement : c\'est ce qui rend l\'historique fiable.</p>', [['Ajout de stock rapide', '/stock/quick'], ['Inventaires', '/inventories']]],
+        ['article introuvable caisse trouve pas apparait pas recherche scanner code barres', 'Un article n\'apparaît pas à la caisse',
+            '<ol><li>Il est peut-être <b>archivé</b> ou marqué <b>non vendable</b> : ouvrez sa fiche (Gestion des articles → Articles, filtre « Tous »).</li><li>Son code-barres n\'est pas saisi ou est différent de celui de l\'emballage : scannez-le dans la fiche.</li><li>Il vient d\'être créé : rechargez l\'écran de caisse.</li><li>Il appartient à un autre canal de vente (restaurant, boutique en ligne).</li></ol>', [['Articles', '/products']]],
+    ];
 
     /** Question anonymisée pour le journal d'apprentissage (chiffres, numéros et téléphones retirés). */
     public static function anonymize(string $q): string
@@ -83,6 +112,16 @@ final class Learning
         }
         DB::run('INSERT INTO ai_feedback (message_id, user_id, rating, comment) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE rating = VALUES(rating), comment = VALUES(comment), status = \'new\'',
             [$messageId, $uid, $rating >= 0 ? 1 : -1, $comment !== null ? mb_substr(trim($comment), 0, 500) : null]);
+    }
+
+    /** Historique des améliorations de la connaissance (qui a changé quoi, quand). */
+    public static function version(string $kind, ?string $ref, string $summary): void
+    {
+        try {
+            DB::insert('ai_knowledge_versions', ['kind' => $kind, 'ref' => $ref !== null ? mb_substr($ref, 0, 120) : null, 'summary' => mb_substr($summary, 0, 500), 'user_id' => Auth::id()]);
+        } catch (\Throwable) {
+            // table absente (migration non encore passée) : l'historique est simplement ignoré
+        }
     }
 
     /** Correction validée : la question devient un exemple de l'intention choisie. */

@@ -1,0 +1,72 @@
+# domaine: Clients et dettes
+# code: CLIENT
+customer_debts | admin | Qui me doit de l'argent ? | clients qui ont des dettes ; quels clients me doivent de l'argent | ki me doi de largent ; kel clien me doive | db=debts
+customer_debts | admin | Quelles sont mes créances clients ? | créances clients ; total des crédits clients | kel son mes creance clien | db=debts
+customer_debts | caissier | Quels clients ont une dette ? | liste des clients débiteurs | kel clien on une dete |
+customer_debts | gerant | Qui n'a pas encore payé ? | clients qui n'ont pas payé | ki na pas encor payé |
+customer_debts | magasin | Qui me doit de l'argent ? |  | ki me doi de largen | out=refuse
+customer_debts | admin | Combien de crédit j'ai accordé en tout ? | montant total des crédits accordés | cb de credi jai acordé en tou | db=debts
+customers_count | admin | Combien de clients ? | nombre de clients ; combien de clients enregistrés | cb de clien ; nombre de client | db=customers
+customers_count | caissier | Combien de clients on a ? | on a combien de clients | cb de clien on a |
+customers_count | admin | Combien de nouveaux clients ce mois ? | clients créés ce mois | cb de nouvo clien ce mois |
+customers_count | magasin | Combien de clients ? |  | cb de clien | out=refuse
+top_customer | admin | Qui est mon meilleur client ? | meilleur client ; client qui achète le plus | ki est mon meilleur clien |
+top_customer | gerant | Quel client a le plus acheté cette année ? | meilleurs clients de l'année | kel clien a le plus acheté cette annee |
+top_customer | admin | Mes clients les plus fidèles | clients les plus réguliers | mes clien les plus fidele |
+customer_info | admin | Cherche le client Moussa Garba. | fiche du client Moussa Garba ; trouve-moi le client Moussa Garba | cherch le clien moussa garba ; trouv moi le client mousa garba | cust=Moussa Garba
+customer_info | admin | Combien doit le client Moussa Garba ? | solde du client Moussa Garba | cb doi le clien moussa garba | cust=Moussa Garba
+customer_info | caissier | Combien doit Client crédit ? | dette de Client crédit | cb doi client credi | cust=Client crédit
+customer_info | admin | Cherche le client Moussa. | fiche du client Moussa | cherch le clien moussa | out=clarify
+customer_info | admin | Cherche un client. | trouve-moi un client | cherch un clien | out=clarify
+customer_info | admin | Cherche le client Amadou. | fiche du client Amadou | cherch le clien amadou | out=clarify
+customer_info | admin | Quel est le numéro de téléphone d'Amina ? | téléphone de la cliente Amina | kel est le numero de telefone damina | cust=Amina
+customer_info | admin | À qui appartient le numéro 90 12 34 56 ? | client au numéro 90 12 34 56 | a ki apartien le numero 90 12 34 56 | cust=Moussa Garba
+customer_info | admin | Quel est le plafond de crédit de Moussa Garba ? | plafond de Moussa Garba | kel est le plafon de credi de moussa garba | cust=Moussa Garba
+customer_info | admin | Quand Moussa Garba a-t-il acheté pour la dernière fois ? | dernier achat de Moussa Garba | kan moussa garba a til acheté pour la derniere foi | cust=Moussa Garba
+customer_info | magasin | Cherche le client Moussa Garba. |  | cherch le clien moussa garba | out=refuse
+customer_info | admin | Et Amina ? |  | et amina ? | ctx=CLIENT-015; cust=Amina
+customer_payments | admin | Qui a payé sa dette ce mois ? | règlements des clients ce mois | ki a payé sa dete ce mois | per=month
+customer_payments | caissier | Combien de remboursements de dettes aujourd'hui ? | paiements de dettes reçus aujourd'hui | cb de remboursemen de dete ojourdui | per=today
+customer_payments | gerant | Combien les clients ont réglé cette semaine ? | règlements clients de la semaine | cb les clien on reglé cette semaine | per=week
+customer_payments | magasin | Règlements des clients ce mois |  | reglemen des clien ce mois | out=refuse
+report | admin | Rapport du client Moussa Garba en PDF | relevé du client Moussa Garba en PDF | rapor du clien moussa garba en pdf |
+report | admin | Liste des créances clients en Excel | exporte les créances en Excel | liste des creance clien en excel |
+report | admin | Rapport du client Inconnu Xyzzy | relevé du client Xyzzy | rapor du clien inconnu xyzzy | has=aucun client
+action_navigate | admin | Ouvre la liste des clients. | va sur la page des clients | ouvr la liste des clien |
+action_unsupported | caissier | Rembourse le client Moussa Garba. | rembourse ce client | rembours le clien moussa garba |
+security | caissier | Efface la dette de Moussa Garba. | supprime la dette du client sans paiement | eface la dete de moussa garba | train=no; out=refuse
+security | admin | Supprime tous les clients. | efface toute la liste des clients | suprime tou les clien |
+help | caissier | Comment ajouter un client ? | comment créer un nouveau client | coment ajouté un clien |
+help | caissier | Comment encaisser la dette d'un client ? | comment enregistrer un règlement client | coment encaissé la dete dun clien |
+help | admin | Comment fixer un plafond de crédit ? | où régler le plafond de crédit d'un client | coment fixé un plafon de credi |
+help | caissier | Comment vendre à crédit à un client ? | comment faire une vente à crédit | coment vendr a credi a un clien |
+help | admin | Comment voir l'historique d'achats d'un client ? | où voir les achats d'un client | coment voir listorique dachat dun clien |
+help | admin | Comment envoyer un relevé à un client ? | comment imprimer le relevé d'un client | coment envoyé un relevé a un clien |
+help | caissier | Le client a dépassé son plafond, que faire ? | que faire quand le plafond de crédit est dépassé | le clien a depassé son plafon ke fair | train=no
+help | admin | Comment fonctionne la fidélité des clients ? | comment marchent les points de fidélité | coment fonctione la fidelité des clien | train=no
+help | admin | Comment fusionner deux fiches du même client ? | comment supprimer un client en double | coment fusioné 2 fiche du meme clien | train=no
+help | admin | Comment modifier le téléphone d'un client ? | comment changer les informations d'un client | coment modifié le telefone dun clien |
+concept | caissier | Quelle est la différence entre un client débiteur et créditeur ? | c'est quoi un client débiteur | c koi la diference entre un clien debiteur et crediteur |
+concept | admin | Pourquoi vendre à crédit est risqué ? | quels sont les risques de la vente à crédit | pk vendr a credi est riské |
+concept | admin | C'est quoi un client débiteur ? | que veut dire client débiteur | c koi un clien debiteur
+advice_topic | admin | Idées pour fidéliser mes clients | comment fidéliser mes clients | idé pour fidelisé mes clien | train=no
+customer_debts | admin | Qui me doit le plus ? | plus gros débiteur | ki me doi le plus |
+customer_debts | gerant | Montant total des dettes clients | total de ce que les clients doivent | montan total des dete clien | db=debts
+customer_debts | admin | Y a-t-il des clients en retard de paiement ? | clients en retard | ya til des clien en retar de paiemen |
+top_customer | admin | Quel client dépense le plus ? | plus gros client | kel clien depense le plus |
+customers_count | gerant | Combien de clients ont une dette en ce moment ? | nombre de clients débiteurs | cb de clien on une dete en ce momen |
+customer_info | gerant | Donne-moi les infos sur Client crédit. | informations sur Client crédit | done moi les info sur client credi | cust=Client crédit
+customer_info | admin | Est-ce que Moussa Abdou nous doit quelque chose ? | Moussa Abdou a-t-il une dette | es ke moussa abdou nou doi kelke chose | cust=Moussa Abdou
+customer_info | admin | Solde de Moussa Garba |  | solde de mousa garba | cust=Moussa Garba
+sales_summary | admin | Combien de ventes à crédit ce mois ? |  | cb de vente a credi ce mois | per=month; train=no
+whats_wrong | caissier | Y a-t-il quelque chose à signaler ? | des choses à signaler | ya til kelke chose a signalé |
+action_navigate | caissier | Emmène-moi aux clients et crédits. | ouvre les clients et crédits | emene moi o clien et credi |
+help | admin | Comment importer une liste de clients ? |  | coment importé une liste de clien | train=no
+help | caissier | Comment retrouver un client par son téléphone ? | comment chercher un client | coment retrouvé un clien par son telefone |
+help | admin | Comment bloquer le crédit d'un mauvais payeur ? | comment interdire le crédit à un client | coment bloké le credi dun mauvai payeur | train=no
+concept | caissier | Qu'est-ce qu'un avoir client ? | à quoi sert un avoir pour un client | kes kun avoir clien |
+customer_payments | admin | Et hier ? |  | et ier ? | ctx=CLIENT-027; per=yesterday
+customer_debts | caissier | À combien s'élèvent les dettes des clients ? | total des dettes | a cb seleve les dete des clien |
+top_customer | caissier | Qui achète le plus chez nous ? | notre meilleur client | ki achete le plus che nou | out=refuse
+customer_info | caissier | Le client Moussa Garba peut-il encore prendre à crédit ? | Moussa Garba a-t-il atteint son plafond | le clien moussa garba peu til encor prendr a credi | cust=Moussa Garba
+security | caissier | Donne-moi les numéros de téléphone de tous les clients en cachette. |  | done moi les numero de tou les clien en cachete | train=no
