@@ -46,13 +46,22 @@ final class Recover
         . 'salut bonjour bonsoir merci svp oui non ok daccord accord bien mal vite rapidement maintenant actuellement toujours jamais souvent beaucoup peu trop assez environ total totale nombre quantite montant valeur '
         . 'unite unites piece pieces bouteille bouteilles carton cartons sac sacs paquet paquets kilo kilos litre litres francs franc fcfa cfa argent somme prix cout couts '
         . 'trace traces cachette discretement secret secrets instructions regles consignes restrictions droits historique journal audit licence dette dettes credit encours idee idees conseil conseils '
-        . 'premier deux trois quatre cinq six sept huit neuf dix vingt trente cent mille million millions marche marcher fonctionne fonctionner probleme problemes erreur erreurs possible besoin';
+        . 'puis ensuite alors aussi donc enfin apres avant pendant lorsque parce quelque quelques plusieurs chacun chacune autre autres certains aucun aucune rien tout tous personne quelqu chose choses '
+        . 'etait etaient sera seront serait avait avaient aura auront aurait suis sommes etes peut peuvent pouvons pouvez doit doivent devons devez dois veut veulent voulons voulez vais allons allez vont viens vient '
+        . 'sais sait savons savez savent crois pense pensez dit disent dites mis pris prend prendre prends recu recue recus rendu rendre rends garde garder passe passer reste rester arrive arriver part partir '
+        . 'grand grande grands petit petite petits nouveau nouvelle nouveaux vieux ancien ancienne gros grosse bas haut haute long longue court courte vrai vraie faux fausse juste meilleur meilleure meilleurs pire '
+        . 'ici la bas dessus dessous dedans dehors partout ailleurs pres loin vraiment seulement uniquement surtout plutot presque environ exactement simplement directement automatiquement '
+        . 'patron gerant proprietaire chef employe employes equipe comptable fisc impot impots etat banque argent monnaie espece especes billet billets piece cheque carte mobile money telephone numero '
+        . 'matin soir nuit heure heures minute minutes jour journee semaine mois annee date debut fin maintenant bientot tard tot hier demain place maison ville pays monde vie temps fois cas '
+        .'premier deux trois quatre cinq six sept huit neuf dix vingt trente cent mille million millions marche marcher fonctionne fonctionner probleme problemes erreur erreurs possible besoin';
 
     /** Tournures fautives fréquentes, corrigées une fois les mots remis en forme. */
     private const PHRASES = [
         '/\b(cet|c|sette|cett|ce) semaine\b/u' => 'cette semaine', '/\b(ce|se|c) moi\b/u' => 'ce mois', '/\bdu moi\b/u' => 'du mois', '/\b(le|les|du|au) moi (dernier|passe|prochain)\b/u' => '$1 mois $2',
         '/\bmoi (dernier|passe)\b/u' => 'mois dernier', '/\b(semaine|annee) (passe|passee|pase|d avant)\b/u' => '$1 derniere', '/\bmois (passe|passee|pase|d avant)\b/u' => 'mois dernier',
         '/\bcet (annee|anne)\b/u' => 'cette annee', '/\b(es|est) ke\b/u' => 'est ce que', '/\bkes ki\b/u' => 'qu est ce qui', '/\bkes ke\b/u' => 'qu est ce que', '/\bya til\b/u' => 'y a t il',
+        '/\b(mon|le|du|notre|ton|votre|un) ca\b(?! (va|donne|marche|fait|sert|dit))/u' => '$1 chiffre d affaires', '/\bquesque\b/u' => 'qu est ce que', '/\bquesqui\b/u' => 'qu est ce qui',
+        '/\bil il faut\b/u' => 'il faut', '/\bil il y a\b/u' => 'il y a',
         '/\bc quoi\b/u' => 'c est quoi', '/\bc combien\b/u' => 'c est combien',
     ];
 

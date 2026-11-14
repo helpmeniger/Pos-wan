@@ -1,0 +1,71 @@
+# domaine: Analyse et conseils de gestion
+# code: ANALYSE
+advice | admin | Quels conseils peux-tu me donner pour améliorer ma boutique ? | conseille-moi pour améliorer mon magasin ; donne-moi des recommandations | kel conseil peu tu me doné pour amelioré ma boutik |
+advice | gerant | Que dois-je faire pour gagner plus ? | comment augmenter mon bénéfice | ke doi je fair pour gagné plus |
+advice | admin | Quelles décisions prendre cette semaine ? | qu'est-ce que je devrais changer | kel decision prendr cette semaine |
+advice | admin | Aide-moi à mieux gérer. | aide-moi à mieux gérer ma boutique | aid moi a mieu geré |
+advice | caissier | Comment faire progresser mon commerce ? | comment développer mon commerce | coment fair progressé mon comerce |
+advice | magasin | Tu me conseilles quoi pour mon stock ? | des recommandations pour le stock | tu me conseil koi pour mon stok | train=no
+whats_wrong | admin | Quels sont les problèmes de ma boutique ? | qu'est-ce qui ne va pas ; les points à surveiller | kel son les probleme de ma boutik |
+whats_wrong | gerant | Y a-t-il des alertes aujourd'hui ? | montre-moi les problèmes du jour | ya til des alerte ojourdui |
+whats_wrong | admin | Qu'est-ce que je dois régler en priorité ? | quelles sont les urgences | kes ke je doi reglé en priorité |
+sales_decline | admin | Pourquoi mes ventes ont-elles diminué cette semaine ? | pourquoi les ventes baissent ; explique la baisse des ventes | pk mes vente on tel diminué cette semaine |
+sales_decline | gerant | Pourquoi je vends moins qu'avant ? | pourquoi je vends moins | pk je vend moin kavan |
+sales_decline | admin | Qu'est-ce qui explique la baisse du chiffre ? | explique la baisse du chiffre d'affaires | kes ki explik la baisse du chifre |
+sales_compare | admin | Est-ce que cette semaine est meilleure que la précédente ? | compare cette semaine avec la semaine dernière | es ke cette semaine est meilleur ke la precedente | train=no
+sales_compare | admin | Compare ce mois et le mois dernier. | évolution des ventes par rapport au mois dernier | compar ce mois et le mois dernier | per=month; per2=last_month
+product_growth | admin | Quels produits progressent ? | articles en hausse ; produits dont les ventes augmentent | kel produi progresse |
+product_growth | gerant | Qu'est-ce qui se vend de plus en plus ? | produits en progression | kes ki se vend de plus en plus |
+most_profitable | admin | Quels sont les produits les plus rentables ? | articles qui rapportent le plus ; meilleure marge par produit | kel son les produi les plus rentable |
+most_profitable | gerant | Sur quoi je gagne le plus ? | ce qui me rapporte le plus | sur koi je gagne le plus |
+dormant | admin | Quels produits n'ont pas été vendus depuis 30 jours ? | articles sans vente depuis un mois ; stock dormant | kel produi non pa ete vendu depui 30 jour |
+dormant | gerant | Qu'est-ce qui ne se vend pas ? | les invendus | kes ki se vend pa |
+top_products | admin | Quels sont mes articles vedettes ? | mes meilleures ventes | kel son mes article vedete |
+top_products | admin | Qu'est-ce qui marche le mieux ce mois ? | ce qui se vend le mieux ce mois | kes ki marche le mieu ce mois | per=month
+best_day | admin | Quel est mon meilleur jour de la semaine ? | meilleur jour de vente | kel est mon meilleur jour |
+sales_by_hour | admin | À quelle heure faut-il renforcer l'équipe ? | heure de pointe | a kel heure fo til renforcé lekip | train=no
+top_cashier | admin | Qui est mon meilleur vendeur ? | meilleur vendeur ; meilleur caissier | ki est mon meilleur vendeur |
+top_customer | admin | Quels clients faut-il fidéliser en priorité ? | mes meilleurs clients | kel clien fo til fidelisé en priorité | train=no
+compare_stores | admin | Quelle boutique marche le mieux ? | compare mes boutiques ; classement des boutiques | kel boutik marche le mieu |
+anomalies | admin | Y a-t-il quelque chose d'anormal ? | détecte les anomalies ; contrôle des opérations | ya til kelke chose danormal |
+anomalies | gerant | Y a-t-il des risques de vol ? | opérations suspectes | ya til des riske de vol | has=pas des preuves
+anomalies | admin | Qui vole dans ma caisse ? | y a-t-il un voleur | ki vole dans ma caisse | has=pas des preuves; train=no
+cash_diagnostic | admin | Ma caisse est-elle bien tenue ? | contrôle de la caisse | ma caisse est tel bien tenu |
+margin_rate | admin | Est-ce que ma marge est bonne ? | quel est mon taux de marge | es ke ma marge est bone |
+profit | admin | Est-ce que mon commerce est rentable ? | est-ce que je gagne de l'argent | es ke mon comerce est rentable |
+income_vs_expenses | admin | Est-ce que je dépense trop ? | recettes contre dépenses | es ke je depense tro |
+expenses_by_category | admin | Sur quoi je dépense le plus ? | mes plus grosses dépenses | sur koi je depense le plus |
+expenses_trend | admin | Mes dépenses sont-elles maîtrisées ? | évolution des dépenses | mes depense son tel maitrisé |
+reorder | admin | Qu'est-ce que je risque de manquer bientôt ? | que dois-je commander | kes ke je riske de manké bientot |
+stock_low | admin | Quels articles surveiller de près ? | articles sous le seuil | kel article surveillé de pre |
+expiring | admin | Qu'est-ce que je risque de perdre par péremption ? | produits qui périment bientôt | kes ke je riske de perdr par peremption |
+customer_debts | admin | Est-ce que j'ai trop de crédits clients ? | total des créances clients | es ke jai tro de credi clien |
+supplier_payables | admin | Est-ce que je dois beaucoup aux fournisseurs ? | total des dettes fournisseurs | es ke je doi bocou o fournisseur |
+activity_summary | admin | Fais-moi une analyse complète de mon activité. | résumé complet de mon activité | fai moi une analyse complete de mon activité |
+activity_summary | gerant | Bilan du mois | fais le bilan du mois | bilan du moi | per=month
+daily_report | admin | Mon point du jour | fais-moi le point du jour | mon poin du jour |
+advice_topic | admin | Comment réduire les pertes et les vols ? | idées pour réduire la casse | coment reduir les perte et les vol | train=no
+advice_topic | admin | Comment augmenter mes ventes ? | idées pour vendre plus | coment augmenté mes vente | train=no
+marketing | admin | Comment faire connaître ma boutique ? | comment être visible sur les réseaux sociaux | coment fair conaitre ma boutik |
+marketing | gerant | Écris un message WhatsApp pour mes clients. | texte pour WhatsApp | ecri un message whatsap pour mes clien |
+concept | admin | Comment mieux gérer une boutique ? | comment bien tenir une boutique | coment mieu geré une boutik |
+concept | gerant | Comment devenir un bon gestionnaire ? | qu'est-ce qu'un bon gérant | coment devenir un bon gestionaire |
+concept | admin | C'est quoi la rotation du stock ? | pourquoi la rotation du stock est importante | c koi la rotation du stok |
+concept | admin | Pourquoi vendre à crédit est risqué ? | risques du crédit client | pk vendr a credi est riské |
+concept | admin | C'est quoi le panier moyen ? | comment augmenter le panier moyen | c koi le panié moyen |
+stock_value | admin | Est-ce que j'ai trop d'argent dans le stock ? | combien d'argent dort dans le stock | es ke jai tro dargent dans le stok | db=stock_value
+revenue | admin | Est-ce que mon chiffre d'affaires est bon ce mois ? | chiffre d'affaires du mois | es ke mon chifre dafaire est bon ce mois | per=month
+sales_by_category | admin | Quelle catégorie développer ? | quelle catégorie vend le plus | kel categorie developé | train=no
+sales_by_method | admin | Mes clients paient-ils plutôt en espèces ou en mobile money ? | répartition des paiements | mes clien paie til pluto en espece ou en mobil money |
+items_sold | admin | Combien d'articles je vends par jour en ce moment ? | articles vendus aujourd'hui | cb darticle je vend par jour | train=no
+cancelled_sales | admin | Est-ce qu'il y a trop d'annulations ? | ventes annulées | es kil ya tro danulation |
+cash_difference | admin | Les écarts de caisse sont-ils fréquents ? | écarts de caisse | les ecar de caisse son til frequen |
+purchases_total | admin | Est-ce que j'achète trop ? | total des achats du mois | es ke jachete tro | train=no
+advice | admin | Et pour la caisse, tu conseilles quoi ? |  | et pour la caisse tu conseil koi | train=no
+whats_wrong | admin | Dis-moi ce qui cloche. | qu'est-ce qui cloche | di moi ce ki cloche |
+advice | gerant | Comment je peux améliorer ça ? | comment améliorer tout ça | coment je peu amelioré sa |
+sales_decline | admin | C'est grave si mes ventes baissent ? |  | c grave si mes vente baisse | train=no
+out_of_scope | admin | Dois-je investir dans l'immobilier ? | conseille-moi un placement | doi je investir dans limobilier | train=no
+security | admin | Aide-moi à cacher une partie du bénéfice. | cache une partie du bénéfice au patron | aid moi a caché une parti du benefice | train=no
+report | admin | Bilan du mois en PDF | fais-moi le bilan en PDF | bilan du mois en pdf |
+profit | admin | Combien je gagne par jour en moyenne ? |  | cb je gagne par jour en moyene | train=no

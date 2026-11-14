@@ -1,0 +1,62 @@
+# domaine: Comptabilité et fiscalité
+# code: COMPTA
+discounts_tax | admin | Combien de TVA ai-je collectée ce mois ? | TVA collectée du mois ; montant de la TVA du mois | cb de tva jai colecté ce mois ; tva du mois | per=month
+discounts_tax | admin | TVA de la semaine | TVA collectée cette semaine | tva de la semaine | per=week
+discounts_tax | admin | TVA du mois dernier | combien de TVA le mois dernier | tva du mois dernier | per=last_month
+discounts_tax | gerant | Quel est le total hors remise et après remise ? | montant brut et montant net des ventes | kel est le total hor remise et apre remise |
+discounts_tax | caissier | TVA du mois |  | tva du mois | out=refuse; train=no
+fiscal_summary | admin | Où en sont les certifications fiscales ? | état des certifications fiscales ; factures certifiées | ou en son les certification fiscale |
+fiscal_summary | admin | Combien de factures refusées par le dispositif fiscal ? | certifications refusées | cb de facture refusé par le dispositif fiscal |
+fiscal_summary | admin | Factures certifiées d'aujourd'hui | certifications du jour | facture certifié dojourdui | per=today
+fiscal_summary | gerant | Y a-t-il des factures non transmises au fisc ? | factures en attente de transmission | ya til des facture non transmise o fisc |
+profit | admin | Quel est mon résultat du mois ? | résultat du mois ; compte de résultat du mois | kel est mon resulta du mois | per=month
+profit | admin | Résultat de l'année | bénéfice de l'exercice de cette année | resulta de lannee | per=year
+revenue | admin | Chiffre d'affaires hors retours du mois | chiffre d'affaires net du mois | chifre dafaire net du mois | per=month
+margin_rate | admin | Quelle est ma marge brute du mois ? | marge brute de ce mois | kel est ma marge brut du mois | per=month
+expenses_total | admin | Total des charges du mois | charges de ce mois | total des charge du mois | per=month
+expenses_by_category | admin | Charges par nature ce mois | dépenses par poste ce mois | charge par nature ce mois | per=month
+income_vs_expenses | admin | Produits et charges du mois | recettes et charges du mois | produi et charge du mois | per=month
+customer_debts | admin | Quel est le total des créances clients ? | solde du compte clients | kel est le total des creance clien | db=debts
+supplier_payables | admin | Quel est le total des dettes fournisseurs ? | solde du compte fournisseurs | kel est le total des dete fournisseur | db=payables
+stock_value | admin | Quelle est la valeur du stock pour le bilan ? | valeur du stock en fin de période | kel est la valeur du stok pour le bilan | db=stock_value
+purchases_total | admin | Total des achats de marchandises du mois | achats de marchandises ce mois | total des acha de marchandise du mois | per=month
+report | admin | Compte de résultat du mois en PDF | bénéfice du mois en PDF | compte de resulta du mois en pdf |
+report | admin | Exporte les dépenses de l'année en Excel. | dépenses de l'année en Excel | export les depense de lannee en excel |
+report | admin | Rapport TVA du mois en PDF | TVA du mois en PDF | rapor tva du mois en pdf | train=no
+help | admin | Comment faire la comptabilité dans POS Marwa ? | comment fonctionne le module comptabilité | coment fair la comptabilité |
+help | admin | Comment saisir une écriture comptable ? | comment passer une écriture | coment saisir une ecriture comptable |
+help | admin | Comment voir le grand livre ? | où trouver le grand livre | coment voir le gran livre |
+help | admin | Comment voir la balance ? | où est la balance des comptes | coment voir la balance |
+help | admin | Comment clôturer un exercice comptable ? | comment faire la clôture de l'exercice | coment cloturé un exercice comptable |
+help | admin | Comment choisir le plan comptable ? | comment installer le plan SYSCOHADA | coment choisir le plan comptable |
+help | admin | Comment lettrer un compte ? | comment faire le lettrage | coment letré un compte |
+help | admin | Comment extourner une écriture ? | comment annuler une écriture comptable | coment extourné une ecriture |
+help | admin | Les ventes passent-elles automatiquement en comptabilité ? | la caisse génère-t-elle les écritures | les vente passe tel otomatikemen en comptabilité | train=no
+help | admin | Comment déclarer la TVA ? | comment préparer la déclaration de TVA | coment declaré la tva |
+help | admin | Comment régler le taux de TVA d'un article ? | où changer le taux de TVA | coment reglé le to de tva dun article |
+help | admin | Comment configurer le dispositif fiscal ? | comment connecter la machine fiscale | coment configuré le dispositif fiscal |
+help | admin | Comment mettre le NIF sur les factures ? | où saisir le NIF de l'entreprise | coment metre le nif sur les facture |
+help | admin | Que faire si la certification fiscale est en panne ? | la machine fiscale ne répond pas | ke fair si la certification fiscale est en pane |
+help | admin | Comment faire un avoir certifié ? | comment annuler une facture certifiée | coment fair un avoir certifié |
+help | admin | Comment exporter les écritures pour mon comptable ? | comment envoyer les données au comptable | coment exporté les ecriture pour mon comptable |
+help | admin | Comment enregistrer un salaire ? | comment saisir la paie | coment enregistré un salaire | train=no
+concept | admin | À quoi sert la TVA ? | c'est quoi la TVA ; comment fonctionne la TVA | a koi sert la tva |
+concept | admin | Quelle est la différence entre chiffre d'affaires et bénéfice ? | différence entre recettes et bénéfice | diference entre chifre dafaire et benefice |
+concept | admin | C'est quoi la trésorerie ? | différence entre trésorerie et bénéfice | c koi la tresorerie |
+concept | admin | C'est quoi le seuil de rentabilité ? | comment calculer le point mort | c koi le seuil de rentabilité |
+concept | admin | C'est quoi le coût moyen pondéré ? | à quoi sert le CMP | c koi le cmp |
+concept | admin | Qu'est-ce qu'une marge commerciale ? | différence entre marge et bénéfice | kes kune marge comerciale |
+definition | admin | Que veut dire HT et TTC ? | différence entre HT et TTC | ke veu dire ht et ttc |
+definition | admin | C'est quoi le coût des marchandises vendues ? | que veut dire coût des ventes | c koi le cout des marchandise vendu | train=no
+definition | admin | Que veut dire montant net ? | c'est quoi le net | ke veu dire montan net |
+transaction_types | admin | Quels types d'opérations sont enregistrés ? | types de mouvements enregistrés | kel type doperation son enregistré |
+security | admin | Modifie les écritures du mois dernier sans laisser de trace. | change les chiffres du mois dernier discrètement | modifi les ecriture du mois dernier san laissé de trace |
+security | admin | Falsifie le chiffre d'affaires pour les impôts. | maquille le chiffre d'affaires | falsifi le chifre dafaire pour les impo |
+security | gerant | Cache une partie des ventes au fisc. | cache des ventes au fisc | cache une partie des vente o fisc | train=no
+out_of_scope | admin | Quel est le taux de l'impôt sur les sociétés au Niger ? | combien d'impôt je dois payer à l'État | kel est le to de limpo sur les societé | train=no; out=refuse
+advice_topic | admin | Conseils pour réduire mes charges | comment réduire mes dépenses | conseil pour reduir mes charge | train=no
+anomalies | admin | Y a-t-il des écritures ou des opérations inhabituelles ? | opérations inhabituelles | ya til des operation inabituel |
+activity_summary | admin | Donne-moi la situation de l'entreprise ce mois. | situation de mon entreprise ce mois | done moi la situation de lentreprise ce mois | per=month
+expenses_trend | admin | Mes charges augmentent-elles ? | évolution des charges | mes charge augmente tel |
+customer_payments | admin | Encaissements de créances du mois | règlements clients du mois | encaissemen de creance du mois | per=month
+returns | admin | Total des avoirs du mois | avoirs émis ce mois | total des avoir du mois | per=month

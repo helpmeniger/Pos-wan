@@ -195,7 +195,8 @@ final class Brain
             return;
         }
         // 3. Conversation : salutations, remerciements, plaisanteries, notions de gestion
-        if ($top && General::isGeneral($top) && ($c['score'] >= 0.55 || count($c['tokens']) <= 4) && !($follow && $c['score'] < 0.7)) {
+        if ($top && General::isGeneral($top) && ($c['score'] >= 0.55 || count($c['tokens']) <= 4) && !($follow && $c['score'] < 0.7)
+            && !(preg_match('/^(comment|ou |que faire|pourquoi)\b/', $n) && !in_array($top, ['wellbeing', 'app_purpose', 'app_name', 'concept'], true) && $c['score'] < 0.9)) {
             if ($top !== 'concept' || (($k = General::concept($q)) && ($k['hits'] >= 2 || $c['score'] >= 0.6))) {
                 if ($this->general($top, $q, $c)) {
                     return;
@@ -224,13 +225,15 @@ final class Brain
             }
         }
         // 5. Conseils calculés sur les données, alertes, diagnostic de caisse (moteur Expert)
-        if (in_array($top, ['advice', 'whats_wrong', 'cash_diagnostic'], true)) {
+        if (in_array($top, ['advice', 'whats_wrong', 'cash_diagnostic'], true) && count(Nlu::split($q)) <= 1) {
             $this->answerIntent($q, $c);
             return;
         }
         // 6. Domaines du moteur 1.x conservés : rapports PDF / Excel, formation, marketing, contrôle, conseils thématiques
-        $howTo = (bool) preg_match('/^(comment|pourquoi|ou |que faire|c est quoi|a quoi)\b/', $n);
-        if (!$howTo && (preg_match('/\b(pdf|excel|csv|imprime\w*|telecharg\w*|exporte\w*)\b/', $n) || preg_match('/^rapport\b/', $n))) {
+        $howTo = (bool) preg_match('/^(comment|pourquoi|ou |que faire|c est quoi|a quoi)\b|\b(n|ne) \w+ (pas|plus|pa)\b|\b(marche|fonctionne|sort|imprime) (pas|plus|pa)\b|\bprobleme\b/', $n);
+        // « Quand le ticket a-t-il été imprimé ? » est une question, pas une demande d'impression
+        $asksFact = (bool) preg_match('/^(quand|qui|combien|quel|quelle|a quelle|est ce)\b/', $n);
+        if (!$howTo && (preg_match('/\b(pdf|excel|csv)\b/', $n) || (!$asksFact && preg_match('/\b(imprime\w*|telecharg\w*|exporte\w*)\b/', $n)) || preg_match('/^rapport\b/', $n))) {
             $this->legacyAsk($q, 'report');
             return;
         }
@@ -242,7 +245,7 @@ final class Brain
             $this->legacyAsk($q, 'checkup');
             return;
         }
-        if (Marketing::isMarketing($n) && !preg_match('/\b(valeur|combien|chiffre)\b/', $n)) {
+        if (Marketing::isMarketing($n) && !preg_match('/\b(valeur|combien|chiffre)\b/', $n) && !($top === 'help' && $c['score'] >= 0.55)) {
             $this->legacyAsk($q, 'marketing');
             return;
         }
@@ -281,7 +284,7 @@ final class Brain
         }
         // 9. Questions d'aide / de procédure (formulations en « comment… », « où se trouve… »)
         if (preg_match('/^(comment|explique|expliquez|aide moi|ou (se trouve|trouver|est|voir|regler|changer|indiquer)|ou puis je|que faire|quelle est la procedure|les etapes|pourquoi (je ne peux|ne puis|ca ne|le ticket ne|l imprimante))\b|\b(comment (on|je|faire|creer|ajouter|enregistrer|faire un|configurer|utiliser|annuler|cloturer|consulter))\b|\b(que faire|quoi faire|comment faire|je fais quoi|on fait quoi)$/', $n)
-            && !preg_match('/\b(combien|valeur de mon|quel est le (solde|chiffre|benefice))\b/', $n) && !($top && isset(Catalog::TOOLS[$top]) && $c['score'] >= 0.7)) {
+            && !preg_match('/\b(combien|valeur de mon|quel est le (solde|chiffre|benefice))\b/', $n) && !($top && isset(Catalog::TOOLS[$top]) && $c['score'] >= 0.9)) {
             $this->help($q);
             return;
         }
@@ -315,6 +318,11 @@ final class Brain
             $n = Text::norm($q);
             // Une question (« que dois-je commander ? ») n'est pas une demande d'opération
             if (preg_match('/^(que|quoi|quel|quelle|quels|quelles|combien|est ce|qui|quand|ou|pourquoi|comment|y a t il)\b|\b(dois je|faut il|doit on)\b/', $n) && $tool !== 'navigate') {
+                return false;
+            }
+            // Une opération se demande à l'impératif (« ajoute… », « prépare… ») : « les ventes annulées ce mois » n'en est pas une
+            if (!preg_match('/^(stp |svp |peux tu |tu peux |il faut |faut |je veux |je voudrais |merci d |j ai recu \\d+ [a-z ]+ )?(ajoute|rajoute|mets|met|augmente|incremente|entre|prepare|cree|genere|fais|fait|lance|ouvre|demarre|commence|retire|sors|sort|enregistre|annule|commande|va|emmene|amene|affiche|supprime|modifie|change|valide|rembourse|efface)\\w*\\b/', $n)
+                && !preg_match('/\\b(ajoute les|ajoute le|ajoute la)$/', $n)) {
                 return false;
             }
             $params = match ($tool) {
@@ -416,12 +424,13 @@ final class Brain
         $parts = Nlu::split($q);
         $multi = count($parts) > 1 ? array_map(fn($p) => [$p, Nlu::classify($p)], $parts) : [];
         // Une partie sans intention propre mais avec un mot de comparaison ou de suite reste rattachée à la précédente
-        $confident = array_values(array_filter($multi, fn($x) => $x[1]['score'] >= Nlu::THRESHOLD || preg_match('/^(compare|comparaison|et)\b/', $x[1]['norm'])));
+        $confident = array_values(array_filter($multi, fn($x) => $x[1]['score'] >= 0.36 || preg_match('/^(compare|comparaison|et)\b/', $x[1]['norm'])));
         if (count($confident) > 1 && count(array_unique(array_map(fn($x) => $x[1]['intent'], $confident))) > 1) {
             $this->status('Votre question contient ' . count($confident) . ' demandes : je les traite une à une.');
             $this->inherit = true;
             $all = [];
             foreach ($confident as [$part, $c]) {
+                $c['score'] = max($c['score'], $c['score'] >= 0.36 ? Nlu::THRESHOLD : 0);   // partie retenue : traitée comme comprise
                 $top = $c['score'] >= Nlu::THRESHOLD ? $c['intent'] : null;
                 if ($top && !isset(Catalog::TOOLS[$top]) ? $this->dispatch($top, $part, $c) : $this->answerIntent($part, $c)) {
                     $all = array_merge($all, [$this->out['intent']]);
@@ -506,7 +515,8 @@ final class Brain
             'pareil', 'idem', 'mais', 'ou', 'magasin', 'boutique', 'depot', 'celui', 'celle', 'janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'], true));
         $onlySlot = $startsEt && $hasSlot && !$rest;
         // « Et le sucre ? » après une question sur un article : même question pour un autre article
-        $otherItem = $startsEt && in_array($prev, ['product_stock', 'product_info', 'product_sales'], true) && $intent !== $prev && $c['score'] < 0.8 && Nlu::named($q, 'product');
+        $otherItem = $startsEt && $intent !== $prev && $c['score'] < 0.8 && ((in_array($prev, ['product_stock', 'product_info', 'product_sales'], true) && Nlu::named($q, 'product'))
+            || ($prev === 'customer_info' && Nlu::named($q, 'customer')) || ($prev === 'supplier_info' && Nlu::named($q, 'supplier')));
         $follow = $prev && $isFollow && ($intent === null || $intent === $prev || ($c['score'] < 0.6 && $hasSlot) || $onlySlot || $otherItem);
         if ($follow && $intent !== 'sales_compare' && $intent !== 'wifi_tickets') {
             $base = (isset($slots['period']) && isset(self::BASE[$prev])) ? self::BASE[$prev] : $prev;
@@ -543,6 +553,36 @@ final class Brain
         // Plusieurs demandes dans une même question : les suivantes gardent la période de la première
         if ($this->inherit && $intent && empty($slots['period']) && !empty($this->state['slots']['period']) && in_array($intent, self::PERIOD_INTENTS, true)) {
             $slots['period'] = $this->state['slots']['period'];
+        }
+        // « Et son prix ? », « combien on en a vendu ? » : le pronom renvoie à l'article dont on vient de parler
+        $prevItem = $this->state['slots']['product'] ?? null;
+        if ($prevItem && empty($prevItem['ambiguous']) && preg_match('/\b(son|sa|ses|en a|on en|j en|il en|cet article|ce produit|celui la|lui)\b/', $n) && !Nlu::named($q, 'product')) {
+            if (in_array($intent, ['sales_summary', 'items_sold', 'top_products', 'revenue'], true) || ($intent === null && preg_match('/\bvendu\w*\b/', $n))) {
+                $intent = 'product_sales';
+            } elseif ($intent === null && preg_match('/\b(prix|coute|combien)\b/', $n)) {
+                $intent = 'product_info';
+            }
+            if (in_array($intent, ['product_stock', 'product_info', 'product_sales', 'stock_movements'], true)) {
+                $slots['product'] = $prevItem;
+                $c['score'] = max($c['score'], 0.5);
+            }
+        }
+        // Autre question dans le même domaine (« et les ruptures ? ») : le magasin dont on parlait est conservé
+        if ($prev && $startsEt && $intent && $intent !== $prev && isset(Catalog::TOOLS[$prev], Catalog::TOOLS[$intent]) && Catalog::TOOLS[$prev][1] === Catalog::TOOLS[$intent][1]
+            && empty($slots['location']) && !empty($this->state['slots']['location']) && empty($this->state['slots']['location']['ambiguous'])) {
+            $slots['location'] = $this->state['slots']['location'];
+        }
+        // Comparaison avec une seule période citée et sans contexte : elle est comparée à la période en cours équivalente
+        if ($intent === 'sales_compare' && empty($slots['period2']) && !empty($slots['period'])) {
+            $cur = ['le mois dernier' => 'ce mois', 'la semaine derniere' => 'cette semaine', 'hier' => 'aujourd hui'][Text::norm((string) $slots['period']['label'])] ?? null;
+            if ($cur && ($p1 = Text::period($cur))) {
+                $slots['period2'] = $slots['period'];
+                $slots['period'] = $p1;
+            }
+        }
+        // Trop de mots inconnus pour une intention peu assurée : on ne répond pas à côté
+        if ($intent && empty($c['forced']) && !$follow && ($c['coverage'] ?? 1) < 0.5 && $c['score'] < 0.75 && !$this->inherit) {
+            return false;
         }
         if (!$intent) {
             return false;
@@ -867,6 +907,14 @@ final class Brain
             $this->state['legacy_ctx'] = $r['spec'];
             $this->legacy($r);
             $this->log($q, 'legacy:' . ($r['spec']['kind'] ?? 'rapport'), 0.5, 'fallback');
+            return;
+        }
+        if (count($c['tokens']) >= 2 && ($c['coverage'] ?? 1) <= 0.5 && $c['score'] < 0.6) {
+            // La plupart des mots n'appartiennent pas au vocabulaire de la gestion ni du logiciel : sujet hors périmètre
+            $this->out['intent'] = 'out_of_scope';
+            $this->say('Ce sujet sort de ce que je connais. Je suis l\'assistant de POS Marwa : je réponds sur votre gestion (ventes, stock, caisse, clients, fournisseurs, finances) et sur l\'utilisation du logiciel. Si votre question concerne bien votre activité, reformulez-la avec d\'autres mots.');
+            $this->out['suggestions'] = ['Que sais-tu faire ?', 'Fais-moi le point'];
+            $this->log($q, 'out_of_scope', $c['score'], 'refused');
             return;
         }
         $this->out['intent'] = null;

@@ -79,7 +79,7 @@ final class Nlu
         'last_transactions' => ['donne moi les dernieres transactions', 'dernieres operations', 'derniers mouvements', 'activite recente'],
         'epay_summary' => ['paiements electroniques', 'transactions marwa pay', 'paiements par carte du mois', 'combien de paiements mobiles'],
         'fiscal_summary' => ['certifications fiscales', 'factures certifiees', 'factures en attente de certification', 'fiscal connect'],
-        'users_count' => ['combien d utilisateurs', 'liste des employes du logiciel', 'nombre de comptes utilisateurs'],
+        'users_count' => ['combien d utilisateurs', 'nombre d utilisateurs du logiciel', 'combien de comptes utilisateurs', 'combien d utilisateurs', 'liste des employes du logiciel', 'nombre de comptes utilisateurs'],
         'whoami' => ['qui suis je', 'quels sont mes droits', 'mon profil', 'a quoi j ai acces', 'quel est mon role'],
         'wifi_tickets' => ['combien de tickets wifi ont ete generes', 'tickets wifi disponibles', 'combien de tickets sont encore disponibles', 'combien de tickets ont ete utilises', 'combien de tickets sont expires', 'tickets marwa connect', 'tickets internet vendus'],
     ];
@@ -364,7 +364,8 @@ final class Nlu
         arsort($best);
         $keys = array_keys($best);
         return ['intent' => $keys[0] ?? null, 'score' => round((float) ($best[$keys[0] ?? ''] ?? 0), 3), 'second' => $keys[1] ?? null,
-            'second_score' => round((float) ($best[$keys[1] ?? ''] ?? 0), 3), 'tokens' => $q, 'norm' => $norm, 'top' => array_map(fn($v) => round($v, 3), array_slice($best, 0, 5, true))];
+            'second_score' => round((float) ($best[$keys[1] ?? ''] ?? 0), 3), 'tokens' => $q, 'norm' => $norm,
+            'coverage' => $q ? round(count(array_filter($q, fn($t) => isset(self::$idf[$t]))) / count($q), 2) : 0.0, 'top' => array_map(fn($v) => round($v, 3), array_slice($best, 0, 5, true))];
     }
 
     // ------------------------------------------------------------------ paramètres
@@ -394,7 +395,7 @@ final class Nlu
         }
         // Nombre (« les 5 produits », « top 10 », « cinq »)
         $nums = ['deux' => 2, 'trois' => 3, 'quatre' => 4, 'cinq' => 5, 'six' => 6, 'sept' => 7, 'huit' => 8, 'dix' => 10, 'quinze' => 15, 'vingt' => 20];
-        if (preg_match('/\b(?:top|les|des|premiers?|meilleurs?)\s+(\d{1,2}|' . implode('|', array_keys($nums)) . ')\b/', $n, $m)) {
+        if (preg_match('/\b(?:top|les|des|premiers?|meilleurs?)\s*(\d{1,2}|' . implode('|', array_keys($nums)) . ')\b/', $n, $m) || preg_match('/^(\d{1,2})\s+(?:dern|meilleur|premi|plus)/', $n, $m)) {
             $s['limit'] = ctype_digit($m[1]) ? (int) $m[1] : $nums[$m[1]];
         }
         if (preg_match('/\b(\d{1,3})\s+(?:derniers?\s+)?jours?\b/', $n, $m) && empty($s['period'])) {
@@ -592,7 +593,7 @@ final class Nlu
     public static function split(string $question): array
     {
         $out = [];
-        $verbs = 'combien|quel|quelle|quels|quelles|donne|montre|fais|dis|compare|affiche|liste|calcule|verifie|cherche|regarde|ajoute|prepare|explique|comment|pourquoi|qui|la valeur|le chiffre|les produits|les ventes|le solde|le benefice|la liste|les depenses|le stock';
+        $verbs = 'que|qu est ce|est ce|y a t il|ou en|lesquels|lesquelles|combien|quel|quelle|quels|quelles|donne|montre|fais|dis|compare|affiche|liste|calcule|verifie|cherche|regarde|ajoute|prepare|explique|comment|pourquoi|qui|la valeur|le chiffre|les produits?|les articles?|les ventes?|le solde|le benefice|la liste|les depenses?|le stock|les ruptures?|ce qui|tu me|lesquels';
         // Ponctuation d'abord (avant normalisation, qui supprime « ? » et « ; »), puis les connecteurs suivis d'une nouvelle demande.
         foreach (preg_split('/[?;]+/u', $question) as $raw) {
             $raw = preg_replace('/,\s*(?=(?:et\s+)?(?:' . $verbs . ')\b)/iu', ' §§ ', (string) $raw);

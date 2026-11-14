@@ -1,0 +1,52 @@
+# domaine: Formation et aide à l'utilisation
+# code: AIDE
+training | admin | Je veux apprendre à utiliser le logiciel. | apprends-moi POS Marwa ; ma formation | je veu aprendre a utilisé le logiciel |
+training | caissier | Forme-moi à la caisse. | formation à la caisse | forme moi a la caisse |
+training | magasin | Je veux une leçon sur le stock. | leçon sur le stock | je veu une lecon sur le stok |
+training | caissier | Fais-moi un quiz. | un quiz ; teste mes connaissances | fai moi un kiz |
+training | admin | Où en est ma formation ? | ma progression de formation | ou en est ma formation |
+help | caissier | Comment faire ma première vente ? | comment vendre un article ; comment faire une vente | coment fair ma premiere vente |
+help | caissier | Comment scanner un article ? | comment utiliser le lecteur de code-barres | coment scané un article |
+help | caissier | Comment chercher un article à la caisse ? | comment trouver un article dans la caisse | coment cherché un article a la caisse |
+help | caissier | Comment changer la quantité d'un article dans le panier ? | comment modifier la quantité à la caisse | coment changé la quantité dun article dans le panié |
+help | caissier | Comment retirer un article du panier ? | comment supprimer une ligne du panier | coment retiré un article du panié |
+help | caissier | Comment rendre la monnaie ? | comment calculer la monnaie à rendre | coment rendr la monai |
+help | caissier | Comment choisir un client pendant la vente ? | comment associer un client à une vente | coment choisir un clien pendan la vente |
+help | admin | Comment ajouter une photo à un article ? | comment mettre une image sur un produit | coment ajouté une foto a un article |
+help | admin | Comment créer une catégorie ? | comment ajouter une catégorie d'articles | coment creé une categorie |
+help | admin | Comment modifier le prix d'un article ? | comment changer un prix de vente | coment modifié le pri dun article |
+help | admin | Comment changer plusieurs prix en une fois ? | comment modifier les prix en masse | coment changé plusieur pri en une foi |
+help | admin | Comment faire une promotion sur un article ? | comment mettre un prix promotionnel | coment fair une promotion sur un article |
+help | admin | Comment archiver un article que je ne vends plus ? | comment désactiver un article | coment archivé un article |
+help | admin | Comment faire une sauvegarde ? | comment sauvegarder mes données | coment fair une sauvegarde |
+help | admin | Comment restaurer une sauvegarde ? | comment récupérer mes données | coment restoré une sauvegarde |
+help | admin | Comment installer un module ? | comment activer un module complémentaire | coment instalé un module |
+help | admin | Comment activer la licence ? | comment saisir la clé de licence | coment activé la licence |
+help | admin | Comment mettre à jour le logiciel ? | comment installer une nouvelle version | coment metre a jour le logiciel |
+help | admin | Comment ajouter une deuxième boutique ? | comment créer une nouvelle boutique | coment ajouté une 2eme boutik |
+help | admin | Comment ajouter une caisse ? | comment créer une nouvelle caisse | coment ajouté une caisse |
+help | admin | Comment changer le nom de mon entreprise ? | où modifier les informations de l'entreprise | coment changé le nom de mon entreprise |
+help | admin | Comment utiliser le logiciel sur plusieurs ordinateurs ? | comment connecter un deuxième poste | coment utilisé le logiciel sur plusieur ordinateur |
+help | admin | Comment utiliser POS Marwa sur un téléphone ? | le logiciel marche-t-il sur téléphone | coment utilisé pos marwa sur un telefone |
+help | admin | Que faire en cas de coupure d'Internet ? | le logiciel marche-t-il sans Internet | ke fair en cas de coupure dinternet |
+help | admin | Que faire en cas de coupure de courant ? | coupure d'électricité pendant une vente | ke fair en cas de coupure de couran | train=no
+help | admin | Comment obtenir de l'assistance ? | comment contacter le support | coment obtenir de lassistance |
+help | admin | Comment demander une assistance à distance ? | comment partager mon écran avec l'assistance | coment demandé une assistance a distance |
+help | admin | Comment activer le mode sombre ? | comment changer le thème | coment activé le mode sombre |
+help | admin | Comment afficher l'écran client ? | comment utiliser un deuxième écran | coment afiché lecran clien |
+help | admin | Comment utiliser le module restaurant ? | comment prendre une commande au restaurant | coment utilisé le module restoran |
+help | admin | Comment gérer une pharmacie avec POS Marwa ? | comment vendre un médicament sur ordonnance | coment geré une farmacie |
+help | admin | Comment ouvrir la boutique en ligne ? | comment vendre en ligne | coment ouvrir la boutik en ligne |
+help | admin | Comment enregistrer une livraison à domicile ? | comment suivre une livraison | coment enregistré une livraison a domicile |
+help | admin | Comment gérer les chambres de l'hôtel ? | comment faire une réservation d'hôtel | coment geré les chambre de lotel |
+help | admin | Comment inscrire un élève ? | comment utiliser le module école | coment inscrir un eleve |
+help | caissier | Je ne trouve pas un article à la caisse. | un article n'apparaît pas à la caisse | je trouv pa un article a la caisse |
+help | admin | Le stock affiché est faux, que faire ? | comment corriger un stock faux | le stok afiché est fo ke fair |
+help | caissier | La page ne s'ouvre pas. | le logiciel ne s'ouvre pas | la page souvre pa | train=no
+help | admin | Comment supprimer les données de démonstration ? | comment archiver les données de démo | coment suprimé les doné de demonstration |
+checkup | admin | Qu'est-ce que j'ai oublié de configurer ? | vérifie ma configuration | kes ke jai oublié de configuré |
+capabilities | admin | Qu'est-ce que tu sais faire exactement ? | quelles sont tes capacités | kes ke tu sai fair exactemen |
+app_purpose | caissier | C'est quoi ce logiciel ? | à quoi sert POS Marwa | c koi ce logiciel |
+concept | admin | Pourquoi faire des sauvegardes ? | à quoi sert une sauvegarde | pk fair des sauvegarde |
+concept | caissier | Comment fonctionne un code-barres ? | à quoi sert un code-barres | coment fonctione un code bar |
+action_navigate | admin | Ouvre les paramètres. | va dans les paramètres | ouvr les parametre |

@@ -1,0 +1,63 @@
+# domaine: Questions complexes et multi-intentions
+# code: MULTI
+# Ces questions ne sont pas données au classifieur (plusieurs demandes ou suite de conversation).
+sales_summary | admin | Regarde les ventes de la semaine, compare avec la semaine dernière et dis-moi quels produits ont le mieux marché. |  | regarde les vente de la semaine, compare avec la semaine derniere et di moi kel produi on le mieu marché | also=sales_compare,top_products
+stock_value | admin | Donne-moi la valeur du stock et les produits en rupture. | la valeur du stock, et quels produits sont en rupture ? | done moi la valeur du stok et les produi en ruptur | also=stock_out
+sales_summary | admin | Combien de ventes aujourd'hui ? Et qui me doit de l'argent ? | combien de ventes aujourd'hui, et qui me doit de l'argent ? | cb de vente ojourdui ? et ki me doi de largent ? | also=customer_debts
+sales_summary | admin | Ventes d'hier puis dépenses du mois. | les ventes d'hier, ensuite les dépenses du mois | vente dier puis depense du mois | also=expenses_total
+profit | admin | Quel est le bénéfice du mois et combien je dois aux fournisseurs ? | bénéfice du mois, puis et combien je dois aux fournisseurs ? | kel est le benefice du mois et cb je doi o fournisseur | also=supplier_payables
+stock_out | admin | Quels produits sont en rupture, et que dois-je commander ? | produits en rupture, puis que dois-je commander ? | kel produi son en ruptur et ke doi je comandé | also=reorder
+cash_balance | admin | Quel est le solde de la caisse ? Et combien est sorti aujourd'hui ? | solde de la caisse, et combien est sorti aujourd'hui | kel est le solde de la caisse ? et cb est sorti ojourdui | also=cash_out
+customer_debts | admin | Qui me doit de l'argent et quel est mon meilleur client ? | qui me doit de l'argent, puis quel est mon meilleur client ? | ki me doi de largent et kel est mon meilleur clien | also=top_customer
+top_products | admin | Quels sont les produits les plus vendus et les plus rentables ? | produits les plus vendus, et quels sont les plus rentables ? | kel son les produi les plus vendu et les plus rentable | also=most_profitable
+sales_summary | admin | Combien de ventes ce mois, combien de retours et combien d'annulations ? | ventes du mois, puis combien de retours, puis combien de ventes annulées | cb de vente ce mois, cb de retour et cb danulation | also=returns,cancelled_sales
+revenue | admin | Donne-moi le chiffre d'affaires du mois, puis le bénéfice. | chiffre d'affaires du mois ensuite le bénéfice | done moi le chifre dafaire du mois puis le benefice | also=profit
+stock_value | admin | Combien vaut mon stock ? Quels articles ne se vendent pas ? | valeur du stock, puis quels articles ne se vendent pas ? | cb vaut mon stok ? kel article ne se vende pa ? | also=dormant
+expenses_total | admin | Combien de dépenses ce mois, et montre-moi les dépenses par catégorie. | dépenses du mois, puis dépenses par catégorie | cb de depense ce mois et montr moi les depense par categorie | also=expenses_by_category
+last_sale | admin | Quelle est la dernière vente, et qui a fait la dernière sortie de caisse ? | dernière vente, puis qui a fait la dernière sortie de caisse ? | kel est la derniere vente et ki a fai la derniere sorti de caisse | also=last_cash_out
+purchases_total | admin | Combien d'achats ce mois ? Et quelles commandes sont en cours ? | achats du mois, et quelles commandes fournisseur sont en cours | cb dachat ce mois ? et kel comande son en cour | also=purchase_orders
+stock_out | magasin | Quels produits sont en rupture et quels lots périment bientôt ? | produits en rupture, puis quels produits périment bientôt ? | kel produi son en ruptur et kel lot perime bientot | also=expiring
+sales_summary | caissier | Combien j'ai vendu aujourd'hui, et combien il y a dans ma caisse ? | mes ventes du jour, puis combien dans ma caisse ? | cb jai vendu ojourdui et cb ya dans ma caisse | also=cash_balance
+daily_report | admin | Fais-moi le bilan de la journée, puis dis-moi ce qui ne va pas. | bilan de la journée ensuite qu'est-ce qui ne va pas | fai moi le bilan de la journé puis di moi ce ki va pa | also=whats_wrong
+sales_by_user | admin | Donne-moi les ventes par caissier et les ventes par mode de paiement. | ventes par caissier, puis ventes par mode de paiement | done moi les vente par caissier et les vente par mode de paiemen | also=sales_by_method
+customers_count | admin | Combien de clients, et combien d'utilisateurs ? | combien de clients, puis combien d'utilisateurs | cb de clien et cb dutilisateur | also=users_count
+sales_summary | admin | Ventes d'aujourd'hui | les ventes du jour | vente dojourdui | per=today; train=no
+sales_summary | admin | Et hier ? |  | et ier ? | ctx=MULTI-021; per=yesterday
+sales_compare | admin | Fais la comparaison. | compare les deux | fai la comparaison | ctx=MULTI-022
+expenses_total | admin | Et les dépenses ? |  | et les depense | ctx=MULTI-022; per=yesterday
+top_products | admin | Et les 3 meilleurs produits ? |  | et les 3 meilleur produi | ctx=MULTI-022; per=yesterday; lim=3
+stock_value | admin | Quelle est la valeur du stock ? |  | kel est la valeur du stok | train=no; db=stock_value
+stock_value | admin | Retire les produits du dépôt. | enlève le dépôt | retir les produi du depo | ctx=MULTI-026; xloc=Dépôt
+stock_value | admin | Et seulement le dépôt ? | et uniquement au dépôt | et seulemen le depo | ctx=MULTI-026; loc=Dépôt
+stock_out | admin | Et les ruptures ? |  | et les ruptur | ctx=MULTI-028; loc=Dépôt
+items_sold | admin | Combien d'articles avons-nous vendus aujourd'hui ? |  | cb darticle avon nou vendu ojourdui | per=today; train=no
+items_sold | admin | Et hier ? |  | et ier | ctx=MULTI-030; per=yesterday
+top_products | admin | Et les 5 meilleurs ? |  | et les 5 meilleur | ctx=MULTI-031; per=yesterday; lim=5
+product_stock | admin | Combien de savon en stock ? |  | cb de savon en stok | prod=Savon; train=no
+product_stock | admin | Et le dentifrice ? |  | et le dentifrisse | ctx=MULTI-033; prod=Dentifrice
+product_info | admin | Et son prix ? |  | et son pri | ctx=MULTI-034; prod=Dentifrice
+product_sales | admin | Et combien on en a vendu ce mois ? |  | et cb on en a vendu ce mois | ctx=MULTI-034; prod=Dentifrice; per=month
+profit | admin | Bénéfice du mois |  | benefice du mois | per=month; train=no
+profit | admin | Et le mois dernier ? |  | et le moi dernier | ctx=MULTI-037; per=last_month
+profit | admin | Et cette année ? |  | et cette anné | ctx=MULTI-038; per=year
+revenue | admin | Et le chiffre d'affaires ? |  | et le chifre dafaire | ctx=MULTI-039; per=year
+customer_info | admin | Combien doit Moussa Garba ? |  | cb doi moussa garba | cust=Moussa Garba; train=no
+customer_info | admin | Et Client crédit ? |  | et client credi | ctx=MULTI-041; cust=Client crédit
+cash_out | admin | Sorties de caisse d'aujourd'hui |  | sorti de caisse dojourdui | per=today; train=no
+cash_in | admin | Et les entrées ? |  | et les entré | ctx=MULTI-043; per=today
+cash_out | admin | Et hier ? |  | et ier | ctx=MULTI-043; per=yesterday
+sales_summary | admin | Ventes de cette semaine au dépôt |  | vente de cette semaine o depo | per=week; loc=Dépôt; train=no
+sales_summary | admin | Et au magasin principal ? |  | et o magasin principal | ctx=MULTI-046; per=week; loc=Magasin principal
+sales_summary | admin | Et le mois dernier ? |  | et le moi dernier | ctx=MULTI-047; per=last_month; loc=Magasin principal
+sales_by_method | admin | Ventes par mode de paiement cette semaine |  | vente par mode de paiemen cette semaine | per=week; train=no
+sales_by_method | admin | Et la semaine dernière ? |  | et la semaine derniere | ctx=MULTI-049; per=last_week
+action_stock_add | admin | Ajoute 15 au savon puis montre-moi son stock. |  | ajoute 15 o savon puis montr moi son stok | qty=15; prod=Savon; train=no
+stock_value | admin | Bonjour, donne-moi la valeur du stock s'il te plaît, merci d'avance. | salut, j'aimerais avoir la valeur du stock, merci | bjr done moi la valeur du stok stp mrc | train=no; db=stock_value
+sales_summary | admin | Je voudrais savoir, si c'est possible, combien nous avons vendu hier dans la boutique. | est-ce que tu pourrais me dire combien on a vendu hier | je voudrai savoir si c possible cb nou avon vendu ier | per=yesterday; train=no
+profit | caissier | Combien j'ai vendu aujourd'hui et quel est le bénéfice ? |  | cb jai vendu ojourdui et kel est le benefice | also=sales_summary; train=no; out=refuse
+stock_out | caissier | Quels produits sont en rupture et combien de clients on a ? |  | kel produi son en ruptur et cb de clien on a | also=customers_count; train=no
+sales_compare | admin | Compare les ventes d'hier et d'aujourd'hui, et donne-moi les meilleurs produits. |  | compar les vente dier et dojourdui et done moi les meilleur produi | also=top_products
+whats_wrong | admin | Qu'est-ce qui ne va pas, et tu me conseilles quoi ? | qu'est-ce qui ne va pas ? tu me conseilles quoi ? | kes ki va pa et tu me conseil koi | also=advice
+cash_diagnostic | admin | Vérifie ma caisse et donne-moi les écarts du mois. | vérifie ma caisse, puis écarts de caisse du mois | verifi ma caisse et done moi les ecar du mois | also=cash_difference
+supplier_payables | admin | Combien je dois aux fournisseurs, et combien les clients me doivent ? | dettes fournisseurs, puis créances clients | cb je doi o fournisseur et cb les clien me doive | also=customer_debts
+dormant | admin | Quels articles ne se vendent pas, et lesquels périment bientôt ? | articles invendus, puis produits qui périment bientôt | kel article se vende pa et lekel perime bientot | also=expiring

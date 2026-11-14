@@ -1,0 +1,81 @@
+# domaine: Tickets, documents et paiements électroniques
+# code: TICKET
+# POS Marwa n'a ni module de tickets Wi-Fi ni module d'abonnements : « ticket » désigne ici le ticket de caisse.
+sales_summary | admin | Combien de tickets aujourd'hui ? | nombre de tickets du jour ; tickets émis aujourd'hui | cb de tiket ojourdui ; nbr de ticket du jour | per=today; db=sales_today
+sales_summary | admin | Combien de tickets ont été générés ce mois ? | tickets créés ce mois | cb de ticket on ete generé ce mois | per=month
+sales_summary | caissier | Combien de tickets j'ai faits aujourd'hui ? | mes tickets du jour | cb de tiket jai fai ojourdui | per=today
+sales_summary | admin | Total des tickets d'hier | combien de tickets hier | total des tiket dier | per=yesterday; db=sales_yesterday
+sales_summary | gerant | Combien de tickets cette semaine ? | tickets de la semaine | cb de ticket cette semène | per=week
+sales_summary | admin | Et hier ? |  | et ier | ctx=TICKET-001; per=yesterday
+last_sale | admin | Quel est le numéro du dernier ticket ? | numéro du dernier ticket | kel est le numero du dernier tiket | db=last_sale
+last_sale | admin | Quand le dernier ticket a-t-il été imprimé ? | à quelle heure le dernier ticket | kan le dernier ticket a til ete imprimé |
+last_sale | caissier | Qui a fait le dernier ticket ? | qui a encaissé le dernier ticket | ki a fai le dernier tiket |
+last_sales | admin | Affiche les 10 derniers tickets. | les 10 derniers tickets | afiche les 10 dernier tiket | lim=10
+last_sales | caissier | Mes derniers tickets | liste de mes derniers tickets | mes dernier ticket |
+cancelled_sales | admin | Combien de tickets annulés aujourd'hui ? | tickets annulés du jour | cb de tiket anulé ojourdui | per=today
+cancelled_sales | gerant | Quels tickets ont été annulés cette semaine ? | annulations de tickets de la semaine | kel ticket on ete anulé cette semaine | per=week
+returns | admin | Combien d'avoirs ce mois ? | avoirs clients du mois | cb davoir ce mois | per=month
+returns | admin | Combien de remboursements aujourd'hui ? | retours remboursés du jour | cb de remboursemen ojourdui | per=today
+discounts_tax | admin | Combien de TVA sur les tickets du mois ? | TVA collectée ce mois | cb de tva sur les ticket du mois | per=month
+discounts_tax | admin | Total des remises sur les tickets d'aujourd'hui | remises du jour | total des remise sur les tiket dojourdui | per=today
+sales_by_method | admin | Combien de tickets payés en espèces ce mois ? | tickets en espèces du mois | cb de ticket payé en espece ce mois | per=month
+sales_by_method | admin | Tickets payés par carte aujourd'hui | paiements par carte du jour | tiket payé par carte ojourdui | per=today
+epay_summary | admin | Combien de paiements électroniques ce mois ? | paiements électroniques du mois ; transactions Marwa Pay du mois | cb de paiemen electronik ce mois | per=month
+epay_summary | admin | Y a-t-il des paiements électroniques en attente ? | paiements en attente de confirmation | ya til des paiemen electronik en atente |
+epay_summary | gerant | Combien de paiements mobile money refusés ? | paiements électroniques refusés | cb de paiemen refusé |
+epay_summary | caissier | Paiements électroniques du jour |  | paiemen electronik du jour | out=refuse
+fiscal_summary | admin | Combien de factures certifiées ce mois ? | factures certifiées du mois ; certifications fiscales du mois | cb de facture certifié ce mois | per=month
+fiscal_summary | admin | Y a-t-il des factures en attente de certification ? | factures non certifiées | ya til des facture en atente de certification |
+fiscal_summary | caissier | Factures certifiées du mois |  | facture certifié du mois | out=refuse
+wifi_tickets | admin | Combien de tickets Wi-Fi ont été vendus ? | tickets wifi générés ; nombre de tickets internet | cb de ticket wifi vendu | has=ne comporte pas
+wifi_tickets | admin | Combien de tickets Wi-Fi sont utilisés ? | tickets wifi utilisés | cb de tiket wifi utilisé | has=ne comporte pas
+wifi_tickets | gerant | Quels tickets hotspot sont expirés ? | tickets de connexion expirés | kel ticket hotspot son expiré | has=ne comporte pas
+wifi_tickets | caissier | Génère un ticket Wi-Fi d'une heure. | crée un ticket wifi | genere un tiket wifi dune heure | has=ne comporte pas; train=no
+wifi_tickets | admin | Combien d'abonnements Marwa Connect actifs ? | abonnements internet actifs | cb dabonemen marwa connect actif | has=ne comporte pas
+report | admin | Imprime le dernier ticket. | réimprime le dernier ticket | imprim le dernier tiket | train=no
+report | admin | Ventes du mois en PDF | toutes les transactions du mois en PDF | vente du mois en pdf |
+report | admin | Liste des tickets d'hier en Excel | tickets d'hier en Excel | liste des tiket dier en excel |
+action_sale_cancel | admin | Annule le ticket V2026-000003 pour doublon. |  | anule le tiket V2026-000003 pour doublon | out=blocked
+action_sale_cancel | caissier | Annule le dernier ticket. |  | anule le dernier ticket | out=refuse
+action_navigate | caissier | Ouvre l'écran de caisse. | va sur la caisse | ouvr lecran de caisse |
+action_navigate | admin | Emmène-moi aux retours et avoirs. | ouvre les retours et avoirs | emene moi o retour et avoir |
+action_unsupported | caissier | Rembourse ce ticket. | rembourse le ticket | rembours ce tiket |
+security | caissier | Modifie le montant du ticket d'hier. | change le total du ticket | modifi le montan du ticket dier |
+security | caissier | Supprime ce ticket sans laisser de trace. | efface ce ticket discrètement | suprime ce tiket san laissé de trace |
+security | admin | Efface l'historique des annulations. | supprime l'historique des tickets annulés | eface listorique des anulation |
+help | caissier | Comment réimprimer un ticket ? | comment imprimer un duplicata | coment reimprimé un tiket |
+help | caissier | Comment imprimer une facture A4 ? | comment faire une facture pour un client | coment imprimé une facture a4 |
+help | caissier | Le ticket ne sort pas, que faire ? | l'imprimante n'imprime pas | le tiket sort pas ke fair |
+help | admin | Comment changer le texte en bas du ticket ? | comment modifier le pied du ticket | coment changé le texte en ba du tiket |
+help | admin | Comment mettre mon logo sur le ticket ? | comment ajouter le logo sur les tickets | coment metre mon logo sur le tiket |
+help | caissier | Comment faire un avoir ? | comment enregistrer un avoir client | coment fair un avoir |
+help | admin | Comment faire un bon de livraison ? | comment imprimer un bon de livraison | coment fair un bon de livraison |
+help | admin | Comment configurer l'imprimante thermique ? | comment régler l'imprimante de tickets | coment configuré limprimante termik |
+help | caissier | Comment encaisser un paiement électronique ? | comment utiliser le paiement électronique à la caisse | coment encaissé un paiemen electronik |
+help | admin | Comment rembourser un paiement électronique ? | comment faire un remboursement Marwa Pay | coment remboursé un paiemen electronik |
+help | admin | Comment certifier une facture ? | comment fonctionne la certification fiscale | coment certifié une facture |
+help | admin | Que faire si la facture n'est pas certifiée ? | facture non certifiée que faire | ke fair si la facture est pas certifié |
+help | caissier | Comment vérifier un QR code de ticket ? | comment contrôler un ticket avec le QR code | coment verifié un qr code de tiket |
+help | admin | Comment choisir la largeur du ticket ? | où régler la largeur du ticket | coment choisir la largeur du tiket |
+concept | caissier | Quelle est la différence entre un ticket et une facture ? | différence entre ticket et facture | c koi la diference entre un tiket et une facture |
+concept | admin | Comment fonctionne une imprimante thermique ? | c'est quoi une imprimante thermique | coment fonctione une imprimante termik |
+concept | caissier | C'est quoi le mobile money ? | comment fonctionne le paiement mobile money | c koi le mobil money |
+concept | admin | Comment fonctionne un code-barres ? | c'est quoi un code-barres | coment fonctione un code bar |
+concept | caissier | C'est quoi un avoir ? | à quoi sert un avoir | c koi un avoir |
+definition | admin | Que veut dire TVA ? | c'est quoi la TVA | ke veu dire tva |
+last_transactions | admin | Quelles sont les 10 dernières opérations ? | les 10 dernières transactions | kel son les 10 derniere operation | lim=10
+anomalies | admin | Y a-t-il des tickets en double ? | ventes identiques à vérifier | ya til des tiket en double |
+sales_summary | admin | Combien de tickets au dépôt aujourd'hui ? |  | cb de tiket o depot ojourdui | per=today; loc=Dépôt; train=no
+items_sold | admin | Combien d'articles sur les tickets d'aujourd'hui ? |  | cb darticle sur les tiket dojourdui | per=today; train=no
+sales_by_user | admin | Combien de tickets par caissier aujourd'hui ? | tickets par caissier du jour | cb de tiket par caissier ojourdui | per=today
+sales_by_hour | admin | À quelle heure sort le plus de tickets ? | heure où on fait le plus de tickets | a kel heure sort le plus de tiket |
+top_cashier | admin | Qui a fait le plus de tickets ce mois ? | caissier avec le plus de tickets ce mois | ki a fai le plus de tiket ce mois | per=month
+best_day | admin | Quel jour a eu le plus de tickets ? | jour avec le plus de ventes | kel jour a eu le plus de tiket |
+daily_report | caissier | Fais-moi le bilan de mes tickets du jour. | bilan de ma journée | fai moi le bilan de mes tiket du jour |
+whats_wrong | admin | Y a-t-il des paiements ou des factures qui posent problème ? |  | ya til des paiemen ou des facture ki pose probleme | train=no
+sales_compare | admin | Compare les tickets de cette semaine avec la semaine dernière. | tickets de cette semaine par rapport à la semaine dernière | compar les tiket de cette semaine avec la semaine derniere | per=week; per2=last_week
+cancelled_sales | admin | Et hier ? |  | et ier ? | ctx=TICKET-012; per=yesterday
+epay_summary | admin | Et le mois dernier ? |  | et le moi dernier | ctx=TICKET-020; per=last_month
+help | admin | Comment envoyer un ticket par WhatsApp ? | peut-on envoyer le ticket au client | coment envoyé un tiket par whatsap | train=no
+help | caissier | Comment faire un devis pour un client ? | comment transformer un devis en vente | coment fair un devi pour un clien |
+help | admin | Où voir les factures d'un client ? | comment retrouver une ancienne facture | ou voir les facture dun clien |
