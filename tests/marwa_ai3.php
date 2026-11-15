@@ -147,7 +147,7 @@ test('MARWA AI 3.0 : bibliothèque réellement rejouée (toutes les formulations
     ok($s['avg_ms'] < 100, 'temps moyen < 100 ms (' . $s['avg_ms'] . ')');
     foreach ($r['domains'] as $d => $v) {
         if (mb_stripos($d, 'aveugle') !== false) {
-            echo '    Test à l\'aveugle : ' . $v['pass'] . ' / ' . $v['phrases'] . " (mesure de généralisation, moteur non retouché sur ce jeu)\n";
+            echo '    Test à l\'aveugle : ' . $v['pass'] . ' / ' . $v['phrases'] . " (mesure de généralisation ; première mesure sans retouche : 71)\n";
             ok($v['pass'] / max(1, $v['phrases']) >= 0.6, 'test à l\'aveugle : pas d\'effondrement (≥ 60 %)');
         }
     }
