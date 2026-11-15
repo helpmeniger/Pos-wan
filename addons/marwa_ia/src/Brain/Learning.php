@@ -127,7 +127,8 @@ final class Learning
     /** Correction validée : la question devient un exemple de l'intention choisie. */
     public static function teach(int $logId, string $intent): void
     {
-        if (!isset(Catalog::TOOLS[$intent])) {
+        $label = DB::value('SELECT label FROM ai_intents WHERE code = ? AND active = 1', [$intent]);
+        if (!$label) {
             throw new BusinessException('Intention inconnue.');
         }
         $l = DB::one('SELECT * FROM ai_learning_logs WHERE id = ?', [$logId]);
@@ -135,7 +136,8 @@ final class Learning
             throw new BusinessException('Question introuvable.');
         }
         self::addExample($intent, $l['question']);
-        DB::update('ai_learning_logs', ['resolved' => 1, 'resolution' => 'Exemple ajouté à « ' . Catalog::TOOLS[$intent][0] . ' »'], 'id = ?', [$logId]);
+        DB::update('ai_learning_logs', ['resolved' => 1, 'resolution' => 'Exemple ajouté à « ' . $label . ' »'], 'id = ?', [$logId]);
+        self::version('correction', $intent, 'Question incomprise rattachée à « ' . $label . ' » : ' . mb_substr($l['question'], 0, 120));
     }
 
     public static function addExample(string $intent, string $text): void
@@ -143,6 +145,9 @@ final class Learning
         $norm = Text::norm($text);
         if (mb_strlen($norm) < 4) {
             throw new BusinessException('Exemple trop court.');
+        }
+        if (!DB::value('SELECT 1 FROM ai_intents WHERE code = ? AND active = 1', [$intent])) {
+            throw new BusinessException('Intention inconnue.');
         }
         DB::run("INSERT IGNORE INTO ai_intent_examples (intent_code, text, normalized, source, validated_by) VALUES (?, ?, ?, 'admin', ?)", [$intent, mb_substr($text, 0, 300), mb_substr($norm, 0, 300), Auth::id()]);
         \App\Core\Audit::log('ai.example_add', 'ai_intent', null, ['intent' => $intent]);
@@ -166,6 +171,7 @@ final class Learning
             $id = DB::insert('ai_knowledge_base', $data + ['source' => 'admin', 'created_by' => Auth::id()]);
         }
         \App\Core\Audit::log('ai.knowledge_save', 'ai_knowledge_base', $id, ['title' => $title]);
+        self::version('connaissance', (string) $id, 'Fiche de connaissance enregistrée : ' . mb_substr($title, 0, 150));
         return $id;
     }
 

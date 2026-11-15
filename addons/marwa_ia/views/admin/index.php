@@ -7,6 +7,13 @@ $o = $dash['outcomes']; ?>
     <div class="col-6 col-md-3 col-xl"><div class="card h-100"><div class="card-body py-2"><div class="small text-secondary"><?= e($k[0]) ?></div><div class="fs-5 fw-semibold"><?= e((string) $k[1]) ?></div></div></div></div>
   <?php endforeach; ?>
 </div>
+<?php $lastEval = App\Core\DB::one('SELECT * FROM ai_eval_runs ORDER BY id DESC LIMIT 1'); $nScen = (int) App\Core\DB::value('SELECT COUNT(*) FROM ai_scenarios'); ?>
+<div class="alert alert-light border small d-flex flex-wrap gap-3 align-items-center">
+  <span><i class="bi bi-collection"></i> <b><?= $nScen ?></b> scénarios dans la bibliothèque</span>
+  <?php if ($lastEval): ?><span><i class="bi bi-check2-square"></i> Dernière évaluation (<?= e(fdate($lastEval['created_at'])) ?>, <?= e($lastEval['scope']) ?>) : <b><?= (int) $lastEval['passed'] ?> / <?= (int) $lastEval['phrases'] ?></b> formulations réussies</span>
+  <?php else: ?><span class="text-secondary">Aucune évaluation lancée sur cette installation.</span><?php endif; ?>
+  <a class="btn btn-sm btn-outline-primary ms-auto" href="<?= e(url('/ia/admin/tests')) ?>">Tests automatiques</a>
+</div>
 <div class="row g-3">
   <div class="col-xl-7">
     <div class="card mb-3"><div class="card-header d-flex align-items-center">Banc de tests de compréhension

@@ -1729,7 +1729,7 @@ test('Écran client 3.1 : photos JPEG légères, sens EXIF, transparence, fichie
 });
 test('MARWA IA : compréhension du français (périodes, intentions, noms), rapports, droits, aide, modèle local', function () {
     actingAs('admin');
-    eq(['0001_marwa_ia', '0002_formation', '0003_marwa_ai'], App\Core\Addons::install('marwa_ia', false), 'installation');
+    eq(['0001_marwa_ia', '0002_formation', '0003_marwa_ai', '0004_marwa_ai_training'], App\Core\Addons::install('marwa_ia', false), 'installation');
     App\Core\Addons::registerAutoload();
     $T = Addons\MarwaIa\Text::class;
     $E = Addons\MarwaIa\Engine::class;
@@ -6809,6 +6809,8 @@ test('Marwa Pay (phase 9) : sécurité — XSS, CSRF, cloisonnement des caisses,
 
 // MARWA AI 2.0 (assistant) : tests dans un fichier séparé
 require __DIR__ . '/marwa_ai.php';
+// MARWA AI 3.0 : bibliothèque de scénarios, centre d'entraînement
+require __DIR__ . '/marwa_ai3.php';
 
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);

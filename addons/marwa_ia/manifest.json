@@ -1,10 +1,10 @@
 {
     "code": "marwa_ia",
     "name": "MARWA AI — votre administrateur intelligent",
-    "version": "2.0.0",
-    "requires": "3.9.0",
+    "version": "3.0.0",
+    "requires": "3.10.0",
     "author": "Mahamadou Hamidou (Mohamed) — POS Marwa",
-    "description": "Assistant intégré qui comprend le français courant (fautes, synonymes, questions de suite, plusieurs demandes à la fois), lit vos données en direct avec vos droits (lecture seule), explique le logiciel pas à pas, détecte les anomalies sans accuser, prépare les opérations courantes (avec confirmation) et garde vos conversations. Réponses affichées en continu. Fonctionne sans Internet ; modèles de langage facultatifs (Ollama local, ou OpenAI, Claude, Gemini après accord de l'administrateur).",
+    "description": "Assistant intégré qui comprend le français courant (fautes de frappe, mots collés, abréviations, tournures familières, questions de suite, plusieurs demandes à la fois), demande une précision plutôt que de deviner, donne des conseils calculés sur vos chiffres, lit vos données en direct avec vos droits (lecture seule), explique le logiciel pas à pas, détecte les anomalies sans accuser, prépare les opérations courantes (avec confirmation) et garde vos conversations. Centre d'entraînement : bibliothèque de plus de 1 200 scénarios rejouables, synonymes, questions incomprises, corrections, mesure de la performance. Réponses affichées en continu. Fonctionne sans Internet ; modèles de langage facultatifs (Ollama local, ou OpenAI, Claude, Gemini après accord de l'administrateur).",
     "icon": "bi-stars",
     "color": "#6f42c1",
     "permissions": {
@@ -50,8 +50,8 @@
         },
         {
             "group": "Assistant",
-            "label": "Pilotage de MARWA AI",
-            "icon": "bi-speedometer2",
+            "label": "MARWA AI Training Center",
+            "icon": "bi-mortarboard",
             "url": "/ia/admin",
             "permission": "ia.manage",
             "color": "#6f42c1"

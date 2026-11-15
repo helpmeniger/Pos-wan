@@ -173,9 +173,9 @@ final class AiController extends Controller
 
     public function teach(int $id): void
     {
-        $this->attempt(fn() => Learning::teach((int) $id, Request::str('intent')), '/ia/admin');
+        $this->attempt(fn() => Learning::teach((int) $id, Request::str('intent')), '/ia/admin/incomprises');
         flash('success', t('Exemple validé : la question est désormais rattachée à cette intention.'));
-        redirect('/ia/admin');
+        redirect('/ia/admin/incomprises');
     }
 
     public function intents(): void

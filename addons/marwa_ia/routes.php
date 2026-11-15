@@ -39,3 +39,25 @@ $router->post('/ia/admin/modeles', [A::class, 'modelSave'], 'ia.manage');
 $router->post('/ia/admin/modeles/{id}/role', [A::class, 'modelRole'], 'ia.manage');
 $router->post('/ia/admin/modeles/{id}/tester', [A::class, 'modelTest'], 'ia.manage');
 $router->get('/ia/admin/dictionnaire', [A::class, 'dictionary'], 'ia.manage');
+
+// MARWA AI TRAINING CENTER (droit ia.manage)
+use Addons\MarwaIa\TrainingController as T;
+
+$router->get('/ia/admin/scenarios', [T::class, 'scenarios'], 'ia.manage');
+$router->post('/ia/admin/scenarios', [T::class, 'scenarioAdd'], 'ia.manage');
+$router->post('/ia/admin/scenarios/{id}/supprimer', [T::class, 'scenarioDelete'], 'ia.manage');
+$router->get('/ia/admin/scenarios/export', [T::class, 'scenariosExport'], 'ia.manage');
+$router->get('/ia/admin/synonymes', [T::class, 'synonyms'], 'ia.manage');
+$router->post('/ia/admin/synonymes', [T::class, 'synonymAdd'], 'ia.manage');
+$router->post('/ia/admin/synonymes/{id}/supprimer', [T::class, 'synonymDelete'], 'ia.manage');
+$router->post('/ia/admin/intentions/etat', [T::class, 'intentToggle'], 'ia.manage');
+$router->post('/ia/admin/intentions/ajouter', [T::class, 'intentAdd'], 'ia.manage');
+$router->get('/ia/admin/incomprises', [T::class, 'unresolved'], 'ia.manage');
+$router->post('/ia/admin/incomprises/{id}/ecarter', [T::class, 'dismiss'], 'ia.manage');
+$router->get('/ia/admin/corrections', [T::class, 'corrections'], 'ia.manage');
+$router->post('/ia/admin/corrections/{id}', [T::class, 'correctionHandle'], 'ia.manage');
+$router->get('/ia/admin/tests', [T::class, 'tests'], 'ia.manage');
+$router->post('/ia/admin/tests', [T::class, 'testsRun'], 'ia.manage');
+$router->post('/ia/admin/tests/formulation', [T::class, 'probe'], 'ia.manage');
+$router->get('/ia/admin/performance', [T::class, 'performance'], 'ia.manage');
+$router->get('/ia/admin/historique', [T::class, 'history'], 'ia.manage');

@@ -1,0 +1,6 @@
+<?php /** Historique des améliorations de la connaissance. */ $cur = 'history'; require __DIR__ . '/_nav.php'; ?>
+<div class="alert alert-light border small">Version de la connaissance intégrée : <b><?= e($seed) ?></b> · bibliothèque du classifieur : <?= (int) $lib['examples'] ?> exemples, <?= (int) $lib['intents'] ?> intentions, <?= (int) $lib['vocabulary'] ?> mots.
+  Chaque ajout fait ici (scénario, synonyme, intention, fiche, correction validée) est tracé ci-dessous avec son auteur. Le modèle de langage, s'il y en a un, n'est jamais réentraîné : ce sont les exemples et la connaissance qui évoluent.</div>
+<div class="card"><?php if (!$rows): ?><div class="card-body small text-secondary">Aucune modification pour l'instant.</div><?php else: ?><table class="table table-sm small mb-0"><thead><tr><th>Date</th><th>Type</th><th>Référence</th><th>Modification</th><th>Par</th></tr></thead><tbody>
+<?php foreach ($rows as $r): ?><tr><td><?= e(fdate($r['created_at'])) ?></td><td><span class="badge text-bg-light border"><?= e($r['kind']) ?></span></td><td><code><?= e((string) $r['ref']) ?></code></td><td><?= e($r['summary']) ?></td><td><?= e((string) $r['full_name']) ?></td></tr><?php endforeach; ?>
+</tbody></table><?php endif; ?></div>

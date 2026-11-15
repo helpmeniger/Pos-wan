@@ -171,8 +171,9 @@ final class Brain
         $q = $clean['text'] !== '' ? $clean['text'] : $raw;
         $this->trace['corrected'] = $clean['changes'];
         $n = Text::norm($q);
-        // 1. Tentative de manipulation : refus expliqué
-        if ($msg = Guard::check($n)) {
+        // 1. Tentative de manipulation : refus expliqué. Le texte d'origine est contrôlé lui aussi : le correcteur de fautes
+        //    ne doit pas pouvoir déformer un mot-clé (« DELETE », « DROP ») avant le garde-fou.
+        if ($msg = Guard::check($n) ?? Guard::check(Text::norm($raw))) {
             $this->out['intent'] = 'security';
             $this->say($msg);
             $this->log($q, 'security', 1, 'refused');
@@ -195,7 +196,10 @@ final class Brain
             return;
         }
         // 3. Conversation : salutations, remerciements, plaisanteries, notions de gestion
-        if ($top && General::isGeneral($top) && ($c['score'] >= 0.55 || count($c['tokens']) <= 4) && !($follow && $c['score'] < 0.7)
+        // Une formule de politesse ne se déduit pas d'un seul mot commun (« demain » dans « quel temps fera-t-il demain ») :
+        // si la moitié des mots de la question sont inconnus, ce n'est pas une salutation.
+        $social = in_array($top, ['greeting', 'thanks', 'goodbye', 'wellbeing', 'praise', 'frustration'], true) && $c['score'] < 0.85 && ($c['coverage'] ?? 1) <= 0.6 && count($c['tokens']) >= 2;
+        if ($top && General::isGeneral($top) && !$social && ($c['score'] >= 0.55 || count($c['tokens']) <= 4) && !($follow && $c['score'] < 0.7)
             && !(preg_match('/^(comment|ou |que faire|pourquoi)\b/', $n) && !in_array($top, ['wellbeing', 'app_purpose', 'app_name', 'concept'], true) && $c['score'] < 0.9)) {
             if ($top !== 'concept' || (($k = General::concept($q)) && ($k['hits'] >= 2 || $c['score'] >= 0.6))) {
                 if ($this->general($top, $q, $c)) {
@@ -384,7 +388,20 @@ final class Brain
                 return true;
         }
         if (General::isGeneral($intent)) {
+            if (in_array($intent, ['greeting', 'thanks', 'goodbye', 'wellbeing', 'praise', 'frustration'], true) && $c['score'] < 0.85 && ($c['coverage'] ?? 1) <= 0.6 && count($c['tokens']) >= 2) {
+                return false;
+            }
             return $this->general($intent, $q, $c);
+        }
+        // Intention ajoutée par un administrateur : réponse rédigée, sans accès aux données
+        if (str_starts_with($intent, 'perso_') && $c['score'] >= 0.55) {
+            $row = \App\Core\DB::one('SELECT label, description FROM ai_intents WHERE code = ? AND builtin = 0 AND active = 1', [$intent]);
+            if ($row && trim((string) $row['description']) !== '') {
+                $this->out['intent'] = $intent;
+                $this->say((string) $row['description']);
+                $this->log($q, $intent, $c['score'], 'answered');
+                return true;
+            }
         }
         return false;
     }

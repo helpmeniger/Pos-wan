@@ -1,6 +1,6 @@
 <?php
 /**
- * MARWA AI 2.0 — tests (inclus par tests/run.php, après les autres modules : la base contient alors
+ * MARWA AI 2.0 (attentes mises à jour pour la 3.0) — tests (inclus par tests/run.php, après les autres modules : la base contient alors
  * des ventes, du stock, des clients, des fournisseurs, des caisses…). Variables reçues : $B, $port.
  *
  * Les valeurs attendues sont recalculées ici, directement en SQL, sans passer par le moteur de MARWA AI.
@@ -40,12 +40,13 @@ test('MARWA AI : migration, inventaire automatique de l\'application, dictionnai
     App\Core\Addons::registerAutoload();
     $tables = array_column(DB::all("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'ai\\_%'"), 'TABLE_NAME');
     sort($tables);
-    eq(['ai_action_logs', 'ai_conversations', 'ai_documentation_index', 'ai_feedback', 'ai_intent_examples', 'ai_intents', 'ai_knowledge_base', 'ai_learning_logs', 'ai_messages', 'ai_model_settings',
-        'ai_tool_registry', 'ai_usage_logs', 'ai_user_context'], $tables, '13 tables ai_*');
+    eq(['ai_action_logs', 'ai_conversations', 'ai_documentation_index', 'ai_eval_runs', 'ai_feedback', 'ai_intent_examples', 'ai_intents', 'ai_knowledge_base', 'ai_knowledge_versions', 'ai_learning_logs', 'ai_messages',
+        'ai_model_settings', 'ai_scenarios', 'ai_synonyms', 'ai_tool_registry', 'ai_usage_logs', 'ai_user_context'], $tables, '17 tables ai_*');
     ok(is_file(BASE_PATH . '/addons/marwa_ia/sql/down_0003.sql'), 'script de retour arrière fourni');
     ok(DB::value('SELECT 1 FROM ia_history LIMIT 1') !== false, 'tables 1.x conservées (ia_history)');
     AI\Learning::seed(true);
-    eq(count(AI\Catalog::TOOLS), (int) DB::value('SELECT COUNT(*) FROM ai_intents'), 'une intention par outil de données');
+    eq([], array_values(array_diff(array_keys(AI\Catalog::TOOLS), array_column(DB::all('SELECT code FROM ai_intents'), 'code'))), 'une intention par outil de données');
+    ok((int) DB::value('SELECT COUNT(*) FROM ai_intents') > count(AI\Catalog::TOOLS), 'et les intentions de conversation, de conseil et d\'action');
     ok((int) DB::value("SELECT COUNT(*) FROM ai_intent_examples WHERE source = 'builtin'") > 150, 'exemples d\'entraînement intégrés');
     ok((int) DB::value("SELECT COUNT(*) FROM ai_tool_registry WHERE kind = 'action' AND needs_confirmation = 1") >= 4, 'outils d\'action enregistrés, avec confirmation');
     ok((int) DB::value("SELECT COUNT(*) FROM ai_knowledge_base WHERE source = 'builtin'") > 10, 'FAQ intégrée reprise dans la base de connaissances');
@@ -188,7 +189,7 @@ test('MARWA AI : banc de 114 questions réelles (simples, fautes, synonymes, sui
         ['admin', 'et les dépenses ?', 'expenses_total', [], [], 'suite1'],
         ['admin', 'Valeur du stock du dépôt', 'stock_value', [$n($whStock('Dépôt'))], [], 'suite2'],
         ['admin', 'et dans le magasin principal ?', 'stock_value', [$n($whStock('Magasin principal'))], [], 'suite2'],
-        ['admin', 'Qui est le président du Niger ?', null, ['hors de ce domaine'], [$n($whStock('Magasin principal'))], 'suite2'],
+        ['admin', 'Qui est le président du Niger ?', 'out_of_scope', ['sort de'], [$n($whStock('Magasin principal'))], 'suite2'],
         // Plusieurs demandes dans une question
         ['admin', 'Donne-moi la valeur du stock et les produits en rupture', 'stock_out', [$n($stock), $outN . ' article']],
         ['admin', 'Combien de ventes aujourd\'hui ? Et qui me doit de l\'argent ?', 'customer_debts', [$n((float) $today['t']), $n($debts)]],
@@ -196,13 +197,13 @@ test('MARWA AI : banc de 114 questions réelles (simples, fautes, synonymes, sui
         // Ambiguës / données inexistantes
         ['admin', 'Combien ?', null, ['Précisez']],
         ['admin', 'Quel est le stock de l\'article Zorglub ?', 'product_stock', ['article']],
-        ['admin', 'Rapport du client Inconnu Xyzzy', 'legacy', ['aucun client']],
+        ['admin', 'Rapport du client Inconnu Xyzzy', 'report', ['aucun client']],
         // Hors sujet
-        ['admin', 'Raconte-moi une blague', 'legacy', ['domaine']],
-        ['admin', 'Quelle est la météo demain ?', 'legacy', ['domaine']],
+        ['admin', 'Raconte-moi une blague', 'joke', []],
+        ['admin', 'Quelle est la météo demain ?', 'out_of_scope', ['domaine']],
         // Définitions, transactions, aide pas à pas, capacités, module absent
         ['admin', 'C\'est quoi la différence entre le brut et le net ?', 'definition', ['brut', 'net']],
-        ['admin', 'Que veut dire TVA ?', 'definition', ['TVA']],
+        ['admin', 'Que veut dire TVA ?', 'concept', ['TVA']],
         ['admin', 'Quels sont les types de transactions ?', 'transaction_types', []],
         ['admin', 'Comment faire un inventaire ?', 'help', ['nventaire']],
         ['admin', 'Comment clôturer la caisse ?', 'help', ['caisse']],
@@ -214,11 +215,11 @@ test('MARWA AI : banc de 114 questions réelles (simples, fautes, synonymes, sui
         ['admin', 'Supprime l\'article Savon', 'action_unsupported', ['archive']],
         ['admin', 'Ouvre les inventaires', 'action_navigate', ['Inventaires']],
         // Rapports et domaines du moteur 1.x conservés
-        ['admin', 'Ventes d\'hier en PDF', 'legacy', [$n((float) $yest['t'])]],
-        ['admin', 'Ventes de 1999 en PDF', 'legacy:ventes', ['1999'], [$n((float) $today['t'])]],
-        ['admin', 'Mon plan marketing en PDF', 'legacy', ['marketing']],
-        ['admin', 'Ma formation', 'legacy', ['formation']],
-        ['admin', 'Vérifie ma configuration', 'legacy', ['configuration']],
+        ['admin', 'Ventes d\'hier en PDF', 'report', [$n((float) $yest['t'])]],
+        ['admin', 'Ventes de 1999 en PDF', 'report', ['1999'], [$n((float) $today['t'])]],
+        ['admin', 'Mon plan marketing en PDF', 'report', ['marketing']],
+        ['admin', 'Ma formation', 'training', ['formation']],
+        ['admin', 'Vérifie ma configuration', 'checkup', ['configuration']],
         // Droits limités : caissier (ses ventes seulement, pas de coûts ni de marges)
         ['caissier', 'Combien j\'ai vendu aujourd\'hui ?', 'sales_summary', ['vos ventes', $n((float) $todayC['t'])]],
         ['caissier', 'Ventes de l\'admin aujourd\'hui', 'sales_summary', ['propres ventes'], [$n((float) $today['t']) === $n((float) $todayC['t']) ? '§' : $n((float) $today['t'])]],
