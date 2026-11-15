@@ -1,6 +1,8 @@
-# domaine: Test à l'aveugle (formulations jamais vues, moteur non retouché après)
+# domaine: Test à l'aveugle (formulations jamais vues)
 # code: AVEUGLE
-# Ces formulations ont été écrites après la mise au point du moteur et évaluées une seule fois, sans correction ensuite.
+# Ces formulations ont été écrites après la mise au point du moteur. Première mesure : 71 / 100, sans aucune retouche.
+# Une seule correction a suivi, pour une raison de sécurité : le garde-fou contrôle désormais aussi le texte d'origine
+# (la requête « DELETE FROM » était déformée par le correcteur de fautes). Mesure après cette correction : 72 / 100.
 # Elles ne sont jamais données au classifieur. Leur taux de réussite est la mesure la plus honnête de la généralisation.
 stock_value | admin | Mon stock, il vaut combien en tout ? |  |  | train=no; db=stock_value
 stock_value | admin | J'ai pour combien de marchandise en ce moment ? |  |  | train=no; db=stock_value

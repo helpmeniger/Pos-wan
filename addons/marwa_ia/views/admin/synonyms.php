@@ -7,7 +7,7 @@
 </div><div class="card-footer"><button class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Ajouter</button></div></form>
 <p class="small text-secondary mt-2">L'assistant connaît déjà <?= (int) $builtin ?> synonymes et racines du métier et <?= (int) $abbr ?> abréviations (cb, stp, pk, qté, mdp…), et il corrige les fautes de frappe : inutile de les saisir ici.</p></div>
 <div class="col-lg-7"><div class="card"><div class="card-header">Synonymes ajoutés (<?= count($rows) ?>)</div>
-  <?php if (!$rows): ?><div class="card-body small text-secondary">Aucun pour l'instant.</div><?php else: ?><table class="table table-sm small mb-0"><thead><tr><th>Mot</th><th>Compris comme</th><th>Note</th><th>Ajouté par</th><th></th></tr></thead><tbody>
+  <?php if (!$rows): ?><div class="card-body small text-secondary">Aucun pour l'instant.</div><?php else: ?><div class="table-responsive"><table class="table table-sm small mb-0"><thead><tr><th>Mot</th><th>Compris comme</th><th>Note</th><th>Ajouté par</th><th></th></tr></thead><tbody>
   <?php foreach ($rows as $r): ?><tr><td><?= e($r['term']) ?></td><td><?= e($r['canonical']) ?></td><td><?= e((string) $r['note']) ?></td><td><?= e((string) $r['full_name']) ?><div class="text-secondary"><?= e(fdate($r['created_at'])) ?></div></td>
     <td><form method="post" action="<?= e(url('/ia/admin/synonymes/' . (int) $r['id'] . '/supprimer')) ?>" data-confirm="Supprimer ce synonyme ?"><?= csrf_field() ?><button class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button></form></td></tr><?php endforeach; ?>
-  </tbody></table><?php endif; ?></div></div></div>
+  </tbody></table></div><?php endif; ?></div></div></div>

@@ -7,6 +7,26 @@ externe (OpenAI, Claude, Gemini…) **seulement** si l'administrateur l'ajoute e
 questions (loi n° 2017-28). Même alors, la base de données n'est jamais envoyée et les chiffres restent calculés
 par POS Marwa.
 
+## Nouveautés 3.0
+- **Fautes et langage courant** : lettres inversées ou manquantes, mots collés, écriture phonétique, abréviations
+  (« cb », « stp », « qté »), tournures familières (« fais-moi le point », « ça donne quoi »).
+- **Demande de précision** plutôt que de deviner : « Ajoute 50 à Eau minérale » ne déclenche aucune opération tant
+  que l'article, la quantité et la nature de l'opération ne sont pas clairs.
+- **Conseils calculés** sur vos chiffres (ruptures, articles dormants, marge, créances, écarts de caisse), distingués
+  des conseils généraux ; **conversation** plus naturelle ; une trentaine de notions de gestion expliquées.
+- **Ajout rapide de stock** préparé par l'assistant, exécuté après votre confirmation.
+- **MARWA AI Training Center** (Assistant → MARWA AI Training Center) : bibliothèque de 1 262 scénarios, intentions,
+  synonymes, questions incomprises, corrections, tests automatiques, performance, historique.
+- Mesure honnête : `php addons/marwa_ia/bin/ai-eval.php` rejoue toute la bibliothèque et compte à part les
+  formulations que le classifieur n'a jamais vues.
+
+Ce que l'assistant n'est pas : il ne « s'entraîne » pas tout seul sur vos conversations et aucun grand modèle de
+langage n'est réentraîné. Seuls des exemples validés par un administrateur (anonymisés) enrichissent sa
+compréhension. Sa compréhension repose sur la similarité des mots : une tournure très éloignée des exemples peut
+ne pas être comprise — il le dit alors, sans inventer.
+
+Documentation : `docs/ia/04_AUDIT_V3.md`, `docs/ia/05_DOCUMENTATION_V3.md`, `docs/ia/06_RAPPORT_DE_PERFORMANCE.md`.
+
 ## Nouveautés 2.0
 - **Réponses en continu** et **conversations** conservées (liste, renommer, supprimer, durée de conservation),
   visibles par leur seul auteur.

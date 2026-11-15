@@ -2,6 +2,24 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.10.0] — 2026-11-15
+
+### Ajouté
+- **MARWA AI 3.0** (mise à niveau de l'assistant existant, `addons/marwa_ia`) : récupération des fautes (lettres inversées ou manquantes, mots collés, écriture phonétique, abréviations), tournures familières, plusieurs demandes dans une question, demande de précision au lieu de deviner (article ambigu, quantité sans nature d'opération).
+- Conversation générale (salutations, plaisanteries, une trentaine de notions de gestion expliquées), conseils **calculés sur les chiffres de l'entreprise** et distingués des conseils généraux, 15 nouveaux types d'informations (dernière entrée de stock, mouvements, fiches article / client / fournisseur, taux de marge, diagnostic de caisse…).
+- Ajout rapide de stock préparé par l'assistant (droit `stock.adjust`), exécuté par la fonction du logiciel après confirmation.
+- Garde-fou contre les tentatives de manipulation (règles à ignorer, mots de passe, SQL, opération cachée, effacement de dette, élévation de droits) : refus expliqué. Il complète les contrôles de droits, qui restent faits côté serveur.
+- **Bibliothèque de 1 262 scénarios** (3 664 formulations) rejouable, avec mesure séparée des formulations jamais vues par le classifieur, et commande `php addons/marwa_ia/bin/ai-eval.php`.
+- **MARWA AI Training Center** (droit `ia.manage`) : tableau de bord, base de connaissances, scénarios, intentions, synonymes, questions incomprises, corrections des utilisateurs, tests automatiques, performance, modèles, historique des améliorations.
+
+### Modifié
+- Les demandes de rapport, de formation, de marketing et de contrôle de configuration portent désormais leur propre intention (`report`, `training`, `marketing`, `checkup`) au lieu de `legacy` ; les fonctions elles-mêmes sont inchangées.
+- Migration `0004_marwa_ai_training` (4 tables ajoutées, aucune table existante modifiée). Sauvegardez la base avant la mise à jour.
+
+### Limites connues
+- Compréhension par similarité de mots : pas de modèle neuronal intégré. Sur un jeu de 100 formulations écrites après la mise au point et jamais montrées au moteur, 71 ont été correctement traitées (voir `docs/ia/06_RAPPORT_DE_PERFORMANCE.md`).
+- Les scénarios chiffrés sont écrits pour le jeu de démonstration.
+
 ## [3.9.0] — 2026-11-12
 
 ### Ajouté

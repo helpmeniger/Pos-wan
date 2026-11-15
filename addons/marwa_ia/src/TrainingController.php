@@ -186,7 +186,7 @@ final class TrainingController extends Controller
     {
         $since = date('Y-m-d', strtotime('-60 days'));
         view('marwa_ia::admin/unresolved', ['title' => 'MARWA AI — questions incomprises',
-            'rows' => DB::all("SELECT id, question, intent_guess, confidence, outcome, created_at FROM ai_learning_logs WHERE outcome IN ('not_understood','fallback','clarify') AND resolved = 0 ORDER BY id DESC LIMIT 150"),
+            'rows' => DB::all("SELECT id, question, intent_guess, confidence, outcome, created_at FROM ai_learning_logs WHERE (outcome IN ('not_understood','fallback','clarify') OR (outcome = 'refused' AND intent_guess = 'out_of_scope')) AND resolved = 0 ORDER BY id DESC LIMIT 150"),
             'frequent' => DB::all("SELECT normalized, COUNT(*) n, MAX(created_at) last_at, MAX(intent_guess) guess FROM ai_learning_logs WHERE created_at >= ? AND normalized <> '' GROUP BY normalized HAVING n >= 2 ORDER BY n DESC LIMIT 40", [$since]),
             'unrecognized' => DB::all("SELECT COALESCE(intent_guess, '—') k, COUNT(*) n FROM ai_learning_logs WHERE outcome = 'not_understood' AND created_at >= ? GROUP BY k ORDER BY n DESC LIMIT 15", [$since]),
             'intents' => self::intentOptions()]);

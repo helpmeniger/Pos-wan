@@ -157,7 +157,7 @@ test('MARWA AI 3.0 (HTTP) : centre d\'entraînement — 11 menus, droits, scéna
     $a = new Http();
     $a->login($B, 'admin', 'Essai-Niamey-2026');
     $c = new Http();
-    $c->login($B, 'caissier', 'Essai-Niamey-2026');
+    $c->login($B, 'caissier', 'Mot-de-passe-2026');
     $pages = ['/ia/admin' => 'scénarios dans la bibliothèque', '/ia/admin/connaissances' => 'Nouvelle fiche', '/ia/admin/scenarios' => 'Ajouter un scénario', '/ia/admin/intentions' => 'Ajouter une intention', '/ia/admin/synonymes' => 'Ajouter un synonyme',
         '/ia/admin/incomprises' => 'Questions à enseigner', '/ia/admin/corrections' => 'avis', '/ia/admin/tests' => 'Tester une formulation', '/ia/admin/performance' => 'Usage réel', '/ia/admin/modeles' => 'Ajouter un modèle', '/ia/admin/historique' => 'Version de la connaissance'];
     foreach ($pages as $u => $txt) {
