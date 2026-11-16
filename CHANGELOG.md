@@ -2,6 +2,20 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.12.0] — 2026-11-16
+
+### Ajouté
+- **Reconnaissance 1.4 — comptage des articles et comportement sur le rayon** (`addons/vision`) : chaque emplacement d'étagère peut être découpé en **places** (nombre d'articles vus de face quand il est plein). L'écran compte les articles présents (« Cola 4/6 », une case verte ou rouge par article) et distingue, à chaque geste, un article **touché** (rien), **pris × N** (un suivi jusqu'à la caisse par article), **remis × N**, **déplacé** sur le rayon (aucun suivi) ou **posé hors de sa place**.
+- **Rayons à réassortir** : seuil « alerte si ≤ » par emplacement, cloche et tableau « État des rayons » sur la page Contrôle.
+- Une prise n'est confirmée qu'après environ 5 s de calme : un bras resté immobile en travers d'un autre rayon, ou une main posée longtemps, ne produit plus de fausse prise. Un jugement fait pendant qu'un obstacle immobile cachait le rayon est annulé quand la scène redevient comme avant.
+
+### Modifié
+- Migration `0005_comptage_rayon` (colonnes ajoutées aux emplacements et aux événements ; retour arrière : `addons/vision/sql/down_0005.sql`). Un emplacement existant compte une place : fonctionnement 1.3 inchangé.
+
+### Essais et limites
+- 31 vérifications du moteur d'étagère ; 300 essais aléatoires de comptage : 225 / 225 prises comptées justes, 75 / 75 « touché » sans faux événement ; essai Chromium avec vidéo simulée (deux bouteilles prises d'un geste : « pris × 2 », 1/3, à réassortir).
+- Seuls les articles visibles de face sont comptés (pas la profondeur du rayon). Ce n'est pas un détecteur d'articles entraîné : le nombre de places de chaque emplacement est indiqué une fois. Non mesuré avec une vraie caméra en boutique.
+
 ## [3.11.0] — 2026-11-16
 
 ### Ajouté

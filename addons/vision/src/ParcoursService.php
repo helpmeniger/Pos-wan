@@ -78,19 +78,47 @@ final class ParcoursService
             if ($by === 'aucun') {
                 $pid = null; // reconnaissance incertaine : on ne nomme pas l'article (pas de rapprochement sur une supposition)
             }
-            $id = DB::insert('vision_journeys', ['store_id' => $store, 'camera_id' => $cam['id'], 'slot_id' => $ev['slot_id'] ?: null, 'product_id' => $pid, 'identified_by' => $by,
-                'origin' => 'rayon', 'taken_event_id' => $ev['id'], 'taken_at' => $now, 'deadline_at' => date('Y-m-d H:i:s', strtotime($now) + self::delay() * 60), 'status' => 'en_cours']);
-            return self::resolveOne((int) $id, $now);
+            // Plusieurs articles pris d'un seul geste : un suivi par article (chacun doit être encaissé)
+            $r = null;
+            for ($n = 0; $n < max(1, (int) ($ev['qty'] ?? 1)); $n++) {
+                $id = DB::insert('vision_journeys', ['store_id' => $store, 'camera_id' => $cam['id'], 'slot_id' => $ev['slot_id'] ?: null, 'product_id' => $pid, 'identified_by' => $by,
+                    'origin' => 'rayon', 'taken_event_id' => $ev['id'], 'taken_at' => $now, 'deadline_at' => date('Y-m-d H:i:s', strtotime($now) + self::delay() * 60), 'status' => 'en_cours']);
+                $r = self::resolveOne((int) $id, $now);
+                $r['count'] = $n + 1;
+            }
+            return $r;
         }
         if ($role === 'etagere' && $ev['direction'] === 'remis') {
-            // Le dernier article pris sur cet emplacement (ou de cet article sur cette caméra), encore suivi
-            $j = DB::one('SELECT * FROM vision_journeys WHERE camera_id = ? AND status IN (\'en_cours\',\'vu_caisse\',\'alerte\') AND reviewed_at IS NULL AND exit_event_id IS NULL
-                          AND ' . ($ev['slot_id'] ? 'slot_id = ?' : 'product_id = ?') . ' AND taken_at >= ? - INTERVAL ? MINUTE ORDER BY taken_at DESC LIMIT 1',
+            // Les derniers articles pris sur cet emplacement (ou de cet article sur cette caméra), encore suivis
+            $rows = DB::all('SELECT * FROM vision_journeys WHERE camera_id = ? AND status IN (\'en_cours\',\'vu_caisse\',\'alerte\') AND reviewed_at IS NULL AND exit_event_id IS NULL
+                          AND ' . ($ev['slot_id'] ? 'slot_id = ?' : 'product_id = ?') . ' AND taken_at >= ? - INTERVAL ? MINUTE ORDER BY taken_at DESC LIMIT ' . max(1, min(50, (int) ($ev['qty'] ?? 1))),
                 [$cam['id'], $ev['slot_id'] ?: (int) $ev['product_id'], $now, 3 * self::delay()]);
-            if (!$j) {
+            if (!$rows) {
                 return null; // réapprovisionnement, ou remise d'un article pris avant la surveillance
             }
-            DB::update('vision_journeys', ['status' => 'remis', 'resolved_at' => $now, 'reason' => $j['status'] === 'alerte' ? 'Remis en rayon après l\'alerte' : null], 'id = ?', [$j['id']]);
+            foreach ($rows as $j) {
+                DB::update('vision_journeys', ['status' => 'remis', 'resolved_at' => $now, 'reason' => $j['status'] === 'alerte' ? 'Remis en rayon après l\'alerte' : null], 'id = ?', [$j['id']]);
+            }
+            return ['journey' => (int) $rows[0]['id'], 'status' => 'remis', 'level' => null, 'count' => count($rows)];
+        }
+        if ($role === 'etagere' && $ev['direction'] === 'deplace') {
+            // Parti d'un emplacement et posé sur un autre du même rayon dans le même geste : il ne quitte pas le rayon
+            return ['journey' => null, 'status' => 'deplace', 'level' => null];
+        }
+        if ($role === 'etagere' && $ev['direction'] === 'depose') {
+            // Objet posé hors de sa place : si la reconnaissance le nomme avec certitude, l'article pris plus tôt et suivi
+            // (même boutique) n'a pas quitté la boutique : son suivi est clos « remis » (reposé ailleurs)
+            if (!self::sure($ev)) {
+                return ['journey' => null, 'status' => 'depose', 'level' => null];
+            }
+            $j = DB::one('SELECT * FROM vision_journeys WHERE product_id = ? AND status IN (\'en_cours\',\'vu_caisse\',\'alerte\') AND reviewed_at IS NULL AND exit_event_id IS NULL'
+                . ($store ? ' AND (store_id = ? OR store_id IS NULL)' : '') . ' AND taken_at >= ? - INTERVAL ? MINUTE ORDER BY taken_at DESC LIMIT 1',
+                array_merge([(int) $ev['product_id']], $store ? [$store] : [], [$now, 3 * self::delay()]));
+            if (!$j) {
+                return ['journey' => null, 'status' => 'depose', 'level' => null];
+            }
+            $where = (string) DB::value('SELECT label FROM vision_slots WHERE id = ?', [$ev['slot_id']]);
+            DB::update('vision_journeys', ['status' => 'remis', 'resolved_at' => $now, 'reason' => mb_substr('Reposé ailleurs sur le rayon' . ($where !== '' ? ' (' . $where . ')' : '') . ($cam['place'] ? ' · ' . $cam['place'] : ''), 0, 255)], 'id = ?', [$j['id']]);
             return ['journey' => (int) $j['id'], 'status' => 'remis', 'level' => null];
         }
         if ($role === 'caisse' && in_array($ev['direction'], ['vu', 'sortie'], true) && self::sure($ev)) {
@@ -236,7 +264,8 @@ final class ParcoursService
     public static function rows(string $where, array $params, int $limit = 100): array
     {
         return DB::all("SELECT j.*, p.name AS product, p.reference, sl.label AS slot, c.name AS camera, c.place, sa.number AS sale_number,
-                               et.thumb AS taken_thumb, ec.thumb AS checkout_thumb, cc.name AS checkout_camera, ex.thumb AS exit_thumb, xc.name AS exit_camera, u.full_name AS reviewer
+                               et.thumb AS taken_thumb, ec.thumb AS checkout_thumb, cc.name AS checkout_camera, ex.thumb AS exit_thumb, xc.name AS exit_camera, u.full_name AS reviewer,
+                               (SELECT COUNT(*) FROM vision_events d WHERE d.camera_id = j.camera_id AND d.direction = 'depose' AND d.seen_at >= j.taken_at) AS deposes
                         FROM vision_journeys j
                         LEFT JOIN products p ON p.id = j.product_id LEFT JOIN vision_slots sl ON sl.id = j.slot_id LEFT JOIN vision_cameras c ON c.id = j.camera_id
                         LEFT JOIN sales sa ON sa.id = j.sale_id LEFT JOIN vision_events et ON et.id = j.taken_event_id
@@ -254,12 +283,37 @@ final class ParcoursService
         $out = array_map(fn($r) => [
             'id' => (int) $r['id'], 'level' => $r['level'], 'level_label' => self::LEVELS[$r['level']] ?? '', 'product' => $r['product'] ?? 'Article non identifié',
             'where' => trim(($r['place'] ?: $r['camera'] ?: '') . ($r['slot'] ? ' · ' . $r['slot'] : ''), ' ·') ?: ($r['checkout_camera'] ?? $r['exit_camera'] ?? ''),
-            'reason' => $r['reason'], 'taken_at' => substr((string) $r['taken_at'], 11, 5), 'alerted_at' => substr((string) $r['alerted_at'], 11, 5),
+            'reason' => $r['reason'] . ((int) $r['deposes'] ? ' · ' . (int) $r['deposes'] . ' objet(s) posé(s) hors de leur place sur ce rayon depuis : à regarder d\'abord' : ''),
+            'taken_at' => substr((string) $r['taken_at'], 11, 5), 'alerted_at' => substr((string) $r['alerted_at'], 11, 5),
             'thumb' => $r['taken_thumb'] ?? $r['checkout_thumb'] ?? $r['exit_thumb'], 'new' => (int) $r['id'] > $sinceId,
         ], $alerts);
         $open = DB::one("SELECT SUM(status = 'en_cours') AS en_cours, SUM(status = 'vu_caisse') AS vu_caisse FROM vision_journeys WHERE status IN ('en_cours','vu_caisse')");
         return ['alerts' => $out, 'en_cours' => (int) ($open['en_cours'] ?? 0), 'vu_caisse' => (int) ($open['vu_caisse'] ?? 0),
             'max_id' => (int) DB::value("SELECT COALESCE(MAX(id), 0) FROM vision_journeys WHERE status = 'alerte'")];
+    }
+
+    /**
+     * Emplacements dont le nombre d'articles vus à leur place est descendu au seuil choisi (« alerte si ≤ »).
+     * Un compte de plus de 24 h n'est pas utilisé (écran de surveillance fermé depuis).
+     */
+    public static function lowShelves(): array
+    {
+        return DB::all('SELECT s.id, s.label, s.units, s.min_count, s.seen_count, s.seen_at, p.name AS product, c.name AS camera, c.place
+                        FROM vision_slots s JOIN vision_cameras c ON c.id = s.camera_id AND c.active = 1 LEFT JOIN products p ON p.id = s.product_id
+                        WHERE s.active = 1 AND s.min_count IS NOT NULL AND s.seen_count IS NOT NULL AND s.seen_count <= s.min_count AND s.seen_at >= NOW() - INTERVAL 1 DAY
+                        ORDER BY s.seen_count, s.label');
+    }
+
+    /** Comptes vus par l'écran de surveillance (articles à leur place, par emplacement). */
+    public static function saveCounts(int $cameraId, array $list): int
+    {
+        $n = 0;
+        foreach (array_slice($list, 0, 40) as $x) {
+            $x = (array) $x;
+            $n += DB::run('UPDATE vision_slots SET seen_count = LEAST(units, ?), seen_at = NOW() WHERE id = ? AND camera_id = ? AND active = 1',
+                [max(0, min(255, (int) ($x['count'] ?? 0))), (int) ($x['id'] ?? 0), $cameraId])->rowCount();
+        }
+        return $n;
     }
 
     /** Nombre d'alertes à vérifier (cloche de la barre supérieure). */

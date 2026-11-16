@@ -35,8 +35,16 @@ final class ControleController extends Controller
             $params = [$from . ' 00:00:00', $to . ' 23:59:59'];
         }
         view('vision::controles', ['title' => 'Contrôle rayon → caisse', 'rows' => ParcoursService::rows($where, $params, 150), 'show' => $show, 'from' => $from, 'to' => $to,
-            'stats' => ParcoursService::stats($from, $to), 'cameras' => DB::all("SELECT role, COUNT(*) AS n FROM vision_cameras WHERE active = 1 GROUP BY role"),
+            'stats' => ParcoursService::stats($from, $to), 'shelves' => self::shelves(), 'cameras' => DB::all("SELECT role, COUNT(*) AS n FROM vision_cameras WHERE active = 1 GROUP BY role"),
             'scripts' => ['addons/vision/vision-controles.js']]);
+    }
+
+    /** État des rayons : tous les emplacements avec leur compte vu (pour la page Contrôle). */
+    private static function shelves(): array
+    {
+        return DB::all('SELECT s.id, s.label, s.units, s.min_count, s.seen_count, s.seen_at, p.name AS product, c.name AS camera, c.place
+                        FROM vision_slots s JOIN vision_cameras c ON c.id = s.camera_id AND c.active = 1 LEFT JOIN products p ON p.id = s.product_id
+                        WHERE s.active = 1 ORDER BY c.name, s.id');
     }
 
     public function live(): void
@@ -56,6 +64,15 @@ final class ControleController extends Controller
         header('Cache-Control: no-store');
         $rows = ParcoursService::cashierReminders((int) Auth::id());
         json_response(['ok' => true, 'items' => array_map(fn($r) => ['id' => (int) $r['id'], 'product' => $r['product'], 'since' => substr((string) $r['checkout_at'], 11, 5)], $rows)]);
+    }
+
+    /** Comptes d'articles vus à leur place, envoyés par l'écran de surveillance. */
+    public function counts(int $id): void
+    {
+        $this->jsonAttempt(function () use ($id) {
+            DB::value("SELECT id FROM vision_cameras WHERE id = ? AND role = 'etagere'", [$id]) ?: throw new \App\Core\BusinessException('Caméra d\'étagère introuvable.');
+            return ['saved' => ParcoursService::saveCounts($id, (array) Request::input('slots', [])), 'low' => count(ParcoursService::lowShelves())];
+        });
     }
 
     public function slots(int $id): void

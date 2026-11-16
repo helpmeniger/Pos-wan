@@ -3233,7 +3233,7 @@ test('Surveillance : moteur de comptage (ligne, zone, sens, hésitation, lumièr
 
 test('Module Reconnaissance 1.1 : caméras USB / carte / IP, relais sécurisé, surveillance, comparaison avec les ventes', function () use ($B, $port) {
     App\Core\Addons::install('vision', false);
-    eq('1.3.0', App\Core\Addons::installed()['vision']['version'] ?? null, 'module mis à jour en 1.3.0');
+    eq('1.4.0', App\Core\Addons::installed()['vision']['version'] ?? null, 'module mis à jour en 1.4.0');
     ok((bool) DB::value("SELECT 1 FROM role_permissions rp JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id WHERE r.code = 'store_manager' AND p.code = 'vision.watch'"), 'droit de surveillance pour le gérant');
     // Fausse caméra IP (serveur PHP séparé)
     $cport = (int) (getenv('TEST_CAM_PORT') ?: $port + 7);
@@ -3601,7 +3601,7 @@ test('MARWA VOICE AI 1.1 : voix Piper livrée dans le dossier (fragments vérifi
 test('Mise à jour du logiciel : modules actifs mis à jour automatiquement (jamais d\'erreur 500 sur leurs nouveaux écrans)', function () use ($B) {
     // Situation signalée : fichiers 2.2 copiés, module « vision » encore en 1.0.0 dans la base
     DB::update('addons', ['version' => '1.0.0'], 'code = ?', ['vision']);
-    DB::run("DELETE FROM schema_migrations WHERE version IN ('addon:vision:0002_cameras_surveillance', 'addon:vision:0004_parcours_rayon_caisse')");
+    DB::run("DELETE FROM schema_migrations WHERE version IN ('addon:vision:0002_cameras_surveillance', 'addon:vision:0004_parcours_rayon_caisse', 'addon:vision:0005_comptage_rayon')");
     DB::run('SET FOREIGN_KEY_CHECKS = 0');
     DB::run('DROP TABLE IF EXISTS vision_journeys');
     DB::run('DROP TABLE IF EXISTS vision_slots');
@@ -3614,9 +3614,9 @@ test('Mise à jour du logiciel : modules actifs mis à jour automatiquement (jam
     foreach (['/vision/surveillance', '/vision/rapport', '/vision/cameras', '/vision/controles'] as $u) {
         eq(200, $a->req('GET', $B . $u)['code'], "$u après copie des fichiers");
     }
-    eq('1.3.0', DB::value("SELECT version FROM addons WHERE code = 'vision'"), 'module mis à jour automatiquement');
+    eq('1.4.0', DB::value("SELECT version FROM addons WHERE code = 'vision'"), 'module mis à jour automatiquement');
     ok((bool) DB::value("SHOW TABLES LIKE 'vision_events'") && (bool) DB::value("SHOW TABLES LIKE 'vision_cameras'") && (bool) DB::value("SHOW TABLES LIKE 'vision_journeys'"), 'nouvelles tables créées');
-    ok((bool) DB::value("SHOW COLUMNS FROM vision_cameras LIKE 'role'"), 'caméras recréées avec leur rôle (migration 1.3 rejouée)');
+    ok((bool) DB::value("SHOW COLUMNS FROM vision_cameras LIKE 'role'") && (bool) DB::value("SHOW COLUMNS FROM vision_slots LIKE 'units'"), 'caméras et emplacements recréés (migrations 1.3 et 1.4 rejouées)');
 
     // Mise à jour d'un module impossible : ses écrans sont masqués (404), jamais une erreur 500
     $dir = App\Core\Addons::dir() . '/zz_maj_test';

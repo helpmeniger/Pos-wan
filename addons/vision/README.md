@@ -1,4 +1,4 @@
-# Module « Reconnaissance des articles par photo » (vision) — 1.3.0
+# Module « Reconnaissance des articles par photo » (vision) — 1.4.0
 
 Reconnaît les articles **par la caméra, sans code-barres** : webcam du PC de caisse, tablette
 ou smartphone connecté au réseau local. Une fois le module activé, la reconnaissance est
@@ -269,8 +269,8 @@ comptoir après le scan).
 - **Une alerte n'est pas une preuve de vol.** Un article peut avoir été posé ailleurs, encaissé sous un autre
   article (ou avec un autre code-barres), mal reconnu, ou caché par une personne. Vérifiez avec discrétion,
   sans accuser un client ni un employé.
-- **Quantité** : une prise correspond à **un** changement d'emplacement. Deux articles pris d'un coup sur le
-  même emplacement comptent pour une prise.
+- **Quantité** : sans nombre de places (« Plein » = 1), une prise correspond à **un** changement d'emplacement.
+  Indiquez le nombre d'articles de l'emplacement pour que chaque article soit compté (1.4).
 - **Réapprovisionnement** : un rayon rempli par un employé est compté « remis » et peut clore un suivi en
   cours sur cet emplacement. Mémorisez à nouveau « rayon plein » après une mise en rayon.
 - **Emplacements sans article indiqué** : l'article dépend de la reconnaissance par photo, dont la précision
@@ -306,6 +306,59 @@ comptoir après le scan).
 - **Non mesuré : une vraie caméra dans une vraie boutique.** La fiabilité réelle dépend de l'emplacement de la
   caméra, de l'éclairage et des clients. Commencez par une seule étagère, suivez la part des fausses alertes
   sur la page Contrôle, puis étendez.
+
+## Comptage des articles et comportement sur le rayon (1.4)
+
+### Ce que la caméra d'étagère compte
+
+Pour chaque emplacement, indiquez **combien d'articles il contient quand il est plein, vus de face** (« Plein »,
+par exemple 6 bouteilles côte à côte). L'emplacement est alors découpé en autant de **places**, le long de son grand
+côté. Chaque place est comparée à la même place sur l'image « rayon plein » mémorisée :
+
+- place qui ressemble à l'image « plein » → **article présent** (case verte à l'écran) ;
+- place qui ne lui ressemble plus → **article manquant** (case rouge).
+
+L'écran affiche le compte (« Cola 4/6 »), l'envoie au serveur, et la page Contrôle → **État des rayons** le reprend.
+Avec un seuil « Alerte si ≤ », l'emplacement passe **à réassortir** (cloche, page Contrôle) : c'est une alerte de
+mise en rayon, distincte des vérifications rayon → caisse.
+
+### Ce que l'écran comprend à chaque geste
+
+| Ce qui se passe devant le rayon | Ce que l'écran en conclut |
+|---|---|
+| Une main touche un article, le soulève, le repose | **Touché** : aucun événement |
+| Un ou plusieurs articles quittent leur place | **Pris × N** : un suivi jusqu'à la caisse **par article** |
+| Un article revient à sa place | **Remis × N** : autant de suivis clos |
+| Un article quitte sa place et un objet apparaît ailleurs sur le rayon, dans le même geste (ou dans les 5 s) | **Déplacé** : il ne quitte pas le rayon, aucun suivi |
+| Un objet apparaît à une place qui n'est pas la sienne | **Posé hors de sa place** : si la reconnaissance le nomme avec certitude, l'article suivi correspondant est clos « reposé ailleurs » ; sinon l'alerte le mentionne (« à regarder d'abord ») |
+| Une main, un bras, une personne restent devant le rayon | **Attente** (« rayon caché ») ; rien n'est jugé |
+| Un bras reste immobile en travers d'un autre rayon pendant une prise | La prise n'est **confirmée qu'après 5 s de calme** : si l'emplacement redevient comme avant (le bras repart), rien n'est compté |
+
+Une prise est donc annoncée environ **5 secondes** après le geste : c'est le prix d'un contrôle qui se trompe peu.
+
+### Mesures (images de synthèse et vidéo simulée)
+
+- `tests/js/shelf.test.js` : 31 vérifications, dont le comptage (6/6 et 4/4 au départ), une prise, deux articles
+  d'un seul geste, touché sans prendre, reposé, déplacé d'un emplacement à l'autre, objet posé hors de sa place,
+  bras immobile en travers d'un autre rayon, main large posée longtemps sans rien prendre.
+- 300 essais aléatoires de comptage (1 à 3 articles pris, places, bruit, couleur et pause de la main jusqu'à 1,4 s,
+  lumière) : **225 / 225 prises comptées justes, 75 / 75 « touché » sans faux événement**. Avant la confirmation
+  différée, 14 essais sur 225 comptaient à tort une prise sur le rayon traversé par le bras.
+- Chromium, vidéo simulée donnée comme webcam (3 bouteilles, une main en prend 2 d'un seul geste) : « pris × 2 »,
+  deux suivis ouverts, compte 3/3 → 1/3, emplacement « à réassortir » sur la page Contrôle, aucune erreur.
+
+### Limites du comptage (à connaître)
+
+- **Seuls les articles visibles de face** sont comptés. Un rayon profond (articles les uns derrière les autres) ou un
+  présentoir à poussoir qui avance l'article suivant : la place paraît toujours pleine, la prise **n'est pas vue**.
+  Pour ces rayons, filmez de dessus ou comptez par rangée de façade.
+- Le compte est relatif à l'image « rayon plein » : mémorisez-la quand le rayon est vraiment plein, et après
+  chaque mise en rayon.
+- Ce n'est **pas** un détecteur d'articles comme ceux des démonstrations (cadres autour de chaque produit) :
+  ceux-là utilisent des modèles entraînés sur des milliers de photos annotées, qui ne sont pas fournis ici. Le
+  comptage par places demande d'indiquer, une fois, combien d'articles contient chaque emplacement.
+- Deux articles identiques échangés de place ne changent rien (et c'est voulu).
+- Non mesuré avec une vraie caméra en boutique.
 
 ## Installation
 
@@ -379,7 +432,7 @@ Options :
 | `vision_log` | Reconnaissances : proposé, choisi, note, écart, résultat (confirmé, corrigé, automatique, annulé, aucun) |
 | `vision_cameras` | Caméras : type, rôle (passage, étagère, caisse, sortie), boutique, lieu, caisse filmée, tracé |
 | `vision_events` | Passages, articles vus, pris ou remis en rayon (vignette de l'article, jamais de vidéo) |
-| `vision_slots` | Emplacements tracés sur l'image d'une caméra d'étagère, article attendu |
+| `vision_slots` | Emplacements tracés sur l'image d'une caméra d'étagère, article attendu, nombre de places, seuil de réassort, dernier compte vu |
 | `vision_journeys` | Suivi « pris en rayon → encaissé / remis / à vérifier », vérification et note |
 
 ## Précision mesurée (sans complaisance)

@@ -18,9 +18,10 @@ use App\Core\DB;
  */
 final class SurveillanceService
 {
-    public const DIRECTIONS = ['sortie' => 'Ligne franchie (sortie)', 'entree' => 'Ligne franchie (retour)', 'vu' => 'Vu dans la zone', 'prise' => 'Pris en rayon', 'remis' => 'Remis en rayon'];
+    public const DIRECTIONS = ['sortie' => 'Ligne franchie (sortie)', 'entree' => 'Ligne franchie (retour)', 'vu' => 'Vu dans la zone', 'prise' => 'Pris en rayon', 'remis' => 'Remis en rayon',
+        'deplace' => 'Déplacé sur le rayon', 'depose' => 'Posé hors de sa place'];
     /** Événements acceptés selon le rôle de la caméra. */
-    public const BY_ROLE = ['passage' => ['sortie', 'entree', 'vu'], 'etagere' => ['prise', 'remis'], 'caisse' => ['vu', 'sortie', 'entree'], 'sortie' => ['sortie', 'entree', 'vu']];
+    public const BY_ROLE = ['passage' => ['sortie', 'entree', 'vu'], 'etagere' => ['prise', 'remis', 'deplace', 'depose'], 'caisse' => ['vu', 'sortie', 'entree'], 'sortie' => ['sortie', 'entree', 'vu']];
     public const STATUSES = ['identifie' => 'Identifié', 'incertain' => 'Incertain', 'confirme' => 'Confirmé', 'corrige' => 'Corrigé', 'ignore' => 'Ignoré'];
 
     public static function addEvent(array $in): array
@@ -48,16 +49,24 @@ final class SurveillanceService
         if ($role === 'etagere') {
             $slot = DB::one('SELECT * FROM vision_slots WHERE id = ? AND camera_id = ? AND active = 1', [(int) ($in['slot_id'] ?? 0), $cam['id']])
                 ?? throw new BusinessException('Emplacement inconnu pour cette caméra : tracez les emplacements de l\'étagère.');
-            if ($slot['product_id']) {
+            // Objet posé hors de sa place : ce n'est pas l'article attendu de l'emplacement (la reconnaissance seule le nomme)
+            if ($slot['product_id'] && $dir !== 'depose') {
                 $pid = (int) $slot['product_id'];
                 $sure = true;
             }
         }
+        // Quantité (comptage par places) : au plus le nombre de places de l'emplacement
+        $qty = max(1, min($slot ? max(1, (int) $slot['units']) : 50, (int) ($in['qty'] ?? 1)));
+        $to = null;
+        if ($dir === 'deplace') {
+            $to = DB::one('SELECT id FROM vision_slots WHERE id = ? AND camera_id = ? AND active = 1', [(int) ($in['to_slot_id'] ?? 0), $cam['id']])
+                ?? throw new BusinessException('Emplacement d\'arrivée inconnu pour cette caméra.');
+        }
         $thumb = VisionService::cleanThumb(isset($in['thumb']) ? (string) $in['thumb'] : null);
-        $ev = ['camera_id' => $cam['id'], 'slot_id' => $slot ? (int) $slot['id'] : null, 'direction' => $dir, 'product_id' => $pid, 'score' => $score, 'margin' => $margin,
+        $ev = ['camera_id' => $cam['id'], 'slot_id' => $slot ? (int) $slot['id'] : null, 'to_slot_id' => $to ? (int) $to['id'] : null, 'direction' => $dir, 'qty' => $qty, 'product_id' => $pid, 'score' => $score, 'margin' => $margin,
             'status' => $sure ? 'identifie' : 'incertain', 'thumb' => $thumb, 'seen_at' => date('Y-m-d H:i:s'), 'user_id' => Auth::id()];
         $id = DB::insert('vision_events', $ev);
-        $j = ParcoursService::onEvent(['id' => (int) $id, '_slot_product' => $slot && $slot['product_id']] + $ev, $cam);
+        $j = ParcoursService::onEvent(['id' => (int) $id, '_slot_product' => $slot && $slot['product_id'] && $dir !== 'depose'] + $ev, $cam);
         return ['id' => (int) $id, 'status' => $ev['status'], 'journey' => $j];
     }
 

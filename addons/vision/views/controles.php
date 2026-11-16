@@ -57,6 +57,21 @@ $LV = ['priorite' => 'danger', 'verifier' => 'warning', 'faible' => 'secondary']
   <?php if (!$rows): ?><tr><td colspan="4" class="text-center text-secondary py-4"><?= $show === 'alerte' ? 'Aucune vérification demandée.' : 'Aucun suivi sur cette période.' ?></td></tr><?php endif; ?>
   </tbody></table></div></div>
 
+<div class="card mb-3" id="rayons"><div class="card-header"><i class="bi bi-bookshelf"></i> État des rayons (articles vus à leur place)</div><div class="table-responsive"><table class="table table-sm small align-middle mb-0">
+  <thead><tr><th>Emplacement</th><th>Article attendu</th><th style="min-width:160px">Vus à leur place</th><th>Seuil</th><th>Vu à</th><th></th></tr></thead><tbody>
+  <?php foreach ($shelves as $sh): $u = max(1, (int) $sh['units']); $c = $sh['seen_count']; $low = $c !== null && $sh['min_count'] !== null && (int) $c <= (int) $sh['min_count'] && strtotime((string) $sh['seen_at']) >= time() - 86400; ?>
+    <tr class="<?= $low ? 'table-warning' : '' ?>"><td><b><?= e($sh['label']) ?></b><br><span class="text-secondary"><?= e(trim($sh['camera'] . ($sh['place'] ? ' · ' . $sh['place'] : ''))) ?></span></td>
+      <td><?= e((string) ($sh['product'] ?? '—')) ?></td>
+      <td><?php if ($c === null): ?><span class="text-secondary">pas encore compté</span><?php else: ?>
+        <div class="d-flex align-items-center gap-2"><div class="rep-bar flex-grow-1"><span style="width:<?= (int) round(100 * $c / $u) ?>%;background:<?= $low ? '#dc3545' : '#20c997' ?>"></span></div><b><?= (int) $c ?> / <?= $u ?></b></div><?php endif; ?></td>
+      <td><?= $sh['min_count'] !== null ? 'alerte si ≤ ' . (int) $sh['min_count'] : '—' ?></td>
+      <td class="text-secondary"><?= $sh['seen_at'] ? e(fdate($sh['seen_at'])) : '' ?></td>
+      <td><?= $low ? '<span class="badge bg-warning text-dark">À réassortir</span>' : '' ?></td></tr>
+  <?php endforeach; ?>
+  <?php if (!$shelves): ?><tr><td colspan="6" class="text-center text-secondary py-3">Aucun emplacement tracé. Tracez les emplacements dans l'écran Surveillance et indiquez combien d'articles chacun contient quand il est plein.</td></tr><?php endif; ?>
+  </tbody></table></div>
+  <div class="card-body small text-secondary border-top">Ce compte est celui des articles <b>visibles de face</b> à leur place, comparé à l'image « rayon plein » mémorisée. Les articles cachés derrière (profondeur du rayon) ne sont pas vus. Ce n'est pas le stock du logiciel : un rayon peut être vide alors que la réserve est pleine.</div></div>
+
 <div class="card mb-3"><div class="card-header"><i class="bi bi-speedometer2"></i> Fiabilité par caméra (période affichée)</div><div class="table-responsive"><table class="table table-sm small mb-0">
   <thead><tr><th>Caméra</th><th class="text-end">Prises suivies</th><th class="text-end">Article nommé</th><th class="text-end">Encaissés</th><th class="text-end">Remis</th><th class="text-end">Alertes</th><th class="text-end">Fausses alertes</th><th class="text-end">Pertes</th><th class="text-end">Délai moyen jusqu'à la vente</th></tr></thead><tbody>
   <?php foreach ($stats['cameras'] as $c): ?>

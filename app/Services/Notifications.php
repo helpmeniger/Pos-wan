@@ -58,6 +58,10 @@ final class Notifications
                 if ($n > 0) {
                     $items[] = ['bi-eye text-danger', "$n article(s) pris en rayon à vérifier (non encaissés)", '/vision/controles'];
                 }
+                $low = count(\Addons\Vision\ParcoursService::lowShelves());
+                if ($low > 0) {
+                    $items[] = ['bi-bookshelf text-warning', "$low rayon(s) à réassortir (articles vus par la caméra)", '/vision/controles#rayons'];
+                }
             } catch (\Throwable) {
                 // module pas encore mis à jour (tables 1.3 absentes) : pas d'alerte, la page reste utilisable
             }

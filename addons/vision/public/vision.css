@@ -101,3 +101,10 @@
 .pm-vis-remind button { float: right; border: 0; background: none; font-size: 1.1rem; line-height: 1; }
 [data-bs-theme="dark"] .ctl-alert { background: #2b2f33; } [data-bs-theme="dark"] .ctl-alert.ctl-priorite { background: #3a2326; } [data-bs-theme="dark"] .ctl-alert.ctl-verifier { background: #3a3123; }
 [data-bs-theme="dark"] .pm-vis-remind { background: #3a3123; border-color: #8a6d2c; }
+
+/* 1.4 — comptage par places */
+.surv-slot { grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1.3fr) 74px 84px 52px 22px; }
+.surv-slot-num { display: flex; flex-direction: column; font-size: .7rem; color: #64748b; line-height: 1.1; }
+.surv-slot-num input { padding: 1px 4px; }
+.surv-slot-count { font-weight: 700; font-size: .8rem; text-align: center; }
+@media (max-width: 575px) { .surv-slot { grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 22px; } .surv-slot [data-k="product"] { grid-column: 2 / 4; } .surv-slot-num, .surv-slot-count { grid-column: auto; } }

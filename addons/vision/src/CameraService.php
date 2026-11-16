@@ -193,6 +193,7 @@ final class CameraService
     public static function slots(int $cameraId): array
     {
         return array_map(fn($r) => ['id' => (int) $r['id'], 'label' => $r['label'], 'product_id' => $r['product_id'] ? (int) $r['product_id'] : null, 'product' => $r['product'],
+            'units' => (int) ($r['units'] ?? 1), 'min_count' => isset($r['min_count']) ? (int) $r['min_count'] : null, 'seen_count' => isset($r['seen_count']) ? (int) $r['seen_count'] : null,
             'x' => (float) $r['x'], 'y' => (float) $r['y'], 'w' => (float) $r['w'], 'h' => (float) $r['h']],
             DB::all('SELECT s.*, p.name AS product FROM vision_slots s LEFT JOIN products p ON p.id = s.product_id WHERE s.camera_id = ? AND s.active = 1 ORDER BY s.id', [$cameraId]));
     }
@@ -229,7 +230,11 @@ final class CameraService
                 if ($pid && !DB::value("SELECT 1 FROM products WHERE id = ? AND status = 'active'", [$pid])) {
                     throw new BusinessException('Article introuvable pour l\'emplacement ' . ($i + 1) . '.');
                 }
-                $d = ['label' => trim(mb_substr((string) ($s['label'] ?? ''), 0, 80)) ?: 'Emplacement ' . ($i + 1), 'product_id' => $pid, 'x' => $x, 'y' => $y, 'w' => $w, 'h' => $h, 'active' => 1];
+                // Nombre d'articles quand l'emplacement est plein (places comptées) et seuil « à réassortir »
+                $units = max(1, min(30, (int) ($s['units'] ?? 1)));
+                $min = isset($s['min_count']) && $s['min_count'] !== '' && $s['min_count'] !== null ? max(0, min($units, (int) $s['min_count'])) : null;
+                $d = ['label' => trim(mb_substr((string) ($s['label'] ?? ''), 0, 80)) ?: 'Emplacement ' . ($i + 1), 'product_id' => $pid, 'units' => $units, 'min_count' => $min,
+                    'x' => $x, 'y' => $y, 'w' => $w, 'h' => $h, 'active' => 1];
                 $id = (int) ($s['id'] ?? 0);
                 if ($id && DB::value('SELECT 1 FROM vision_slots WHERE id = ? AND camera_id = ?', [$id, $cameraId])) {
                     DB::update('vision_slots', $d, 'id = ?', [$id]);

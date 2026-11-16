@@ -124,7 +124,7 @@ final class SurveillanceController extends Controller
 
     public function addEvent(): void
     {
-        $this->jsonAttempt(fn() => SurveillanceService::addEvent(array_combine($k = ['camera_id', 'direction', 'slot_id', 'product_id', 'score', 'margin', 'thumb'], array_map(fn($x) => Request::input($x), $k))));
+        $this->jsonAttempt(fn() => SurveillanceService::addEvent(array_combine($k = ['camera_id', 'direction', 'slot_id', 'to_slot_id', 'qty', 'product_id', 'score', 'margin', 'thumb'], array_map(fn($x) => Request::input($x), $k))));
     }
 
     /** Compteurs du jour par caméra (rafraîchissement de l'écran de surveillance). */

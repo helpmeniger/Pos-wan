@@ -17,16 +17,16 @@ test('Surveillance des étagères : article pris / remis à son emplacement (mai
     }
     exec(escapeshellarg($node) . ' ' . escapeshellarg(BASE_PATH . '/tests/js/shelf.test.js') . ' 2>&1', $out, $code);
     ok($code === 0, implode("\n", $out));
-    ok((bool) preg_match('/(\d+) réussi\(s\), 0 échec/', implode("\n", $out), $m) && (int) $m[1] >= 18, 'au moins 18 vérifications du moteur d\'étagère : ' . end($out));
+    ok((bool) preg_match('/(\d+) réussi\(s\), 0 échec/', implode("\n", $out), $m) && (int) $m[1] >= 30, 'au moins 30 vérifications du moteur d\'étagère (dont comptage par places) : ' . end($out));
 });
 
-test('Module Reconnaissance 1.3 : rôles des caméras, emplacements, suivi rayon → caisse, alertes, vérification, droits', function () use ($B) {
+test('Module Reconnaissance 1.3 / 1.4 : rôles des caméras, emplacements, suivi rayon → caisse, comptage par places, déplacé, réassort, alertes, droits', function () use ($B) {
     App\Core\Addons::install('vision', false);
-    eq('1.3.0', App\Core\Addons::installed()['vision']['version'] ?? null, 'module en 1.3.0');
+    eq('1.4.0', App\Core\Addons::installed()['vision']['version'] ?? null, 'module en 1.4.0');
     foreach (['vision_slots', 'vision_journeys'] as $tb) {
         ok((bool) DB::value('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [$tb]), "table $tb");
     }
-    ok(is_file(BASE_PATH . '/addons/vision/sql/down_0004.sql'), 'script de retour arrière fourni');
+    ok(is_file(BASE_PATH . '/addons/vision/sql/down_0004.sql') && is_file(BASE_PATH . '/addons/vision/sql/down_0005.sql'), 'scripts de retour arrière fournis');
     foreach (['vision-shelf.js', 'vision-controles.js'] as $f) {
         ok(is_file(PUBLIC_PATH . '/assets/addons/vision/' . $f), "$f publié");
     }
@@ -219,6 +219,51 @@ test('Module Reconnaissance 1.3 : rôles des caméras, emplacements, suivi rayon
     }
     eq(403, $c->req('POST', "$B/vision/controles/$j6", json_encode(['action' => 'fausse']), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $c->token("$B/pos")])['code'], 'le caissier ne clôt pas une alerte');
     ok(json_decode($c->req('GET', "$B/vision/controles/caisse", null, ['Accept: application/json'])['body'], true)['ok'], 'le caissier peut recevoir le rappel de sa caisse');
+
+    // 10 bis. Comptage par places (1.4) : quantité par geste, déplacé, posé ailleurs, comptes vus, rayons à réassortir
+    $sl = json_decode($post("/vision/cameras/{$shelf['id']}/slots", ['slots' => [
+        ['id' => $sCola, 'label' => 'Cola', 'product_id' => $pa, 'units' => 6, 'min_count' => 2, 'x' => 0.05, 'y' => 0.2, 'w' => 0.25, 'h' => 0.3],
+        ['id' => $sBas, 'label' => 'Étagère du bas', 'units' => 4, 'x' => 0.4, 'y' => 0.6, 'w' => 0.3, 'h' => 0.3],
+    ]])['body'], true);
+    ok($sl['ok'] && $sl['slots'][0]['units'] === 6 && $sl['slots'][0]['min_count'] === 2 && $sl['slots'][1]['min_count'] === null, 'emplacements : 6 articles quand plein, alerte si ≤ 2');
+    $before = (int) DB::value('SELECT COALESCE(MAX(id), 0) FROM vision_journeys');
+    $x = $ev(['camera_id' => $shelf['id'], 'direction' => 'prise', 'slot_id' => $sCola, 'qty' => 3]);
+    ok($x['journey']['count'] === 3 && (int) DB::value('SELECT COUNT(*) FROM vision_journeys WHERE id > ?', [$before]) === 3 && (int) DB::value('SELECT qty FROM vision_events WHERE id = ?', [$x['id']]) === 3, 'trois articles pris d\'un seul geste : trois suivis (chacun doit être encaissé)');
+    $x = $ev(['camera_id' => $shelf['id'], 'direction' => 'remis', 'slot_id' => $sCola, 'qty' => 2]);
+    ok($x['journey']['count'] === 2 && (int) DB::value("SELECT COUNT(*) FROM vision_journeys WHERE id > ? AND status = 'remis'", [$before]) === 2, 'deux reposés : deux suivis clos, un reste suivi');
+    eq(6, (int) DB::value('SELECT qty FROM vision_events WHERE id = ?', [$ev(['camera_id' => $shelf['id'], 'direction' => 'prise', 'slot_id' => $sCola, 'qty' => 40])['id']]), 'quantité limitée au nombre de places');
+    DB::run("UPDATE vision_journeys SET status = 'fausse_alerte' WHERE id > ? AND status = 'en_cours'", [$before]);
+    eq(422, $post('/vision/events', ['camera_id' => $shelf['id'], 'direction' => 'deplace', 'slot_id' => $sCola])['code'], 'déplacé sans emplacement d\'arrivée : refusé');
+    $n = (int) DB::value('SELECT COUNT(*) FROM vision_journeys');
+    $x = $ev(['camera_id' => $shelf['id'], 'direction' => 'deplace', 'slot_id' => $sCola, 'to_slot_id' => $sBas]);
+    ok($x['ok'] && $x['journey']['status'] === 'deplace' && (int) DB::value('SELECT COUNT(*) FROM vision_journeys') === $n, 'déplacé d\'un emplacement à un autre : aucun suivi (il ne quitte pas le rayon)');
+    eq(422, $post('/vision/events', ['camera_id' => $till['id'], 'direction' => 'deplace', 'slot_id' => $sCola, 'to_slot_id' => $sBas])['code'], 'déplacé : seulement une caméra d\'étagère');
+    // Article pris, puis reposé ailleurs (reconnu avec certitude) : son suivi est clos, sans alerte
+    $jd = (int) $ev(['camera_id' => $shelf['id'], 'direction' => 'prise', 'slot_id' => $sCola])['journey']['journey'];
+    $x = $ev(['camera_id' => $shelf['id'], 'direction' => 'depose', 'slot_id' => $sBas, 'product_id' => $pa, 'score' => 0.7, 'margin' => 0.2]);
+    ok($J($jd)['status'] === 'remis' && str_contains((string) $J($jd)['reason'], 'Reposé ailleurs') && str_contains((string) $J($jd)['reason'], 'Étagère du bas'), 'reposé ailleurs sur le rayon (reconnu) : suivi clos « reposé ailleurs »');
+    $jd2 = (int) $ev(['camera_id' => $shelf['id'], 'direction' => 'prise', 'slot_id' => $sCola])['journey']['journey'];
+    $x = $ev(['camera_id' => $shelf['id'], 'direction' => 'depose', 'slot_id' => $sBas, 'product_id' => $pa, 'score' => 0.2, 'margin' => 0.01]);
+    ok($x['status'] === 'incertain' && $J($jd2)['status'] === 'en_cours', 'objet posé ailleurs non reconnu avec certitude : aucun suivi clos sur une supposition');
+    ok((int) DB::value('SELECT product_id FROM vision_events WHERE id = ?', [$x['id']]) !== $pa || $x['status'] === 'incertain', 'l\'article attendu de l\'emplacement n\'est pas attribué à l\'objet posé');
+    $expire($jd2);
+    PS::resolve();
+    $la = array_values(array_filter(json_decode($a->req('GET', "$B/vision/controles/live", null, ['Accept: application/json'])['body'], true)['alerts'], fn($y) => $y['id'] === $jd2));
+    ok($la && str_contains($la[0]['reason'], 'posé(s) hors de leur place sur ce rayon'), 'alerte : signale l\'objet posé ailleurs sur le rayon (à regarder d\'abord)');
+    // Comptes vus et rayons à réassortir
+    $cn = json_decode($post("/vision/cameras/{$shelf['id']}/counts", ['slots' => [['id' => $sCola, 'count' => 2], ['id' => $sBas, 'count' => 9]]])['body'], true);
+    ok($cn['ok'] && $cn['saved'] === 2 && (int) DB::value('SELECT seen_count FROM vision_slots WHERE id = ?', [$sBas]) === 4, 'comptes enregistrés (limités au nombre de places)');
+    ok($cn['low'] === 1 && PS::lowShelves()[0]['label'] === 'Cola', 'Cola : 2 / 6, au seuil : à réassortir');
+    ok(str_contains($a->req('GET', "$B/vision/rapport")['body'], 'rayon(s) à réassortir'), 'cloche : rayon à réassortir');
+    $pg = $a->req('GET', "$B/vision/controles")['body'];
+    ok(str_contains($pg, 'État des rayons') && str_contains($pg, '2 / 6') && str_contains($pg, 'À réassortir') && str_contains($pg, 'visibles de face'), 'page Contrôle : état des rayons');
+    eq(422, $post("/vision/cameras/{$till['id']}/counts", ['slots' => [['id' => $sCola, 'count' => 1]]])['code'], 'comptes : seulement une caméra d\'étagère');
+    $post("/vision/cameras/{$shelf['id']}/counts", ['slots' => [['id' => $sCola, 'count' => 5]]]);
+    eq([], PS::lowShelves(), 'réassorti : plus d\'alerte');
+    DB::update('vision_slots', ['seen_count' => 0, 'seen_at' => date('Y-m-d H:i:s', time() - 2 * 86400)], 'id = ?', [$sCola]);
+    eq([], PS::lowShelves(), 'compte de plus de 24 h ignoré (écran fermé depuis)');
+    $sv = $a->req('GET', "$B/vision/surveillance")['body'];
+    ok(str_contains($sv, '"units":6') && str_contains($sv, '"min_count":2'), 'écran de surveillance : places et seuil de chaque emplacement');
 
     // 10. Le rapport « passages vus / ventes » ignore les prises en rayon (ce ne sont pas des passages)
     $cmp = Addons\Vision\SurveillanceService::compare(date('Y-m-d'), date('Y-m-d'), [$shelf['id']], 20);

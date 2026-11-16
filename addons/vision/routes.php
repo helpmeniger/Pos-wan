@@ -37,6 +37,7 @@ $router->get('/vision/rapport', [S::class, 'report'], 'vision.watch');
 use Addons\Vision\ControleController as K;
 
 $router->post('/vision/cameras/{id}/slots', [K::class, 'slots'], 'vision.watch');
+$router->post('/vision/cameras/{id}/counts', [K::class, 'counts'], 'vision.watch');
 $router->post('/vision/parcours/settings', [K::class, 'settings'], 'vision.watch');
 $router->get('/vision/controles', [K::class, 'index'], 'vision.watch');
 $router->get('/vision/controles/live', [K::class, 'live'], 'vision.watch');

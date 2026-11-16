@@ -15,7 +15,7 @@
   const D = JSON.parse(dataEl.textContent);
   const SW = 160;            // largeur de l'image analysée (suffisante pour le mouvement, légère)
   const TICK = 120;          // ms entre deux analyses (caméras locales)
-  const LABEL = { sortie: T('Sortie'), entree: T('Retour'), vu: T('Vu'), prise: T('Pris en rayon'), remis: T('Remis en rayon') };
+  const LABEL = { sortie: T('Sortie'), entree: T('Retour'), vu: T('Vu'), prise: T('Pris en rayon'), remis: T('Remis en rayon'), deplace: T('Déplacé sur le rayon'), depose: T('Posé hors de sa place') };
   const JOURNEY = { en_cours: T('suivi jusqu’à la caisse'), vu_caisse: T('vu en caisse, vente attendue'), encaisse: T('encaissé'), remis: T('suivi clos : remis'), alerte: T('vérification demandée') };
   const SHELF_STATE = { apprentissage: T('Apprentissage du rayon…'), mouvement: T('Mouvement devant le rayon…'), masque: T('Rayon caché : en attente'), calme: T('Rayon surveillé') };
   let running = false, wakeLock = null, recogReady = false;
@@ -41,17 +41,19 @@
       let pid = null, score = null, margin = null;
       try {
         // Emplacement lié à un article : l'article est connu, pas besoin de reconnaissance
-        if (!(j.slot && j.slot.product_id) && recogReady && V.IDX.n) {
+        const known = j.slot && j.slot.product_id && j.type !== 'depose';
+        if (!known && j.type !== 'deplace' && recogReady && V.IDX.n) {
           const e = await V.embed(j.canvas, { x: 0, y: 0, s: j.canvas.width });
           const res = V.match(e.f);
           if (res.length) { pid = res[0].pid; score = res[0].score; margin = res[0].score - (res[1] ? res[1].score : -1); }
         }
       } catch (err) { /* reconnaissance impossible : passage non identifié */ }
-      const d = await V.api('/vision/events', { camera_id: j.cam.id, direction: j.type, slot_id: j.slot ? j.slot.id : null, product_id: pid, score, margin, thumb: j.thumb });
-      let name = j.slot && j.slot.product ? j.slot.product : '';
+      const d = await V.api('/vision/events', { camera_id: j.cam.id, direction: j.type, slot_id: j.slot ? j.slot.id : null, to_slot_id: j.to ? j.to.id : null, qty: j.qty || 1, product_id: pid, score, margin, thumb: j.thumb });
+      let name = j.slot && j.slot.product && j.type !== 'depose' ? j.slot.product : '';
       if (!name && pid) { const [p] = await V.products([pid]).catch(() => []); name = p ? p.name : ''; }
       const extra = d.ok && d.journey ? JOURNEY[d.journey.status] || '' : '';
-      j.cam.showEvent(j.type, j.thumb, d.ok ? d.status : 'erreur', (j.slot ? j.slot.label + (name ? ' · ' : '') : '') + name, d.ok ? '' : d.error, extra);
+      const what = (j.qty > 1 ? j.qty + ' × ' : '') + (j.slot ? j.slot.label + (name ? ' · ' : '') : '') + name + (j.to ? ' → ' + j.to.label : '');
+      j.cam.showEvent(j.type, j.thumb, d.ok ? d.status : 'erreur', what, d.ok ? '' : d.error, extra);
       if (d.ok && d.journey && d.journey.status === 'alerte' && window.PMControles) window.PMControles.refresh();
     }
     busyQueue = false;
@@ -92,7 +94,8 @@
         const per = this.c.kind === 'ip' ? Math.max(100, Math.round(1000 / this.c.fps)) : TICK;
         const n = (ms) => Math.max(3, Math.round(ms / per));
         this.shelf = window.PMShelf ? PMShelf.create({ width: this.small.width, height: this.small.height, slots: this.slots.filter((x) => x.id), sensitivity: this.c.sensitivity,
-          settleFrames: n(1500), learnFrames: n(1000), relearnFrames: n(20000) }) : null;
+          settleFrames: n(1500), learnFrames: n(1000), relearnFrames: n(20000), confirmFrames: n(5000) }) : null;
+        this.sentCounts = '';
         const ref = this.loadFull();
         if (this.shelf && ref) this.shelf.restore(ref);
         this.tracker = null;
@@ -117,12 +120,19 @@
       box.innerHTML = this.slots.map((x, i) => `<div class="surv-slot" data-i="${i}"><span class="surv-slot-n">${i + 1}</span>
         <input class="form-control form-control-sm" data-k="label" maxlength="80" value="${esc(x.label || '')}" placeholder="${esc(T('Nom (ex. Coca 33 cl)'))}">
         <input class="form-control form-control-sm" data-k="product" list="survProducts" value="${esc(x.product || '')}" placeholder="${esc(T('Article attendu (facultatif)'))}">
+        <label class="surv-slot-num" title="${esc(T('Nombre d\'articles visibles de face quand l\'emplacement est plein : ils seront comptés un par un'))}">${esc(T('Plein'))}
+          <input type="number" min="1" max="30" class="form-control form-control-sm" data-k="units" value="${x.units || 1}"></label>
+        <label class="surv-slot-num" title="${esc(T('Alerte « à réassortir » quand le nombre vu descend à ce seuil (vide : pas d\'alerte)'))}">${esc(T('Alerte si ≤'))}
+          <input type="number" min="0" max="30" class="form-control form-control-sm" data-k="min" value="${x.min_count ?? ''}"></label>
+        <span class="surv-slot-count" data-k="count">${x.seen_count != null ? esc(x.seen_count + ' / ' + (x.units || 1)) : ''}</span>
         <button type="button" class="btn btn-sm btn-link text-danger p-0" data-k="del" title="${esc(T('Retirer'))}"><i class="bi bi-x-lg"></i></button></div>`).join('');
       $$('.surv-slot', box).forEach((row) => {
         const x = this.slots[+row.dataset.i];
         $('[data-k="label"]', row).addEventListener('input', (e) => { x.label = e.target.value; this.slotsDirty(); });
         const prod = $('[data-k="product"]', row);
         prod.addEventListener('input', () => { x.product = prod.value; x.product_id = productIds[prod.value] || null; searchProducts(prod.value); this.slotsDirty(); });
+        $('[data-k="units"]', row).addEventListener('input', (e) => { x.units = Math.max(1, Math.min(30, +e.target.value || 1)); this.slotsDirty(); });
+        $('[data-k="min"]', row).addEventListener('input', (e) => { x.min_count = e.target.value === '' ? null : Math.max(0, +e.target.value); this.slotsDirty(); });
         $('[data-k="del"]', row).addEventListener('click', () => { this.slots.splice(+row.dataset.i, 1); this.slotList(); this.slotsDirty(); this.render(); });
       });
     }
@@ -130,7 +140,7 @@
     async saveSlots() {
       const bad = this.slots.find((x) => x.product && !x.product_id);
       if (bad) { this.msg(T('Article introuvable : choisissez-le dans la liste proposée, ou laissez le champ vide.') + ' (' + bad.product + ')', 'text-danger'); return; }
-      const d = await V.api('/vision/cameras/' + this.id + '/slots', { slots: this.slots.map((x) => ({ id: x.id || null, label: x.label, product_id: x.product_id, x: x.x, y: x.y, w: x.w, h: x.h })) });
+      const d = await V.api('/vision/cameras/' + this.id + '/slots', { slots: this.slots.map((x) => ({ id: x.id || null, label: x.label, product_id: x.product_id, units: x.units || 1, min_count: x.min_count ?? null, x: x.x, y: x.y, w: x.w, h: x.h })) });
       if (!d.ok) { this.msg(d.error, 'text-danger'); return; }
       this.slots = d.slots; this.slotList(); $('[data-save-slots]', this.el).classList.add('d-none');
       this.newTracker(); this.render();
@@ -197,6 +207,18 @@
       for (const ev of r.events) this.event(ev);
       this.render();
     }
+    /** Comptes d'articles vus à leur place : envoyés quand le rayon est calme et qu'ils ont changé (au plus toutes les 5 s). */
+    async sendCounts(r) {
+      if (r.state !== 'calme' || r.pending || (this.countsAt && Date.now() - this.countsAt < 5000)) return;
+      const list = r.slots.filter((x) => x.id).map((x) => ({ id: x.id, count: x.count }));
+      const key = JSON.stringify(list);
+      if (!list.length || key === this.sentCounts) return;
+      this.sentCounts = key; this.countsAt = Date.now();
+      list.forEach((x) => { const sl = this.slots.find((y) => y.id === x.id); if (sl) sl.seen_count = x.count; });
+      $$('.surv-slot', this.el).forEach((row) => { const sl = this.slots[+row.dataset.i]; const c = $('[data-k="count"]', row); if (sl && c && sl.seen_count != null) c.textContent = sl.seen_count + ' / ' + (sl.units || 1); });
+      const d = await V.api('/vision/cameras/' + this.id + '/counts', { slots: list }).catch(() => null);
+      if (d && d.ok && d.low && window.PMControles) window.PMControles.refresh();
+    }
     /** Étagère : image « avant » gardée tant que le rayon est calme ; une prise montre l'article tel qu'il était. */
     analyseShelf(rgba) {
       if (!this.shelf) return;
@@ -205,7 +227,8 @@
       const v = this.video;
       for (const ev of r.events) {
         const slot = this.slots.find((x) => x.id === ev.slot); if (!slot) continue;
-        const src = ev.type === 'prise' && this.before ? this.before : v;
+        // Vignette : l'article tel qu'il était avant d'être pris ou déplacé ; ce qui a été posé, tel qu'il est maintenant
+        const src = (ev.type === 'prise' || ev.type === 'deplace') && this.before ? this.before : v;
         const k = v.videoWidth / this.small.width;
         const bx = slot.x * v.videoWidth, by = slot.y * v.videoHeight, bw = slot.w * v.videoWidth, bh = slot.h * v.videoHeight;
         const side = Math.min(Math.max(bw, bh, ev.box.w * k, ev.box.h * k) * 1.05, v.videoWidth, v.videoHeight);
@@ -214,12 +237,13 @@
         const crop = document.createElement('canvas'); crop.width = crop.height = Math.max(64, Math.min(448, Math.round(side)));
         crop.getContext('2d').drawImage(src, x, y, side, side, 0, 0, crop.width, crop.height);
         const thumb = V.thumbOf(crop, { x: 0, y: 0, s: crop.width });
-        this.counts[ev.type]++; const c = $(`[data-c="${ev.type}"]`, this.el); if (c) c.textContent = this.counts[ev.type];
+        if (this.counts[ev.type] !== undefined) { this.counts[ev.type] += ev.qty || 1; const c = $(`[data-c="${ev.type}"]`, this.el); if (c) c.textContent = this.counts[ev.type]; }
         this.flash = Date.now();
-        enqueue({ cam: this, type: ev.type, canvas: crop, thumb, slot });
+        enqueue({ cam: this, type: ev.type, canvas: crop, thumb, slot, qty: ev.qty || 1, to: ev.to ? this.slots.find((x) => x.id === ev.to) : null });
       }
+      this.sendCounts(r);
       // Image pleine résolution du rayon calme (environ toutes les secondes) : servira de vignette « avant la prise »
-      if (r.state === 'calme' && !r.events.length && (!this.beforeAt || Date.now() - this.beforeAt > 1000) && v.videoWidth) {
+      if (r.state === 'calme' && !r.events.length && !r.pending && (!this.beforeAt || Date.now() - this.beforeAt > 1000) && v.videoWidth) {
         this.before = this.before || document.createElement('canvas');
         if (this.before.width !== v.videoWidth) { this.before.width = v.videoWidth; this.before.height = v.videoHeight; }
         this.before.getContext('2d').drawImage(v, 0, 0); this.beforeAt = Date.now();
@@ -269,7 +293,12 @@
           const o = ch[x.id] || {}; const hot = (o.change || 0) > 0.15;
           g.strokeStyle = !x.id ? '#adb5bd' : hot ? '#e63946' : o.touched ? '#fd7e14' : '#20c997'; g.lineWidth = 3; g.setLineDash(x.id ? [] : [6, 4]);
           g.strokeRect(x.x * W, x.y * H, x.w * W, x.h * H); g.setLineDash([]);
-          g.fillStyle = 'rgba(0,0,0,.6)'; const label = (i + 1) + ' ' + (x.label || ''); g.font = 'bold 12px sans-serif';
+          const cells = this.shelf && x.id ? (this.shelf.cells().find((c) => c.id === x.id) || {}).cells : null;
+          if (cells && cells.length > 1 && o.present) {
+            cells.forEach((c, k) => { g.lineWidth = 2; g.strokeStyle = o.present[k] ? 'rgba(32,201,151,.9)' : 'rgba(230,57,70,.95)'; g.strokeRect(c.x * W + 2, c.y * H + 2, c.w * W - 4, c.h * H - 4);
+              if (!o.present[k]) { g.fillStyle = 'rgba(230,57,70,.18)'; g.fillRect(c.x * W + 2, c.y * H + 2, c.w * W - 4, c.h * H - 4); } });
+          }
+          g.fillStyle = 'rgba(0,0,0,.6)'; const label = (i + 1) + ' ' + (x.label || '') + (o.units > 1 ? ' ' + o.count + '/' + o.units : ''); g.font = 'bold 12px sans-serif';
           g.fillRect(x.x * W, x.y * H, Math.min(x.w * W, g.measureText(label).width + 8), 16); g.fillStyle = '#fff'; g.fillText(label, x.x * W + 4, x.y * H + 12);
         });
         if (this.draw && this.draw.rect) { const z = this.draw.rect; g.strokeStyle = '#ffc107'; g.lineWidth = 2; g.setLineDash([6, 4]); g.strokeRect(z.x * W, z.y * H, z.w * W, z.h * H); g.setLineDash([]); }
