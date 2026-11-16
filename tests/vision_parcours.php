@@ -229,4 +229,7 @@ test('Module Reconnaissance 1.3 : rôles des caméras, emplacements, suivi rayon
     DB::run('DELETE FROM vision_events WHERE camera_id IN (?, ?, ?, ?)', [$shelf['id'], $till['id'], $door['id'], $old['id']]);
     DB::run('DELETE FROM vision_cameras WHERE id IN (?, ?, ?, ?)', [$shelf['id'], $till['id'], $door['id'], $old['id']]);
     DB::run('DELETE FROM stores WHERE id = ?', [$other]);
+    // Articles de ce test archivés (ils ont des ventes) : ils ne doivent pas rendre ambiguës les questions posées
+    // ensuite à l'assistant (« le stock du savon » ne doit pas trouver deux savons)
+    DB::run("UPDATE products SET status = 'archived' WHERE id IN (?, ?, ?, ?, ?)", [$pa, $pb, $pc, $pd, $pe]);
 });

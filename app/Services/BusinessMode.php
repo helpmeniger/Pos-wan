@@ -32,7 +32,7 @@ final class BusinessMode
     public const ORGANISATION_ADDONS = ['ong', 'grh', 'archives'];
     private const COMMERCE = ['/pos', '/sales', '/returns', '/quotes', '/verify', '/customers', '/customer-payments', '/restaurant', '/kitchen', '/products', '/categories', '/stock', '/inventories',
         '/suppliers', '/purchases', '/receptions', '/supplier-returns', '/dashboard', '/reports/sales', '/reports/products', '/reports/profit', '/reports/vat', '/reports/stock', '/reports/debts', '/reports/cash',
-        '/reports/prescriptions', '/clinique', '/pressing', '/hotel', '/livraisons', '=/vision', '/vision/surveillance', '/vision/rapport'];
+        '/reports/prescriptions', '/clinique', '/pressing', '/hotel', '/livraisons', '=/vision', '/vision/surveillance', '/vision/rapport', '/vision/controles'];
 
     /**
      * Menus masqués selon le mode (préfixes d'adresse) : on n'affiche pas les activités qui ne
@@ -51,7 +51,7 @@ final class BusinessMode
         // de l'établissement remplace la caisse ; dépenses, sessions de caisse et caméras restent.
         'ecole' => ['/pos', '/sales', '/returns', '/quotes', '/verify', '/customers', '/restaurant', '/kitchen', '/products', '/categories', '/stock', '/inventories',
             '/suppliers', '/purchases', '/receptions', '/supplier-returns', '/dashboard', '/reports/sales', '/reports/profit', '/reports/vat', '/reports/stock', '/reports/debts',
-            '/reports/prescriptions', '/clinique', '/pressing', '/hotel', '/livraisons', '=/vision', '/vision/surveillance', '/vision/rapport'],
+            '/reports/prescriptions', '/clinique', '/pressing', '/hotel', '/livraisons', '=/vision', '/vision/surveillance', '/vision/rapport', '/vision/controles'],
         // Organisation : ni caisse ni commerce ; restent les modules de l'organisation, les dépenses, la configuration
         'organisation' => [...self::COMMERCE, '/cash', '/registers', '/ecole', '/boutique', '/doublons', '/banques/versements', '/printers', '/settings/display', '/afficheur', '/ecran'],
     ];
