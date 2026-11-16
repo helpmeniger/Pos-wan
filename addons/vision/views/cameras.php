@@ -8,12 +8,16 @@ $v = fn($k, $d = '') => e((string) ($e[$k] ?? $d));
     <div class="card">
       <div class="card-header d-flex align-items-center"><i class="bi bi-webcam me-1"></i> Caméras enregistrées <a class="btn btn-sm btn-outline-danger ms-auto" href="<?= e(url('/vision/surveillance')) ?>"><i class="bi bi-camera-video"></i> Surveillance</a></div>
       <div class="table-responsive"><table class="table table-sm align-middle mb-0">
-        <thead><tr><th>Caméra</th><th>Type</th><th>Utilisation</th><th class="text-center">Passages</th><th></th></tr></thead><tbody>
+        <thead><tr><th>Caméra</th><th>Type</th><th>Rôle et utilisation</th><th class="text-center">Passages</th><th></th></tr></thead><tbody>
         <?php foreach ($cameras as $c): ?>
           <tr class="<?= $c['active'] ? '' : 'text-secondary' ?>" data-cam="<?= (int) $c['id'] ?>" data-kind="<?= e($c['kind']) ?>" data-label="<?= e((string) $c['device_label']) ?>">
             <td><b><?= e($c['name']) ?></b><?= $c['active'] ? '' : ' <span class="badge bg-secondary">désactivée</span>' ?><br><span class="small text-secondary"><?= $c['kind'] === 'ip' ? e(preg_replace('#^(https?://[^/]+).*$#', '$1/…', (string) $c['url'])) . ' · ' . ($c['url_kind'] === 'mjpeg' ? 'flux MJPEG' : 'image fixe') . ' · ' . (int) $c['fps'] . ' im./s' . ($c['username'] ? ' · identifiant enregistré' : '') : e($c['device_label'] ?: 'appareil choisi sur chaque poste') ?></span></td>
             <td class="small"><?= e(CS::KINDS[$c['kind']]) ?></td>
-            <td class="small"><?= $c['use_surveillance'] ? '<span class="badge bg-danger">Surveillance · ' . ($c['mode'] === 'zone' ? 'zone' : 'ligne') . '</span> ' : '' ?><?= $c['use_caisse'] ? '<span class="badge bg-primary">Caisse / reconnaissance</span>' : '' ?></td>
+            <td class="small"><?php $role = $c['role'] ?? 'passage'; ?>
+              <?php if ($role !== 'passage'): ?><span class="badge <?= ['etagere' => 'bg-warning text-dark', 'caisse' => 'bg-success', 'sortie' => 'bg-danger'][$role] ?>"><i class="bi <?= ['etagere' => 'bi-bookshelf', 'caisse' => 'bi-cart-check', 'sortie' => 'bi-door-open'][$role] ?>"></i> <?= e(['etagere' => 'Étagère', 'caisse' => 'Caisse', 'sortie' => 'Sortie'][$role]) ?></span>
+                <?= $c['place'] ? '<span class="text-secondary">' . e($c['place']) . '</span>' : '' ?><?= $role === 'etagere' ? ' · ' . (int) ($slotCounts[$c['id']] ?? 0) . ' emplacement(s)' : '' ?><br>
+              <?php elseif ($c['use_surveillance']): ?><span class="badge bg-secondary">Passages · <?= $c['mode'] === 'zone' ? 'zone' : 'ligne' ?></span> <?php endif; ?>
+              <?= $c['use_caisse'] ? '<span class="badge bg-primary">Caisse / reconnaissance</span>' : '' ?></td>
             <td class="text-center"><?= (int) ($counts[$c['id']] ?? 0) ?></td>
             <td class="text-end text-nowrap">
               <button type="button" class="btn btn-sm btn-outline-secondary" data-test title="Voir l'image de la caméra"><i class="bi bi-play-btn"></i> Tester</button>
@@ -58,6 +62,14 @@ $v = fn($k, $d = '') => e((string) ($e[$k] ?? $d));
         <div class="col-6 cam-ip"><label class="form-label mb-0">Images / seconde</label><input type="number" name="fps" min="1" max="10" class="form-control" value="<?= $v('fps', '3') ?>"></div>
         <div class="col-6 cam-ip"><label class="form-label mb-0">Identifiant</label><input name="username" class="form-control" maxlength="100" autocomplete="off" value="<?= $v('username') ?>"></div>
         <div class="col-6 cam-ip"><label class="form-label mb-0">Mot de passe</label><input type="password" name="password" class="form-control" autocomplete="new-password" placeholder="<?= !empty($e['secret']) ? '•••••• (inchangé)' : '' ?>"><?php if (!empty($e['secret'])): ?><div class="form-check"><input class="form-check-input" type="checkbox" name="clear_password" value="1" id="cpw"><label class="form-check-label" for="cpw">effacer</label></div><?php endif; ?></div>
+        <div class="col-12 mt-2"><b>Rôle dans le contrôle rayon → caisse</b></div>
+        <div class="col-12"><select name="role" class="form-select" id="camRole">
+          <?php foreach (Addons\Vision\ParcoursService::ROLES as $k => $l): ?><option value="<?= e($k) ?>" <?= ($e['role'] ?? 'passage') === $k ? 'selected' : '' ?>><?= e($l) ?></option><?php endforeach; ?></select>
+          <div class="form-text" id="camRoleHelp"></div></div>
+        <div class="col-6"><label class="form-label mb-0">Boutique</label><select name="store_id" class="form-select"><option value="">— toutes / non précisée —</option><?php foreach ($stores as $st): ?><option value="<?= (int) $st['id'] ?>" <?= (int) ($e['store_id'] ?? 0) === (int) $st['id'] ? 'selected' : '' ?>><?= e($st['name']) ?></option><?php endforeach; ?></select></div>
+        <div class="col-6"><label class="form-label mb-0">Lieu</label><input name="place" class="form-control" maxlength="100" value="<?= $v('place') ?>" placeholder="Ex. : Rayon boissons, Caisse 2, Porte principale"></div>
+        <div class="col-12 cam-role-caisse"><label class="form-label mb-0">Caisse filmée</label><select name="register_id" class="form-select"><option value="">— aucune —</option><?php foreach ($registers as $r): ?><option value="<?= (int) $r['id'] ?>" <?= (int) ($e['register_id'] ?? 0) === (int) $r['id'] ? 'selected' : '' ?>><?= e($r['store'] . ' · ' . $r['name']) ?></option><?php endforeach; ?></select>
+          <div class="form-text">Permet le rappel discret au caissier de cette caisse (réglage plus bas).</div></div>
         <div class="col-12 mt-2"><b>Utilisation</b></div>
         <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="use_surveillance" value="1" id="cuS" <?= !$e || $e['use_surveillance'] ? 'checked' : '' ?>><label class="form-check-label" for="cuS"><b>Surveillance</b> : comptage automatique des articles qui passent</label></div></div>
         <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="use_caisse" value="1" id="cuC" <?= !empty($e['use_caisse']) ? 'checked' : '' ?>><label class="form-check-label" for="cuC"><b>Caisse et reconnaissance</b> : proposée dans la fenêtre caméra (scan, « Reconnaître »)</label></div></div>
@@ -65,7 +77,24 @@ $v = fn($k, $d = '') => e((string) ($e[$k] ?? $d));
         <div class="col-6"><label class="form-label mb-0">Sensibilité (1–10)</label><input type="range" name="sensitivity" min="1" max="10" class="form-range" value="<?= $v('sensitivity', '5') ?>"></div>
         <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="active" value="1" id="cuA" <?= !$e || $e['active'] ? 'checked' : '' ?>><label class="form-check-label" for="cuA">Active</label></div></div>
         <div class="col-12 d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-check2"></i> Enregistrer</button><?php if ($e): ?><a class="btn btn-outline-secondary" href="<?= e(url('/vision/cameras')) ?>">Annuler</a><?php endif; ?></div>
-        <div class="col-12 form-text">La ligne rouge et la zone se dessinent sur l'image, dans l'écran Surveillance.</div>
+        <div class="col-12 form-text">La ligne rouge, la zone et les emplacements d'étagère se dessinent sur l'image, dans l'écran Surveillance.</div>
+      </form>
+    </div></div>
+
+    <div class="card mt-3 border-warning"><div class="card-header"><i class="bi bi-diagram-3"></i> Contrôle rayon → caisse <a class="btn btn-sm btn-outline-warning ms-2" href="<?= e(url('/vision/controles')) ?>">Alertes et suivis</a></div><div class="card-body">
+      <ol class="small ps-3 mb-2">
+        <li><b>Étagère</b> : la caméra filme le rayon ; vous tracez les <b>emplacements</b> (et, si possible, l'article de chacun). Quand un article est pris, un <b>suivi</b> commence.</li>
+        <li><b>Caisse</b> : la caméra filme le comptoir (zone). Un article reconnu sur le comptoir est noté « vu en caisse ».</li>
+        <li><b>Encaissement</b> : la vente du même article, dans la même boutique, clôt le suivi. Remis en rayon : clos aussi.</li>
+        <li>Délai dépassé sans vente ni remise, ou article vu par la caméra de <b>sortie</b> sans être encaissé : <b>alerte « vérification demandée »</b> (écran de surveillance, cloche, page Contrôles).</li>
+      </ol>
+      <form method="post" action="<?= e(url('/vision/parcours/settings')) ?>" class="row g-2 small"><?= csrf_field() ?>
+        <div class="col-6"><label class="form-label mb-0">Délai pour passer en caisse (minutes)</label><input type="number" name="vision_parcours_delai" min="1" max="120" class="form-control" value="<?= e(setting('vision_parcours_delai', '15')) ?>"><div class="form-text">Temps moyen de courses + file d'attente. Trop court : fausses alertes.</div></div>
+        <div class="col-6"><label class="form-label mb-0">Rappel au caissier après (secondes)</label><input type="number" name="vision_parcours_rappel_s" min="15" max="600" class="form-control" value="<?= e(setting('vision_parcours_rappel_s', '60')) ?>"></div>
+        <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="vision_parcours_sortie" value="1" id="vps" <?= setting('vision_parcours_sortie', '1') === '1' ? 'checked' : '' ?>><label class="form-check-label" for="vps">Alerte immédiate quand la caméra de sortie voit un article non encaissé</label></div></div>
+        <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="vision_parcours_inconnu" value="1" id="vpi" <?= setting('vision_parcours_inconnu', '1') === '1' ? 'checked' : '' ?>><label class="form-check-label" for="vpi">Signaler aussi les articles <b>non identifiés</b> pris en rayon (alerte de faible priorité)</label></div></div>
+        <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="vision_parcours_rappel" value="1" id="vpr" <?= setting('vision_parcours_rappel', '0') === '1' ? 'checked' : '' ?>><label class="form-check-label" for="vpr"><b>Rappel discret au caissier</b> : « article vu sur le comptoir, pas encore encaissé » (caméra de caisse rattachée à son poste)</label></div></div>
+        <div class="col-12"><button class="btn btn-sm btn-primary"><i class="bi bi-check2"></i> Enregistrer</button></div>
       </form>
     </div></div>
 

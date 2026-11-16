@@ -18,7 +18,9 @@ use App\Core\DB;
  */
 final class SurveillanceService
 {
-    public const DIRECTIONS = ['sortie' => 'Ligne franchie (sortie)', 'entree' => 'Ligne franchie (retour)', 'vu' => 'Vu dans la zone'];
+    public const DIRECTIONS = ['sortie' => 'Ligne franchie (sortie)', 'entree' => 'Ligne franchie (retour)', 'vu' => 'Vu dans la zone', 'prise' => 'Pris en rayon', 'remis' => 'Remis en rayon'];
+    /** Événements acceptés selon le rôle de la caméra. */
+    public const BY_ROLE = ['passage' => ['sortie', 'entree', 'vu'], 'etagere' => ['prise', 'remis'], 'caisse' => ['vu', 'sortie', 'entree'], 'sortie' => ['sortie', 'entree', 'vu']];
     public const STATUSES = ['identifie' => 'Identifié', 'incertain' => 'Incertain', 'confirme' => 'Confirmé', 'corrige' => 'Corrigé', 'ignore' => 'Ignoré'];
 
     public static function addEvent(array $in): array
@@ -29,6 +31,10 @@ final class SurveillanceService
         if (!isset(self::DIRECTIONS[$dir])) {
             throw new BusinessException('Sens de passage inconnu.');
         }
+        $role = (string) ($cam['role'] ?? 'passage');
+        if (!in_array($dir, self::BY_ROLE[$role] ?? [], true)) {
+            throw new BusinessException('Événement « ' . self::DIRECTIONS[$dir] . ' » impossible pour une caméra « ' . (ParcoursService::ROLES[$role] ?? $role) . ' ».');
+        }
         $pid = (int) ($in['product_id'] ?? 0) ?: null;
         if ($pid && !DB::value("SELECT 1 FROM products WHERE id = ? AND status = 'active'", [$pid])) {
             $pid = null;
@@ -37,10 +43,22 @@ final class SurveillanceService
         $score = $num('score');
         $margin = $num('margin');
         $sure = $pid && $score !== null && $margin !== null && $score >= (float) setting('vision_surv_seuil', '0.45') && $margin >= (float) setting('vision_surv_marge', '0.04');
+        // Étagère : l'emplacement tracé fait foi pour l'article (plan de rayon), la reconnaissance sert à défaut
+        $slot = null;
+        if ($role === 'etagere') {
+            $slot = DB::one('SELECT * FROM vision_slots WHERE id = ? AND camera_id = ? AND active = 1', [(int) ($in['slot_id'] ?? 0), $cam['id']])
+                ?? throw new BusinessException('Emplacement inconnu pour cette caméra : tracez les emplacements de l\'étagère.');
+            if ($slot['product_id']) {
+                $pid = (int) $slot['product_id'];
+                $sure = true;
+            }
+        }
         $thumb = VisionService::cleanThumb(isset($in['thumb']) ? (string) $in['thumb'] : null);
-        $id = DB::insert('vision_events', ['camera_id' => $cam['id'], 'direction' => $dir, 'product_id' => $pid, 'score' => $score, 'margin' => $margin,
-            'status' => $sure ? 'identifie' : 'incertain', 'thumb' => $thumb, 'seen_at' => date('Y-m-d H:i:s'), 'user_id' => Auth::id()]);
-        return ['id' => (int) $id, 'status' => $sure ? 'identifie' : 'incertain'];
+        $ev = ['camera_id' => $cam['id'], 'slot_id' => $slot ? (int) $slot['id'] : null, 'direction' => $dir, 'product_id' => $pid, 'score' => $score, 'margin' => $margin,
+            'status' => $sure ? 'identifie' : 'incertain', 'thumb' => $thumb, 'seen_at' => date('Y-m-d H:i:s'), 'user_id' => Auth::id()];
+        $id = DB::insert('vision_events', $ev);
+        $j = ParcoursService::onEvent(['id' => (int) $id, '_slot_product' => $slot && $slot['product_id']] + $ev, $cam);
+        return ['id' => (int) $id, 'status' => $ev['status'], 'journey' => $j];
     }
 
     /** Revue d'un passage : confirmer l'article proposé, le corriger, ou ignorer (pas un article). */
@@ -90,7 +108,7 @@ final class SurveillanceService
         $camSql = $cameraIds ? ' AND e.camera_id IN (' . implode(',', array_map('intval', $cameraIds)) . ')' : '';
         $events = DB::all("SELECT e.id, e.camera_id, e.direction, e.product_id, e.status, e.score, e.seen_at, c.name AS camera
                            FROM vision_events e JOIN vision_cameras c ON c.id = e.camera_id
-                           WHERE e.seen_at BETWEEN ? AND ? AND e.status <> 'ignore' $camSql ORDER BY e.seen_at", [$start, $end]);
+                           WHERE e.seen_at BETWEEN ? AND ? AND e.status <> 'ignore' AND e.direction IN ('sortie','entree','vu') $camSql ORDER BY e.seen_at", [$start, $end]);
         // Ventes de la période élargie de la fenêtre (une vente juste avant minuit justifie un passage juste après)
         $sales = DB::all("SELECT si.product_id, si.base_quantity AS qty, s.created_at, s.id AS sale_id, s.number
                           FROM sale_items si JOIN sales s ON s.id = si.sale_id

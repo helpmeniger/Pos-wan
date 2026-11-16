@@ -97,9 +97,31 @@ final class CameraService
             'fps' => max(1, min(10, (int) ($in['fps'] ?? 3))),
             'use_caisse' => !empty($in['use_caisse']) ? 1 : 0, 'use_surveillance' => !empty($in['use_surveillance']) ? 1 : 0,
             'mode' => ($in['mode'] ?? '') === 'zone' ? 'zone' : 'ligne',
+            'role' => isset(ParcoursService::ROLES[$in['role'] ?? '']) ? (string) $in['role'] : 'passage',
+            'store_id' => (int) ($in['store_id'] ?? 0) ?: null,
+            'place' => trim(mb_substr((string) ($in['place'] ?? ''), 0, 100)) ?: null,
+            'register_id' => (int) ($in['register_id'] ?? 0) ?: null,
             'sensitivity' => max(1, min(10, (int) ($in['sensitivity'] ?? 5))),
             'active' => !isset($in['active']) || !empty($in['active']) ? 1 : 0,
         ];
+        if ($d['store_id'] && !DB::value('SELECT 1 FROM stores WHERE id = ?', [$d['store_id']])) {
+            throw new BusinessException('Boutique introuvable.');
+        }
+        if ($d['register_id']) {
+            $rs = DB::value('SELECT store_id FROM cash_registers WHERE id = ?', [$d['register_id']]) ?: throw new BusinessException('Caisse introuvable.');
+            if ($d['store_id'] && (int) $rs !== $d['store_id']) {
+                throw new BusinessException('Cette caisse appartient à une autre boutique.');
+            }
+            $d['store_id'] ??= (int) $rs;
+        }
+        // Une caméra à rôle (étagère, caisse, sortie) est analysée par l'écran de surveillance ; caisse et sortie
+        // comptent par zone ou ligne, l'étagère par emplacements.
+        if ($d['role'] !== 'passage') {
+            $d['use_surveillance'] = 1;
+        }
+        if ($d['role'] !== 'caisse') {
+            $d['register_id'] = null;
+        }
         if ($kind === 'ip') {
             $url = trim((string) ($in['url'] ?? ''));
             self::checkUrl($url);
@@ -162,7 +184,65 @@ final class CameraService
     {
         return ['id' => (int) $c['id'], 'name' => $c['name'], 'kind' => $c['kind'], 'device_label' => $c['device_label'], 'fps' => (int) $c['fps'],
             'use_caisse' => (bool) $c['use_caisse'], 'use_surveillance' => (bool) $c['use_surveillance'], 'mode' => $c['mode'],
-            'sensitivity' => (int) $c['sensitivity'], 'geometry' => json_decode((string) $c['geometry'], true) ?: new \stdClass(), 'active' => (bool) $c['active']];
+            'sensitivity' => (int) $c['sensitivity'], 'geometry' => json_decode((string) $c['geometry'], true) ?: new \stdClass(), 'active' => (bool) $c['active'],
+            'role' => $c['role'] ?? 'passage', 'place' => $c['place'] ?? null,
+            'slots' => ($c['role'] ?? '') === 'etagere' ? self::slots((int) $c['id']) : []];
+    }
+
+    /** Emplacements d'une caméra d'étagère (avec le nom de l'article attendu). */
+    public static function slots(int $cameraId): array
+    {
+        return array_map(fn($r) => ['id' => (int) $r['id'], 'label' => $r['label'], 'product_id' => $r['product_id'] ? (int) $r['product_id'] : null, 'product' => $r['product'],
+            'x' => (float) $r['x'], 'y' => (float) $r['y'], 'w' => (float) $r['w'], 'h' => (float) $r['h']],
+            DB::all('SELECT s.*, p.name AS product FROM vision_slots s LEFT JOIN products p ON p.id = s.product_id WHERE s.camera_id = ? AND s.active = 1 ORDER BY s.id', [$cameraId]));
+    }
+
+    /**
+     * Enregistre les emplacements tracés sur l'image d'une caméra d'étagère (liste complète : ceux qui manquent sont retirés).
+     * @param array<int, array{id?: int, label?: string, product_id?: int, x: float, y: float, w: float, h: float}> $list
+     */
+    public static function saveSlots(int $cameraId, array $list): array
+    {
+        $cam = DB::one('SELECT * FROM vision_cameras WHERE id = ?', [$cameraId]) ?? throw new BusinessException('Caméra introuvable.');
+        if (($cam['role'] ?? '') !== 'etagere') {
+            throw new BusinessException('Les emplacements se tracent sur une caméra d\'étagère (rôle « Étagère »).');
+        }
+        if (count($list) > 40) {
+            throw new BusinessException('40 emplacements au plus par caméra.');
+        }
+        $num = function ($v): float {
+            if (!is_numeric($v)) {
+                throw new BusinessException('Coordonnées invalides.');
+            }
+            return round(max(0, min(1, (float) $v)), 4);
+        };
+        $keep = [];
+        DB::transaction(function () use ($list, $cameraId, $num, &$keep) {
+            foreach (array_values($list) as $i => $s) {
+                $s = (array) $s;
+                $x = $num($s['x'] ?? null); $y = $num($s['y'] ?? null);
+                $w = min(1 - $x, $num($s['w'] ?? null)); $h = min(1 - $y, $num($s['h'] ?? null));
+                if ($w < 0.03 || $h < 0.03) {
+                    throw new BusinessException('Emplacement ' . ($i + 1) . ' trop petit.');
+                }
+                $pid = (int) ($s['product_id'] ?? 0) ?: null;
+                if ($pid && !DB::value("SELECT 1 FROM products WHERE id = ? AND status = 'active'", [$pid])) {
+                    throw new BusinessException('Article introuvable pour l\'emplacement ' . ($i + 1) . '.');
+                }
+                $d = ['label' => trim(mb_substr((string) ($s['label'] ?? ''), 0, 80)) ?: 'Emplacement ' . ($i + 1), 'product_id' => $pid, 'x' => $x, 'y' => $y, 'w' => $w, 'h' => $h, 'active' => 1];
+                $id = (int) ($s['id'] ?? 0);
+                if ($id && DB::value('SELECT 1 FROM vision_slots WHERE id = ? AND camera_id = ?', [$id, $cameraId])) {
+                    DB::update('vision_slots', $d, 'id = ?', [$id]);
+                } else {
+                    $id = (int) DB::insert('vision_slots', $d + ['camera_id' => $cameraId]);
+                }
+                $keep[] = $id;
+            }
+            // Retirés : désactivés (les suivis passés gardent leur emplacement)
+            DB::run('UPDATE vision_slots SET active = 0 WHERE camera_id = ?' . ($keep ? ' AND id NOT IN (' . implode(',', $keep) . ')' : ''), [$cameraId]);
+        });
+        Audit::log('vision.slots_save', null, $cameraId, ['count' => count($keep)]);
+        return self::slots($cameraId);
     }
 
     // ------------------------------------------------------------------ image d'une caméra IP

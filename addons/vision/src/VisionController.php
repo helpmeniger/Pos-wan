@@ -51,7 +51,8 @@ final class VisionController extends Controller
             'auto' => setting('vision_auto', '0') === '1', 'autoScore' => (float) setting('vision_seuil_auto', '0.80'),
             'margin' => (float) setting('vision_marge', '0.06'), 'learn' => setting('vision_apprendre_ventes', '1') === '1',
             'autoScoreObj' => (float) setting('vision_seuil_objet', '0.45'), 'marginObj' => (float) setting('vision_marge_objet', '0.25'),
-            'refs' => (int) DB::value('SELECT COUNT(*) FROM vision_refs'), 'confusions' => VisionService::confusions()]);
+            'refs' => (int) DB::value('SELECT COUNT(*) FROM vision_refs'), 'confusions' => VisionService::confusions(),
+            'remind' => setting('vision_parcours_rappel', '0') === '1']);
     }
 
     /** Empreintes de tous les articles ; l'adresse contient la version : mise en cache par le navigateur. */

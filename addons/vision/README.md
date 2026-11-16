@@ -1,4 +1,4 @@
-# Module « Reconnaissance des articles par photo » (vision) — 1.2.0
+# Module « Reconnaissance des articles par photo » (vision) — 1.3.0
 
 Reconnaît les articles **par la caméra, sans code-barres** : webcam du PC de caisse, tablette
 ou smartphone connecté au réseau local. Une fois le module activé, la reconnaissance est
@@ -180,6 +180,133 @@ annulations dans les statistiques du module.
 Taille apparente de l'article (33 cl / 50 cl) : implémentée, mesurée **sans gain** (la
 distance à la caméra varie) ; désactivée.
 
+## Contrôle rayon → caisse (1.3) — Gestion des articles → Contrôle rayon → caisse
+
+Objectif : quand une caméra voit un article **quitter son emplacement** sur l'étagère, vérifier qu'il
+est ensuite **encaissé** (ou remis en place). Sinon, **demander une vérification**, sans accuser personne.
+
+### 1. Donner un rôle à chaque caméra (Configuration → Caméras)
+
+| Rôle | Où la placer | Ce qu'elle signale |
+|---|---|---|
+| **Étagère** | Face au rayon, d'assez près, sans passage de clients entre la caméra et le rayon | Un article **pris** ou **remis** à un emplacement tracé |
+| **Caisse** | Au-dessus du comptoir (zone tracée sur le comptoir), rattachée à un **poste de caisse** | L'article reconnu sur le comptoir : « vu en caisse » |
+| **Sortie** | Au-dessus de la porte, ligne rouge en travers du passage | Un article reconnu qui **sort** |
+| Passage | (fonctionnement 1.1 / 1.2 inchangé) | Passages comptés, comparés aux ventes en fin de journée |
+
+Chaque caméra est rattachée à une **boutique** (directement, ou par sa caisse) : une vente d'une autre
+boutique ne justifie jamais une prise.
+
+### 2. Tracer les emplacements de l'étagère (écran Surveillance)
+
+- **Tracer un emplacement** : faites glisser un rectangle autour d'un article, ou d'une rangée d'articles
+  identiques. Nommez-le et, si possible, indiquez **l'article attendu** : la prise est alors nommée par
+  l'emplacement (plan de rayon), sans dépendre de la reconnaissance par photo.
+- Sans article indiqué, la reconnaissance nomme l'article **seulement si elle est sûre** ; sinon l'article
+  reste « non identifié » (aucun rapprochement n'est fait sur une supposition).
+- **Rayon plein : mémoriser** : à faire quand le rayon est rempli. Un article qui revient à sa place est alors
+  compté « remis », même après un redémarrage de l'écran.
+- Pendant la surveillance, chaque emplacement est coloré : vert (calme), orange (touché), rouge (changé).
+  L'état du rayon s'affiche : « Apprentissage », « Mouvement devant le rayon », « Rayon caché : en attente »,
+  « Rayon surveillé ».
+
+**Comment une prise est détectée.** Ce n'est pas un suivi d'objet : l'écran mémorise l'image du rayon quand
+plus rien ne bouge. Une main passe : il attend. Il attend aussi tant qu'une personne se tient devant le rayon,
+ou qu'un bras reste posé sur l'emplacement. Quand tout est de nouveau immobile (environ 1,5 s), chaque
+emplacement que le mouvement a atteint est comparé à son état d'avant :
+- il a nettement changé en s'éloignant de l'état « rayon plein » → **pris** ;
+- il s'en rapproche → **remis** (article remis, ou rayon réapprovisionné).
+
+Les écarts sont mesurés **en couleur** : une main de même luminosité qu'un article se distingue par sa
+teinte. Les variations de lumière de toute l'image sont compensées. Si la scène change durablement (caméra
+déplacée), le rayon est réappris au bout d'environ 20 s, sans événement.
+
+### 3. Le suivi de chaque article pris
+
+| Ce qui se passe | Résultat |
+|---|---|
+| Vente du même article, même boutique, après la prise | **Encaissé** : suivi clos, vente liée. Une unité vendue ne clôt qu'**un** suivi |
+| L'article revient à son emplacement | **Remis en rayon** : suivi clos |
+| La caméra de caisse le reconnaît sur le comptoir | **Vu en caisse** : la vente est attendue |
+| Délai dépassé (15 min par défaut) sans vente ni remise | **Vérification demandée** (« À vérifier ») |
+| Vu en caisse mais pas encaissé dans le délai | Vérification demandée, **priorité** |
+| La caméra de sortie le voit sortir sans encaissement | Vérification demandée **immédiatement**, priorité |
+| Vente enregistrée après l'alerte (file d'attente) | Clos « encaissé après l'alerte » (l'alerte reste tracée) |
+| Article non identifié (reconnaissance incertaine) | Vérification de **faible priorité** (désactivable) |
+| Article vu sur le comptoir alors qu'aucun rayon filmé ne l'a vu partir | Suivi ouvert depuis la caisse |
+| Article vu à la sortie, sans prise observée | Justifié par une vente récente non encore rapprochée ; sinon à vérifier |
+
+Une **tolérance de 60 s** admet une vente enregistrée juste avant la prise (horloges, article posé sur le
+comptoir après le scan).
+
+### 4. Les alertes
+
+- **Écran Surveillance** : panneau « Vérifications demandées », actualisé toutes les 5 s, avec un **signal
+  sonore** pour chaque nouvelle alerte (désactivable) et des boutons de vérification.
+- **Cloche** de la barre supérieure (responsables ayant le droit `vision.watch`).
+- **Page Contrôle rayon → caisse** : à vérifier, en cours, clos automatiquement, vérifiés. Pour chaque
+  article : vignettes (au rayon, en caisse, à la sortie), parcours observé, vente liée.
+- **Vérifier** = choisir le résultat : **Encaissé**, **Remis**, **Fausse alerte** (avec la raison), **Perte
+  confirmée** (avec une note, par exemple le comptage du rayon). Chaque vérification est enregistrée et auditée.
+- **Fiabilité par caméra** : part des articles nommés, encaissés, remis, alertes, **part des fausses alertes**,
+  pertes, délai moyen jusqu'à la vente. Une caméra qui produit beaucoup de fausses alertes est mal placée ;
+  un délai moyen proche du délai réglé indique qu'il faut l'allonger.
+- **Rappel discret au caissier** (désactivé par défaut) : un article vu sur le comptoir de **sa** caisse
+  depuis plus de 60 s (réglable) et pas encore encaissé s'affiche dans un petit encadré « À vérifier avant de
+  clôturer la vente ». Rien n'est ajouté au panier automatiquement.
+
+### 5. Réglages (Configuration → Caméras → Contrôle rayon → caisse)
+
+| Réglage | Par défaut |
+|---|---|
+| Délai pour passer en caisse | 15 min (1 à 120) |
+| Alerte immédiate à la sortie | oui |
+| Signaler les articles non identifiés | oui (faible priorité) |
+| Rappel discret au caissier, après | non, 60 s |
+
+### 6. Ce que le contrôle ne fait pas (limites honnêtes)
+
+- **Une alerte n'est pas une preuve de vol.** Un article peut avoir été posé ailleurs, encaissé sous un autre
+  article (ou avec un autre code-barres), mal reconnu, ou caché par une personne. Vérifiez avec discrétion,
+  sans accuser un client ni un employé.
+- **Quantité** : une prise correspond à **un** changement d'emplacement. Deux articles pris d'un coup sur le
+  même emplacement comptent pour une prise.
+- **Réapprovisionnement** : un rayon rempli par un employé est compté « remis » et peut clore un suivi en
+  cours sur cet emplacement. Mémorisez à nouveau « rayon plein » après une mise en rayon.
+- **Emplacements sans article indiqué** : l'article dépend de la reconnaissance par photo, dont la précision
+  est mesurée plus bas ; un article non reconnu avec certitude n'est pas nommé.
+- **Caméra mal placée** : des clients qui passent constamment entre la caméra et le rayon gardent l'écran en
+  attente (« rayon caché ») et peuvent faire manquer des prises.
+- **Calcul sur le poste** : l'écran de surveillance doit rester ouvert ; aucune détection quand il est fermé.
+- **Vie privée** : aucune vidéo n'est enregistrée, seulement des vignettes de l'article, effacées après la
+  durée de conservation. Filmer des personnes est encadré par la loi n° 2017-28 relative à la protection des
+  données à caractère personnel : informez le personnel et la clientèle (affichage), limitez les caméras aux
+  zones utiles.
+
+### 7. Essais réalisés (1.3)
+
+- **Moteur d'étagère** (`tests/js/shelf.test.js`, 20 vérifications sur images de synthèse) : prise,
+  main qui touche sans prendre, pris puis remis, deux prises successives, voisin non touché, personne
+  immobile devant le rayon (attente puis prise quand elle part), lumière qui change, caméra déplacée
+  (réappris sans événement, puis nouvelle prise détectée), prise d'une partie de l'emplacement, article
+  plus grand que l'emplacement tracé, référence « rayon plein » restaurée, main de même luminosité mais d'une
+  autre teinte, main qui s'arrête sur l'article.
+- **600 essais aléatoires** (bruit, position et couleur de la main, lumière) : 200 prises, 200 « touché sans
+  prendre », 200 remises → aucune erreur. Ce sont des images de synthèse.
+- **Suivi rayon → caisse** (`tests/vision_parcours.php`, sur de vraies ventes) : encaissé, une vente pour une
+  seule prise, alerte au délai puis vente tardive, remis, vu en caisse sans vente (priorité), reconnaissance
+  incertaine, sortie immédiate, sortie sans prise observée, autre boutique, rappel au caissier, vérification,
+  droits (le caissier ne voit ni ne clôt les alertes), cloche.
+- **Essai de bout en bout** dans Chromium avec une **vidéo de rayon simulée** donnée comme webcam (trois
+  articles, une main de même luminosité que l'article prend celui du milieu et s'arrête un instant dessus) :
+  une seule prise, sur le bon emplacement, article nommé par l'emplacement, vignette montrant l'article avant
+  la prise, suivi ouvert ; délai réglé à 1 min pour l'essai → alerte affichée 62 s plus tard dans le panneau
+  en direct et sur la page Contrôle ; aucune erreur dans le navigateur. Le premier essai avait échoué
+  (main invisible en niveaux de gris) : c'est ce qui a conduit à comparer en couleur.
+- **Non mesuré : une vraie caméra dans une vraie boutique.** La fiabilité réelle dépend de l'emplacement de la
+  caméra, de l'éclairage et des clients. Commencez par une seule étagère, suivez la part des fausses alertes
+  sur la page Contrôle, puis étendez.
+
 ## Installation
 
 1. Le dossier `addons/vision` est fourni avec POS Marwa 2.1.0 (ou copiez-le dans `addons/`).
@@ -250,6 +377,10 @@ Options :
 |---|---|
 | `vision_refs` | Empreintes apprises : article, 512 octets, nature (image entière ou article détouré), taille apparente, origine (photo, fiche, vente), vignette, auteur, date |
 | `vision_log` | Reconnaissances : proposé, choisi, note, écart, résultat (confirmé, corrigé, automatique, annulé, aucun) |
+| `vision_cameras` | Caméras : type, rôle (passage, étagère, caisse, sortie), boutique, lieu, caisse filmée, tracé |
+| `vision_events` | Passages, articles vus, pris ou remis en rayon (vignette de l'article, jamais de vidéo) |
+| `vision_slots` | Emplacements tracés sur l'image d'une caméra d'étagère, article attendu |
+| `vision_journeys` | Suivi « pris en rayon → encaissé / remis / à vérifier », vérification et note |
 
 ## Précision mesurée (sans complaisance)
 

@@ -2,6 +2,24 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.11.0] — 2026-11-16
+
+### Ajouté
+- **Reconnaissance 1.3 — contrôle rayon → caisse** (`addons/vision`) : chaque caméra reçoit un **rôle** (étagère, caisse, sortie, ou passage comme avant), une boutique, un lieu et, pour la caisse, le poste filmé.
+- **Caméras d'étagère** : emplacements tracés sur l'image (avec l'article attendu, facultatif). Un nouveau moteur (`vision-shelf.js`, calcul sur le poste) détecte qu'un article est **pris** ou **remis** : il attend que la main, le bras ou la personne devant le rayon soit partie, compare en couleur, compense la lumière et réapprend le rayon si la caméra est déplacée.
+- **Suivi de chaque article pris** jusqu'à son encaissement (même article, même boutique, une vente pour une seule prise), sa remise en rayon, son passage au comptoir (caméra de caisse) ou à la porte (caméra de sortie). Sans vente ni remise dans le délai (15 min par défaut), ou vu à la sortie sans encaissement : **vérification demandée**.
+- **Alertes** : panneau en direct avec signal sonore sur l'écran de surveillance, cloche de la barre supérieure, page « Contrôle rayon → caisse » (vignettes, parcours observé, vente liée), vérification enregistrée (encaissé, remis, fausse alerte, perte confirmée) et **fiabilité par caméra** (part des fausses alertes, délai moyen jusqu'à la vente).
+- **Rappel discret au caissier** (désactivé par défaut) : article vu sur le comptoir de sa caisse, pas encore encaissé.
+
+### Modifié
+- Le rapport « Passages vus / ventes » ne compte pas les prises et remises en rayon (ce ne sont pas des passages).
+- Migration `0004_parcours_rayon_caisse` (2 tables ajoutées, colonnes ajoutées aux caméras et aux passages ; retour arrière : `addons/vision/sql/down_0004.sql`). La mise à jour d'un module sauvegarde la base avant de migrer.
+
+### Essais et limites
+- Moteur d'étagère : 20 vérifications et 600 essais aléatoires sur images de synthèse, sans erreur. Suivi rayon → caisse testé avec de vraies ventes. Essai de bout en bout dans Chromium avec une vidéo de rayon simulée donnée comme webcam.
+- Le premier essai de bout en bout a révélé deux défauts corrigés avant livraison : une main de même luminosité que l'article passait inaperçue (comparaison désormais en couleur), et une main immobile sur l'article pouvait être jugée trop tôt (attente tant qu'un bras déborde de l'emplacement).
+- **Non mesuré avec une vraie caméra en boutique.** Une alerte demande une vérification ; ce n'est pas une preuve de vol.
+
 ## [3.10.0] — 2026-11-15
 
 ### Ajouté

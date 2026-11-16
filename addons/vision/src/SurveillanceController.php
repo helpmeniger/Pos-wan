@@ -19,6 +19,8 @@ final class SurveillanceController extends Controller
         view('vision::cameras', ['title' => 'Caméras', 'cameras' => DB::all('SELECT * FROM vision_cameras ORDER BY active DESC, name'),
             'edit' => $edit ? DB::one('SELECT * FROM vision_cameras WHERE id = ?', [$edit]) : null,
             'counts' => array_column(DB::all('SELECT camera_id, COUNT(*) AS n FROM vision_events GROUP BY camera_id'), 'n', 'camera_id'),
+            'slotCounts' => array_column(DB::all('SELECT camera_id, COUNT(*) AS n FROM vision_slots WHERE active = 1 GROUP BY camera_id'), 'n', 'camera_id'),
+            'stores' => DB::all('SELECT id, name FROM stores ORDER BY name'), 'registers' => DB::all('SELECT r.id, r.name, s.name AS store FROM cash_registers r JOIN stores s ON s.id = r.store_id WHERE r.active = 1 ORDER BY s.name, r.name'),
             'scripts' => ['addons/vision/vision-cameras.js']]);
     }
 
@@ -117,12 +119,12 @@ final class SurveillanceController extends Controller
         $cmp = SurveillanceService::compare($today, $today, [], (int) setting('vision_surv_fenetre', '20'));
         view('vision::surveillance', ['title' => 'Surveillance des articles', 'cameras' => array_map([CameraService::class, 'publicRow'],
             DB::all('SELECT * FROM vision_cameras WHERE active = 1 AND use_surveillance = 1 ORDER BY name')), 'today' => $cmp['totals'],
-            'scripts' => ['addons/vision/vision-surv.js']]);
+            'scripts' => ['addons/vision/vision-shelf.js', 'addons/vision/vision-surv.js', 'addons/vision/vision-controles.js']]);
     }
 
     public function addEvent(): void
     {
-        $this->jsonAttempt(fn() => SurveillanceService::addEvent(array_combine($k = ['camera_id', 'direction', 'product_id', 'score', 'margin', 'thumb'], array_map(fn($x) => Request::input($x), $k))));
+        $this->jsonAttempt(fn() => SurveillanceService::addEvent(array_combine($k = ['camera_id', 'direction', 'slot_id', 'product_id', 'score', 'margin', 'thumb'], array_map(fn($x) => Request::input($x), $k))));
     }
 
     /** Compteurs du jour par caméra (rafraîchissement de l'écran de surveillance). */

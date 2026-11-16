@@ -32,3 +32,13 @@ $router->get('/vision/surveillance/today', [S::class, 'today'], 'vision.watch');
 $router->post('/vision/events', [S::class, 'addEvent'], 'vision.watch');
 $router->post('/vision/events/{id}', [S::class, 'review'], 'vision.watch');
 $router->get('/vision/rapport', [S::class, 'report'], 'vision.watch');
+
+// Contrôle « rayon → caisse » (1.3) : emplacements d'étagère, suivi des articles, alertes de vérification
+use Addons\Vision\ControleController as K;
+
+$router->post('/vision/cameras/{id}/slots', [K::class, 'slots'], 'vision.watch');
+$router->post('/vision/parcours/settings', [K::class, 'settings'], 'vision.watch');
+$router->get('/vision/controles', [K::class, 'index'], 'vision.watch');
+$router->get('/vision/controles/live', [K::class, 'live'], 'vision.watch');
+$router->post('/vision/controles/{id}', [K::class, 'review'], 'vision.watch');
+$router->get('/vision/controles/caisse', [K::class, 'cashier'], 'vision.use');

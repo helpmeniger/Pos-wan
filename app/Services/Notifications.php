@@ -52,6 +52,16 @@ final class Notifications
                 $items[] = ['bi-stars text-warning', "$dirty chambre(s) à nettoyer", '/hotel/menage'];
             }
         }
+        if (\App\Core\Addons::isActive('vision') && can('vision.watch') && class_exists(\Addons\Vision\ParcoursService::class)) {
+            try {
+                $n = \Addons\Vision\ParcoursService::openAlerts();
+                if ($n > 0) {
+                    $items[] = ['bi-eye text-danger', "$n article(s) pris en rayon à vérifier (non encaissés)", '/vision/controles'];
+                }
+            } catch (\Throwable) {
+                // module pas encore mis à jour (tables 1.3 absentes) : pas d'alerte, la page reste utilisable
+            }
+        }
         if (can('customers.view')) {
             $late = (int) DB::value("SELECT COUNT(DISTINCT customer_id) FROM customer_transactions ct JOIN customers c ON c.id = ct.customer_id WHERE ct.type = 'credit_sale' AND ct.due_date < CURDATE() AND c.balance > 0");
             if ($late > 0) {

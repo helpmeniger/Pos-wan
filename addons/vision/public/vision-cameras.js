@@ -19,6 +19,26 @@
   };
   kind.addEventListener('change', showKind); showKind();
 
+  // Rôle de la caméra : aide, comptage adapté, caisse rattachée seulement pour une caméra de caisse
+  const role = $('#camRole');
+  const HELP = {
+    passage: T('Compte les articles qui franchissent une ligne ou passent dans une zone ; comparaison avec les ventes en fin de journée.'),
+    etagere: T("Filmez le rayon de face, d'assez près. Dans l'écran Surveillance, tracez un emplacement par article (ou groupe d'articles identiques) et indiquez l'article : une prise est alors nommée sans dépendre de la reconnaissance."),
+    caisse: T("Filmez le comptoir de dessus. L'article posé sur le comptoir est reconnu (articles appris) et noté « vu en caisse » en attendant la vente."),
+    sortie: T("Filmez la porte, ligne rouge en travers du passage. Un article reconnu qui sort sans avoir été encaissé déclenche une alerte immédiate."),
+  };
+  const showRole = () => {
+    if (!role) return;
+    $('#camRoleHelp').textContent = HELP[role.value] || '';
+    $$('.cam-role-caisse', form).forEach((el) => el.classList.toggle('d-none', role.value !== 'caisse'));
+    const mode = form.querySelector('[name="mode"]');
+    if (mode && role.value === 'caisse') mode.value = 'zone';
+    if (mode && role.value === 'sortie') mode.value = 'ligne';
+    const surv = form.querySelector('[name="use_surveillance"]');
+    if (surv && role.value !== 'passage') surv.checked = true;
+  };
+  if (role) { role.addEventListener('change', showRole); showRole(); }
+
   /** Liste des caméras du poste (les noms ne sont donnés qu'après autorisation de la caméra). */
   async function devices(askPermission) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) throw new Error(T('Ce navigateur ne liste pas les caméras (connexion non sécurisée ?). Ouvrez cette page sur le poste lui-même (localhost) ou en HTTPS.'));

@@ -46,3 +46,4 @@ storage/pay/
 storage/pay-sweep.lock
 addons/pay/bridge/bridge.json
 addons/pay/bridge/*.log
+storage/installed.lock.bak

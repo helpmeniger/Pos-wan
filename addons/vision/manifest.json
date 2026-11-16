@@ -1,10 +1,10 @@
 {
     "code": "vision",
     "name": "Reconnaissance des articles par photo",
-    "version": "1.2.0",
-    "requires": "2.4.0",
+    "version": "1.3.0",
+    "requires": "3.11.0",
     "author": "Mahamadou Hamidou (Mohamed) — POS Marwa",
-    "description": "Reconnaît les articles par la caméra (webcam, caméra USB, carte d'acquisition, caméra IP du réseau ou smartphone), sans code-barres : en caisse, au restaurant, en inventaire, aux étiquettes, à la pharmacie et dans la recherche d'articles. Surveillance anti-vol : comptage automatique et en continu des articles qui franchissent une ligne ou passent dans une zone, puis comparaison avec les ventes et les sorties de stock. L'intelligence fonctionne dans le navigateur, sans Internet.",
+    "description": "Reconnaît les articles par la caméra (webcam, caméra USB, carte d'acquisition, caméra IP du réseau ou smartphone), sans code-barres : en caisse, au restaurant, en inventaire, aux étiquettes, à la pharmacie et dans la recherche d'articles. Surveillance anti-vol : comptage automatique et en continu des articles qui franchissent une ligne ou passent dans une zone, puis comparaison avec les ventes et les sorties de stock. Contrôle rayon → caisse : caméras d'étagère (article pris ou remis à son emplacement), de caisse et de sortie ; chaque article pris en rayon est suivi jusqu'à son encaissement, sinon une vérification est demandée. L'intelligence fonctionne dans le navigateur, sans Internet.",
     "icon": "bi-eye",
     "color": "#7b2cbf",
     "permissions": {
@@ -59,6 +59,14 @@
         },
         {
             "group": "Gestion des articles",
+            "label": "Contrôle rayon → caisse",
+            "icon": "bi-diagram-3",
+            "url": "/vision/controles",
+            "permission": "vision.watch",
+            "color": "#c1121f"
+        },
+        {
+            "group": "Gestion des articles",
             "label": "Passages vus / ventes",
             "icon": "bi-clipboard-data",
             "url": "/vision/rapport",
@@ -87,7 +95,12 @@
         "vision_surv_marge": "0.04",
         "vision_surv_fenetre": "20",
         "vision_surv_conservation": "30",
-        "vision_cam_publique": "0"
+        "vision_cam_publique": "0",
+        "vision_parcours_delai": "15",
+        "vision_parcours_inconnu": "1",
+        "vision_parcours_sortie": "1",
+        "vision_parcours_rappel": "0",
+        "vision_parcours_rappel_s": "60"
     },
     "assets": {
         "js": [

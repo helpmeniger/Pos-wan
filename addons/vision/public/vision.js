@@ -661,8 +661,27 @@
       cam.insertAdjacentElement('afterend', b);
     });
   }
+  // Rappel discret au caissier (réglage « Rappel au caissier ») : article vu sur le comptoir de sa caisse,
+  // pas encore encaissé. Un simple rappel : rien n'est ajouté au panier, aucune accusation.
+  const remindSeen = new Set();
+  function cashierReminder() {
+    let box = null;
+    const tick = async () => {
+      const d = await fetch(BASE + '/vision/controles/caisse', { headers: { Accept: 'application/json' } }).then((r) => r.json()).catch(() => null);
+      const items = d && d.ok ? d.items.filter((x) => !remindSeen.has(x.id)) : [];
+      if (items.length) {
+        if (!box) { box = document.createElement('div'); box.className = 'pm-vis-remind'; box.setAttribute('role', 'status'); document.body.appendChild(box); }
+        box.innerHTML = `<button type="button" aria-label="${T('Fermer')}">×</button><b><i class="bi bi-eye"></i> ${T('À vérifier avant de clôturer la vente')}</b><br>`
+          + items.map((x) => `${esc(x.product)} <span class="text-secondary">(${T('vu sur le comptoir à')} ${esc(x.since)})</span>`).join('<br>');
+        box.querySelector('button').addEventListener('click', () => { items.forEach((x) => remindSeen.add(x.id)); box.remove(); box = null; });
+      } else if (box) { box.remove(); box = null; }
+      setTimeout(tick, 15000);
+    };
+    tick();
+  }
   config().then((c) => {
     if (!c || c.ok === false) return;
+    if (c.remind && document.body.classList.contains('pos-body')) cashierReminder();
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', quickButtons); else quickButtons();
     // Caméras IP déclarées pour la caisse : proposées dans le choix des caméras du scanner
     cameraSources().then((items) => items.filter((cam) => cam.kind === 'ip' && cam.use_caisse).forEach((cam) => PMScanner.addSource({
