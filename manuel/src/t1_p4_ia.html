@@ -1,0 +1,415 @@
+<!-- ===================== PARTIE 4 — INTELLIGENCE ARTIFICIELLE (NOUVEAU MODULE) ===================== -->
+<div class="opener" style="--accent:var(--ai)">
+  <div class="kicker">Partie · Nouveau module</div>
+  <div class="big">4</div>
+  <h1 data-part>L’intelligence artificielle : comprendre, utiliser, maîtriser</h1>
+  <p class="sub">Ce qu’est l’IA, comment elle fonctionne, comment bien l’utiliser au quotidien et au travail, ses applications dans tous les domaines, ses limites et ses risques.</p>
+  <ul class="toc-mini">
+    <li>Qu’est-ce que l’IA ? · Brève histoire</li>
+    <li>Comment fonctionne l’IA ?</li>
+    <li>Les outils d’IA aujourd’hui</li>
+    <li>Bien dialoguer avec une IA : l’art du prompt</li>
+    <li>L’IA au bureau</li>
+    <li>L’IA dans tous les domaines</li>
+    <li>Limites, risques et usage responsable</li>
+    <li>Métiers d’avenir · Exercices et projet</li>
+  </ul>
+  {{ill:art-p4}}
+  <div class="band">HELP-ME · APPRENDRE L’INFORMATIQUE DE BUREAU</div>
+</div>
+
+<section class="sec-p4">
+
+<!-- ------------------------------------------------------------ 4.1 -->
+<h2 class="lesson" data-code="3001"><span class="num">4.1</span>Qu’est-ce que l’intelligence artificielle ?</h2>
+<div class="objectifs"><span class="t">Objectifs</span>
+<ul><li>Définir l’intelligence artificielle (IA).</li><li>Reconnaître l’IA dans la vie de tous les jours.</li><li>Distinguer IA spécialisée, IA générative et IA générale.</li></ul></div>
+
+<div class="box def"><span class="t">Définition</span>L’<b>intelligence artificielle</b> (IA) est un domaine de l’informatique qui conçoit des programmes capables de réaliser des tâches qui demandent habituellement l’intelligence humaine : <b>comprendre</b> le langage, <b>reconnaître</b> des images ou des sons, <b>raisonner</b>, <b>prédire</b>, <b>décider</b> ou <b>créer</b> du contenu.</div>
+<p>Un programme classique suit des règles écrites à l’avance par un programmeur : « si le solde est inférieur à 0, alors afficher une alerte ». Un système d’IA, lui, <b>apprend à partir d’exemples</b> : on lui montre des milliers de photos de chats, et il apprend seul à reconnaître un chat sur une photo qu’il n’a jamais vue.</p>
+
+<h3>L’IA est déjà partout</h3>
+<div class="grid2">
+  <div class="card"><span class="ct">📱 Téléphone</span>Déverrouillage par le visage, correcteur et suggestions du clavier, tri des photos, appareil photo qui améliore l’image.</div>
+  <div class="card"><span class="ct">🗺️ Déplacements</span>GPS qui calcule l’itinéraire le plus rapide selon la circulation.</div>
+  <div class="card"><span class="ct">🎬 Loisirs</span>Recommandations de vidéos, de musique ou de publications.</div>
+  <div class="card"><span class="ct">🌍 Langues</span>Traduction automatique, sous-titres, dictée vocale.</div>
+  <div class="card"><span class="ct">✉️ Messagerie</span>Filtre anti-spam, réponses suggérées, résumés.</div>
+  <div class="card"><span class="ct">💳 Argent</span>Détection des fraudes à la carte bancaire et au <i>mobile money</i>.</div>
+</div>
+
+<h3>Les grandes familles d’IA</h3>
+<figure>{{ill:ai-nested}}<figcaption>L’IA générative est une partie de l’apprentissage profond, lui-même une partie de l’apprentissage automatique.</figcaption></figure>
+<table class="compact">
+  <thead><tr><th>Type</th><th>Ce qu’elle fait</th><th>Exemples</th></tr></thead>
+  <tbody>
+    <tr><td><b>IA spécialisée</b> (ou « faible »)</td><td>Excelle dans <b>une</b> tâche précise.</td><td>Reconnaissance faciale, jeu d’échecs, détection de fraude, GPS</td></tr>
+    <tr><td><b>IA générative</b></td><td><b>Crée</b> du contenu nouveau : texte, image, son, vidéo, code.</td><td>ChatGPT, Claude, Gemini, Copilot, générateurs d’images</td></tr>
+    <tr><td><b>IA générale</b> (ou « forte »)</td><td>Égalerait l’humain dans <b>toutes</b> les tâches intellectuelles.</td><td>N’existe pas encore. C’est un objectif de recherche, très débattu.</td></tr>
+  </tbody>
+</table>
+<div class="box warn"><span class="t">Idée reçue</span>L’IA ne « pense » pas et ne « comprend » pas comme un être humain. Elle n’a ni conscience, ni émotions, ni intentions. Elle calcule des <b>probabilités</b> à partir des données qu’elle a apprises. Elle peut donc paraître très sûre d’elle… et se tromper.</div>
+<div class="box retenir"><span class="t">À retenir</span>L’IA est un ensemble de techniques informatiques qui permettent à une machine d’apprendre à partir de données pour reconnaître, prédire, décider ou créer. Elle est déjà présente dans votre téléphone.</div>
+<div class="scan" data-code="3001" data-kind="nouveau" data-title="Leçon 4.1 · Qu’est-ce que l’intelligence artificielle ?"></div>
+
+<!-- ------------------------------------------------------------ 4.2 -->
+<h2 class="lesson" data-code="3002"><span class="num">4.2</span>Brève histoire de l’intelligence artificielle</h2>
+<div class="objectifs"><span class="t">Objectifs</span>
+<ul><li>Connaître les étapes clés de l’IA.</li><li>Comprendre pourquoi l’IA progresse si vite depuis 2012.</li></ul></div>
+<ul class="timeline">
+  <li class="hl"><span class="y">1950</span><span><b>Alan Turing</b> se demande si une machine peut penser et propose le « <b>test de Turing</b> ».</span></li>
+  <li class="hl"><span class="y">1956</span><span>Conférence de <b>Dartmouth</b> (États-Unis) : naissance officielle de l’expression « intelligence artificielle » (John McCarthy).</span></li>
+  <li><span class="y">1957</span><span>Le <b>Perceptron</b> de Frank Rosenblatt, premier « neurone artificiel » capable d’apprendre.</span></li>
+  <li><span class="y">1966</span><span><b>ELIZA</b>, premier programme de conversation (« chatbot »).</span></li>
+  <li><span class="y">1974-<br>1993</span><span>Les « <b>hivers de l’IA</b> » : déceptions et baisse des financements. Dans les années 1980, les <b>systèmes experts</b> (règles écrites par des spécialistes) connaissent un certain succès.</span></li>
+  <li class="hl"><span class="y">1997</span><span>L’ordinateur <b>Deep Blue</b> (IBM) bat le champion du monde d’échecs Garry Kasparov.</span></li>
+  <li><span class="y">2011</span><span>Les assistants vocaux arrivent sur les téléphones (Siri).</span></li>
+  <li class="hl"><span class="y">2012</span><span>Révolution de l’<b>apprentissage profond</b> : grâce aux grandes quantités de données et à la puissance des cartes graphiques (GPU), la reconnaissance d’images fait un bond spectaculaire.</span></li>
+  <li><span class="y">2016</span><span><b>AlphaGo</b> (Google DeepMind) bat l’un des meilleurs joueurs mondiaux de go.</span></li>
+  <li><span class="y">2017</span><span>Invention de l’architecture <b>Transformer</b>, à la base des modèles de langage actuels.</span></li>
+  <li><span class="y">2020</span><span><b>AlphaFold</b> prédit la forme des protéines, une avancée majeure pour la médecine.</span></li>
+  <li class="hl"><span class="y">2022</span><span>Lancement de <b>ChatGPT</b> (OpenAI) et des générateurs d’images : l’IA générative devient accessible au grand public.</span></li>
+  <li><span class="y">2023</span><span>Arrivée de nombreux assistants : <b>Claude</b> (Anthropic), <b>Gemini</b> (Google), <b>Copilot</b> (Microsoft), <b>Meta AI</b>, Mistral…</span></li>
+  <li><span class="y">2024</span><span>Prix Nobel de physique (Hopfield et Hinton) et de chimie (Hassabis, Jumper et Baker) liés à l’IA. L’Union européenne adopte l’<b>AI Act</b>, l’Union africaine sa <b>Stratégie continentale sur l’IA</b>.</span></li>
+  <li class="hl"><span class="y">2025-<br>2026</span><span>Les IA deviennent <b>multimodales</b> (texte, voix, image, vidéo), <b>raisonnent</b> étape par étape et fonctionnent en <b>agents</b> capables d’enchaîner des actions : chercher, remplir un tableau, rédiger un rapport, utiliser un logiciel.</span></li>
+</ul>
+<div class="box def"><span class="t">Pourquoi maintenant ?</span>Trois ingrédients se sont réunis : des <b>données</b> massives (Internet, smartphones), une <b>puissance de calcul</b> énorme (GPU, centres de données) et de <b>meilleurs algorithmes</b> (apprentissage profond, Transformers).</div>
+<div class="scan" data-code="3002" data-kind="nouveau" data-title="Leçon 4.2 · Brève histoire de l’IA"></div>
+
+<!-- ------------------------------------------------------------ 4.3 -->
+<h2 class="lesson" data-code="3003"><span class="num">4.3</span>Comment fonctionne l’IA ?</h2>
+<div class="objectifs"><span class="t">Objectifs</span>
+<ul><li>Comprendre le rôle des données et de l’apprentissage.</li><li>Découvrir les réseaux de neurones.</li><li>Comprendre comment un assistant conversationnel produit ses réponses.</li></ul></div>
+
+<h3>1. Les données : le carburant de l’IA</h3>
+<p>Une IA apprend à partir de <b>données</b> : textes, images, sons, chiffres. Plus elles sont nombreuses, variées et de bonne qualité, meilleure est l’IA. À l’inverse, des données incomplètes ou déséquilibrées produisent une IA qui se trompe ou qui est injuste : c’est le problème des <b>biais</b>.</p>
+
+<h3>2. L’apprentissage automatique</h3>
+<p>Prenons l’exemple d’une application qui aide les agriculteurs à reconnaître une maladie du mil ou de la tomate à partir d’une photo de feuille :</p>
+<figure>{{ill:ai-learn}}<figcaption>Les étapes de l’apprentissage automatique (<i>machine learning</i>).</figcaption></figure>
+<table class="compact">
+  <thead><tr><th>Mode</th><th>Principe</th><th>Exemple</th></tr></thead>
+  <tbody>
+    <tr><td><b>Supervisé</b></td><td>On fournit des exemples avec la bonne réponse (« étiquette »).</td><td>Photos annotées « saine » ou « malade »</td></tr>
+    <tr><td><b>Non supervisé</b></td><td>L’IA trouve seule des groupes ou des ressemblances.</td><td>Regrouper des clients aux habitudes proches</td></tr>
+    <tr><td><b>Par renforcement</b></td><td>L’IA apprend par essais et erreurs, avec des récompenses.</td><td>Jeux, robots, et amélioration des assistants à partir des avis humains</td></tr>
+  </tbody>
+</table>
+
+<h3>3. Les réseaux de neurones et l’apprentissage profond</h3>
+<p>Un <b>réseau de neurones artificiels</b> s’inspire très librement du cerveau. Il est composé de couches de petites unités de calcul reliées entre elles. Chaque lien a un <b>poids</b> (un nombre) que l’entraînement ajuste progressivement. Quand le réseau a beaucoup de couches, on parle d’<b>apprentissage profond</b> (<i>deep learning</i>).</p>
+<figure>{{ill:neural}}<figcaption>Un réseau de neurones simplifié qui reconnaît un animal sur une photo.</figcaption></figure>
+
+<h3>4. Les grands modèles de langage (LLM)</h3>
+<p>Les assistants comme ChatGPT, Claude ou Gemini reposent sur des <b>grands modèles de langage</b> (en anglais <i>Large Language Models</i>, <b>LLM</b>). Ils ont été entraînés sur d’immenses quantités de textes (livres, sites Web, articles) pour apprendre une chose essentielle : <b>prédire le mot suivant</b>.</p>
+<figure>{{ill:next-token}}<figcaption>Un LLM écrit sa réponse morceau par morceau (les « jetons », ou <i>tokens</i>), en choisissant à chaque fois une suite probable.</figcaption></figure>
+<p>En prédisant le mot suivant des milliards de fois, le modèle a appris la grammaire, beaucoup de connaissances, des façons de raisonner et de rédiger. Il est ensuite ajusté avec l’aide d’humains pour devenir un assistant utile, honnête et prudent.</p>
+<div class="grid2">
+  <div class="card"><span class="ct">L’entraînement</span>Très long et très coûteux : des semaines de calcul dans des centres de données. Les connaissances s’arrêtent à une <b>date limite</b>.</div>
+  <div class="card"><span class="ct">L’utilisation</span>Quand vous posez une question, le modèle déjà entraîné calcule sa réponse en quelques secondes. Certains peuvent aussi <b>chercher sur le Web</b> pour se mettre à jour.</div>
+</div>
+<div class="box warn"><span class="t">Conséquence importante</span>Comme il produit ce qui est <b>probable</b>, et pas forcément ce qui est <b>vrai</b>, un modèle peut inventer avec assurance une date, un chiffre, une citation ou une référence : on parle d’<b>hallucination</b>. Vérifiez toujours les informations importantes.</div>
+<div class="scan" data-code="3003" data-kind="nouveau" data-title="Leçon 4.3 · Comment fonctionne l’IA ?"></div>
+
+<!-- ------------------------------------------------------------ 4.4 -->
+<h2 class="lesson" data-code="3004"><span class="num">4.4</span>Les outils d’IA aujourd’hui</h2>
+<div class="objectifs"><span class="t">Objectifs</span>
+<ul><li>Connaître les principaux outils d’IA et leurs usages.</li><li>Prendre en main l’interface d’un assistant conversationnel.</li></ul></div>
+
+<h3>Les assistants conversationnels</h3>
+<p>On leur écrit (ou on leur parle) en langage courant, en français ou dans d’autres langues, et ils répondent : explications, rédaction, résumé, traduction, calculs, idées, code informatique… La plupart proposent une version gratuite (avec des limites) et une version payante.</p>
+<table class="compact">
+  <thead><tr><th>Assistant</th><th>Entreprise</th><th>Où le trouver</th></tr></thead>
+  <tbody>
+    <tr><td><b>ChatGPT</b></td><td>OpenAI</td><td>chatgpt.com, applications mobiles</td></tr>
+    <tr><td><b>Claude</b></td><td>Anthropic</td><td>claude.ai, applications mobiles</td></tr>
+    <tr><td><b>Gemini</b></td><td>Google</td><td>gemini.google.com, Android, Gmail, Docs</td></tr>
+    <tr><td><b>Copilot</b></td><td>Microsoft</td><td>Windows 11, Edge, Word, Excel, Outlook</td></tr>
+    <tr><td><b>Meta AI</b></td><td>Meta</td><td>WhatsApp, Facebook, Instagram (selon les pays)</td></tr>
+    <tr><td><b>Le Chat</b></td><td>Mistral AI (France)</td><td>chat.mistral.ai</td></tr>
+  </tbody>
+</table>
+<figure>{{ill:ai-chat}}<figcaption>L’interface type d’un assistant conversationnel.</figcaption></figure>
+<table class="compact">
+  <tbody>
+    <tr><td><b>1</b></td><td><b>Nouvelle discussion</b> : repartir d’une page blanche pour un nouveau sujet.</td></tr>
+    <tr><td><b>2</b></td><td><b>Historique</b> de vos conversations.</td></tr>
+    <tr><td><b>3</b></td><td>Votre <b>demande</b> (le <i>prompt</i>).</td></tr>
+    <tr><td><b>4</b></td><td>La <b>réponse</b> de l’IA : texte, tableau, liste, code…</td></tr>
+    <tr><td><b>5</b></td><td><b>Copier</b>, <b>régénérer</b> une autre réponse, donner son avis.</td></tr>
+    <tr><td><b>6</b></td><td><b>Zone de saisie</b> : le <b>+</b> ajoute un fichier ou une photo, le 🎙 permet de parler.</td></tr>
+    <tr><td><b>7</b></td><td>L’<b>avertissement</b> : l’IA peut se tromper.</td></tr>
+  </tbody>
+</table>
+
+<h3>Les autres outils d’IA</h3>
+<div class="grid2">
+  <div class="card"><span class="ct">🖼️ Images</span>Créer ou retoucher une image à partir d’une description : affiche, logo, illustration (générateurs intégrés aux assistants, Adobe Firefly, Canva…).</div>
+  <div class="card"><span class="ct">🎙️ Voix et son</span>Dictée, transcription d’une réunion, lecture à voix haute, création de musique, doublage.</div>
+  <div class="card"><span class="ct">🌍 Traduction</span>Google Traduction, DeepL, traduction en direct d’une conversation ou d’un panneau photographié. Le haoussa et, de plus en plus, d’autres langues africaines sont pris en charge.</div>
+  <div class="card"><span class="ct">🎬 Vidéo</span>Sous-titrage automatique, montage assisté, génération de courtes vidéos.</div>
+  <div class="card"><span class="ct">🔎 Recherche</span>Moteurs de réponse qui citent leurs sources (Perplexity, résumés IA de Google et Bing).</div>
+  <div class="card"><span class="ct">🤖 Agents</span>Assistants capables d’enchaîner des actions : naviguer sur le Web, remplir un formulaire, préparer un dossier, utiliser vos logiciels.</div>
+</div>
+<div class="box new"><span class="t">Multimodal</span>Les assistants actuels sont <b>multimodaux</b> : vous pouvez leur envoyer une <b>photo</b> (un exercice, une facture, une plante malade), un <b>document PDF</b>, un <b>tableau Excel</b> ou leur <b>parler</b> directement, puis poser vos questions.</div>
+<div class="box warn"><span class="t">Attention</span>Téléchargez les applications d’IA uniquement depuis les boutiques officielles. De nombreuses fausses applications « ChatGPT » ou « IA gratuite » sont des arnaques qui volent des données ou de l’argent.</div>
+<div class="scan" data-code="3004" data-kind="nouveau" data-title="Leçon 4.4 · Les outils d’IA aujourd’hui"></div>
+
+<!-- ------------------------------------------------------------ 4.5 -->
+<h2 class="lesson" data-code="3005"><span class="num">4.5</span>Bien dialoguer avec une IA : l’art du prompt</h2>
+<div class="objectifs"><span class="t">Objectifs</span>
+<ul><li>Rédiger une demande claire et précise.</li><li>Appliquer la méthode RCTF.</li><li>Améliorer une réponse par le dialogue.</li></ul></div>
+
+<p>Un <b>prompt</b> (on dit aussi « invite » ou « requête ») est la demande que l’on écrit à l’IA. La qualité de la réponse dépend beaucoup de la qualité de la demande. Une IA est comme un nouveau collaborateur très compétent, mais qui ne sait <b>rien</b> de votre situation : il faut tout lui expliquer.</p>
+
+<h3>La méthode RCTF</h3>
+<table class="compact">
+  <thead><tr><th>Lettre</th><th>Question à se poser</th><th>Exemple</th></tr></thead>
+  <tbody>
+    <tr><td><b style="color:#DC2626">R</b> · Rôle</td><td>Quel expert doit-elle jouer ?</td><td>« Tu es un professeur de comptabilité patient… »</td></tr>
+    <tr><td><b style="color:#2563EB">C</b> · Contexte</td><td>Qui suis-je ? Pour qui ? Pourquoi ?</td><td>« … je suis étudiant en 1<sup>re</sup> année de BTS à Zinder… »</td></tr>
+    <tr><td><b style="color:#16A34A">T</b> · Tâche</td><td>Que doit-elle faire exactement ?</td><td>« … explique-moi l’amortissement linéaire avec un exemple chiffré en F CFA… »</td></tr>
+    <tr><td><b style="color:#CA8A04">F</b> · Format</td><td>Sous quelle forme ? Quelle longueur ?</td><td>« … en 10 lignes maximum, puis 3 exercices corrigés. »</td></tr>
+  </tbody>
+</table>
+
+<div class="prompt"><span class="lab">✗ Prompt trop vague</span>Écris une lettre.</div>
+<div class="prompt"><span class="lab">✓ Prompt efficace</span><span class="r">Tu es un conseiller en recrutement.</span> <span class="c">Je m’appelle Mariama, j’ai un BTS en secrétariat et je souhaite postuler à un poste d’assistante administrative dans une ONG à Niamey.</span> <span class="tk">Rédige une lettre de motivation qui met en avant ma maîtrise de Word, d’Excel et mon sens de l’organisation.</span> <span class="f">Ton professionnel, une page maximum, avec des [crochets] là où je dois compléter mes informations.</span></div>
+
+<h3>Les bonnes pratiques</h3>
+<ul>
+  <li><b>Donnez des exemples</b> du résultat attendu (« dans ce style : … »).</li>
+  <li><b>Fournissez la matière</b> : collez le texte à résumer ou joignez le document.</li>
+  <li><b>Découpez</b> une grosse tâche en étapes : d’abord le plan, puis chaque partie.</li>
+  <li><b>Dialoguez</b> : la première réponse est un brouillon. Demandez « plus court », « plus simple », « ajoute un tableau », « explique comme à un enfant de 12 ans »…</li>
+  <li><b>Demandez des sources</b> et vérifiez-les, ou demandez à l’IA de signaler ce dont elle n’est pas sûre.</li>
+  <li>Pour un nouveau sujet, ouvrez une <b>nouvelle discussion</b>.</li>
+</ul>
+
+<h3>Des demandes utiles au quotidien</h3>
+<table class="compact">
+  <thead><tr><th>Besoin</th><th>Exemple de demande</th></tr></thead>
+  <tbody>
+    <tr><td>Comprendre</td><td>« Explique-moi la différence entre RAM et SSD avec une comparaison de la vie courante. »</td></tr>
+    <tr><td>Réviser</td><td>« Pose-moi 10 questions sur la leçon que je te colle, une par une, et corrige mes réponses. »</td></tr>
+    <tr><td>Résumer</td><td>« Résume ce rapport en 5 points clés pour mon directeur. »</td></tr>
+    <tr><td>Corriger</td><td>« Corrige l’orthographe de ce texte sans changer le style et liste les corrections. »</td></tr>
+    <tr><td>Traduire</td><td>« Traduis ce message en anglais professionnel. »</td></tr>
+    <tr><td>Organiser</td><td>« Fais-moi un planning de révision sur 3 semaines pour mon examen. »</td></tr>
+    <tr><td>Créer</td><td>« Propose 5 noms et un slogan pour ma boutique de couture à Maradi. »</td></tr>
+  </tbody>
+</table>
+<div class="box tip"><span class="t">Astuce</span>Terminez par : « <b>Pose-moi d’abord les questions nécessaires</b> avant de répondre. » L’IA vous demandera les informations qui lui manquent et la réponse sera bien plus adaptée.</div>
+<div class="scan" data-code="3005" data-kind="nouveau" data-title="Leçon 4.5 · Bien dialoguer avec une IA : l’art du prompt"></div>
+
+<!-- ------------------------------------------------------------ 4.6 -->
+<h2 class="lesson" data-code="3006"><span class="num">4.6</span>L’IA au bureau</h2>
+<div class="objectifs"><span class="t">Objectifs</span>
+<ul><li>Identifier les tâches de bureau que l’IA peut accélérer.</li><li>Utiliser Copilot dans Windows et Microsoft 365.</li></ul></div>
+
+<p>L’IA est désormais intégrée aux outils de bureau : <b>Microsoft 365 Copilot</b> (Word, Excel, PowerPoint, Outlook, Teams), <b>Gemini</b> dans Google Workspace (Gmail, Docs, Sheets), et <b>Copilot</b> directement dans Windows 11. Sur les ordinateurs récents, une <b>touche Copilot</b> permet même de l’ouvrir directement depuis le clavier.</p>
+<table class="compact">
+  <thead><tr><th>Logiciel</th><th>Ce que l’IA peut faire</th></tr></thead>
+  <tbody>
+    <tr><td><b>Word</b></td><td>Rédiger un premier jet, reformuler, résumer un long document, proposer un plan, adapter le ton.</td></tr>
+    <tr><td><b>Excel</b></td><td>Proposer une formule, expliquer une formule existante, analyser un tableau, créer un graphique, repérer des tendances.</td></tr>
+    <tr><td><b>PowerPoint</b></td><td>Créer une présentation à partir d’un document Word, proposer des visuels, résumer.</td></tr>
+    <tr><td><b>Outlook / Gmail</b></td><td>Résumer une longue conversation, rédiger une réponse, trier les priorités.</td></tr>
+    <tr><td><b>Teams / Meet</b></td><td>Transcrire une réunion, produire le compte rendu et la liste des actions.</td></tr>
+    <tr><td><b>Windows</b></td><td>Répondre à une question, expliquer ce qui est à l’écran, retrouver un fichier ou un réglage.</td></tr>
+  </tbody>
+</table>
+
+<h3>Exemple : une formule Excel</h3>
+<div class="prompt"><span class="lab">Demande</span>Dans Excel, la colonne B contient des notes sur 20 (de B2 à B40). Je veux, en colonne C, « Admis » si la note est supérieure ou égale à 10, sinon « Ajourné ». Donne-moi la formule et explique-la.</div>
+<div class="answer"><span class="lab">Réponse type</span>Saisissez en C2 : <code>=SI(B2&gt;=10;"Admis";"Ajourné")</code>, puis recopiez vers le bas jusqu’à C40. La fonction SI teste la condition B2 ≥ 10 : si elle est vraie, elle affiche « Admis », sinon « Ajourné ».</div>
+
+<h3>Exemple : un compte rendu de réunion</h3>
+<div class="prompt"><span class="lab">Demande</span>Voici mes notes en vrac de la réunion de ce matin [coller les notes]. Rédige un compte rendu structuré : participants, décisions prises, actions à mener (qui, quoi, pour quand) dans un tableau. Style administratif.</div>
+
+<div class="box warn"><span class="t">Confidentialité au travail</span>Ne collez jamais dans un assistant d’IA public des <b>données confidentielles</b> : informations personnelles de clients ou de patients, salaires, contrats, mots de passe, documents internes. Utilisez uniquement les outils <b>autorisés par votre employeur</b> (versions professionnelles protégées) et respectez la charte de votre structure.</div>
+<div class="box tip"><span class="t">La règle d’or</span>L’IA prépare, <b>vous décidez</b>. Vous restez responsable de tout document que vous signez ou envoyez : relisez, vérifiez les chiffres et personnalisez.</div>
+<div class="scan" data-code="3006" data-kind="nouveau" data-title="Leçon 4.6 · L’IA au bureau (Copilot, Gemini)"></div>
+
+<!-- ------------------------------------------------------------ 4.7 -->
+<h2 class="lesson" data-code="3007"><span class="num">4.7</span>L’IA dans tous les domaines</h2>
+<div class="objectifs"><span class="t">Objectifs</span>
+<ul><li>Découvrir des applications concrètes de l’IA dans chaque secteur.</li><li>Identifier les opportunités pour le Niger et le Sahel.</li></ul></div>
+
+<p>L’IA transforme presque tous les secteurs d’activité. Voici, pour chaque domaine, ce qu’elle permet déjà, avec un point de vigilance.</p>
+
+<h3>🎓 Éducation</h3>
+<p><b>Apports</b> : un tuteur personnel disponible à toute heure, des explications adaptées au niveau de chacun, la création de quiz et de fiches de révision, la traduction de cours. Les enseignants préparent plus vite leurs séquences et leurs évaluations.<br><b>Vigilance</b> : faire faire ses devoirs par l’IA, c’est ne rien apprendre. Utilisez-la pour <b>comprendre</b>, pas pour copier, et respectez les règles de votre établissement.</p>
+
+<h3>🏥 Santé</h3>
+<p><b>Apports</b> : aide à la lecture de radiographies et d’images médicales, dépistage précoce (tuberculose, maladies des yeux…), suivi d’épidémies, téléconsultation, recherche de médicaments (AlphaFold).<br><b>Vigilance</b> : l’IA ne remplace pas le médecin. Ne prenez jamais un traitement sur la seule base d’une réponse d’IA.</p>
+
+<h3>🌾 Agriculture et élevage</h3>
+<p><b>Apports</b> : diagnostic des maladies des cultures à partir d’une photo prise au téléphone, conseils de fertilisation, prévisions météo locales, surveillance des pâturages et des points d’eau par satellite, alertes contre les criquets, irrigation intelligente (capteurs d’humidité), estimation des récoltes.<br><b>Vigilance</b> : les conseils doivent être adaptés aux sols, aux variétés et au climat locaux. Croisez-les avec l’avis des services techniques agricoles.</p>
+
+<h3>🛒 Commerce, artisanat et PME</h3>
+<p><b>Apports</b> : rédaction d’annonces et de publications pour les réseaux sociaux, création de logos et d’affiches, réponses automatiques aux clients (WhatsApp Business), traduction pour vendre à l’étranger, analyse des ventes et gestion des stocks dans Excel, plan d’affaires.<br><b>Vigilance</b> : vérifiez les prix, les chiffres et les promesses faites aux clients.</p>
+
+<h3>💰 Banque, assurance et <i>mobile money</i></h3>
+<p><b>Apports</b> : détection des fraudes en temps réel, évaluation du risque de crédit (y compris pour des personnes sans historique bancaire), assistants virtuels pour les clients.<br><b>Vigilance</b> : les escrocs utilisent aussi l’IA (faux messages très crédibles, voix imitées). Les règles de la leçon 3.6 restent essentielles.</p>
+
+<h3>🏛️ Administration et services publics</h3>
+<p><b>Apports</b> : traitement plus rapide des courriers et des dossiers, assistants pour renseigner les citoyens, traduction des démarches en langues nationales, analyse de données pour mieux planifier (écoles, centres de santé).<br><b>Vigilance</b> : protection des données personnelles des citoyens (loi n° 2017-28), transparence des décisions et contrôle humain.</p>
+
+<h3>📰 Médias, communication et culture</h3>
+<p><b>Apports</b> : transcription d’interviews, sous-titres, traduction, montage vidéo, vérification d’informations, création graphique et musicale, numérisation et valorisation des langues et du patrimoine locaux.<br><b>Vigilance</b> : les hypertrucages (<i>deepfakes</i>) et la désinformation. Signalez clairement les contenus générés par l’IA.</p>
+
+<h3>⚖️ Droit et ressources humaines</h3>
+<p><b>Apports</b> : recherche dans les textes, résumé de dossiers, rédaction de modèles de contrats ou de fiches de poste, tri de candidatures.<br><b>Vigilance</b> : les IA peuvent inventer des articles de loi ou des jurisprudences. Vérifiez dans les textes officiels. Le tri automatique de CV peut reproduire des discriminations.</p>
+
+<h3>⚡ Industrie, énergie, mines et BTP</h3>
+<p><b>Apports</b> : maintenance prédictive (détecter une panne avant qu’elle arrive), optimisation des centrales solaires et des réseaux électriques, sécurité sur les chantiers et dans les mines, contrôle qualité par caméra.</p>
+
+<h3>🚚 Transport et logistique</h3>
+<p><b>Apports</b> : calcul d’itinéraires, optimisation des tournées de livraison, prévision de la demande, gestion des flottes. Les véhicules autonomes sont en test dans certains pays.</p>
+
+<h3>🌍 Environnement et climat</h3>
+<p><b>Apports</b> : prévision des sécheresses et des inondations, suivi de la désertification et de la déforestation par images satellites, gestion de l’eau, alertes précoces pour les populations.</p>
+
+<h3>💻 Informatique et sciences</h3>
+<p><b>Apports</b> : assistants de programmation qui écrivent et corrigent du code, cybersécurité (détection d’attaques), accélération de la recherche scientifique (biologie, physique, nouveaux matériaux).</p>
+
+<h3>♿ Accessibilité et inclusion</h3>
+<p><b>Apports</b> : lecture à voix haute pour les personnes aveugles ou malvoyantes, description d’images, sous-titres en direct pour les personnes sourdes, interfaces vocales pour les personnes qui lisent difficilement, traduction en langues locales.</p>
+
+<div class="box aibox"><span class="t">Pour aller plus loin</span>Demandez à un assistant : « Je travaille dans [votre domaine] au Niger. Donne-moi 5 façons concrètes d’utiliser l’IA dans mon travail quotidien, avec pour chacune un exemple de demande à écrire et les précautions à prendre. »</div>
+<div class="scan" data-code="3007" data-kind="nouveau" data-title="Leçon 4.7 · L’IA dans tous les domaines"></div>
+
+<!-- ------------------------------------------------------------ 4.8 -->
+<h2 class="lesson" data-code="3008"><span class="num">4.8</span>Les limites et les risques de l’IA</h2>
+<div class="objectifs"><span class="t">Objectifs</span>
+<ul><li>Connaître les principales limites de l’IA.</li><li>Identifier les risques pour soi et pour la société.</li></ul></div>
+
+<table class="compact">
+  <thead><tr><th>Risque</th><th>De quoi s’agit-il ?</th><th>Comment réagir ?</th></tr></thead>
+  <tbody>
+    <tr><td><b>Hallucinations</b></td><td>L’IA invente des faits, des chiffres, des citations ou des sources, avec assurance.</td><td>Vérifier les informations importantes dans des sources fiables.</td></tr>
+    <tr><td><b>Biais</b></td><td>L’IA reproduit les préjugés de ses données (sexe, origine, langue). Elle connaît souvent moins bien l’Afrique et ses langues.</td><td>Garder un regard critique, préciser le contexte local.</td></tr>
+    <tr><td><b>Vie privée</b></td><td>Ce que vous écrivez peut être stocké et parfois utilisé pour entraîner les modèles.</td><td>Ne pas saisir de données sensibles ; régler les paramètres de confidentialité.</td></tr>
+    <tr><td><b>Hypertrucages</b> (<i>deepfakes</i>)</td><td>Fausses images, vidéos ou voix très réalistes, utilisées pour tromper ou nuire.</td><td>Vérifier l’origine ; se méfier des contenus choquants ou urgents.</td></tr>
+    <tr><td><b>Droit d’auteur</b></td><td>Les contenus générés peuvent ressembler à des œuvres protégées. Les règles évoluent.</td><td>Citer l’usage de l’IA ; ne pas copier le style ou l’œuvre d’autrui.</td></tr>
+    <tr><td><b>Dépendance</b></td><td>Trop déléguer à l’IA peut affaiblir nos propres compétences (écrire, calculer, raisonner).</td><td>S’en servir pour apprendre, pas pour éviter d’apprendre.</td></tr>
+    <tr><td><b>Emploi</b></td><td>Certaines tâches sont automatisées ; de nouveaux métiers apparaissent.</td><td>Se former en continu (voir la leçon 4.10).</td></tr>
+    <tr><td><b>Environnement</b></td><td>Les centres de données consomment beaucoup d’électricité et d’eau.</td><td>Utiliser l’IA quand elle est vraiment utile.</td></tr>
+  </tbody>
+</table>
+<div class="box warn"><span class="t">Reconnaître un contenu généré par IA</span>Mains ou doigts déformés, textes illisibles dans l’image, regards étranges, lèvres mal synchronisées avec la voix, ton trop parfait… Mais les fausses images sont de plus en plus difficiles à repérer : la meilleure défense reste de <b>vérifier la source</b>.</div>
+<div class="scan" data-code="3008" data-kind="nouveau" data-title="Leçon 4.8 · Les limites et les risques de l’IA"></div>
+
+<!-- ------------------------------------------------------------ 4.9 -->
+<h2 class="lesson" data-code="3009"><span class="num">4.9</span>Utiliser l’IA de façon responsable</h2>
+<div class="objectifs"><span class="t">Objectifs</span>
+<ul><li>Appliquer les règles d’un usage éthique de l’IA.</li><li>Connaître les cadres de régulation de l’IA.</li></ul></div>
+
+<h3>Les 10 règles d’or</h3>
+<ol class="steps">
+  <li><b>Gardez le contrôle</b> : l’IA propose, vous décidez et vous restez responsable.</li>
+  <li><b>Vérifiez</b> toute information importante (dates, chiffres, lois, santé, argent).</li>
+  <li><b>Protégez les données</b> : pas d’informations personnelles, confidentielles ou de mots de passe.</li>
+  <li><b>Soyez transparent</b> : signalez quand un travail a été réalisé avec l’aide de l’IA, surtout à l’école et au travail.</li>
+  <li><b>Apprenez avec l’IA</b> plutôt que de lui laisser faire le travail à votre place.</li>
+  <li><b>Respectez les autres</b> : ne créez jamais de fausses images ou de faux messages d’une personne réelle.</li>
+  <li><b>Respectez les droits d’auteur</b> et les règles de votre établissement ou de votre employeur.</li>
+  <li><b>Gardez un esprit critique</b> face aux biais et aux réponses trop sûres d’elles.</li>
+  <li><b>Utilisez des outils officiels</b>, téléchargés depuis les boutiques reconnues.</li>
+  <li><b>Pensez local</b> : précisez votre contexte (pays, langue, monnaie, lois) pour des réponses adaptées.</li>
+</ol>
+
+<h3>Citer l’usage de l’IA</h3>
+<p>Dans un devoir, un mémoire ou un rapport, indiquez par exemple en note : « <i>Plan et reformulation réalisés avec l’aide de l’assistant [nom], le [date] ; contenu vérifié et complété par l’auteur.</i> »</p>
+
+<h3>Les règles et les lois</h3>
+<ul>
+  <li>L’<b>UNESCO</b> a adopté en 2021 une <b>Recommandation sur l’éthique de l’IA</b>, la première norme mondiale sur le sujet.</li>
+  <li>L’<b>Union africaine</b> a adopté en 2024 une <b>Stratégie continentale sur l’intelligence artificielle</b>, centrée sur le développement et les besoins africains.</li>
+  <li>L’<b>Union européenne</b> a adopté en 2024 l’<b>AI Act</b>, appliqué progressivement,, qui classe les usages de l’IA selon leur niveau de risque.</li>
+  <li>Au Niger, les lois sur la <b>protection des données personnelles</b> (loi n° 2017-28) et sur la <b>cybercriminalité</b> s’appliquent aussi aux usages de l’IA.</li>
+</ul>
+<div class="box retenir"><span class="t">À retenir</span>Une IA utile est une IA <b>vérifiée</b>, <b>transparente</b> et <b>respectueuse</b> des personnes et de leurs données.</div>
+<div class="scan" data-code="3009" data-kind="nouveau" data-title="Leçon 4.9 · Utiliser l’IA de façon responsable"></div>
+
+<!-- ------------------------------------------------------------ 4.10 -->
+<h2 class="lesson" data-code="3010"><span class="num">4.10</span>L’IA et l’avenir : métiers et compétences</h2>
+<div class="objectifs"><span class="t">Objectifs</span>
+<ul><li>Comprendre l’impact de l’IA sur l’emploi.</li><li>Identifier les compétences et métiers d’avenir.</li></ul></div>
+<p>L’IA automatise surtout des <b>tâches</b> (saisie, tri, traduction simple, premiers jets), plus rarement des métiers entiers. Ceux qui savent utiliser l’IA deviennent plus productifs. On dit souvent : « Ce n’est pas l’IA qui vous remplacera, mais une personne qui sait l’utiliser. »</p>
+<h3>Les compétences les plus utiles</h3>
+<div class="grid2">
+  <div class="card"><span class="ct">Numériques</span>Bureautique (ce manuel !), cloud, cybersécurité, utilisation efficace de l’IA.</div>
+  <div class="card"><span class="ct">Humaines</span>Esprit critique, communication, travail en équipe, créativité, empathie.</div>
+  <div class="card"><span class="ct">Données</span>Organiser, analyser et présenter des données (Excel, statistiques).</div>
+  <div class="card"><span class="ct">Apprendre à apprendre</span>Se former en continu, car les outils changent chaque année.</div>
+</div>
+<h3>Des métiers d’avenir</h3>
+<table class="compact">
+  <tbody>
+    <tr><td><b>Analyste ou scientifique des données</b></td><td>Exploite les données pour aider à décider.</td></tr>
+    <tr><td><b>Ingénieur ou développeur en IA</b></td><td>Conçoit et adapte des modèles et des applications.</td></tr>
+    <tr><td><b>Annotateur de données</b></td><td>Prépare et étiquette les données d’entraînement : un métier accessible et en demande.</td></tr>
+    <tr><td><b>Spécialiste en cybersécurité</b></td><td>Protège les systèmes et les personnes.</td></tr>
+    <tr><td><b>Formateur ou médiateur numérique</b></td><td>Accompagne les entreprises et le public dans l’usage de l’IA.</td></tr>
+    <tr><td><b>Technicien en agriculture de précision</b></td><td>Capteurs, drones, données satellites au service des récoltes.</td></tr>
+    <tr><td><b>Créateur de contenu augmenté</b></td><td>Communication, design et vidéo assistés par l’IA.</td></tr>
+  </tbody>
+</table>
+<div class="scan" data-code="3010" data-kind="nouveau" data-title="Leçon 4.10 · L’IA et l’avenir : métiers et compétences"></div>
+
+<!-- ------------------------------------------------------------ 4.11 -->
+<h2 class="lesson" data-code="3011"><span class="num">4.11</span>Exercices et projet : intelligence artificielle</h2>
+
+<div class="ex"><span class="et">Ex. 1 · Vrai ou faux ?<span class="lvl d">débutant</span></span>
+<ol>
+  <li>L’IA comprend et ressent les choses comme un être humain. <span class="blank"></span></li>
+  <li>Une IA apprend à partir de données. <span class="blank"></span></li>
+  <li>Une réponse d’IA est toujours exacte si elle est bien rédigée. <span class="blank"></span></li>
+  <li>Le filtre anti-spam de la messagerie utilise l’IA. <span class="blank"></span></li>
+  <li>On peut coller sans risque les données de ses clients dans un assistant public. <span class="blank"></span></li>
+  <li>L’IA générale (« forte ») existe déjà. <span class="blank"></span></li>
+</ol></div>
+
+<div class="ex"><span class="et">Ex. 2 · QCM<span class="lvl d">débutant</span></span>
+<ol class="qcm">
+  <li>Que signifie « LLM » ?<ol><li>Logiciel de langue multiple</li><li>Grand modèle de langage</li><li>Lecteur de lettres manuscrites</li></ol></li>
+  <li>Une « hallucination » d’IA, c’est :<ol><li>une panne de l’ordinateur</li><li>une information inventée présentée comme vraie</li><li>une image floue</li></ol></li>
+  <li>Dans la méthode RCTF, le « F » signifie :<ol><li>Fichier</li><li>Fiabilité</li><li>Format</li></ol></li>
+  <li>En quelle année ChatGPT a-t-il été lancé ?<ol><li>1997</li><li>2016</li><li>2022</li></ol></li>
+</ol></div>
+
+<div class="ex"><span class="et">Ex. 3 · Associer<span class="lvl d">débutant</span></span>
+<p>Reliez chaque usage au domaine : (a) diagnostic d’une maladie du mil par photo ; (b) détection d’une fraude au <i>mobile money</i> ; (c) sous-titres automatiques d’un reportage ; (d) quiz de révision personnalisé.<br>Domaines : éducation · agriculture · finance · médias.</p></div>
+
+<div class="ex"><span class="et">Ex. 4 · Améliorer un prompt<span class="lvl i">intermédiaire</span></span>
+<p>Réécrivez ces demandes avec la méthode RCTF : (1) « Fais un exposé sur l’eau. » ; (2) « Écris un message pour mes clients. » ; (3) « Aide-moi en Excel. »</p><div class="lines"></div></div>
+
+<div class="ex"><span class="et">Ex. 5 · Repérer les risques<span class="lvl i">intermédiaire</span></span>
+<p>Awa reçoit un message vocal de « son frère » qui lui demande d’envoyer d’urgence 50 000 F CFA à un nouveau numéro. La voix est très ressemblante. Quels sont les signaux d’alerte ? Que doit-elle faire ?</p><div class="lines"></div></div>
+
+<div class="ex"><span class="et">Ex. 6 · Pratique guidée<span class="lvl i">intermédiaire</span></span>
+<ol>
+  <li>Ouvrez un assistant d’IA et demandez une explication de la leçon 2.7 (les unités de stockage) « pour un élève de 12 ans ».</li>
+  <li>Demandez ensuite 5 questions de quiz, répondez-y et faites-vous corriger.</li>
+  <li>Demandez la même explication en anglais, puis en haoussa. Comparez.</li>
+  <li>Notez dans votre cahier une erreur ou une imprécision éventuelle de l’IA.</li>
+</ol></div>
+
+<div class="ex"><span class="et">Ex. 7 · Vérifier une réponse<span class="lvl a">avancé</span></span>
+<p>Demandez à une IA « les 5 plus grandes villes du Niger avec leur population ». Vérifiez chaque chiffre dans une source officielle (Institut National de la Statistique) et notez les écarts. Que concluez-vous ?</p></div>
+
+<div class="ex"><span class="et">Projet final · Mon assistant de projet<span class="lvl a">avancé</span></span>
+<p>Choisissez un projet réel (créer une petite entreprise, organiser un événement, préparer un exposé). Avec l’aide d’une IA :</p>
+<ol>
+  <li>rédigez une présentation du projet d’une page dans <b>Word</b> ;</li>
+  <li>construisez un budget prévisionnel dans <b>Excel</b>, avec des formules ;</li>
+  <li>créez une affiche ou un logo ;</li>
+  <li>rédigez l’e-mail d’invitation ou de présentation ;</li>
+  <li>rédigez une note d’une demi-page : ce que l’IA a bien fait, ce que vous avez dû corriger, les précautions prises.</li>
+</ol></div>
+<p class="muted" style="font-size:7pt">Les corrigés des exercices 1 à 3 se trouvent en annexe.</p>
+<div class="scan" data-code="3011" data-kind="nouveau" data-title="Leçon 4.11 · Exercices et projet : intelligence artificielle"></div>
+
+</section>
