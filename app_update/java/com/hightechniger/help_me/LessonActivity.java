@@ -21,6 +21,10 @@ import android.widget.VideoView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.hightechniger.help_me.demo.DemoActivity;
+import com.hightechniger.help_me.demo.DemoScene;
+import com.hightechniger.help_me.demo.DemoView;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -75,6 +79,19 @@ public class LessonActivity extends AppCompatActivity {
         String video = lesson.optString("video", "");
         int resId = video.isEmpty() ? 0 : getResources().getIdentifier(video, "raw", getPackageName());
         if (resId != 0) addVideo(resId);
+
+        // Démonstration animée dessinée en code (remplace une vidéo)
+        String demoId = lesson.optString("demo", "");
+        DemoScene scene = demoId.isEmpty() ? null : DemoActivity.create(demoId);
+        if (scene != null) {
+            DemoView dv = new DemoView(this, scene);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.topMargin = dp(12);
+            content.addView(dv, lp);
+            appear(dv);
+            addButton("Voir la démonstration en grand", false, v ->
+                    startActivity(new Intent(this, DemoActivity.class).putExtra(DemoActivity.EXTRA_DEMO, demoId)));
+        }
 
         String resume = lesson.optString("resume", "");
         if (!resume.isEmpty()) {

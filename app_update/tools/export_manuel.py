@@ -18,12 +18,15 @@ CODES = ROOT / "manuel" / "codes-helpme.json"
 OUT = ROOT / "app_update" / "assets"
 
 # Vidéos existantes de l'application (MainActivity8 d'origine)
-VIDEOS = {"1000": "vid7", "2019": "vid1", "2018": "vid2", "2001": "vid3", "2002": "vid4", "2017": "vid5", "2016": "vid6",
+VIDEOS = {"1000": "vid7", "2019": "vid1", "2018": "vid2", "2001": "vid3", "2002": "vid4", "2016": "vid6",
           "1001": "vid8", "2003": "telecharvid9", "2004": "emailvid", "2015": "combinaisonvid", "2005": "caracterevid",
           "1003": "puce", "1004": "bordure", "1006": "ramplacer", "1007": "pagegarde", "1008": "code2018",
           "1009": "filigranevid", "1010": "sectionvid", "1011": "tabetmotpassevid", "1012": "impression",
           "1013": "saisirdonnee", "1014": "copieexcel", "1015": "formuleexcel", "1016": "croiseexcel",
           "2014": "tableauexcel", "1017": "graphiqueexcel", "1018": "protectionetmotsexcel"}
+
+# Démonstrations animées dessinées en code (remplacent une vidéo)
+DEMOS = {"2017": "creer_organiser"}   # ancienne vidéo vid5.mp4
 
 STOP = set("""le la les un une des de du d l et ou en au aux a à pour par sur dans avec sans ce cet cette ces se sa son ses
 leur leurs que qui quoi est sont être avoir plus moins comme ne pas vous votre vos nous on il elle ils elles y
@@ -93,6 +96,7 @@ def main():
                 lessons.append({"code": c["code"], "titre": re.sub(r"^\d+\.\s*", "", title), "partie": part,
                                 "page": c["page"], "resume": first_p[:600], "points_cles": points,
                                 "a_retenir": retenir[:500], "video": VIDEOS.get(c["code"]),
+                                "demo": DEMOS.get(c["code"]),
                                 "statut": c["statut"]})
             for s in subs:
                 body = " ".join(s["texte"]).strip()
@@ -111,7 +115,7 @@ def main():
     (OUT / "lessons.json").write_text(json.dumps(lessons, ensure_ascii=False, indent=1), encoding="utf-8")
     (OUT / "knowledge_manuel.json").write_text(json.dumps(knowledge, ensure_ascii=False, indent=1), encoding="utf-8")
     print(len(lessons), "fiches leçons ;", len(knowledge), "fiches de connaissances ;",
-          sum(1 for l in lessons if l["video"]), "avec vidéo existante")
+          sum(1 for l in lessons if l["video"]), "avec vidéo,", sum(1 for l in lessons if l["demo"]), "avec démonstration animée")
 
 
 if __name__ == "__main__":
