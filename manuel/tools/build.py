@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Construit les PDF du manuel HELP-ME (2e édition).
+"""Construit le manuel HELP-ME (un seul volume, format A5).
 
-Usage : python3 tools/build.py [tome1|tome2|all] [--fast]
+Usage : python3 tools/build.py
 
 Étapes :
- 1. assemble les fichiers src/*.html d'un tome ;
- 2. remplace les blocs <div class="scan" data-code=…> par le code-barres Code 39 ;
+ 1. assemble src/m*.html dans l'ordre ;
+ 2. numérote les chapitres (1., 2.…) et les sous-titres (1.1, 1.2…) comme dans l'original ;
  3. génère le sommaire (2 passes pour les numéros de page) ;
- 4. imprime en PDF avec Chromium (Playwright) ;
- 5. relit chaque page, décode tous les codes-barres et écrit build/codes.json.
+ 4. imprime en PDF avec Chromium ;
+ 5. place chaque code-barres Code 39 à la VERTICALE, EN HAUT, dans le coin extérieur de la page
+    qui contient son contenu (comme dans le fichier original), sans numéro ni texte ;
+ 6. relit tous les codes dans le PDF final et écrit build/codes.json.
 """
 import html
 import io
@@ -19,201 +21,211 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "src"
-BUILD = ROOT / "build"
-ASSETS = ROOT / "assets"
+SRC, BUILD, ASSETS = ROOT / "src", ROOT / "build", ROOT / "assets"
 sys.path.insert(0, str(ROOT / "tools"))
 import code39  # noqa: E402
 
-TOMES = {
-    "tome1": {
-        "title": "Apprendre l’informatique de bureau — Tome 1",
-        "files": ["t1_front.html", "t1_p1.html", "t1_p2.html", "t1_p3.html",
-                  "t1_p4_ia.html", "t1_p5.html", "t1_annexes.html"],
-        "pdf": "HELP-ME_Tome1_Informatique-Windows-Internet-IA_2e-edition.pdf",
-    },
-    "tome2": {
-        "title": "Apprendre l’informatique de bureau — Tome 2",
-        "files": ["t2_front.html", "t2_word.html", "t2_excel.html", "t2_annexes.html"],
-        "pdf": "HELP-ME_Tome2_Word-Excel_2e-edition.pdf",
-    },
-}
-
-PHONE = ('<svg class="phone" viewBox="0 0 26 40"><rect x="1" y="1" width="24" height="38" rx="4" '
-         'fill="none" stroke="currentColor" stroke-width="2"/><rect x="5" y="7" width="16" height="22" rx="1" '
-         'fill="currentColor" opacity=".15"/><path d="M7 14v-4h4M19 14v-4h-4M7 22v4h4M19 22v4h-4" fill="none" '
-         'stroke="currentColor" stroke-width="1.6"/><path d="M8 18h10" stroke="#E0182D" stroke-width="1.4"/>'
-         '<circle cx="13" cy="34" r="1.6" fill="currentColor"/></svg>')
-
-
-def scan_block(code: str, title: str, kind: str) -> str:
-    bars = code39.svg(code, module_mm=0.30, height_mm=8.5, quiet=10)
-    label = {"existant": "Code de la 1re édition, inchangé",
-             "nouveau": "Nouveau code, 2e édition"}[kind]
-    return (
-        f'<div class="scan" data-code="{code}">'
-        f'<span style="color:var(--accent)">{PHONE}</span>'
-        f'<div class="txt"><b>Scannez avec l’application HELP-ME</b>'
-        f'{html.escape(title)}<br><span class="lt">Vidéo, explications et quiz de la leçon · {label}</span></div>'
-        f'<div class="code">{bars}<div class="hr">*{code}*</div></div></div>'
-    )
+FILES = ["m0_front.html", "m1_ordinateur.html", "m2_windows.html", "m3_internet.html", "m4_astuces.html",
+         "m5_word.html", "m6_excel.html", "m7_ia.html", "m9_annexes.html"]
+TITLE = "Apprendre l’informatique de bureau"
+PDF = BUILD / "HELP-ME_Apprendre-l-informatique-de-bureau_Manuel.pdf"
+MM = 72 / 25.4
+# Code-barres : 9 mm de large, ~31 mm de haut, à 3,7 mm du bord et 7 mm du haut (proportions de l'original en A5)
+BC_MODULE_MM, BC_WIDTH_MM, BC_EDGE_MM, BC_TOP_MM, BC_QUIET = 0.27, 9.0, 3.7, 7.0, 10
 
 
 def inline_ill(m):
-    name = m.group(1)
-    p = SRC / "ill" / f"{name}.svg"
-    svg = p.read_text(encoding="utf-8")
+    svg = (SRC / "ill" / f"{m.group(1)}.svg").read_text(encoding="utf-8")
     svg = re.sub(r"<\?xml[^>]*>", "", svg)
     if 'class="' not in svg.split(">")[0]:
         svg = svg.replace("<svg", '<svg class="ill"', 1)
     return svg
 
 
-def assemble(tome: str, toc_pages: dict | None):
-    cfg = TOMES[tome]
-    css = (SRC / "style.css").read_text(encoding="utf-8")
-    body = "\n".join((SRC / f).read_text(encoding="utf-8") for f in cfg["files"] if (SRC / f).exists())
-    body = re.sub(r"\{\{ill:([\w-]+)\}\}", inline_ill, body)
+def number_headings(body):
+    """Numérote h2.lesson (1., 2.…) et h3 (1.1, 1.2…) dans chaque <section class="part">."""
+    def do_section(m):
+        cls, inner = m.group(1), m.group(2)
+        if cls != "part":
+            return m.group(0)
+        n = [0, 0]
 
+        def rep(mm):
+            if mm.group(1):
+                n[0] += 1; n[1] = 0
+                return f'<h2{mm.group(1)}><span class="n">{n[0]}.</span> {mm.group(2)}</h2>'
+            n[1] += 1
+            return f'<h3{mm.group(3)}><span class="n">{n[0]}.{n[1]}</span> {mm.group(4)}</h3>'
+        inner = re.sub(r'<h2((?=[^>]*class="lesson)[^>]*)>(.*?)</h2>|<h3([^>]*)>(.*?)</h3>', rep, inner, flags=re.S)
+        return f'<section class="{cls}">{inner}</section>'
+    return re.sub(r'<section class="([^"]+)">(.*?)</section>', do_section, body, flags=re.S)
+
+
+def assemble(toc_pages):
+    css = (SRC / "style.css").read_text(encoding="utf-8")
+    body = "\n".join((SRC / f).read_text(encoding="utf-8") for f in FILES)
+    body = re.sub(r"\{\{ill:([\w-]+)\}\}", inline_ill, body)
+    body = number_headings(body)
+
+    # Codes-barres : repères invisibles
     codes = []
 
-    def rep_scan(m):
+    def rep_bc(m):
         attrs = dict(re.findall(r'data-(\w+)="([^"]*)"', m.group(0)))
-        code = attrs["code"]
-        kind = attrs.get("kind", "existant")
-        codes.append({"code": code, "titre": attrs.get("title", ""), "statut": kind})
-        return scan_block(code, attrs.get("title", ""), kind)
+        idx = len(codes)
+        codes.append({"code": attrs["code"], "statut": "1re version (conservé)" if attrs.get("orig") else "nouveau", "idx": idx})
+        return f'<span class="marker">§§BC{idx:03d}§§</span>'
+    body = re.sub(r'<span class="bc"[^>]*></span>', rep_bc, body)
 
-    body = re.sub(r'<div class="scan"[^>]*></div>', rep_scan, body)
+    # Sommaire
+    toc, counter = [], [0]
 
-    # Sommaire : parties (h1 dans .opener) et leçons (h2.lesson)
-    toc = []
-    counter = [0]
-
-    def mark(level):
-        def f(m):
+    def mark(level, tag):
+        def f(attrs, inner):
             counter[0] += 1
             tid = f"T{counter[0]:03d}"
-            attrs, inner = m.group(1), m.group(2)
             label = re.sub(r"<[^>]+>", " ", inner)
-            label = re.sub(r"\s+", " ", html.unescape(label)).strip().replace(" ’", "’")
-            code = re.search(r'data-code="(\d+)"', attrs)
+            label = re.sub(r"\s+", " ", html.unescape(label)).strip()
             alt = re.search(r'data-toc="([^"]*)"', attrs)
             if alt:
-                label = alt.group(1)
+                label = html.unescape(alt.group(1))
+            code = re.search(r'data-code="(\d+)"', attrs)
             toc.append({"id": tid, "level": level, "label": label, "code": code.group(1) if code else ""})
-            tagname = "h1" if level == 1 else "h2"
-            return f'<{tagname}{attrs}><span class="marker">§§{tid}§§</span>{inner}</{tagname}>'
+            return f'<{tag}{attrs}><span class="marker">§§{tid}§§</span>{inner}</{tag}>'
         return f
 
-    def any_heading(m):
-        if m.group(1) == "h1":
-            return mark(1)(re.match(r"<h1(.*?)>(.*)</h1>", m.group(0), re.S))
-        return mark(2)(re.match(r"<h2(.*?)>(.*)</h2>", m.group(0), re.S))
-
-    body = re.sub(r'<(h1)\b(?=[^>]*\bdata-part\b)[^>]*>.*?</h1>|<(h2)\b(?=[^>]*class="lesson)[^>]*>.*?</h2>',
-                  lambda m: any_heading(type("M", (), {"group": lambda self, i=0: m.group(0) if i == 0 else ("h1" if m.group(1) else "h2")})()),
-                  body, flags=re.S)
+    def heading(m):
+        if m.group(1):
+            return mark(1, "h1")(m.group(2), m.group(3))
+        return mark(2, "h2")(m.group(5), m.group(6))
+    body = re.sub(r'<(h1)\b((?=[^>]*\bdata-part\b)[^>]*)>(.*?)</h1>|<(h2)\b((?=[^>]*class="lesson)[^>]*)>(.*?)</h2>',
+                  heading, body, flags=re.S)
 
     rows = []
     for t in toc:
         pg = str(toc_pages.get(t["id"], "")) if toc_pages else "000"
         cls = "tp" if t["level"] == 1 else "tl"
-        code = f'<span class="code">{t["code"]}</span>' if t["code"] else ""
         rows.append(f'<div class="{cls}"><span class="lbl">{html.escape(t["label"])}</span>'
-                    f'<span class="dots"></span><span class="pg">{pg}</span>{code}</div>')
+                    f'<span class="dots"></span><span class="pg">{pg}</span></div>')
     body = body.replace("{{TOC}}", '<div class="toc">' + "\n".join(rows) + "</div>")
-    crow = []
-    for t in toc:
-        if t["code"]:
-            pg = str(toc_pages.get(t["id"], "")) if toc_pages else "000"
-            crow.append(f'<tr><td><b>{t["code"]}</b></td><td>{html.escape(t["label"])}</td><td class="c">{pg}</td></tr>')
-    body = body.replace("{{CODES}}", '<table class="compact"><thead><tr><th>Code</th><th>Leçon</th><th class="c">Page</th></tr></thead><tbody>'
-                        + "".join(crow) + "</tbody></table>")
 
-    doc = (f'<!doctype html><html lang="fr"><head><meta charset="utf-8">'
-           f'<title>{cfg["title"]}</title><base href="file://{ASSETS}/">'
-           f'<style>{css}</style></head><body>{body}</body></html>')
-    out = BUILD / f"{tome}.html"
+    doc = (f'<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>{TITLE}</title>'
+           f'<base href="file://{ASSETS}/"><style>{css}</style></head><body>{body}</body></html>')
+    out = BUILD / "manuel.html"
     out.write_text(doc, encoding="utf-8")
     return out, toc, codes
 
 
-def render(html_path: Path, pdf_path: Path):
-    js = f"""
-const {{chromium}} = require('playwright');
-(async () => {{
-  const b = await chromium.launch();
-  const p = await b.newPage();
-  await p.goto('file://{html_path}', {{waitUntil: 'load'}});
-  await p.evaluate(() => document.fonts.ready);
-  await p.pdf({{path: '{pdf_path}', preferCSSPageSize: true, printBackground: true}});
-  await b.close();
-}})();"""
+def render(html_path, pdf_path):
+    js = (f"const {{chromium}}=require('playwright');(async()=>{{const b=await chromium.launch();const p=await b.newPage();"
+          f"await p.goto('file://{html_path}',{{waitUntil:'load'}});await p.evaluate(()=>document.fonts.ready);"
+          f"await p.pdf({{path:'{pdf_path}',preferCSSPageSize:true,printBackground:true}});await b.close();}})();")
     subprocess.run(["node", "-e", js], check=True, stderr=subprocess.DEVNULL)
 
 
-def find_markers(pdf_path: Path):
+def check_overflow(html_path):
+    """Refuse la fabrication si un élément dépasse la largeur utile (Chromium réduirait tout le document)."""
+    js = (f"const {{chromium}}=require('playwright');(async()=>{{const b=await chromium.launch();"
+          f"const p=await b.newPage({{viewport:{{width:438,height:800}}}});await p.emulateMedia({{media:'print'}});"
+          f"await p.goto('file://{html_path}');await p.evaluate(()=>document.fonts.ready);"
+          f"const r=await p.evaluate(()=>{{const W=document.documentElement.clientWidth;const o=[];"
+          f"for(const e of document.querySelectorAll('body *')){{if(e.closest('.opener')||e.closest('svg'))continue;"
+          f"const rc=e.getBoundingClientRect();if(rc.right>W+1)o.push(e.tagName+': '+(e.textContent||'').slice(0,70).replace(/\\s+/g,' '))}}return o}});"
+          f"console.log(JSON.stringify(r));await b.close();}})();")
+    out = subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True).stdout
+    bad = json.loads(out.strip().splitlines()[-1])
+    if bad:
+        print("ERREUR : éléments trop larges (le document serait réduit) :")
+        for b in bad[:10]:
+            print("  -", b)
+        sys.exit(1)
+
+
+def find_markers(pdf_path):
     import pymupdf
     pages = {}
     doc = pymupdf.open(pdf_path)
     for i, page in enumerate(doc):
-        for m in re.findall(r"§§(T\d{3})§§", page.get_text()):
+        for m in re.findall(r"§§((?:T|BC)\d{3})§§", page.get_text()):
             pages.setdefault(m, i + 1)
     return pages, doc.page_count
 
 
-def verify_codes(pdf_path: Path):
+def stamp_barcodes(pdf_path, codes, pages):
+    """Dessine chaque code-barres à la verticale dans le coin supérieur extérieur de sa page."""
+    import pymupdf
+    doc = pymupdf.open(pdf_path)
+    per_page = {}
+    for c in codes:
+        pg = pages.get(f"BC{c['idx']:03d}")
+        c["page"] = pg
+        per_page.setdefault(pg, []).append(c)
+    for pg, lst in per_page.items():
+        page = doc[pg - 1]
+        W = page.rect.width
+        right = pg % 2 == 1                       # page impaire = page de droite = coin droit
+        seen = []
+        for k, c in enumerate(x for x in lst if x["code"] not in seen and not seen.append(x["code"])):
+            seq = code39.modules(c["code"])
+            m = BC_MODULE_MM * MM
+            length = (sum(w for w, _ in seq) + 2 * BC_QUIET) * m
+            w = BC_WIDTH_MM * MM
+            x0 = W - (BC_EDGE_MM * MM) - w if right else BC_EDGE_MM * MM
+            y0 = BC_TOP_MM * MM + k * (length + 3 * MM)
+            shape = page.new_shape()
+            shape.draw_rect(pymupdf.Rect(x0, y0, x0 + w, y0 + length))
+            shape.finish(fill=(1, 1, 1), color=None, width=0)
+            y = y0 + BC_QUIET * m
+            for wd, bar in seq:
+                if bar:
+                    shape.draw_rect(pymupdf.Rect(x0, y, x0 + w, y + wd * m))
+                y += wd * m
+            shape.finish(fill=(0, 0, 0), color=None, width=0)
+            shape.commit()
+    doc.save(pdf_path, incremental=True, encryption=pymupdf.PDF_ENCRYPT_KEEP)
+
+
+def verify(pdf_path, dpi=150):
     import pymupdf
     from PIL import Image
     from pyzbar.pyzbar import ZBarSymbol, decode
-    found = []
+    found = {}
     doc = pymupdf.open(pdf_path)
     for i, page in enumerate(doc):
-        if "§§" not in page.get_text() and "*" not in page.get_text():
-            continue
-        img = Image.open(io.BytesIO(page.get_pixmap(dpi=300).tobytes("png")))
+        clip = pymupdf.Rect(0, 0, page.rect.width, 110 * MM)
+        img = Image.open(io.BytesIO(page.get_pixmap(dpi=dpi, clip=clip).tobytes("png")))
         for d in decode(img, symbols=[ZBarSymbol.CODE39]):
-            found.append({"code": d.data.decode(), "page": i + 1})
+            found.setdefault(d.data.decode(), set()).add(i + 1)
     return found
 
 
-def build(tome: str):
+def main():
     BUILD.mkdir(exist_ok=True)
-    pdf = BUILD / TOMES[tome]["pdf"]
-    h, toc, codes = assemble(tome, None)
-    render(h, pdf)
-    pages, n = find_markers(pdf)
-    h, toc, codes = assemble(tome, pages)
-    render(h, pdf)
-    pages2, n2 = find_markers(pdf)
-    if pages2 != pages:
-        print("  ! pagination modifiée entre les passes, 3e passe")
-        h, toc, codes = assemble(tome, pages2)
-        render(h, pdf)
-    found = verify_codes(pdf)
-    by_code = {}
-    for f in found:
-        by_code.setdefault(f["code"], []).append(f["page"])
-    report = []
+    tmp = BUILD / "_pass.pdf"
+    h, toc, codes = assemble(None)
+    check_overflow(h)
+    render(h, tmp)
+    pages, n = find_markers(tmp)
+    for _ in range(3):
+        h, toc, codes = assemble(pages)
+        render(h, tmp)
+        pages2, n = find_markers(tmp)
+        if pages2 == pages:
+            break
+        pages = pages2
+    stamp_barcodes(tmp, codes, pages)
+    tmp.replace(PDF)
+    found = verify(PDF)
     ok = True
     for c in codes:
-        pg = by_code.get(c["code"], [])
-        if not pg:
+        if c["page"] not in found.get(c["code"], set()):
             ok = False
-        report.append({**c, "pages_pdf": sorted(set(pg))})
-    print(f"{tome}: {n2} pages, {len(codes)} codes déclarés, "
-          f"{len(found)} codes lus dans le PDF -> {'OK' if ok else 'ERREUR'}")
-    for r in report:
-        if not r["pages_pdf"]:
-            print("  ! code non relu :", r["code"], r["titre"])
-    return {"tome": tome, "pdf": pdf.name, "pages": n2, "codes": report,
-            "sommaire": [{**t, "page": pages2.get(t["id"])} for t in toc]}
+            print("  ! code non relu :", c["code"], "page", c["page"])
+    titles = {t["code"]: t["label"] for t in toc if t["code"]}
+    report = [{"code": c["code"], "page": c["page"], "statut": c["statut"], "lecon": titles.get(c["code"], "")} for c in codes]
+    (BUILD / "codes.json").write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"{PDF.name}: {n} pages, {len(codes)} codes placés, {len(found)} codes distincts relus -> {'OK' if ok else 'ERREUR'}")
 
 
 if __name__ == "__main__":
-    which = sys.argv[1] if len(sys.argv) > 1 else "all"
-    tomes = list(TOMES) if which == "all" else [which]
-    results = [build(t) for t in tomes]
-    if which == "all":
-        (BUILD / "codes.json").write_text(json.dumps(results, ensure_ascii=False, indent=1), encoding="utf-8")
+    main()

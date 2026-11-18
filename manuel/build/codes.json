@@ -1,1149 +1,392 @@
 [
  {
-  "tome": "tome1",
-  "pdf": "HELP-ME_Tome1_Informatique-Windows-Internet-IA_2e-edition.pdf",
-  "pages": 166,
-  "codes": [
-   {
-    "code": "2019",
-    "titre": "Exemple : leçon « Allumer et éteindre l’ordinateur »",
-    "statut": "existant",
-    "pages_pdf": [
-     4,
-     32
-    ]
-   },
-   {
-    "code": "2020",
-    "titre": "Leçon 1.1 · Introduction à l’informatique",
-    "statut": "nouveau",
-    "pages_pdf": [
-     15
-    ]
-   },
-   {
-    "code": "2021",
-    "titre": "Leçon 1.2 · Histoire de l’informatique",
-    "statut": "nouveau",
-    "pages_pdf": [
-     20
-    ]
-   },
-   {
-    "code": "2022",
-    "titre": "Leçon 1.3 · L’ordinateur et ses composants",
-    "statut": "nouveau",
-    "pages_pdf": [
-     24
-    ]
-   },
-   {
-    "code": "2023",
-    "titre": "Leçon 1.4 · Souris, clavier et écran",
-    "statut": "nouveau",
-    "pages_pdf": [
-     29
-    ]
-   },
-   {
-    "code": "2019",
-    "titre": "Leçon 1.5 · Allumer, mettre en veille et éteindre l’ordinateur",
-    "statut": "existant",
-    "pages_pdf": [
-     4,
-     32
-    ]
-   },
-   {
-    "code": "2018",
-    "titre": "Leçon 2.1 · Le bureau, les icônes et les raccourcis",
-    "statut": "existant",
-    "pages_pdf": [
-     38
-    ]
-   },
-   {
-    "code": "2001",
-    "titre": "Leçon 2.2 · La barre des tâches",
-    "statut": "existant",
-    "pages_pdf": [
-     42
-    ]
-   },
-   {
-    "code": "2002",
-    "titre": "Leçon 2.3 · Le menu Démarrer et lancer une application",
-    "statut": "existant",
-    "pages_pdf": [
-     46
-    ]
-   },
-   {
-    "code": "2024",
-    "titre": "Leçon 2.4 · Les fenêtres et le multitâche",
-    "statut": "nouveau",
-    "pages_pdf": [
-     49
-    ]
-   },
-   {
-    "code": "2025",
-    "titre": "Leçon 2.5 · L’Explorateur de fichiers, les fichiers et les dossiers",
-    "statut": "nouveau",
-    "pages_pdf": [
-     53
-    ]
-   },
-   {
-    "code": "2026",
-    "titre": "Leçon 2.6 · Paramètres, mises à jour et sécurité de Windows",
-    "statut": "nouveau",
-    "pages_pdf": [
-     56
-    ]
-   },
-   {
-    "code": "2017",
-    "titre": "Leçon 2.7 · Les mots clés de l’informatique",
-    "statut": "existant",
-    "pages_pdf": [
-     61
-    ]
-   },
-   {
-    "code": "2016",
-    "titre": "Leçon 3.1 · Internet, le Web, le navigateur et la connexion",
-    "statut": "existant",
-    "pages_pdf": [
-     67
-    ]
-   },
-   {
-    "code": "2003",
-    "titre": "Leçon 3.2 · Sites Web, recherche et téléchargement",
-    "statut": "existant",
-    "pages_pdf": [
-     71
-    ]
-   },
-   {
-    "code": "2004",
-    "titre": "Leçon 3.3 · La messagerie électronique et Gmail",
-    "statut": "existant",
-    "pages_pdf": [
-     77
-    ]
-   },
-   {
-    "code": "2027",
-    "titre": "Leçon 3.4 · Le cloud : stocker, sauvegarder et partager",
-    "statut": "nouveau",
-    "pages_pdf": [
-     80
-    ]
-   },
-   {
-    "code": "2028",
-    "titre": "Leçon 3.5 · Messagerie instantanée, visioconférence et réseaux sociaux",
-    "statut": "nouveau",
-    "pages_pdf": [
-     83
-    ]
-   },
-   {
-    "code": "2029",
-    "titre": "Leçon 3.6 · Cybersécurité : se protéger en ligne",
-    "statut": "nouveau",
-    "pages_pdf": [
-     88
-    ]
-   },
-   {
-    "code": "3001",
-    "titre": "Leçon 4.1 · Qu’est-ce que l’intelligence artificielle ?",
-    "statut": "nouveau",
-    "pages_pdf": [
-     93
-    ]
-   },
-   {
-    "code": "3002",
-    "titre": "Leçon 4.2 · Brève histoire de l’IA",
-    "statut": "nouveau",
-    "pages_pdf": [
-     96
-    ]
-   },
-   {
-    "code": "3003",
-    "titre": "Leçon 4.3 · Comment fonctionne l’IA ?",
-    "statut": "nouveau",
-    "pages_pdf": [
-     101
-    ]
-   },
-   {
-    "code": "3004",
-    "titre": "Leçon 4.4 · Les outils d’IA aujourd’hui",
-    "statut": "nouveau",
-    "pages_pdf": [
-     105
-    ]
-   },
-   {
-    "code": "3005",
-    "titre": "Leçon 4.5 · Bien dialoguer avec une IA : l’art du prompt",
-    "statut": "nouveau",
-    "pages_pdf": [
-     109
-    ]
-   },
-   {
-    "code": "3006",
-    "titre": "Leçon 4.6 · L’IA au bureau (Copilot, Gemini)",
-    "statut": "nouveau",
-    "pages_pdf": [
-     112
-    ]
-   },
-   {
-    "code": "3007",
-    "titre": "Leçon 4.7 · L’IA dans tous les domaines",
-    "statut": "nouveau",
-    "pages_pdf": [
-     117
-    ]
-   },
-   {
-    "code": "3008",
-    "titre": "Leçon 4.8 · Les limites et les risques de l’IA",
-    "statut": "nouveau",
-    "pages_pdf": [
-     120
-    ]
-   },
-   {
-    "code": "3009",
-    "titre": "Leçon 4.9 · Utiliser l’IA de façon responsable",
-    "statut": "nouveau",
-    "pages_pdf": [
-     123
-    ]
-   },
-   {
-    "code": "3010",
-    "titre": "Leçon 4.10 · L’IA et l’avenir : métiers et compétences",
-    "statut": "nouveau",
-    "pages_pdf": [
-     125
-    ]
-   },
-   {
-    "code": "3011",
-    "titre": "Leçon 4.11 · Exercices et projet : intelligence artificielle",
-    "statut": "nouveau",
-    "pages_pdf": [
-     130
-    ]
-   },
-   {
-    "code": "2015",
-    "titre": "Leçon 5.1 · Les raccourcis clavier indispensables",
-    "statut": "existant",
-    "pages_pdf": [
-     133
-    ]
-   },
-   {
-    "code": "2005",
-    "titre": "Leçon 5.2 · Raccourcis de navigation et caractères spéciaux",
-    "statut": "existant",
-    "pages_pdf": [
-     137
-    ]
-   },
-   {
-    "code": "2030",
-    "titre": "Leçon 5.3 · Taper rapidement au clavier",
-    "statut": "nouveau",
-    "pages_pdf": [
-     139
-    ]
-   },
-   {
-    "code": "2031",
-    "titre": "Leçon 5.4 · Transférer des fichiers : clé USB et téléphone",
-    "statut": "nouveau",
-    "pages_pdf": [
-     142
-    ]
-   },
-   {
-    "code": "2032",
-    "titre": "Leçon 5.5 · Installer et désinstaller une application",
-    "statut": "nouveau",
-    "pages_pdf": [
-     144
-    ]
-   },
-   {
-    "code": "2033",
-    "titre": "Leçon 5.6 · Exercices théoriques (corrigés dans l’application)",
-    "statut": "nouveau",
-    "pages_pdf": [
-     152
-    ]
-   },
-   {
-    "code": "2034",
-    "titre": "Leçon 5.7 · Exercices pratiques (vidéos de démonstration)",
-    "statut": "nouveau",
-    "pages_pdf": [
-     158
-    ]
-   }
-  ],
-  "sommaire": [
-   {
-    "id": "T001",
-    "level": 2,
-    "label": "Comment utiliser ce manuel connecté",
-    "code": "",
-    "page": 3
-   },
-   {
-    "id": "T002",
-    "level": 2,
-    "label": "Préface",
-    "code": "",
-    "page": 6
-   },
-   {
-    "id": "T003",
-    "level": 2,
-    "label": "Sommaire",
-    "code": "",
-    "page": 9
-   },
-   {
-    "id": "T004",
-    "level": 1,
-    "label": "Le traitement automatique de l’information",
-    "code": "",
-    "page": 12
-   },
-   {
-    "id": "T005",
-    "level": 2,
-    "label": "1.1 Introduction à l’informatique",
-    "code": "2020",
-    "page": 13
-   },
-   {
-    "id": "T006",
-    "level": 2,
-    "label": "1.2 Histoire de l’informatique",
-    "code": "2021",
-    "page": 16
-   },
-   {
-    "id": "T007",
-    "level": 2,
-    "label": "1.3 L’ordinateur et ses composants",
-    "code": "2022",
-    "page": 21
-   },
-   {
-    "id": "T008",
-    "level": 2,
-    "label": "1.4 La souris, le clavier et l’écran",
-    "code": "2023",
-    "page": 25
-   },
-   {
-    "id": "T009",
-    "level": 2,
-    "label": "1.5 Allumer, mettre en veille et éteindre",
-    "code": "2019",
-    "page": 30
-   },
-   {
-    "id": "T010",
-    "level": 1,
-    "label": "Le système d’exploitation : les bases de Windows 11",
-    "code": "",
-    "page": 33
-   },
-   {
-    "id": "T011",
-    "level": 2,
-    "label": "2.1 Windows 11 : le bureau, les icônes et les raccourcis",
-    "code": "2018",
-    "page": 34
-   },
-   {
-    "id": "T012",
-    "level": 2,
-    "label": "2.2 La barre des tâches",
-    "code": "2001",
-    "page": 39
-   },
-   {
-    "id": "T013",
-    "level": 2,
-    "label": "2.3 Le menu Démarrer",
-    "code": "2002",
-    "page": 43
-   },
-   {
-    "id": "T014",
-    "level": 2,
-    "label": "2.4 Les fenêtres et le multitâche",
-    "code": "2024",
-    "page": 47
-   },
-   {
-    "id": "T015",
-    "level": 2,
-    "label": "2.5 L’Explorateur de fichiers",
-    "code": "2025",
-    "page": 50
-   },
-   {
-    "id": "T016",
-    "level": 2,
-    "label": "2.6 Paramètres, mises à jour et sécurité",
-    "code": "2026",
-    "page": 54
-   },
-   {
-    "id": "T017",
-    "level": 2,
-    "label": "2.7 Les mots clés de l’informatique",
-    "code": "2017",
-    "page": 57
-   },
-   {
-    "id": "T018",
-    "level": 1,
-    "label": "Usage d’Internet : s’informer, communiquer, partager et se protéger",
-    "code": "",
-    "page": 62
-   },
-   {
-    "id": "T019",
-    "level": 2,
-    "label": "3.1 Internet, le Web et le navigateur",
-    "code": "2016",
-    "page": 63
-   },
-   {
-    "id": "T020",
-    "level": 2,
-    "label": "3.2 Sites Web, recherche et téléchargement",
-    "code": "2003",
-    "page": 68
-   },
-   {
-    "id": "T021",
-    "level": 2,
-    "label": "3.3 La messagerie électronique (e-mail)",
-    "code": "2004",
-    "page": 72
-   },
-   {
-    "id": "T022",
-    "level": 2,
-    "label": "3.4 Le cloud : stocker, sauvegarder et partager",
-    "code": "2027",
-    "page": 78
-   },
-   {
-    "id": "T023",
-    "level": 2,
-    "label": "3.5 Messagerie instantanée, visioconférence et réseaux sociaux",
-    "code": "2028",
-    "page": 81
-   },
-   {
-    "id": "T024",
-    "level": 2,
-    "label": "3.6 Cybersécurité : se protéger en ligne",
-    "code": "2029",
-    "page": 84
-   },
-   {
-    "id": "T025",
-    "level": 1,
-    "label": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
-    "code": "",
-    "page": 89
-   },
-   {
-    "id": "T026",
-    "level": 2,
-    "label": "4.1 Qu’est-ce que l’intelligence artificielle ?",
-    "code": "3001",
-    "page": 90
-   },
-   {
-    "id": "T027",
-    "level": 2,
-    "label": "4.2 Brève histoire de l’intelligence artificielle",
-    "code": "3002",
-    "page": 94
-   },
-   {
-    "id": "T028",
-    "level": 2,
-    "label": "4.3 Comment fonctionne l’IA ?",
-    "code": "3003",
-    "page": 97
-   },
-   {
-    "id": "T029",
-    "level": 2,
-    "label": "4.4 Les outils d’IA aujourd’hui",
-    "code": "3004",
-    "page": 102
-   },
-   {
-    "id": "T030",
-    "level": 2,
-    "label": "4.5 Bien dialoguer avec une IA : l’art du prompt",
-    "code": "3005",
-    "page": 106
-   },
-   {
-    "id": "T031",
-    "level": 2,
-    "label": "4.6 L’IA au bureau",
-    "code": "3006",
-    "page": 110
-   },
-   {
-    "id": "T032",
-    "level": 2,
-    "label": "4.7 L’IA dans tous les domaines",
-    "code": "3007",
-    "page": 113
-   },
-   {
-    "id": "T033",
-    "level": 2,
-    "label": "4.8 Les limites et les risques de l’IA",
-    "code": "3008",
-    "page": 118
-   },
-   {
-    "id": "T034",
-    "level": 2,
-    "label": "4.9 Utiliser l’IA de façon responsable",
-    "code": "3009",
-    "page": 121
-   },
-   {
-    "id": "T035",
-    "level": 2,
-    "label": "4.10 L’IA et l’avenir : métiers et compétences",
-    "code": "3010",
-    "page": 124
-   },
-   {
-    "id": "T036",
-    "level": 2,
-    "label": "4.11 Exercices et projet : intelligence artificielle",
-    "code": "3011",
-    "page": 126
-   },
-   {
-    "id": "T037",
-    "level": 1,
-    "label": "Trucs, astuces et exercices",
-    "code": "",
-    "page": 131
-   },
-   {
-    "id": "T038",
-    "level": 2,
-    "label": "5.1 Les raccourcis clavier indispensables",
-    "code": "2015",
-    "page": 132
-   },
-   {
-    "id": "T039",
-    "level": 2,
-    "label": "5.2 Raccourcis de navigation et caractères spéciaux",
-    "code": "2005",
-    "page": 134
-   },
-   {
-    "id": "T040",
-    "level": 2,
-    "label": "5.3 Taper rapidement au clavier",
-    "code": "2030",
-    "page": 138
-   },
-   {
-    "id": "T041",
-    "level": 2,
-    "label": "5.4 Transférer des fichiers : clé USB et téléphone",
-    "code": "2031",
-    "page": 140
-   },
-   {
-    "id": "T042",
-    "level": 2,
-    "label": "5.5 Installer et désinstaller une application",
-    "code": "2032",
-    "page": 143
-   },
-   {
-    "id": "T043",
-    "level": 2,
-    "label": "5.6 Exercices théoriques",
-    "code": "2033",
-    "page": 145
-   },
-   {
-    "id": "T044",
-    "level": 2,
-    "label": "5.7 Exercices pratiques",
-    "code": "2034",
-    "page": 153
-   },
-   {
-    "id": "T045",
-    "level": 1,
-    "label": "Corrigés, glossaire et index des codes",
-    "code": "",
-    "page": 159
-   },
-   {
-    "id": "T046",
-    "level": 2,
-    "label": "A Corrigés des exercices théoriques",
-    "code": "",
-    "page": 160
-   },
-   {
-    "id": "T047",
-    "level": 2,
-    "label": "B Glossaire",
-    "code": "",
-    "page": 162
-   },
-   {
-    "id": "T048",
-    "level": 2,
-    "label": "C Index des codes HELP-ME",
-    "code": "",
-    "page": 164
-   }
-  ]
+  "code": "2020",
+  "page": 12,
+  "statut": "nouveau",
+  "lecon": "1. Introduction à l’informatique"
  },
  {
-  "tome": "tome2",
-  "pdf": "HELP-ME_Tome2_Word-Excel_2e-edition.pdf",
-  "pages": 101,
-  "codes": [
-   {
-    "code": "1000",
-    "titre": "Leçon W1 · Découvrir Word : la fenêtre, la saisie, la sélection, annuler et rétablir",
-    "statut": "existant",
-    "pages_pdf": [
-     13
-    ]
-   },
-   {
-    "code": "1001",
-    "titre": "Leçon W2 · Police, paragraphes, retraits et interlignes",
-    "statut": "existant",
-    "pages_pdf": [
-     17
-    ]
-   },
-   {
-    "code": "1003",
-    "titre": "Leçon W3 · Les listes à puces et numérotées",
-    "statut": "existant",
-    "pages_pdf": [
-     19
-    ]
-   },
-   {
-    "code": "1004",
-    "titre": "Leçon W4 · Les bordures et les trames",
-    "statut": "existant",
-    "pages_pdf": [
-     21
-    ]
-   },
-   {
-    "code": "1006",
-    "titre": "Leçon W5 · Rechercher, remplacer et enregistrer",
-    "statut": "existant",
-    "pages_pdf": [
-     24
-    ]
-   },
-   {
-    "code": "1007",
-    "titre": "Leçon W6 · Insérer des pages et des tableaux",
-    "statut": "existant",
-    "pages_pdf": [
-     27
-    ]
-   },
-   {
-    "code": "1008",
-    "titre": "Leçon W7 · Insérer des images, des formes et des illustrations",
-    "statut": "existant",
-    "pages_pdf": [
-     30,
-     34
-    ]
-   },
-   {
-    "code": "1008",
-    "titre": "Leçon W8 · En-têtes, pieds de page, zones de texte, équations et symboles",
-    "statut": "existant",
-    "pages_pdf": [
-     30,
-     34
-    ]
-   },
-   {
-    "code": "1009",
-    "titre": "Leçon W9 · Thèmes, filigrane et couleur de page",
-    "statut": "existant",
-    "pages_pdf": [
-     36
-    ]
-   },
-   {
-    "code": "1010",
-    "titre": "Leçon W10 · Marges, orientation, taille, colonnes et sauts",
-    "statut": "existant",
-    "pages_pdf": [
-     38
-    ]
-   },
-   {
-    "code": "1011",
-    "titre": "Leçon W11 · Les styles et la table des matières",
-    "statut": "existant",
-    "pages_pdf": [
-     41,
-     43
-    ]
-   },
-   {
-    "code": "1011",
-    "titre": "Leçon W12 · Protéger un document",
-    "statut": "existant",
-    "pages_pdf": [
-     41,
-     43
-    ]
-   },
-   {
-    "code": "1012",
-    "titre": "Leçon W13 · Imprimer et exporter en PDF",
-    "statut": "existant",
-    "pages_pdf": [
-     45
-    ]
-   },
-   {
-    "code": "1019",
-    "titre": "Leçon W14 · Réviser et collaborer",
-    "statut": "nouveau",
-    "pages_pdf": [
-     47
-    ]
-   },
-   {
-    "code": "1020",
-    "titre": "Leçon W15 · Le publipostage",
-    "statut": "nouveau",
-    "pages_pdf": [
-     49
-    ]
-   },
-   {
-    "code": "1021",
-    "titre": "Leçon W16 · L’intelligence artificielle dans Word",
-    "statut": "nouveau",
-    "pages_pdf": [
-     51
-    ]
-   },
-   {
-    "code": "1022",
-    "titre": "Leçon W17 · Exercices Word (démonstrations vidéo)",
-    "statut": "nouveau",
-    "pages_pdf": [
-     56
-    ]
-   },
-   {
-    "code": "1013",
-    "titre": "Leçon X1 · Découvrir Excel : classeur, cellules et sélection",
-    "statut": "existant",
-    "pages_pdf": [
-     62
-    ]
-   },
-   {
-    "code": "1014",
-    "titre": "Leçon X2 · Recopier et mettre en forme les données",
-    "statut": "existant",
-    "pages_pdf": [
-     66
-    ]
-   },
-   {
-    "code": "1015",
-    "titre": "Leçon X3 · Les formules et les fonctions essentielles",
-    "statut": "existant",
-    "pages_pdf": [
-     70
-    ]
-   },
-   {
-    "code": "1023",
-    "titre": "Leçon X4 · Références relatives et absolues",
-    "statut": "nouveau",
-    "pages_pdf": [
-     72
-    ]
-   },
-   {
-    "code": "1024",
-    "titre": "Leçon X5 · Trier, filtrer et mise en forme conditionnelle",
-    "statut": "nouveau",
-    "pages_pdf": [
-     75
-    ]
-   },
-   {
-    "code": "1025",
-    "titre": "Leçon X6 · Les fonctions utiles au quotidien",
-    "statut": "nouveau",
-    "pages_pdf": [
-     78
-    ]
-   },
-   {
-    "code": "1016",
-    "titre": "Leçon X7 · Les tableaux croisés dynamiques",
-    "statut": "existant",
-    "pages_pdf": [
-     80
-    ]
-   },
-   {
-    "code": "2014",
-    "titre": "Leçon X8 · Les tableaux Excel",
-    "statut": "existant",
-    "pages_pdf": [
-     82
-    ]
-   },
-   {
-    "code": "1017",
-    "titre": "Leçon X9 · Les graphiques",
-    "statut": "existant",
-    "pages_pdf": [
-     85
-    ]
-   },
-   {
-    "code": "1018",
-    "titre": "Leçon X10 · Imprimer et protéger un classeur",
-    "statut": "existant",
-    "pages_pdf": [
-     88
-    ]
-   },
-   {
-    "code": "1026",
-    "titre": "Leçon X11 · L’intelligence artificielle dans Excel",
-    "statut": "nouveau",
-    "pages_pdf": [
-     90
-    ]
-   },
-   {
-    "code": "1027",
-    "titre": "Leçon X12 · Exercices Excel (démonstrations vidéo)",
-    "statut": "nouveau",
-    "pages_pdf": [
-     95
-    ]
-   }
-  ],
-  "sommaire": [
-   {
-    "id": "T001",
-    "level": 2,
-    "label": "Comment utiliser ce manuel connecté",
-    "code": "",
-    "page": 3
-   },
-   {
-    "id": "T002",
-    "level": 2,
-    "label": "Sommaire",
-    "code": "",
-    "page": 5
-   },
-   {
-    "id": "T003",
-    "level": 1,
-    "label": "Microsoft Word : le traitement de texte",
-    "code": "",
-    "page": 7
-   },
-   {
-    "id": "T004",
-    "level": 2,
-    "label": "W1 Découvrir Word : la fenêtre, la saisie et la sélection",
-    "code": "1000",
-    "page": 8
-   },
-   {
-    "id": "T005",
-    "level": 2,
-    "label": "W2 Mettre en forme les caractères et les paragraphes",
-    "code": "1001",
-    "page": 14
-   },
-   {
-    "id": "T006",
-    "level": 2,
-    "label": "W3 Les listes à puces et numérotées",
-    "code": "1003",
-    "page": 18
-   },
-   {
-    "id": "T007",
-    "level": 2,
-    "label": "W4 Les bordures et les trames",
-    "code": "1004",
-    "page": 20
-   },
-   {
-    "id": "T008",
-    "level": 2,
-    "label": "W5 Rechercher, remplacer et enregistrer",
-    "code": "1006",
-    "page": 22
-   },
-   {
-    "id": "T009",
-    "level": 2,
-    "label": "W6 Insérer des pages et des tableaux",
-    "code": "1007",
-    "page": 25
-   },
-   {
-    "id": "T010",
-    "level": 2,
-    "label": "W7 Insérer des images, des formes et des illustrations",
-    "code": "1008",
-    "page": 28
-   },
-   {
-    "id": "T011",
-    "level": 2,
-    "label": "W8 En-têtes, pieds de page, zones de texte et symboles",
-    "code": "1008",
-    "page": 31
-   },
-   {
-    "id": "T012",
-    "level": 2,
-    "label": "W9 La création : thèmes, filigrane et couleur de page",
-    "code": "1009",
-    "page": 35
-   },
-   {
-    "id": "T013",
-    "level": 2,
-    "label": "W10 La mise en page : marges, orientation, colonnes et sauts",
-    "code": "1010",
-    "page": 37
-   },
-   {
-    "id": "T014",
-    "level": 2,
-    "label": "W11 Les styles et la table des matières",
-    "code": "1011",
-    "page": 39
-   },
-   {
-    "id": "T015",
-    "level": 2,
-    "label": "W12 Protéger un document",
-    "code": "1011",
-    "page": 42
-   },
-   {
-    "id": "T016",
-    "level": 2,
-    "label": "W13 Imprimer et exporter en PDF",
-    "code": "1012",
-    "page": 44
-   },
-   {
-    "id": "T017",
-    "level": 2,
-    "label": "W14 Réviser et collaborer",
-    "code": "1019",
-    "page": 46
-   },
-   {
-    "id": "T018",
-    "level": 2,
-    "label": "W15 Le publipostage",
-    "code": "1020",
-    "page": 48
-   },
-   {
-    "id": "T019",
-    "level": 2,
-    "label": "W16 L’intelligence artificielle dans Word",
-    "code": "1021",
-    "page": 50
-   },
-   {
-    "id": "T020",
-    "level": 2,
-    "label": "W17 Exercices Word",
-    "code": "1022",
-    "page": 52
-   },
-   {
-    "id": "T021",
-    "level": 1,
-    "label": "Microsoft Excel : le tableur",
-    "code": "",
-    "page": 57
-   },
-   {
-    "id": "T022",
-    "level": 2,
-    "label": "X1 Découvrir Excel : classeur, cellules et sélection",
-    "code": "1013",
-    "page": 58
-   },
-   {
-    "id": "T023",
-    "level": 2,
-    "label": "X2 Recopier et mettre en forme les données",
-    "code": "1014",
-    "page": 63
-   },
-   {
-    "id": "T024",
-    "level": 2,
-    "label": "X3 Les formules et les fonctions essentielles",
-    "code": "1015",
-    "page": 67
-   },
-   {
-    "id": "T025",
-    "level": 2,
-    "label": "X4 Recopier des formules : références relatives et absolues",
-    "code": "1023",
-    "page": 71
-   },
-   {
-    "id": "T026",
-    "level": 2,
-    "label": "X5 Trier, filtrer et mettre en évidence",
-    "code": "1024",
-    "page": 73
-   },
-   {
-    "id": "T027",
-    "level": 2,
-    "label": "X6 Les fonctions utiles au quotidien",
-    "code": "1025",
-    "page": 76
-   },
-   {
-    "id": "T028",
-    "level": 2,
-    "label": "X7 Les tableaux croisés dynamiques",
-    "code": "1016",
-    "page": 79
-   },
-   {
-    "id": "T029",
-    "level": 2,
-    "label": "X8 Les tableaux Excel",
-    "code": "2014",
-    "page": 81
-   },
-   {
-    "id": "T030",
-    "level": 2,
-    "label": "X9 Les graphiques",
-    "code": "1017",
-    "page": 83
-   },
-   {
-    "id": "T031",
-    "level": 2,
-    "label": "X10 Imprimer et protéger un classeur",
-    "code": "1018",
-    "page": 86
-   },
-   {
-    "id": "T032",
-    "level": 2,
-    "label": "X11 L’intelligence artificielle dans Excel",
-    "code": "1026",
-    "page": 89
-   },
-   {
-    "id": "T033",
-    "level": 2,
-    "label": "X12 Exercices Excel",
-    "code": "1027",
-    "page": 91
-   },
-   {
-    "id": "T034",
-    "level": 1,
-    "label": "Raccourcis, solutions et index des codes",
-    "code": "",
-    "page": 96
-   },
-   {
-    "id": "T035",
-    "level": 2,
-    "label": "A Les raccourcis de Word et d’Excel",
-    "code": "",
-    "page": 97
-   },
-   {
-    "id": "T036",
-    "level": 2,
-    "label": "B Solutions des principales formules",
-    "code": "",
-    "page": 99
-   },
-   {
-    "id": "T037",
-    "level": 2,
-    "label": "C Index des codes HELP-ME",
-    "code": "",
-    "page": 100
-   }
-  ]
+  "code": "2021",
+  "page": 17,
+  "statut": "nouveau",
+  "lecon": "2. Histoire de l’informatique"
+ },
+ {
+  "code": "2022",
+  "page": 19,
+  "statut": "nouveau",
+  "lecon": "3. L’ordinateur et ses composants"
+ },
+ {
+  "code": "2023",
+  "page": 23,
+  "statut": "nouveau",
+  "lecon": "4. La souris, le clavier et l’écran"
+ },
+ {
+  "code": "2019",
+  "page": 24,
+  "statut": "1re version (conservé)",
+  "lecon": "5. Allumer, mettre en veille et éteindre"
+ },
+ {
+  "code": "2018",
+  "page": 29,
+  "statut": "1re version (conservé)",
+  "lecon": "1. Windows 11 : le bureau, les icônes et les raccourcis"
+ },
+ {
+  "code": "2001",
+  "page": 32,
+  "statut": "1re version (conservé)",
+  "lecon": "2. La barre des tâches"
+ },
+ {
+  "code": "2002",
+  "page": 34,
+  "statut": "1re version (conservé)",
+  "lecon": "3. Le menu Démarrer"
+ },
+ {
+  "code": "2024",
+  "page": 36,
+  "statut": "nouveau",
+  "lecon": "4. Les fenêtres et le multitâche"
+ },
+ {
+  "code": "2025",
+  "page": 39,
+  "statut": "nouveau",
+  "lecon": "5. L’Explorateur de fichiers"
+ },
+ {
+  "code": "2026",
+  "page": 41,
+  "statut": "nouveau",
+  "lecon": "6. Paramètres, mises à jour et sécurité"
+ },
+ {
+  "code": "2017",
+  "page": 43,
+  "statut": "1re version (conservé)",
+  "lecon": "7. Les mots clés de l’informatique"
+ },
+ {
+  "code": "2016",
+  "page": 49,
+  "statut": "1re version (conservé)",
+  "lecon": "1. Internet, le Web et le navigateur"
+ },
+ {
+  "code": "2003",
+  "page": 53,
+  "statut": "1re version (conservé)",
+  "lecon": "2. Sites Web, recherche et téléchargement"
+ },
+ {
+  "code": "2004",
+  "page": 58,
+  "statut": "1re version (conservé)",
+  "lecon": "3. La messagerie électronique (e-mail)"
+ },
+ {
+  "code": "2027",
+  "page": 61,
+  "statut": "nouveau",
+  "lecon": "4. Le cloud : stocker, sauvegarder et partager"
+ },
+ {
+  "code": "2028",
+  "page": 63,
+  "statut": "nouveau",
+  "lecon": "5. Messagerie instantanée, visioconférence et réseaux sociaux"
+ },
+ {
+  "code": "2029",
+  "page": 67,
+  "statut": "nouveau",
+  "lecon": "6. Cybersécurité : se protéger en ligne"
+ },
+ {
+  "code": "2015",
+  "page": 69,
+  "statut": "1re version (conservé)",
+  "lecon": "1. Les raccourcis clavier indispensables"
+ },
+ {
+  "code": "2005",
+  "page": 73,
+  "statut": "1re version (conservé)",
+  "lecon": "2. Raccourcis de navigation et caractères spéciaux"
+ },
+ {
+  "code": "2030",
+  "page": 76,
+  "statut": "nouveau",
+  "lecon": "3. Taper rapidement au clavier"
+ },
+ {
+  "code": "2031",
+  "page": 78,
+  "statut": "nouveau",
+  "lecon": "4. Transférer des fichiers : clé USB et téléphone"
+ },
+ {
+  "code": "2032",
+  "page": 80,
+  "statut": "nouveau",
+  "lecon": "5. Installer et désinstaller une application"
+ },
+ {
+  "code": "2033",
+  "page": 87,
+  "statut": "nouveau",
+  "lecon": "6. Exercices théoriques"
+ },
+ {
+  "code": "2034",
+  "page": 91,
+  "statut": "nouveau",
+  "lecon": "7. Exercices pratiques"
+ },
+ {
+  "code": "1000",
+  "page": 97,
+  "statut": "1re version (conservé)",
+  "lecon": "1. Découvrir Word : la fenêtre, la saisie et la sélection"
+ },
+ {
+  "code": "1001",
+  "page": 99,
+  "statut": "1re version (conservé)",
+  "lecon": "2. Mettre en forme les caractères et les paragraphes"
+ },
+ {
+  "code": "1003",
+  "page": 101,
+  "statut": "1re version (conservé)",
+  "lecon": "3. Les listes à puces et numérotées"
+ },
+ {
+  "code": "1004",
+  "page": 102,
+  "statut": "1re version (conservé)",
+  "lecon": "4. Les bordures et les trames"
+ },
+ {
+  "code": "1006",
+  "page": 103,
+  "statut": "1re version (conservé)",
+  "lecon": "5. Rechercher, remplacer et enregistrer"
+ },
+ {
+  "code": "1007",
+  "page": 106,
+  "statut": "1re version (conservé)",
+  "lecon": "6. Insérer des pages et des tableaux"
+ },
+ {
+  "code": "1008",
+  "page": 109,
+  "statut": "1re version (conservé)",
+  "lecon": "8. En-têtes, pieds de page, zones de texte et symboles"
+ },
+ {
+  "code": "1008",
+  "page": 111,
+  "statut": "1re version (conservé)",
+  "lecon": "8. En-têtes, pieds de page, zones de texte et symboles"
+ },
+ {
+  "code": "1009",
+  "page": 113,
+  "statut": "1re version (conservé)",
+  "lecon": "9. La création : thèmes, filigrane et couleur de page"
+ },
+ {
+  "code": "1010",
+  "page": 115,
+  "statut": "1re version (conservé)",
+  "lecon": "10. La mise en page : marges, orientation, colonnes et sauts"
+ },
+ {
+  "code": "1011",
+  "page": 117,
+  "statut": "1re version (conservé)",
+  "lecon": "12. Protéger un document"
+ },
+ {
+  "code": "1011",
+  "page": 118,
+  "statut": "1re version (conservé)",
+  "lecon": "12. Protéger un document"
+ },
+ {
+  "code": "1012",
+  "page": 120,
+  "statut": "1re version (conservé)",
+  "lecon": "13. Imprimer et exporter en PDF"
+ },
+ {
+  "code": "1019",
+  "page": 122,
+  "statut": "nouveau",
+  "lecon": "14. Réviser et collaborer"
+ },
+ {
+  "code": "1020",
+  "page": 123,
+  "statut": "nouveau",
+  "lecon": "15. Le publipostage"
+ },
+ {
+  "code": "1021",
+  "page": 124,
+  "statut": "nouveau",
+  "lecon": "16. L’intelligence artificielle dans Word"
+ },
+ {
+  "code": "1022",
+  "page": 127,
+  "statut": "nouveau",
+  "lecon": "17. Exercices Word"
+ },
+ {
+  "code": "1013",
+  "page": 132,
+  "statut": "1re version (conservé)",
+  "lecon": "1. Découvrir Excel : classeur, cellules et sélection"
+ },
+ {
+  "code": "1014",
+  "page": 135,
+  "statut": "1re version (conservé)",
+  "lecon": "2. Recopier et mettre en forme les données"
+ },
+ {
+  "code": "1015",
+  "page": 138,
+  "statut": "1re version (conservé)",
+  "lecon": "3. Les formules et les fonctions essentielles"
+ },
+ {
+  "code": "1023",
+  "page": 140,
+  "statut": "nouveau",
+  "lecon": "4. Recopier des formules : références relatives et absolues"
+ },
+ {
+  "code": "1024",
+  "page": 142,
+  "statut": "nouveau",
+  "lecon": "5. Trier, filtrer et mettre en évidence"
+ },
+ {
+  "code": "1025",
+  "page": 144,
+  "statut": "nouveau",
+  "lecon": "6. Les fonctions utiles au quotidien"
+ },
+ {
+  "code": "1016",
+  "page": 146,
+  "statut": "1re version (conservé)",
+  "lecon": "7. Les tableaux croisés dynamiques"
+ },
+ {
+  "code": "2014",
+  "page": 147,
+  "statut": "1re version (conservé)",
+  "lecon": "8. Les tableaux Excel"
+ },
+ {
+  "code": "1017",
+  "page": 149,
+  "statut": "1re version (conservé)",
+  "lecon": "9. Les graphiques"
+ },
+ {
+  "code": "1018",
+  "page": 150,
+  "statut": "1re version (conservé)",
+  "lecon": "10. Imprimer et protéger un classeur"
+ },
+ {
+  "code": "1026",
+  "page": 153,
+  "statut": "nouveau",
+  "lecon": "11. L’intelligence artificielle dans Excel"
+ },
+ {
+  "code": "1027",
+  "page": 155,
+  "statut": "nouveau",
+  "lecon": "12. Exercices Excel"
+ },
+ {
+  "code": "3001",
+  "page": 159,
+  "statut": "nouveau",
+  "lecon": "1. Qu’est-ce que l’intelligence artificielle ?"
+ },
+ {
+  "code": "3002",
+  "page": 161,
+  "statut": "nouveau",
+  "lecon": "2. Brève histoire de l’intelligence artificielle"
+ },
+ {
+  "code": "3003",
+  "page": 164,
+  "statut": "nouveau",
+  "lecon": "3. Comment fonctionne l’IA ?"
+ },
+ {
+  "code": "3004",
+  "page": 168,
+  "statut": "nouveau",
+  "lecon": "4. Les outils d’IA aujourd’hui"
+ },
+ {
+  "code": "3005",
+  "page": 171,
+  "statut": "nouveau",
+  "lecon": "5. Bien dialoguer avec une IA : l’art du prompt"
+ },
+ {
+  "code": "3006",
+  "page": 173,
+  "statut": "nouveau",
+  "lecon": "6. L’IA au bureau"
+ },
+ {
+  "code": "3007",
+  "page": 177,
+  "statut": "nouveau",
+  "lecon": "7. L’IA dans tous les domaines"
+ },
+ {
+  "code": "3008",
+  "page": 179,
+  "statut": "nouveau",
+  "lecon": "8. Les limites et les risques de l’IA"
+ },
+ {
+  "code": "3009",
+  "page": 181,
+  "statut": "nouveau",
+  "lecon": "9. Utiliser l’IA de façon responsable"
+ },
+ {
+  "code": "3010",
+  "page": 183,
+  "statut": "nouveau",
+  "lecon": "10. L’IA et l’avenir : métiers et compétences"
+ },
+ {
+  "code": "3011",
+  "page": 187,
+  "statut": "nouveau",
+  "lecon": "11. Exercices et projet : intelligence artificielle"
  }
 ]

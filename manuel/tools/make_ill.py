@@ -5,10 +5,15 @@ from pathlib import Path
 OUT = Path(__file__).resolve().parent.parent / "src" / "ill"
 OUT.mkdir(parents=True, exist_ok=True)
 F = 'font-family="Inter, sans-serif"'
-BLUE, GREEN, RED, AMBER, AI, INK, MUTED = "#1F5FA8", "#18A04A", "#E0182D", "#D97706", "#6D35D6", "#1C2433", "#5B6678"
+BLUE, GREEN, RED, AMBER, AI, INK, MUTED = "#1F4D78", "#5B9BD5", "#E00000", "#2E74B5", "#2E74B5", "#1C2433", "#595959"
+
+
+import re as _re
+_EMO = _re.compile('[\U0001F300-\U0001FAFF\u2600-\u27BF\u2B50\uFE0F]')
 
 
 def save(name, w, h, body):
+    body = _EMO.sub('', body)
     (OUT / f"{name}.svg").write_text(
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="100%" {F}>{body}</svg>',
         encoding="utf-8")
@@ -34,7 +39,7 @@ def keyboard():
     ]
     col = {"k": ("#F4F6F9", INK), "n": ("#F4F6F9", INK), "fn": ("#E2E8F0", MUTED), "esc": (RED, "#fff"),
            "del": ("#F8C9CF", "#9F1020"), "bk": ("#F8C9CF", "#9F1020"), "ent": (GREEN, "#fff"),
-           "caps": ("#B45309", "#fff"), "shift": ("#FBBF24", INK), "mod": ("#DDD6FE", "#4B21A6"),
+           "caps": ("#B45309", "#fff"), "shift": ("#FBBF24", INK), "mod": ("#BDD7EE", "#1F4D78"),
            "win": (BLUE, "#fff"), "sp": ("#BFDBFE", BLUE), "arr": ("#99F6E4", "#0F766E")}
     g = []
     y = 4
@@ -282,8 +287,8 @@ def win11_start():
          f'<text x="{x + 13}" y="{y + 13}" font-size="3.6" fill="#64748B">⌕  Rechercher des applications, des paramètres et des documents</text>',
          f'<text x="{x + 10}" y="{y + 25}" font-size="4.2" font-weight="700" fill="#1C2433">Épinglé</text>',
          f'<rect x="{x + w - 36}" y="{y + 20.5}" width="26" height="6" rx="1.5" fill="#E2E8F0"/><text x="{x + w - 23}" y="{y + 24.8}" font-size="3" text-anchor="middle" fill="#1C2433">Toutes ›</text>']
-    apps = [("#0E8A7E", "e", "Edge"), ("#2B579A", "W", "Word"), ("#1D6F42", "X", "Excel"), ("#C43E1C", "P", "PowerPoint"), ("#0F6CBD", "O", "Outlook"), ("#6D35D6", "✦", "Copilot"),
-            ("#F2B01E", "▬", "Explorateur"), ("#5B6678", "⚙", "Paramètres"), ("#0B6CD8", "▤", "Store"), ("#E0182D", "▶", "Médias"), ("#18A04A", "◔", "Calculatrice"), ("#0EA5E9", "✎", "Paint")]
+    apps = [("#0E8A7E", "e", "Edge"), ("#2B579A", "W", "Word"), ("#1D6F42", "X", "Excel"), ("#C43E1C", "P", "PowerPoint"), ("#0F6CBD", "O", "Outlook"), ("#2E74B5", "✦", "Copilot"),
+            ("#F2B01E", "▬", "Explorateur"), ("#5B6678", "⚙", "Paramètres"), ("#0B6CD8", "▤", "Store"), ("#E0182D", "▶", "Médias"), ("#5B9BD5", "◔", "Calculatrice"), ("#0EA5E9", "✎", "Paint")]
     for i, (c, gl, lab) in enumerate(apps):
         cx = x + 13 + (i % 6) * 22.5
         cy = y + 31 + (i // 6) * 19
@@ -332,7 +337,7 @@ def win11_explorer():
             g.append(f'<rect x="{x + 2}" y="{ty - 4}" width="42" height="5.6" rx="1.2" fill="#DCE8F8"/>')
         g.append(f'<text x="{x + 4}" y="{ty}" font-size="3.2" fill="#1C2433">{t}</text>')
     items = [("#F2B01E", "▬", "Exercices"), ("#F2B01E", "▬", "Factures"), ("#F2B01E", "▬", "Photos"), ("#2B579A", "W", "Lettre.docx"),
-             ("#1D6F42", "X", "Notes.xlsx"), ("#E0182D", "▤", "CV.pdf"), ("#0EA5E9", "▨", "Logo.png"), ("#6D35D6", "▶", "Cours.mp4")]
+             ("#1D6F42", "X", "Notes.xlsx"), ("#E0182D", "▤", "CV.pdf"), ("#0EA5E9", "▨", "Logo.png"), ("#2E74B5", "▶", "Cours.mp4")]
     for i, (c, gl, lab) in enumerate(items):
         ix = x + 54 + (i % 4) * 35
         iy = y + 33 + (i // 4) * 30
@@ -517,9 +522,9 @@ if __name__ == "__main__":
 # ================================================================== INTELLIGENCE ARTIFICIELLE
 def ai_nested():
     W, H = 200, 104
-    rings = [(100, 54, 96, 50, "#EDE7FB", AI, "Intelligence artificielle", "Machines qui imitent des capacités humaines", 12),
-             (100, 62, 74, 40, "#DCCFF8", "#5B2BB8", "Apprentissage automatique", "Apprend à partir d’exemples (données)", 30),
-             (100, 70, 52, 30, "#C4AEF2", "#4B21A6", "Apprentissage profond", "Réseaux de neurones à nombreuses couches", 47),
+    rings = [(100, 54, 96, 50, "#DEEAF6", AI, "Intelligence artificielle", "Machines qui imitent des capacités humaines", 12),
+             (100, 62, 74, 40, "#BDD7EE", "#1F4D78", "Apprentissage automatique", "Apprend à partir d’exemples (données)", 30),
+             (100, 70, 52, 30, "#9DC3E6", "#1F4D78", "Apprentissage profond", "Réseaux de neurones à nombreuses couches", 47),
              (100, 79, 30, 19, AI, "#fff", "IA générative", "Crée textes, images, sons", 75)]
     g = []
     for cx, cy, rx, ry, fill, tc, t, s, ty in rings:
@@ -534,7 +539,7 @@ def ai_learn():
     g = [arrowdefs("a6", AI)]
     steps = [("Données", "Milliers d’exemples\n(photos de feuilles\nsaines ou malades)", BLUE),
              ("Entraînement", "L’algorithme ajuste\nses paramètres\npour réduire l’erreur", AI),
-             ("Modèle", "Le « savoir »\nappris, enregistré\ndans un fichier", "#4B21A6"),
+             ("Modèle", "Le « savoir »\nappris, enregistré\ndans un fichier", "#1F4D78"),
              ("Prédiction", "Nouvelle photo :\n« mildiou, 94 % »", GREEN)]
     for i, (t, s, c) in enumerate(steps):
         x = 3 + i * 50
@@ -585,7 +590,7 @@ def next_token():
         g.append(f'<rect x="{x}" y="6" width="{ww}" height="10" rx="2" fill="#EEF2F7" stroke="#CBD5E1" stroke-width=".4"/><text x="{x + ww / 2}" y="12.8" font-size="4.4" text-anchor="middle" fill="{INK}">{w}</text>')
         x += ww + 2
     g.append(f'<rect x="{x}" y="6" width="22" height="10" rx="2" fill="{AI}"/><text x="{x + 11}" y="12.8" font-size="4.4" text-anchor="middle" fill="#fff" font-weight="800">?</text>')
-    cands = [("Niamey", .92, AI), ("une", .04, "#A78BFA"), ("située", .02, "#C4B5FD"), ("…", .02, "#DDD6FE")]
+    cands = [("Niamey", .92, AI), ("une", .04, "#5B9BD5"), ("située", .02, "#9DC3E6"), ("…", .02, "#BDD7EE")]
     for i, (w, p, c) in enumerate(cands):
         y = 24 + i * 8
         g.append(f'<text x="{x - 2}" y="{y + 4.4}" font-size="4" text-anchor="end" fill="{INK}">{w}</text>'
@@ -598,12 +603,12 @@ def next_token():
 def ai_chat():
     W, H = 200, 112
     g = [f'<rect x="2" y="2" width="196" height="108" rx="4" fill="#fff" stroke="#94A3B8" stroke-width=".5"/>',
-         f'<rect x="2" y="2" width="44" height="108" rx="4" fill="#F5F3FF"/><rect x="40" y="2" width="6" height="108" fill="#F5F3FF"/>',
-         f'<rect x="6" y="7" width="36" height="7" rx="2" fill="#fff" stroke="#DDD6FE" stroke-width=".4"/><text x="9" y="11.8" font-size="3.3" fill="{AI}" font-weight="700">✎ Nouvelle discussion</text>']
+         f'<rect x="2" y="2" width="44" height="108" rx="4" fill="#F2F6FB"/><rect x="40" y="2" width="6" height="108" fill="#F2F6FB"/>',
+         f'<rect x="6" y="7" width="36" height="7" rx="2" fill="#fff" stroke="#BDD7EE" stroke-width=".4"/><text x="9" y="11.8" font-size="3.3" fill="{AI}" font-weight="700">✎ Nouvelle discussion</text>']
     for i, t in enumerate(["Lettre de stage", "Formules Excel", "Résumé du cours", "Idées d’exposé"]):
         g.append(f'<text x="8" y="{24 + i * 7}" font-size="3.2" fill="{INK}">{t}</text>')
     g.append(f'<text x="8" y="104" font-size="3" fill="{MUTED}">⚙ Paramètres · Confidentialité</text>')
-    g.append(f'<rect x="96" y="8" width="96" height="20" rx="4" fill="#EDE9FE"/>')
+    g.append(f'<rect x="96" y="8" width="96" height="20" rx="4" fill="#DEEAF6"/>')
     q = ["Tu es conseiller d’orientation. Je suis en", "terminale D au Niger. Propose-moi 3 métiers", "liés à l’agriculture et à l’informatique,", "sous forme de tableau."]
     for i, t in enumerate(q):
         g.append(f'<text x="99" y="{13 + i * 4.2}" font-size="3.1" fill="{INK}">{t}</text>')
@@ -612,13 +617,13 @@ def ai_chat():
     rows = [("Métier", "Missions", "Formation"), ("Technicien en agriculture", "Capteurs, irrigation", "BTS, licence"), ("Analyste de données agricoles", "Prévisions, rendements", "Licence, master"), ("Développeur d’applis agricoles", "Conseils aux paysans", "Licence info")]
     for i, r in enumerate(rows):
         y = 42 + i * 7
-        fill = AI if i == 0 else ("#F8F7FC" if i % 2 else "#fff")
+        fill = AI if i == 0 else ("#F2F6FB" if i % 2 else "#fff")
         g.append(f'<rect x="61" y="{y}" width="130" height="7" fill="{fill}"/>')
         for j, c in enumerate(r):
             g.append(f'<text x="{63 + j * 46}" y="{y + 4.8}" font-size="3" fill="{"#fff" if i == 0 else INK}" font-weight="{700 if i == 0 else 400}">{c}</text>')
     g.append(f'<text x="61" y="76" font-size="3.3" fill="{INK}">Veux-tu que je détaille les écoles au Niger pour chacun ?</text>')
     g.append(f'<text x="61" y="83" font-size="3.4" fill="{MUTED}">⎘  ⟳  👍  👎</text>')
-    g.append(f'<rect x="52" y="90" width="140" height="13" rx="6.5" fill="#fff" stroke="#C4B5FD" stroke-width=".6"/><text x="58" y="98" font-size="3.4" fill="{MUTED}">＋  Écrivez votre message…</text>'
+    g.append(f'<rect x="52" y="90" width="140" height="13" rx="6.5" fill="#fff" stroke="#9DC3E6" stroke-width=".6"/><text x="58" y="98" font-size="3.4" fill="{MUTED}">＋  Écrivez votre message…</text>'
              f'<circle cx="185" cy="96.5" r="4.4" fill="{AI}"/><text x="185" y="98.2" font-size="4.6" text-anchor="middle" fill="#fff">↑</text><text x="174" y="98.2" font-size="4" text-anchor="middle" fill="{MUTED}">🎙</text>')
     g.append(f'<text x="122" y="108" font-size="2.7" text-anchor="middle" fill="{MUTED}">L’IA peut se tromper. Vérifiez les informations importantes.</text>')
     for n, (x, y) in enumerate([(43, 10), (43, 33), (192, 18), (192, 58), (78, 83), (52, 96.5), (192, 108)], 1):
@@ -775,17 +780,17 @@ def charts():
         ox, oy = x + 6, 32
         if i == 0:
             for k, h in enumerate([12, 20, 15, 24]):
-                g.append(f'<rect x="{ox + k * 6.5}" y="{oy - h}" width="4.6" height="{h}" fill="{["#1D6F42", "#2B579A", "#D97706", "#6D35D6"][k]}"/>')
+                g.append(f'<rect x="{ox + k * 6.5}" y="{oy - h}" width="4.6" height="{h}" fill="{["#1D6F42", "#2B579A", "#1F4D78", "#2E74B5"][k]}"/>')
         elif i == 1:
             for k, w in enumerate([24, 18, 12, 8]):
                 g.append(f'<rect x="{ox}" y="{8 + k * 6}" width="{w}" height="4.4" fill="#2B579A"/>')
         elif i == 2:
             g.append(f'<polyline points="{ox},{oy - 4} {ox + 7},{oy - 10} {ox + 14},{oy - 7} {ox + 21},{oy - 18} {ox + 26},{oy - 22}" fill="none" stroke="#E0182D" stroke-width="1.4"/>')
         elif i == 3:
-            g.append(f'<circle cx="{x + 18.5}" cy="20" r="11" fill="#1D6F42"/><path d="M{x + 18.5} 20L{x + 18.5} 9A11 11 0 0 1 {x + 29} 23z" fill="#D97706"/><path d="M{x + 18.5} 20L{x + 29} 23A11 11 0 0 1 {x + 14} 30z" fill="#2B579A"/>')
+            g.append(f'<circle cx="{x + 18.5}" cy="20" r="11" fill="#1D6F42"/><path d="M{x + 18.5} 20L{x + 18.5} 9A11 11 0 0 1 {x + 29} 23z" fill="#1F4D78"/><path d="M{x + 18.5} 20L{x + 29} 23A11 11 0 0 1 {x + 14} 30z" fill="#2B579A"/>')
         else:
             for (a, b) in [(2, 4), (6, 8), (9, 7), (13, 13), (16, 12), (20, 18), (24, 21)]:
-                g.append(f'<circle cx="{ox + a}" cy="{oy - b}" r="1.3" fill="#6D35D6"/>')
+                g.append(f'<circle cx="{ox + a}" cy="{oy - b}" r="1.3" fill="#2E74B5"/>')
         if i in (0, 2, 4):
             g.append(f'<path d="M{ox - 1} 8V{oy}H{ox + 28}" fill="none" stroke="#94A3B8" stroke-width=".5"/>')
         g.append(f'<text x="{x + 18.5}" y="39" font-size="4" font-weight="750" text-anchor="middle" fill="{INK}">{t}</text><text x="{x + 18.5}" y="44" font-size="3.2" text-anchor="middle" fill="{MUTED}">{s}</text>')
@@ -815,3 +820,23 @@ def pivot():
 
 if __name__ == "__main__":
     word_window(); excel_window(); refs(); condformat(); charts(); pivot()
+
+
+def translate_ui():
+    W, H = 200, 92
+    g = [f'<rect x="2" y="2" width="196" height="88" rx="3" fill="#fff" stroke="#94A3B8" stroke-width=".5"/>',
+         f'<rect x="2" y="2" width="196" height="10" rx="3" fill="#F1F3F4"/><text x="8" y="8.6" font-size="4" font-weight="700" fill="{INK}">Traduction</text>',
+         f'<text x="10" y="21" font-size="3.8" fill="{BLUE}" font-weight="700">Français</text><text x="100" y="21" font-size="4" text-anchor="middle" fill="{MUTED}">⇄</text><text x="110" y="21" font-size="3.8" fill="{BLUE}" font-weight="700">Haoussa</text>',
+         f'<path d="M8 24h86M106 24h86" stroke="{BLUE}" stroke-width=".8"/>',
+         f'<rect x="8" y="28" width="86" height="46" rx="2" fill="#fff" stroke="#DADCE0" stroke-width=".4"/>',
+         f'<text x="12" y="38" font-size="5" fill="{INK}">Bonjour, comment</text><text x="12" y="45" font-size="5" fill="{INK}">allez-vous ?</text>',
+         f'<rect x="106" y="28" width="86" height="46" rx="2" fill="#F8F9FA" stroke="#DADCE0" stroke-width=".4"/>',
+         f'<text x="110" y="38" font-size="5" fill="{INK}">Sannu, yaya kake?</text>',
+         f'<text x="12" y="70" font-size="3.4" fill="{MUTED}">Micro · Lecture à voix haute</text><text x="110" y="70" font-size="3.4" fill="{MUTED}">Écouter · Copier</text>',
+         f'<text x="100" y="84" font-size="3.4" text-anchor="middle" fill="{MUTED}">Exemple d’écran d’un outil de traduction automatique</text>']
+    g.append(callout(1, 30, 21, 30, 21) + callout(2, 60, 40, 60, 40) + callout(3, 165, 38, 165, 38))
+    save("translate", W, H, "".join(g))
+
+
+if __name__ == "__main__":
+    translate_ui()

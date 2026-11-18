@@ -1,661 +1,528 @@
 {
- "edition": "2e édition 2026",
- "symbologie": "Code 39, sans clé de contrôle, valeur numérique à 4 chiffres (texte encodé *NNNN*)",
+ "manuel": "Apprendre l'informatique de bureau — HELP-ME",
+ "format": "A5",
+ "symbologie": "Code 39 sans clé de contrôle, valeur à 4 chiffres (*NNNN*)",
+ "position": "verticale, en haut, coin extérieur de la page",
  "codes": [
   {
    "code": "2020",
-   "tome": "Tome 1",
-   "lecon": "Leçon 1.1 · Introduction à l’informatique",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    15
-   ],
-   "page_1re_edition": null
+   "page": 12,
+   "partie": "Partie 1",
+   "titre_partie": "§§T004§§Le traitement automatique de l’information",
+   "chapitre": "1. Introduction à l’informatique",
+   "statut": "nouveau"
   },
   {
    "code": "2021",
-   "tome": "Tome 1",
-   "lecon": "Leçon 1.2 · Histoire de l’informatique",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    20
-   ],
-   "page_1re_edition": null
+   "page": 17,
+   "partie": "Partie 1",
+   "titre_partie": "§§T004§§Le traitement automatique de l’information",
+   "chapitre": "2. Histoire de l’informatique",
+   "statut": "nouveau"
   },
   {
    "code": "2022",
-   "tome": "Tome 1",
-   "lecon": "Leçon 1.3 · L’ordinateur et ses composants",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    24
-   ],
-   "page_1re_edition": null
+   "page": 19,
+   "partie": "Partie 1",
+   "titre_partie": "§§T004§§Le traitement automatique de l’information",
+   "chapitre": "3. L’ordinateur et ses composants",
+   "statut": "nouveau"
   },
   {
    "code": "2023",
-   "tome": "Tome 1",
-   "lecon": "Leçon 1.4 · Souris, clavier et écran",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    29
-   ],
-   "page_1re_edition": null
+   "page": 23,
+   "partie": "Partie 1",
+   "titre_partie": "§§T004§§Le traitement automatique de l’information",
+   "chapitre": "4. La souris, le clavier et l’écran",
+   "statut": "nouveau"
   },
   {
    "code": "2019",
-   "tome": "Tome 1",
-   "lecon": "Leçon 1.5 · Allumer, mettre en veille et éteindre l’ordinateur",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    4,
-    32
-   ],
-   "page_1re_edition": 31
+   "page": 24,
+   "partie": "Partie 1",
+   "titre_partie": "§§T004§§Le traitement automatique de l’information",
+   "chapitre": "5. Allumer, mettre en veille et éteindre",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "2018",
-   "tome": "Tome 1",
-   "lecon": "Leçon 2.1 · Le bureau, les icônes et les raccourcis",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    38
-   ],
-   "page_1re_edition": 37
+   "page": 29,
+   "partie": "Partie 2",
+   "titre_partie": "§§T010§§Le système d’exploitation : les bases de Windows 11",
+   "chapitre": "1. Windows 11 : le bureau, les icônes et les raccourcis",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "2001",
-   "tome": "Tome 1",
-   "lecon": "Leçon 2.2 · La barre des tâches",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    42
-   ],
-   "page_1re_edition": 47
+   "page": 32,
+   "partie": "Partie 2",
+   "titre_partie": "§§T010§§Le système d’exploitation : les bases de Windows 11",
+   "chapitre": "2. La barre des tâches",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "2002",
-   "tome": "Tome 1",
-   "lecon": "Leçon 2.3 · Le menu Démarrer et lancer une application",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    46
-   ],
-   "page_1re_edition": 56
+   "page": 34,
+   "partie": "Partie 2",
+   "titre_partie": "§§T010§§Le système d’exploitation : les bases de Windows 11",
+   "chapitre": "3. Le menu Démarrer",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "2024",
-   "tome": "Tome 1",
-   "lecon": "Leçon 2.4 · Les fenêtres et le multitâche",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    49
-   ],
-   "page_1re_edition": null
+   "page": 36,
+   "partie": "Partie 2",
+   "titre_partie": "§§T010§§Le système d’exploitation : les bases de Windows 11",
+   "chapitre": "4. Les fenêtres et le multitâche",
+   "statut": "nouveau"
   },
   {
    "code": "2025",
-   "tome": "Tome 1",
-   "lecon": "Leçon 2.5 · L’Explorateur de fichiers, les fichiers et les dossiers",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    53
-   ],
-   "page_1re_edition": null
+   "page": 39,
+   "partie": "Partie 2",
+   "titre_partie": "§§T010§§Le système d’exploitation : les bases de Windows 11",
+   "chapitre": "5. L’Explorateur de fichiers",
+   "statut": "nouveau"
   },
   {
    "code": "2026",
-   "tome": "Tome 1",
-   "lecon": "Leçon 2.6 · Paramètres, mises à jour et sécurité de Windows",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    56
-   ],
-   "page_1re_edition": null
+   "page": 41,
+   "partie": "Partie 2",
+   "titre_partie": "§§T010§§Le système d’exploitation : les bases de Windows 11",
+   "chapitre": "6. Paramètres, mises à jour et sécurité",
+   "statut": "nouveau"
   },
   {
    "code": "2017",
-   "tome": "Tome 1",
-   "lecon": "Leçon 2.7 · Les mots clés de l’informatique",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    61
-   ],
-   "page_1re_edition": 62
+   "page": 43,
+   "partie": "Partie 2",
+   "titre_partie": "§§T010§§Le système d’exploitation : les bases de Windows 11",
+   "chapitre": "7. Les mots clés de l’informatique",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "2016",
-   "tome": "Tome 1",
-   "lecon": "Leçon 3.1 · Internet, le Web, le navigateur et la connexion",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    67
-   ],
-   "page_1re_edition": 73
+   "page": 49,
+   "partie": "Partie 3",
+   "titre_partie": "§§T018§§Usage d’Internet : s’informer, communiquer, partager et se protéger",
+   "chapitre": "1. Internet, le Web et le navigateur",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "2003",
-   "tome": "Tome 1",
-   "lecon": "Leçon 3.2 · Sites Web, recherche et téléchargement",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    71
-   ],
-   "page_1re_edition": 83
+   "page": 53,
+   "partie": "Partie 3",
+   "titre_partie": "§§T018§§Usage d’Internet : s’informer, communiquer, partager et se protéger",
+   "chapitre": "2. Sites Web, recherche et téléchargement",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "2004",
-   "tome": "Tome 1",
-   "lecon": "Leçon 3.3 · La messagerie électronique et Gmail",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    77
-   ],
-   "page_1re_edition": 100
+   "page": 58,
+   "partie": "Partie 3",
+   "titre_partie": "§§T018§§Usage d’Internet : s’informer, communiquer, partager et se protéger",
+   "chapitre": "3. La messagerie électronique (e-mail)",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "2027",
-   "tome": "Tome 1",
-   "lecon": "Leçon 3.4 · Le cloud : stocker, sauvegarder et partager",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    80
-   ],
-   "page_1re_edition": null
+   "page": 61,
+   "partie": "Partie 3",
+   "titre_partie": "§§T018§§Usage d’Internet : s’informer, communiquer, partager et se protéger",
+   "chapitre": "4. Le cloud : stocker, sauvegarder et partager",
+   "statut": "nouveau"
   },
   {
    "code": "2028",
-   "tome": "Tome 1",
-   "lecon": "Leçon 3.5 · Messagerie instantanée, visioconférence et réseaux sociaux",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    83
-   ],
-   "page_1re_edition": null
+   "page": 63,
+   "partie": "Partie 3",
+   "titre_partie": "§§T018§§Usage d’Internet : s’informer, communiquer, partager et se protéger",
+   "chapitre": "5. Messagerie instantanée, visioconférence et réseaux sociaux",
+   "statut": "nouveau"
   },
   {
    "code": "2029",
-   "tome": "Tome 1",
-   "lecon": "Leçon 3.6 · Cybersécurité : se protéger en ligne",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    88
-   ],
-   "page_1re_edition": null
-  },
-  {
-   "code": "3001",
-   "tome": "Tome 1",
-   "lecon": "Leçon 4.1 · Qu’est-ce que l’intelligence artificielle ?",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    93
-   ],
-   "page_1re_edition": null
-  },
-  {
-   "code": "3002",
-   "tome": "Tome 1",
-   "lecon": "Leçon 4.2 · Brève histoire de l’IA",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    96
-   ],
-   "page_1re_edition": null
-  },
-  {
-   "code": "3003",
-   "tome": "Tome 1",
-   "lecon": "Leçon 4.3 · Comment fonctionne l’IA ?",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    101
-   ],
-   "page_1re_edition": null
-  },
-  {
-   "code": "3004",
-   "tome": "Tome 1",
-   "lecon": "Leçon 4.4 · Les outils d’IA aujourd’hui",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    105
-   ],
-   "page_1re_edition": null
-  },
-  {
-   "code": "3005",
-   "tome": "Tome 1",
-   "lecon": "Leçon 4.5 · Bien dialoguer avec une IA : l’art du prompt",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    109
-   ],
-   "page_1re_edition": null
-  },
-  {
-   "code": "3006",
-   "tome": "Tome 1",
-   "lecon": "Leçon 4.6 · L’IA au bureau (Copilot, Gemini)",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    112
-   ],
-   "page_1re_edition": null
-  },
-  {
-   "code": "3007",
-   "tome": "Tome 1",
-   "lecon": "Leçon 4.7 · L’IA dans tous les domaines",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    117
-   ],
-   "page_1re_edition": null
-  },
-  {
-   "code": "3008",
-   "tome": "Tome 1",
-   "lecon": "Leçon 4.8 · Les limites et les risques de l’IA",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    120
-   ],
-   "page_1re_edition": null
-  },
-  {
-   "code": "3009",
-   "tome": "Tome 1",
-   "lecon": "Leçon 4.9 · Utiliser l’IA de façon responsable",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    123
-   ],
-   "page_1re_edition": null
-  },
-  {
-   "code": "3010",
-   "tome": "Tome 1",
-   "lecon": "Leçon 4.10 · L’IA et l’avenir : métiers et compétences",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    125
-   ],
-   "page_1re_edition": null
-  },
-  {
-   "code": "3011",
-   "tome": "Tome 1",
-   "lecon": "Leçon 4.11 · Exercices et projet : intelligence artificielle",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    130
-   ],
-   "page_1re_edition": null
+   "page": 67,
+   "partie": "Partie 3",
+   "titre_partie": "§§T018§§Usage d’Internet : s’informer, communiquer, partager et se protéger",
+   "chapitre": "6. Cybersécurité : se protéger en ligne",
+   "statut": "nouveau"
   },
   {
    "code": "2015",
-   "tome": "Tome 1",
-   "lecon": "Leçon 5.1 · Les raccourcis clavier indispensables",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    133
-   ],
-   "page_1re_edition": 104
+   "page": 69,
+   "partie": "Partie 4",
+   "titre_partie": "§§T025§§Trucs, astuces et exercices",
+   "chapitre": "1. Les raccourcis clavier indispensables",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "2005",
-   "tome": "Tome 1",
-   "lecon": "Leçon 5.2 · Raccourcis de navigation et caractères spéciaux",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    137
-   ],
-   "page_1re_edition": 112
+   "page": 73,
+   "partie": "Partie 4",
+   "titre_partie": "§§T025§§Trucs, astuces et exercices",
+   "chapitre": "2. Raccourcis de navigation et caractères spéciaux",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "2030",
-   "tome": "Tome 1",
-   "lecon": "Leçon 5.3 · Taper rapidement au clavier",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    139
-   ],
-   "page_1re_edition": null
+   "page": 76,
+   "partie": "Partie 4",
+   "titre_partie": "§§T025§§Trucs, astuces et exercices",
+   "chapitre": "3. Taper rapidement au clavier",
+   "statut": "nouveau"
   },
   {
    "code": "2031",
-   "tome": "Tome 1",
-   "lecon": "Leçon 5.4 · Transférer des fichiers : clé USB et téléphone",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    142
-   ],
-   "page_1re_edition": null
+   "page": 78,
+   "partie": "Partie 4",
+   "titre_partie": "§§T025§§Trucs, astuces et exercices",
+   "chapitre": "4. Transférer des fichiers : clé USB et téléphone",
+   "statut": "nouveau"
   },
   {
    "code": "2032",
-   "tome": "Tome 1",
-   "lecon": "Leçon 5.5 · Installer et désinstaller une application",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    144
-   ],
-   "page_1re_edition": null
+   "page": 80,
+   "partie": "Partie 4",
+   "titre_partie": "§§T025§§Trucs, astuces et exercices",
+   "chapitre": "5. Installer et désinstaller une application",
+   "statut": "nouveau"
   },
   {
    "code": "2033",
-   "tome": "Tome 1",
-   "lecon": "Leçon 5.6 · Exercices théoriques (corrigés dans l’application)",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    152
-   ],
-   "page_1re_edition": null
+   "page": 87,
+   "partie": "Partie 4",
+   "titre_partie": "§§T025§§Trucs, astuces et exercices",
+   "chapitre": "6. Exercices théoriques",
+   "statut": "nouveau"
   },
   {
    "code": "2034",
-   "tome": "Tome 1",
-   "lecon": "Leçon 5.7 · Exercices pratiques (vidéos de démonstration)",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    158
-   ],
-   "page_1re_edition": null
+   "page": 91,
+   "partie": "Partie 4",
+   "titre_partie": "§§T025§§Trucs, astuces et exercices",
+   "chapitre": "7. Exercices pratiques",
+   "statut": "nouveau"
   },
   {
    "code": "1000",
-   "tome": "Tome 2",
-   "lecon": "Leçon W1 · Découvrir Word : la fenêtre, la saisie, la sélection, annuler et rétablir",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    13
-   ],
-   "page_1re_edition": 24
+   "page": 97,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "1. Découvrir Word : la fenêtre, la saisie et la sélection",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1001",
-   "tome": "Tome 2",
-   "lecon": "Leçon W2 · Police, paragraphes, retraits et interlignes",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    17
-   ],
-   "page_1re_edition": 28
+   "page": 99,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "2. Mettre en forme les caractères et les paragraphes",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1003",
-   "tome": "Tome 2",
-   "lecon": "Leçon W3 · Les listes à puces et numérotées",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    19
-   ],
-   "page_1re_edition": 30
+   "page": 101,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "3. Les listes à puces et numérotées",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1004",
-   "tome": "Tome 2",
-   "lecon": "Leçon W4 · Les bordures et les trames",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    21
-   ],
-   "page_1re_edition": 33
+   "page": 102,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "4. Les bordures et les trames",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1006",
-   "tome": "Tome 2",
-   "lecon": "Leçon W5 · Rechercher, remplacer et enregistrer",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    24
-   ],
-   "page_1re_edition": 35
+   "page": 103,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "5. Rechercher, remplacer et enregistrer",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1007",
-   "tome": "Tome 2",
-   "lecon": "Leçon W6 · Insérer des pages et des tableaux",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    27
-   ],
-   "page_1re_edition": 38
+   "page": 106,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "6. Insérer des pages et des tableaux",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1008",
-   "tome": "Tome 2",
-   "lecon": "Leçon W7 · Insérer des images, des formes et des illustrations",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    30,
-    34
-   ],
-   "page_1re_edition": "40 et 47"
+   "page": 109,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "7. Insérer des images, des formes et des illustrations",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1008",
-   "tome": "Tome 2",
-   "lecon": "Leçon W8 · En-têtes, pieds de page, zones de texte, équations et symboles",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    30,
-    34
-   ],
-   "page_1re_edition": "40 et 47"
+   "page": 111,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "8. En-têtes, pieds de page, zones de texte et symboles",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1009",
-   "tome": "Tome 2",
-   "lecon": "Leçon W9 · Thèmes, filigrane et couleur de page",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    36
-   ],
-   "page_1re_edition": 49
+   "page": 113,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "9. La création : thèmes, filigrane et couleur de page",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1010",
-   "tome": "Tome 2",
-   "lecon": "Leçon W10 · Marges, orientation, taille, colonnes et sauts",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    38
-   ],
-   "page_1re_edition": 54
+   "page": 115,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "10. La mise en page : marges, orientation, colonnes et sauts",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1011",
-   "tome": "Tome 2",
-   "lecon": "Leçon W11 · Les styles et la table des matières",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    41,
-    43
-   ],
-   "page_1re_edition": "57 et 61"
+   "page": 117,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "11. Les styles et la table des matières",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1011",
-   "tome": "Tome 2",
-   "lecon": "Leçon W12 · Protéger un document",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    41,
-    43
-   ],
-   "page_1re_edition": "57 et 61"
+   "page": 118,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "12. Protéger un document",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1012",
-   "tome": "Tome 2",
-   "lecon": "Leçon W13 · Imprimer et exporter en PDF",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    45
-   ],
-   "page_1re_edition": 62
+   "page": 120,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "13. Imprimer et exporter en PDF",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1019",
-   "tome": "Tome 2",
-   "lecon": "Leçon W14 · Réviser et collaborer",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    47
-   ],
-   "page_1re_edition": null
+   "page": 122,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "14. Réviser et collaborer",
+   "statut": "nouveau"
   },
   {
    "code": "1020",
-   "tome": "Tome 2",
-   "lecon": "Leçon W15 · Le publipostage",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    49
-   ],
-   "page_1re_edition": null
+   "page": 123,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "15. Le publipostage",
+   "statut": "nouveau"
   },
   {
    "code": "1021",
-   "tome": "Tome 2",
-   "lecon": "Leçon W16 · L’intelligence artificielle dans Word",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    51
-   ],
-   "page_1re_edition": null
+   "page": 124,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "16. L’intelligence artificielle dans Word",
+   "statut": "nouveau"
   },
   {
    "code": "1022",
-   "tome": "Tome 2",
-   "lecon": "Leçon W17 · Exercices Word (démonstrations vidéo)",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    56
-   ],
-   "page_1re_edition": null
+   "page": 127,
+   "partie": "Partie 5",
+   "titre_partie": "§§T033§§Microsoft Word : le traitement de texte",
+   "chapitre": "17. Exercices Word",
+   "statut": "nouveau"
   },
   {
    "code": "1013",
-   "tome": "Tome 2",
-   "lecon": "Leçon X1 · Découvrir Excel : classeur, cellules et sélection",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    62
-   ],
-   "page_1re_edition": 82
+   "page": 132,
+   "partie": "Partie 6",
+   "titre_partie": "§§T051§§Microsoft Excel : le tableur",
+   "chapitre": "1. Découvrir Excel : classeur, cellules et sélection",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1014",
-   "tome": "Tome 2",
-   "lecon": "Leçon X2 · Recopier et mettre en forme les données",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    66
-   ],
-   "page_1re_edition": 92
+   "page": 135,
+   "partie": "Partie 6",
+   "titre_partie": "§§T051§§Microsoft Excel : le tableur",
+   "chapitre": "2. Recopier et mettre en forme les données",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1015",
-   "tome": "Tome 2",
-   "lecon": "Leçon X3 · Les formules et les fonctions essentielles",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    70
-   ],
-   "page_1re_edition": 101
+   "page": 138,
+   "partie": "Partie 6",
+   "titre_partie": "§§T051§§Microsoft Excel : le tableur",
+   "chapitre": "3. Les formules et les fonctions essentielles",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1023",
-   "tome": "Tome 2",
-   "lecon": "Leçon X4 · Références relatives et absolues",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    72
-   ],
-   "page_1re_edition": null
+   "page": 140,
+   "partie": "Partie 6",
+   "titre_partie": "§§T051§§Microsoft Excel : le tableur",
+   "chapitre": "4. Recopier des formules : références relatives et absolues",
+   "statut": "nouveau"
   },
   {
    "code": "1024",
-   "tome": "Tome 2",
-   "lecon": "Leçon X5 · Trier, filtrer et mise en forme conditionnelle",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    75
-   ],
-   "page_1re_edition": null
+   "page": 142,
+   "partie": "Partie 6",
+   "titre_partie": "§§T051§§Microsoft Excel : le tableur",
+   "chapitre": "5. Trier, filtrer et mettre en évidence",
+   "statut": "nouveau"
   },
   {
    "code": "1025",
-   "tome": "Tome 2",
-   "lecon": "Leçon X6 · Les fonctions utiles au quotidien",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    78
-   ],
-   "page_1re_edition": null
+   "page": 144,
+   "partie": "Partie 6",
+   "titre_partie": "§§T051§§Microsoft Excel : le tableur",
+   "chapitre": "6. Les fonctions utiles au quotidien",
+   "statut": "nouveau"
   },
   {
    "code": "1016",
-   "tome": "Tome 2",
-   "lecon": "Leçon X7 · Les tableaux croisés dynamiques",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    80
-   ],
-   "page_1re_edition": 106
+   "page": 146,
+   "partie": "Partie 6",
+   "titre_partie": "§§T051§§Microsoft Excel : le tableur",
+   "chapitre": "7. Les tableaux croisés dynamiques",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "2014",
-   "tome": "Tome 2",
-   "lecon": "Leçon X8 · Les tableaux Excel",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    82
-   ],
-   "page_1re_edition": 110
+   "page": 147,
+   "partie": "Partie 6",
+   "titre_partie": "§§T051§§Microsoft Excel : le tableur",
+   "chapitre": "8. Les tableaux Excel",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1017",
-   "tome": "Tome 2",
-   "lecon": "Leçon X9 · Les graphiques",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    85
-   ],
-   "page_1re_edition": 114
+   "page": 149,
+   "partie": "Partie 6",
+   "titre_partie": "§§T051§§Microsoft Excel : le tableur",
+   "chapitre": "9. Les graphiques",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1018",
-   "tome": "Tome 2",
-   "lecon": "Leçon X10 · Imprimer et protéger un classeur",
-   "statut": "conservé (1re édition)",
-   "page_2e_edition": [
-    88
-   ],
-   "page_1re_edition": 119
+   "page": 150,
+   "partie": "Partie 6",
+   "titre_partie": "§§T051§§Microsoft Excel : le tableur",
+   "chapitre": "10. Imprimer et protéger un classeur",
+   "statut": "conservé (même code et même contenu que l'original)"
   },
   {
    "code": "1026",
-   "tome": "Tome 2",
-   "lecon": "Leçon X11 · L’intelligence artificielle dans Excel",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    90
-   ],
-   "page_1re_edition": null
+   "page": 153,
+   "partie": "Partie 6",
+   "titre_partie": "§§T051§§Microsoft Excel : le tableur",
+   "chapitre": "11. L’intelligence artificielle dans Excel",
+   "statut": "nouveau"
   },
   {
    "code": "1027",
-   "tome": "Tome 2",
-   "lecon": "Leçon X12 · Exercices Excel (démonstrations vidéo)",
-   "statut": "nouveau",
-   "page_2e_edition": [
-    95
-   ],
-   "page_1re_edition": null
+   "page": 155,
+   "partie": "Partie 6",
+   "titre_partie": "§§T051§§Microsoft Excel : le tableur",
+   "chapitre": "12. Exercices Excel",
+   "statut": "nouveau"
+  },
+  {
+   "code": "3001",
+   "page": 159,
+   "partie": "Partie 7",
+   "titre_partie": "§§T064§§L’intelligence artificielle : comprendre, utiliser, maîtriser",
+   "chapitre": "1. Qu’est-ce que l’intelligence artificielle ?",
+   "statut": "nouveau"
+  },
+  {
+   "code": "3002",
+   "page": 161,
+   "partie": "Partie 7",
+   "titre_partie": "§§T064§§L’intelligence artificielle : comprendre, utiliser, maîtriser",
+   "chapitre": "2. Brève histoire de l’intelligence artificielle",
+   "statut": "nouveau"
+  },
+  {
+   "code": "3003",
+   "page": 164,
+   "partie": "Partie 7",
+   "titre_partie": "§§T064§§L’intelligence artificielle : comprendre, utiliser, maîtriser",
+   "chapitre": "3. Comment fonctionne l’IA ?",
+   "statut": "nouveau"
+  },
+  {
+   "code": "3004",
+   "page": 168,
+   "partie": "Partie 7",
+   "titre_partie": "§§T064§§L’intelligence artificielle : comprendre, utiliser, maîtriser",
+   "chapitre": "4. Les outils d’IA aujourd’hui",
+   "statut": "nouveau"
+  },
+  {
+   "code": "3005",
+   "page": 171,
+   "partie": "Partie 7",
+   "titre_partie": "§§T064§§L’intelligence artificielle : comprendre, utiliser, maîtriser",
+   "chapitre": "5. Bien dialoguer avec une IA : l’art du prompt",
+   "statut": "nouveau"
+  },
+  {
+   "code": "3006",
+   "page": 173,
+   "partie": "Partie 7",
+   "titre_partie": "§§T064§§L’intelligence artificielle : comprendre, utiliser, maîtriser",
+   "chapitre": "6. L’IA au bureau",
+   "statut": "nouveau"
+  },
+  {
+   "code": "3007",
+   "page": 177,
+   "partie": "Partie 7",
+   "titre_partie": "§§T064§§L’intelligence artificielle : comprendre, utiliser, maîtriser",
+   "chapitre": "7. L’IA dans tous les domaines",
+   "statut": "nouveau"
+  },
+  {
+   "code": "3008",
+   "page": 179,
+   "partie": "Partie 7",
+   "titre_partie": "§§T064§§L’intelligence artificielle : comprendre, utiliser, maîtriser",
+   "chapitre": "8. Les limites et les risques de l’IA",
+   "statut": "nouveau"
+  },
+  {
+   "code": "3009",
+   "page": 181,
+   "partie": "Partie 7",
+   "titre_partie": "§§T064§§L’intelligence artificielle : comprendre, utiliser, maîtriser",
+   "chapitre": "9. Utiliser l’IA de façon responsable",
+   "statut": "nouveau"
+  },
+  {
+   "code": "3010",
+   "page": 183,
+   "partie": "Partie 7",
+   "titre_partie": "§§T064§§L’intelligence artificielle : comprendre, utiliser, maîtriser",
+   "chapitre": "10. L’IA et l’avenir : métiers et compétences",
+   "statut": "nouveau"
+  },
+  {
+   "code": "3011",
+   "page": 187,
+   "partie": "Partie 7",
+   "titre_partie": "§§T064§§L’intelligence artificielle : comprendre, utiliser, maîtriser",
+   "chapitre": "11. Exercices et projet : intelligence artificielle",
+   "statut": "nouveau"
   }
  ]
 }

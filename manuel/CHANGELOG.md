@@ -1,4 +1,4 @@
-# Journal des modifications — 2e édition (2026)
+# Journal des modifications — mise à jour 2026
 
 ## Nouveautés
 - **Partie 4 : Intelligence artificielle** (11 leçons, codes 3001-3011) : définition, histoire, fonctionnement (données, apprentissage automatique, réseaux de neurones, LLM), outils actuels, méthode de prompt RCTF, IA au bureau (Copilot, Gemini), IA dans tous les domaines (éducation, santé, agriculture, commerce, finance, administration, médias, droit, industrie, transport, environnement, accessibilité…), limites et risques, usage responsable et cadres légaux, métiers d'avenir, exercices et projet.
@@ -22,7 +22,15 @@
 - Astuce de téléchargement YouTube par site tiers (« ss ») supprimée (contraire aux conditions d'utilisation et au droit d'auteur) et remplacée par des règles de téléchargement sûr.
 - Nombreuses fautes d'orthographe, de grammaire et de typographie (espaces insécables, guillemets, majuscules accentuées).
 
+## Révision 2 (demandes de l'éditeur)
+- Un seul manuel au format A5, Garamond 12 pt, couleurs de l'original (rouge, bleus), texte justifié sans césure.
+- Codes-barres à la verticale en haut de page, sur la page du même contenu qu'à l'origine, sans numéro ni texte.
+- Captures de l'original reprises avec leurs flèches et légendes ; captures Google/Gmail réintégrées.
+- Suppression des émojis, icônes et mentions « 2e édition / nouveauté » ; mention « 1re édition », © 2019-2026.
+- Parties d'origine conservées (Partie 4 = Trucs, astuces et exercices) ; Word, Excel et IA en Parties 5, 6 et 7.
+- Explications de la partie IA simplifiées pour les élèves ; plus de raccourcis, caractères et termes de glossaire.
+
 ## Points à valider par l'éditeur
 - Préface : le texte cite « Mahamadou » puis « l'ingénieur Mohamed » ; seule la grammaire a été corrigée.
-- ISBN : une nouvelle édition nécessite un nouvel ISBN (emplacement prévu sur la 4e de couverture).
+- ISBN : l'ISBN d'origine est conservé sur la 4e de couverture.
 - Le code 1008 est utilisé pour deux leçons (W7 et W8) et le code 1011 pour deux leçons (W11 et W12), comme dans la 1re édition.
