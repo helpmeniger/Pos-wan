@@ -840,3 +840,26 @@ def translate_ui():
 
 if __name__ == "__main__":
     translate_ui()
+
+
+def ppt_window():
+    W, H = 200, 140
+    c = "#C43E1C"
+    g = [f'<rect x="2" y="2" width="196" height="128" rx="3" fill="#E9EDF3" stroke="#94A3B8" stroke-width=".5"/>',
+         f'<rect x="2" y="2" width="196" height="9" rx="3" fill="{c}"/>',
+         f'<text x="100" y="8" font-size="3.4" text-anchor="middle" fill="#fff">Présentation – PowerPoint</text>',
+         ribbon(2, 11, 196, c, ["Fichier", "Accueil", "Insertion", "Création", "Transitions", "Animations", "Diaporama", "Révision", "Affichage"], 1,
+                [("Presse-papiers", "Coller"), ("Diapositives", "Nouvelle diapo"), ("Police", "Aptos 28 G I S"), ("Paragraphe", "Puces Aligner"), ("Dessin", "Formes")]),
+         f'<rect x="2" y="33" width="38" height="91" fill="#F7F9FC"/>']
+    for i in range(4):
+        y = 38 + i * 21
+        g.append(f'<rect x="8" y="{y}" width="28" height="16" fill="#fff" stroke="{c if i == 0 else "#CBD5E1"}" stroke-width="{.8 if i == 0 else .3}"/><text x="5" y="{y + 6}" font-size="3" fill="{MUTED}">{i + 1}</text>')
+    g.append(f'<rect x="48" y="40" width="144" height="81" fill="#fff" stroke="#CBD5E1" stroke-width=".3"/>'
+             f'<text x="120" y="72" font-size="8" text-anchor="middle" font-weight="800" fill="{c}">HELP-ME</text>'
+             f'<text x="120" y="84" font-size="4.4" text-anchor="middle" fill="{INK}">Apprendre l’informatique de bureau</text>')
+    g.append(f'<rect x="2" y="124" width="196" height="6" fill="#F1F5F9"/><text x="6" y="128.2" font-size="2.9" fill="{MUTED}">Diapositive 1 sur 4</text>')
+    save("ppt-window", W, H, "".join(g))
+
+
+if __name__ == "__main__":
+    ppt_window()
