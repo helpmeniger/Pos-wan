@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[2]
 HTML = ROOT / "manuel" / "build" / "manuel.html"
 CODES = ROOT / "manuel" / "codes-helpme.json"
-OUT = ROOT / "app_update" / "assets"
+OUT = ROOT / "app_android" / "app" / "src" / "main" / "assets"
 
 # Vidéos existantes de l'application (MainActivity8 d'origine)
 VIDEOS = {"1000": "vid7", "2019": "vid1", "2018": "vid2", "2001": "vid3", "2002": "vid4", "2016": "vid6",

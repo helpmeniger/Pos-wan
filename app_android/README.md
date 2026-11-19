@@ -1,0 +1,34 @@
+# Application Android HELP-ME
+
+Projet Android Studio de l'application HELP-ME (`com.hightechniger.help_me`), relié au manuel « Apprendre l'informatique de bureau ».
+
+## Compiler
+
+Prérequis : JDK 17 ou 21, SDK Android (plateforme 35). Puis, à la racine de ce dossier :
+
+1. Copier `google-services.json` (console Firebase) dans `app/`.
+2. Créer `secrets.properties` (jamais dans le dépôt) :
+   ```
+   HM_SERVER_URL=…        # serveur du lobby et du classement
+   HM_LOGIN_URL=…         # serveur de connexion
+   HM_API_KEY=…
+   HM_HMAC_SECRET=…       # À CHANGER côté serveur : l'ancien a été publié dans l'APK
+   HM_MANUAL_PASSWORD=…
+   HM_FORUM_RELAY_KEY=…
+   ```
+3. Pour la version publiée, créer `keystore.properties` (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`).
+4. `./gradlew assembleDebug` ou `./gradlew bundleRelease` (bundle pour Google Play).
+
+## Changements de cette mise à jour
+
+- Outillage : Gradle 8.9, plugin Android 8.7.3, `compileSdk`/`targetSdk` 35, Java 17, Firebase BoM ; doublons de plugins, Realm et jcenter supprimés.
+- Dépendances inutilisées retirées : WebRTC, ML Kit, ExoPlayer, Picasso, Firebase Storage. Version publiée réduite par R8 : 118 Mo → 43 Mo (APK universel ; ~20 Mo par appareil via Google Play).
+- Signature de publication par `keystore.properties` (plus de clé de débogage).
+- Secrets retirés du code source (`BuildConfig`, lus depuis `secrets.properties`).
+- `MainActivity11` et `MainActivity12` (déclarées sans code) retirées du manifeste.
+- **Vidéos remplacées provisoirement par des images** du manuel (`res/drawable-nodpi/lecon_*.webp`, 1,2 Mo au lieu de ~714 Mo) via `MediaImages` et `ImageLessonActivity`.
+- Scan des codes du manuel : `MainActivity8` → `LessonActivity` (65 fiches, `assets/lessons.json`).
+- Assistant : base `assets/knowledge_manuel.json` (209 fiches tirées du manuel).
+- Démonstration animée en code « Créer et organiser » (`demo/`).
+
+Régénérer les données du manuel : `python3 app_update/tools/export_manuel.py` (à la racine du dépôt).

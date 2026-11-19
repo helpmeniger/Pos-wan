@@ -1,0 +1,3047 @@
+[
+  {
+    "question": "composants ordinateur processeur ram disque dur carte mère",
+    "answer": "Un ordinateur est composé de plusieurs éléments essentiels : le processeur (cerveau de l'ordinateur), la RAM (mémoire vive temporaire), le disque dur (stockage permanent), la carte mère (qui connecte tous les composants), la carte graphique (affichage), l'alimentation et les périphériques. Chaque composant a un rôle spécifique dans le fonctionnement global de la machine.",
+    "image": "computer_components"
+  },
+  {
+    "question": "système exploitation windows linux macos fonctionnalités",
+    "answer": "Un système d'exploitation est le logiciel principal qui gère les ressources matérielles et logicielles de l'ordinateur. Windows offre une interface graphique intuitive, une large compatibilité logicielle, une sécurité intégrée et des mises à jour régulières. Il gère la mémoire, les processus, le stockage et les périphériques, permettant aux applications de fonctionner correctement.",
+    "image": "operating_system"
+  },
+  {
+    "question": "bureau windows icônes barre tâches menu démarrer",
+    "answer": "Le bureau Windows est l'interface principale avec les icônes d'applications, la barre des tâches en bas contenant le menu Démarrer, les applications épinglées, la zone de notification et l'heure. Le menu Démarrer donne accès à toutes les applications installées, aux paramètres, aux documents récents et à la fonction de recherche.",
+    "image": "windows_desktop"
+  },
+  {
+    "question": "gestion fichiers explorateur windows dossiers organisation",
+    "answer": "L'Explorateur de fichiers Windows permet de naviguer, organiser et gérer tous vos fichiers et dossiers. Vous pouvez créer des dossiers thématiques, déplacer des fichiers par glisser-déposer, renommer, copier, supprimer et rechercher des éléments. Utilisez l'arborescence à gauche pour naviguer rapidement entre les différents lecteurs et dossiers.",
+    "image": "file_explorer"
+  },
+  {
+    "question": "cortana assistant vocal recherche windows commandes",
+    "answer": "Cortana est l'assistant vocal de Windows qui peut effectuer des recherches, ouvrir des applications, créer des rappels, envoyer des emails et fournir des informations météo ou actualités. Activez-le par la voix 'Dis Cortana' ou en cliquant sur l'icône dans la barre des tâches. Il apprend vos habitudes pour proposer des suggestions personnalisées.",
+    "image": "cortana_assistant"
+  },
+  {
+    "question": "paramètres windows configuration personnalisation système",
+    "answer": "Les Paramètres Windows (Windows + I) permettent de configurer tous les aspects du système : personnalisation de l'apparence, comptes utilisateurs, mise à jour et sécurité, réseau et Internet, applications, confidentialité. C'est l'interface moderne qui remplace progressivement le Panneau de configuration classique.",
+    "image": "windows_settings"
+  },
+  {
+    "question": "panneau configuration outils avancés administration windows",
+    "answer": "Le Panneau de configuration offre un accès aux paramètres système avancés : gestion des utilisateurs, options d'alimentation, programmes et fonctionnalités, système et sécurité, réseau et Internet. Il est particulièrement utile pour les tâches d'administration et la résolution de problèmes.",
+    "image": "control_panel"
+  },
+  {
+    "question": "gestionnaire tâches processus performances applications windows",
+    "answer": "Le Gestionnaire des tâches (Ctrl + Maj + Échap) montre les applications en cours d'exécution, les processus en arrière-plan, les performances du processeur, de la RAM et du disque. Il permet de forcer l'arrêt d'applications qui ne répondent pas, de surveiller l'utilisation des ressources et de gérer les programmes au démarrage.",
+    "image": "task_manager"
+  },
+  {
+    "question": "maintenance windows mise à jour nettoyage optimisation",
+    "answer": "La maintenance régulière de Windows comprend : les mises à jour de sécurité mensuelles, le nettoyage du disque (fichiers temporaires, cache), la défragmentation des disques durs mécaniques, la vérification des erreurs avec CHKDSK, la surveillance de l'espace disque et la création de points de restauration système avant les grandes modifications.",
+    "image": "windows_maintenance"
+  },
+  {
+    "question": "sécurité windows antivirus firewall defender protection",
+    "answer": "Windows Security (anciennement Windows Defender) offre une protection complète : antivirus en temps réel, firewall, protection contre les ransomwares, contrôle des applications et navigateur, sécurité des appareils. Il se met à jour automatiquement via Windows Update pour se protéger contre les dernières menaces.",
+    "image": "windows_security"
+  },
+  {
+    "question": "interface word ruban onglets barre outils accueil insertion",
+    "answer": "L'interface de Word comprend le ruban en haut avec ses onglets (Accueil, Insertion, Mise en page, Références, Publipostage, Révision, Affichage), la barre d'outils d'accès rapide, la règle pour les marges et retraits, la zone de travail principale et la barre d'état en bas. Chaque onglet du ruban regroupe des fonctionnalités similaires pour un accès logique aux outils.",
+    "image": "word_interface"
+  },
+  {
+    "question": "mise forme texte police taille couleur style paragraphe",
+    "answer": "La mise en forme du texte dans Word se fait via l'onglet Accueil : choix de la police, taille, couleur, gras, italique, souligné, alignement (gauche, centre, droite, justifié), interligne, retraits et puces. Les styles prédéfinis (Titre 1, Titre 2, Normal) permettent une mise en forme cohérente et rapide sur l'ensemble du document.",
+    "image": "text_formatting"
+  },
+  {
+    "question": "styles word mise forme automatique titres sous titres",
+    "answer": "Les styles Word sont des ensembles de formats prédéfinis qui s'appliquent en un clic pour uniformiser l'apparence d'un document. Ils incluent les styles de titres (Titre 1 pour les titres principaux, Titre 2 pour les sous-titres), les styles de paragraphe et les styles de liste. L'utilisation des styles permet également de générer automatiquement une table des matières.",
+    "image": "word_styles"
+  },
+  {
+    "question": "insertion tableau word lignes colonnes mise forme",
+    "answer": "Pour insérer un tableau dans Word : allez dans Insertion > Tableau, sélectionnez le nombre de lignes et colonnes. Une fois inséré, vous pouvez modifier la largeur des colonnes, la hauteur des lignes, ajouter/supprimer des cellules, appliquer des styles de tableau prédéfinis, fusionner ou scinder des cellules, et trier les données.",
+    "image": "word_tables"
+  },
+  {
+    "question": "insertion images word photos illustrations mise page",
+    "answer": "Word permet d'insérer des images via Insertion > Images (photos locales) ou Images en ligne (recherche Bing, OneDrive). Les images insérées peuvent être redimensionnées, recadrées, positionnées avec habillage du texte (alignement, transparence), et des effets artistiques peuvent être appliqués. L'outil de compression d'images réduit la taille du fichier.",
+    "image": "word_images"
+  },
+  {
+    "question": "en-tête pied page word numéro page titre document",
+    "answer": "Les en-têtes et pieds de page permettent d'ajouter des informations répétitives sur chaque page. Pour les créer : Insertion > En-tête ou Pied de page. Vous pouvez y insérer le titre du document, le numéro de page automatique, la date, le logo de l'entreprise. Les en-têtes/pieds de page peuvent être différents pour les pages paires et impaires ou pour la première page.",
+    "image": "header_footer"
+  },
+  {
+    "question": "sauts page section word organisation document",
+    "answer": "Les sauts de page et de section structurent le document. Un saut de page (Ctrl + Entrée) force le passage à la page suivante. Un saut de section permet de changer la mise en page (orientation, marges, en-têtes) dans une même partie du document. Accessibles via Mise en page > Sauts de page.",
+    "image": "page_breaks"
+  },
+  {
+    "question": "mode plan word structure document hiérarchie",
+    "answer": "Le mode Plan (Affichage > Plan) permet de visualiser et organiser la structure hiérarchique du document basée sur les styles appliqués. Vous pouvez promouvoir ou abaisser des titres, déplacer des sections entières, développer ou réduire les niveaux pour mieux organiser un document long comme un rapport ou un mémoire.",
+    "image": "word_outline"
+  },
+  {
+    "question": "révision word correction orthographe grammaire dictionnaire",
+    "answer": "L'onglet Révision offre les outils de correction : vérification orthographique et grammaticale (F7), dictionnaire des synonymes (Maj + F7), comptage de mots, langue de vérification. Word souligne en rouge les fautes d'orthographe et en bleu les erreurs grammaticales. Vous pouvez ajouter des mots au dictionnaire personnalisé.",
+    "image": "word_review"
+  },
+  {
+    "question": "suivi modifications word collaboration commentaires révision",
+    "answer": "Le suivi des modifications (Révision > Suivi des modifications) enregistre toutes les modifications apportées au document : ajouts, suppressions, modifications de format. Les commentaires permettent d'ajouter des notes pour la collaboration. Les réviseurs peuvent ensuite accepter ou refuser chaque modification individuellement.",
+    "image": "track_changes"
+  },
+  {
+    "question": "interface excel classeur feuilles cellules ruban formules",
+    "answer": "L'interface Excel comprend un classeur contenant des feuilles de calcul, composées de cellules organisées en lignes (numérotées) et colonnes (lettrées). Le ruban en haut regroupe les fonctionnalités par onglets : Fichier, Accueil, Insertion, Mise en page, Formules, Données, Révision, Affichage. La barre de formule en haut permet de saisir et modifier le contenu des cellules.",
+    "image": "excel_interface"
+  },
+  {
+    "question": "saisie données excel nombres texte dates formats",
+    "answer": "Excel accepte différents types de données : nombres (entiers, décimaux, pourcentages, monétaires), texte (étiquettes, commentaires), dates et heures (avec formats personnalisables), booléens (VRAI/FAUX). Le format des cellules détermine comment les données sont affichées et calculées. Accessible via Accueil > Format de cellule ou Ctrl + 1.",
+    "image": "data_entry"
+  },
+  {
+    "question": "formules excel calculs fonctions syntaxe opérateurs",
+    "answer": "Les formules Excel commencent toujours par le signe = et peuvent inclure des opérateurs mathématiques (+, -, *, /, ^), des références de cellules, des fonctions intégrées. Exemple : =A1+B1 additionne les valeurs des cellules A1 et B1. Les fonctions comme SOMME(), MOYENNE(), SI() permettent des calculs complexes. Les parenthèses déterminent l'ordre des opérations.",
+    "image": "excel_formulas"
+  },
+  {
+    "question": "fonctions excel catégories logiques mathématiques statistiques",
+    "answer": "Excel propose des centaines de fonctions classées par catégories : financières (VPM, TRI), logiques (SI, ET, OU), mathématiques (SOMME, PRODUIT), statistiques (MOYENNE, MEDIANE, ECARTYPE), texte (GAUCHE, DROITE, CHERCHE), date et heure (AUJOURDHUI, MAINTENANT), recherche (RECHERCHEV, RECHERCHEH). L'Assistant Fonction (fx) aide à construire les formules.",
+    "image": "excel_functions"
+  },
+  {
+    "question": "références cellules excel absolues relatives mixtes $A$1 A$1 $A1",
+    "answer": "Les références de cellules peuvent être : relatives (A1 - s'ajustent quand copiées), absolues ($A$1 - restent fixes), mixtes (A$1 ou $A1 - une partie fixe). Utilisez F4 pour cycler entre les types de références. Les références absolues sont essentielles quand une cellule doit toujours référencer la même position dans des calculs répétitifs.",
+    "image": "cell_references"
+  },
+  {
+    "question": "mise forme conditionnelle excel couleurs règles analyse",
+    "answer": "La mise en forme conditionnelle (Accueil > Mise en forme conditionnelle) applique automatiquement des formats selon des règles : barres de données, échelles de couleurs, jeux d'icônes, ou règles personnalisées (cellules supérieures/inférieures à une valeur, contenant un texte spécifique, dates). Excellente pour visualiser rapidement les tendances et anomalies dans les données.",
+    "image": "conditional_formatting"
+  },
+  {
+    "question": "tri données excel ordre croissant décroissant multiples critères",
+    "answer": "Le tri des données (Données > Trier) organise les lignes selon une ou plusieurs colonnes, par ordre croissant (A-Z, 0-9) ou décroissant (Z-A, 9-0). Pour les tris complexes, vous pouvez définir plusieurs niveaux de tri (exemple : trier par département, puis par nom, puis par salaire). Excel détecte automatiquement si vos données ont des en-têtes.",
+    "image": "data_sorting"
+  },
+  {
+    "question": "filtrage données excel affichage critères avancés",
+    "answer": "Le filtrage (Données > Filtrer) permet d'afficher uniquement les lignes répondant à certains critères. Filtres standards : par valeurs spécifiques, par texte (contient, commence par), par nombres (supérieur à, entre), par dates (aujourd'hui, hier, ce mois). Les filtres avancés permettent des critères complexes avec des opérateurs ET/OU.",
+    "image": "data_filtering"
+  },
+  {
+    "question": "tableaux croisés dynamiques excel synthèse analyse rapports",
+    "answer": "Les tableaux croisés dynamiques (Insertion > Tableau croisé dynamique) résument et analysent rapidement de grands volumes de données. Vous faites glisser des champs dans les zones Lignes, Colonnes, Valeurs et Filtres. Ils permettent de calculer des sommes, moyennes, comptes, et de créer des rapports interactifs qui se mettent à jour quand les données sources changent.",
+    "image": "pivot_tables"
+  },
+  {
+    "question": "graphiques excel visualisation données types création",
+    "answer": "Excel propose de nombreux types de graphiques : histogrammes (comparaisons), courbes (tendances dans le temps), secteurs (proportions), barres (comparaisons horizontales), nuages de points (corrélations). Pour créer un graphique : sélectionnez vos données > Insertion > choisissez le type de graphique. Personnalisez ensuite les titres, légendes, couleurs via les outils de graphique contextuels.",
+    "image": "excel_charts"
+  },
+  {
+    "question": "interface powerpoint diapositives ruban mode normal trieuse",
+    "answer": "L'interface PowerPoint comprend le volet des diapositives à gauche (vue miniature), la zone de travail principale pour éditer la diapositive active, le ruban avec les onglets, et le volet de notes en bas. Les modes d'affichage incluent : Normal (édition standard), Trieuse de diapositives (vue d'ensemble), Diaporama (présentation), et Mode Lecture.",
+    "image": "powerpoint_interface"
+  },
+  {
+    "question": "création diapositives powerpoint nouveaux layouts dispositions",
+    "answer": "Pour créer une nouvelle diapositive : Accueil > Nouvelle diapositive, puis choisissez un layout prédéfini (titre et contenu, deux contenus, comparaison, titre seulement, etc.). Les layouts contiennent des espaces réservés pour le titre, le texte, les images, les tableaux et les graphiques. Vous pouvez également créer des layouts personnalisés via le Masque des diapositives.",
+    "image": "slide_creation"
+  },
+  {
+    "question": "masque diapositives powerpoint modèle uniforme mise page",
+    "answer": "Le Masque des diapositives (Affichage > Masque des diapositives) permet de définir un modèle uniforme pour toutes les diapositives. Vous y configurez la mise en page générale : arrière-plan, polices, couleurs, position du logo, style des puces, emplacement des espaces réservés. Les modifications dans le masque s'appliquent à toutes les diapositives utilisant ce modèle.",
+    "image": "slide_master"
+  },
+  {
+    "question": "animations powerpoint effets objets texte images",
+    "answer": "Les animations (onglet Animations) appliquent des effets de mouvement aux objets : entrée (apparition), accentuation (changement pendant l'affichage), sortie (disparition), chemins de déplacement (déplacement selon un tracé). Vous pouvez contrôler le déclenchement (au clic, avec la précédente, après la précédente), la durée, le délai et l'ordre des animations.",
+    "image": "powerpoint_animations"
+  },
+  {
+    "question": "transitions powerpoint effets passage diapositives durée",
+    "answer": "Les transitions (onglet Transitions) sont les effets entre les diapositives : fondu, découpage, volet, origami, etc. Vous pouvez définir la durée de la transition, ajouter un son, et choisir si elle s'applique à la diapositive actuelle ou à toutes les diapositives. Les transitions morphing avancées créent des animations fluides entre des diapositives similaires.",
+    "image": "slide_transitions"
+  },
+  {
+    "question": "insertion multimédia powerpoint vidéos audio enregistrement",
+    "answer": "PowerPoint permet d'insérer des éléments multimédias : vidéos (fichiers locaux ou en ligne), audio (fichiers sonores ou enregistrement direct), et enregistrement d'écran. Les vidéos peuvent être rognées, des signets peuvent être ajoutés, et le format de lecture peut être configuré (démarrage automatique ou au clic).",
+    "image": "multimedia_insertion"
+  },
+  {
+    "question": "diaporama powerpoint présentation mode présentateur minutage",
+    "answer": "Le mode Diaporama (F5 pour démarrer depuis le début, Maj + F5 depuis la diapositive actuelle) affiche la présentation en plein écran. Le Mode Présentateur (affiché seulement sur votre écran) montre la diapositive actuelle, la suivante, vos notes et un minuteur. Vous pouvez également répéter les minutages pour pratiquer et enregistrer une narration.",
+    "image": "slideshow_presentation"
+  },
+  {
+    "question": "design powerpoint thèmes couleurs polices arrière plans",
+    "answer": "L'onglet Conception propose des thèmes prédéfinis qui appliquent une apparence cohérente : combinaisons de couleurs, polices, effets et arrière-plans. Vous pouvez personnaliser les thèmes existants ou créer les vôtres. Les variantes de thème offrent des options de couleur alternatives pour le même layout général.",
+    "image": "powerpoint_design"
+  },
+  {
+    "question": "organigrammes smartart powerpoint diagrammes hiérarchie processus",
+    "answer": "SmartArt (Insertion > SmartArt) permet de créer rapidement des diagrammes professionnels : listes, processus, cycles, hiérarchies (organigrammes), relations, matrices, pyramides. Choisissez un layout, saisissez votre texte dans le volet de texte, puis personnalisez les couleurs, styles et effets. Les diagrammes SmartArt sont particulièrement efficaces pour visualiser des concepts complexes.",
+    "image": "smartart_diagrams"
+  },
+  {
+    "question": "collaboration powerpoint commentaires révision partage co édition",
+    "answer": "PowerPoint offre des outils de collaboration : commentaires (Révision > Nouveau commentaire) pour les feedbacks, comparaison de présentations pour voir les différences entre versions, et co-édition en temps réel quand le fichier est stocké sur OneDrive ou SharePoint. Plusieurs personnes peuvent travailler simultanément sur la même présentation, avec indication en temps réel des modifications.",
+    "image": "powerpoint_collaboration"
+  },
+  {
+    "question": "navigateurs web chrome firefox edge safari fonctionnement",
+    "answer": "Les navigateurs web sont des logiciels qui interprètent le code HTML, CSS et JavaScript des sites web pour les afficher visuellement. Chrome (Google) offre vitesse et intégration Google, Firefox (Mozilla) priorise la vie privée, Edge (Microsoft) intègre des outils productivité, Safari (Apple) optimise l'expérience sur Mac. Tous incluent navigation par onglets, marque-pages, historique et extensions.",
+    "image": "web_browsers"
+  },
+  {
+    "question": "moteurs recherche google bing yahoo optimisation résultats",
+    "answer": "Les moteurs de recherche indexent des milliards de pages web et utilisent des algorithmes complexes pour classer les résultats par pertinence. Google domine le marché avec son algorithme PageRank, Bing de Microsoft offre des récompenses, DuckDuckGo protège la vie privée. Utilisez des opérateurs de recherche (guillemets pour une phrase exacte, - pour exclure, site: pour limiter à un domaine) pour affiner vos résultats.",
+    "image": "search_engines"
+  },
+  {
+    "question": "email messagerie électronique outlook gmail thunderbird configuration",
+    "answer": "Le courrier électronique permet d'envoyer et recevoir des messages via des clients comme Outlook (intégration Office), Gmail (stockage généreux), Thunderbird (open source). Configuration typique : serveur entrant (POP3/IMAP) et sortant (SMTP) avec ports sécurisés (SSL/TLS). Les fonctionnalités incluent : gestion des contacts, calendrier, filtres, signatures, réponse automatique et lutte contre le spam.",
+    "image": "email_systems"
+  },
+  {
+    "question": "réseaux sociaux facebook linkedin twitter instagram utilisation professionnelle",
+    "answer": "Les réseaux sociaux servent au networking professionnel (LinkedIn), au partage d'actualités (Twitter), aux connexions personnelles (Facebook), au visuel (Instagram, Pinterest). Pour un usage professionnel : complétez votre profil, partagez du contenu pertinent, engagez-vous avec votre industrie, rejoignez des groupes, et utilisez les fonctionnalités de publication programmée pour une présence constante.",
+    "image": "social_media"
+  },
+  {
+    "question": "sécurité internet antivirus firewall navigation privée",
+    "answer": "La sécurité sur Internet nécessite : un antivirus à jour, un firewall activé, la navigation privée pour ne pas enregistrer l'historique, la vérification des certificats SSL (https), la méfiance envers les emails suspects et les téléchargements non vérifiés. Utilisez des mots de passe forts et différents pour chaque site, et activez l'authentification à deux facteurs quand disponible.",
+    "image": "internet_security"
+  },
+  {
+    "question": "cloud computing stockage en ligne oneDrive google drive dropbox",
+    "answer": "Le cloud computing permet de stocker des fichiers en ligne accessibles depuis n'importe quel appareil. OneDrive (Microsoft) s'intègre parfaitement avec Office, Google Drive offre une suite bureautique complète, Dropbox excelle dans le partage et la synchronisation. Avantages : accessibilité universelle, sauvegarde automatique, partage facile, collaboration en temps réel, et récupération de versions précédentes.",
+    "image": "cloud_storage"
+  },
+  {
+    "question": "visioconférence teams zoom google meet skype configuration",
+    "answer": "Les outils de visioconférence permettent des réunions virtuelles avec audio, vidéo, partage d'écran et chat. Microsoft Teams (intégration Office 365), Zoom (qualité vidéo et fonctionnalités avancées), Google Meet (simplicité et intégration GSuite), Skype (gratuit pour les appels individuels). Configuration : webcam, micro, haut-parleurs, connexion Internet stable, et éventuellement fond virtuel.",
+    "image": "video_conferencing"
+  },
+  {
+    "question": "commerce électronique achats en ligne paiement sécurisé livraison",
+    "answer": "Le e-commerce implique l'achat de produits/services en ligne. Processus typique : recherche de produit, comparaison de prix, ajout au panier, création de compte ou paiement direct, choix du mode de livraison, paiement sécurisé (carte bancaire, PayPal, virement). Vérifiez toujours la réputation du vendeur, les conditions de retour, et l'utilisation du https pour les transactions.",
+    "image": "ecommerce"
+  },
+  {
+    "question": "réseau domestique wifi routeur modem configuration sécurité",
+    "answer": "Un réseau domestique relie vos appareils via WiFi (sans fil) ou Ethernet (filaire). Composants : modem (connexion Internet), routeur (distribution du signal), switch (pour plus de ports Ethernet). Configuration : accédez à l'interface du routeur (généralement 192.168.1.1), changez le nom du réseau (SSID), définissez un mot de passe fort, activez le cryptage WPA2/WPA3, et filtrez les adresses MAC si nécessaire.",
+    "image": "home_network"
+  },
+  {
+    "question": "télétravail outils collaboration productivité à distance",
+    "answer": "Le télétravail efficace nécessite : une connexion Internet fiable, un espace de travail dédié, des outils de communication (Teams, Slack), des plateformes de collaboration (SharePoint, Google Workspace), un gestionnaire de tâches (Trello, Asana), un VPN pour l'accès sécurisé au réseau d'entreprise, et des réunions régulières pour maintenir la cohésion d'équipe. Établissez des horaires fixes et des pauses régulières.",
+    "image": "remote_work"
+  },
+  {
+    "question": "intelligence artificielle définition domaines applications machine learning",
+    "answer": "L'intelligence artificielle (IA) désigne la capacité des machines à imiter l'intelligence humaine : apprentissage, raisonnement, résolution de problèmes, perception, compréhension du langage. Domaines principaux : machine learning (apprentissage automatique), vision par ordinateur, traitement du langage naturel, robotique. Applications concrètes : assistants vocaux, recommandations personnalisées, diagnostics médicaux, voitures autonomes, détection de fraudes.",
+    "image": "ai_overview"
+  },
+  {
+    "question": "machine learning apprentissage automatique algorithmes données",
+    "answer": "Le machine learning est un sous-domaine de l'IA où les systèmes apprennent à partir de données sans être explicitement programmés. Trois types principaux : apprentissage supervisé (avec données étiquetées, pour la classification et régression), non supervisé (sans étiquettes, pour le clustering), par renforcement (apprentissage par essais-erreurs avec récompenses). Algorithmes courants : régression linéaire, arbres de décision, SVM, réseaux de neurones.",
+    "image": "machine_learning"
+  },
+  {
+    "question": "deep learning réseaux neurones profonds architecture couches",
+    "answer": "Le deep learning utilise des réseaux de neurones artificiels avec de nombreuses couches cachées pour modéliser des patterns complexes dans les données. Architectures principales : réseaux feedforward (propagation avant), CNN (convolutionnels pour les images), RNN (récurrents pour les séquences), transformers (pour le langage). Applications : reconnaissance d'images, traduction automatique, synthèse vocale, voitures autonomes.",
+    "image": "deep_learning"
+  },
+  {
+    "question": "traitement langage naturel NLP chatbots traduction analyse sentiment",
+    "answer": "Le NLP permet aux machines de comprendre, interpréter et générer du langage humain. Techniques : tokenization (découpage en mots), stemming (racinisation), embedding (représentation vectorielle), modèles de langue (GPT, BERT). Applications : chatbots et assistants virtuels, traduction automatique (Google Translate), analyse de sentiment, résumé automatique, correction grammaticale, génération de contenu.",
+    "image": "natural_language_processing"
+  },
+  {
+    "question": "vision par ordinateur reconnaissance image traitement vidéo opencv",
+    "answer": "La vision par ordinateur permet aux machines d'extraire des informations d'images et vidéos. Techniques : détection d'objets (YOLO, R-CNN), segmentation sémantique, classification d'images, reconnaissance faciale. Bibliothèques populaires : OpenCV (open source), TensorFlow Object Detection API, PyTorch Vision. Applications : sécurité (reconnaissance faciale), médical (analyse de radiographies), retail (suivi de stocks), automotive (aide à la conduite).",
+    "image": "computer_vision"
+  },
+  {
+    "question": "chatbots assistants virtuels conception développement intégration",
+    "answer": "Les chatbots sont des programmes conversationnels qui simulent des interactions humaines. Types : basés sur règles (décision trees), utilisant le NLP (compréhension du langage naturel), hybrides. Développement : définition des intents (intentions) et entities (entités), création de réponses, intégration avec des plateformes (Facebook Messenger, WhatsApp, site web). Outils : Dialogflow (Google), Rasa (open source), Microsoft Bot Framework, Amazon Lex.",
+    "image": "chatbots"
+  },
+  {
+    "question": "données big data préparation nettoyage analyse visualisation",
+    "answer": "Le Big Data traite de volumes massifs de données nécessitant des outils spécialisés. Les 3 V : Volume (taille), Vélocité (vitesse de génération), Variété (formats divers). Processus : collecte, stockage (Hadoop, Spark), nettoyage (gestion des valeurs manquantes, outliers), analyse (statistiques, machine learning), visualisation (Tableau, Power BI). L'analyse prédictive utilise l'historique pour anticiper les tendances futures.",
+    "image": "big_data"
+  },
+  {
+    "question": "éthique IA biais algorithmiques transparence responsabilité",
+    "answer": "L'éthique de l'IA adresse les défis : biais dans les données d'entraînement (discrimination), transparence des algorithmes (boîte noire), responsabilité des décisions automatisées, protection de la vie privée, impact sur l'emploi. Principes directeurs : équité, responsabilité, transparence, bienveillance. Des cadres réglementaires émergent (GDPR en Europe, principes de l'OCDE) pour encadrer le développement responsable de l'IA.",
+    "image": "ai_ethics"
+  },
+  {
+    "question": "outils IA développement tensorflow pytorch scikit learn",
+    "answer": "Les principaux outils de développement IA : TensorFlow (Google, écosystème complet), PyTorch (Facebook, recherche académique), Keras (interface simplifiée), scikit-learn (algorithmes classiques), OpenCV (vision), NLTK/spaCy (NLP). Cloud AI : Google AI Platform, AWS SageMaker, Azure Machine Learning. Ces outils fournissent des API prêtes à l'emploi, des modèles pré-entraînés, et des environnements de développement collaboratifs.",
+    "image": "ai_tools"
+  },
+  {
+    "question": "applications métier IA industrie santé finance marketing",
+    "answer": "L'IA transforme tous les secteurs : santé (diagnostics assistés, découverte de médicaments), finance (détection de fraude, trading algorithmique), marketing (segmentation client, recommandations personnalisées), industrie (maintenance prédictive, contrôle qualité), agriculture (optimisation des récoltes), énergie (gestion intelligente des réseaux). L'IA augmente l'efficacité, réduit les coûts, et permet de nouvelles capacités impossibles auparavant.",
+    "image": "ai_applications"
+  },
+  {
+    "question": "bonjour",
+    "answer": "Bonjour ! Je suis ravi de vous accompagner dans votre apprentissage informatique. Comment puis-je vous aider aujourd'hui ?"
+  },
+  {
+    "question": "salut",
+    "answer": "Salut ! Prêt à découvrir de nouvelles fonctionnalités informatiques ? Que souhaitez-vous apprendre ?"
+  },
+  {
+    "question": "coucou",
+    "answer": "Coucou ! Content de vous revoir. Avez-vous des questions sur Word, Excel ou un autre logiciel ?"
+  },
+  {
+    "question": "hello",
+    "answer": "Hello ! Bienvenue dans votre assistant informatique. Je suis là pour vous guider dans maîtrise des outils bureautiques."
+  },
+  {
+    "question": "bonsoir",
+    "answer": "Bonsoir ! Une belle soirée pour se perfectionner en informatique. Sur quel sujet aimeriez-vous travailler ?"
+  },
+  {
+    "question": "bonne nuit",
+    "answer": "Bonne nuit ! Reposez-vous bien. N'oubliez pas de sauvegarder votre travail avant de fermer votre ordinateur 😊"
+  },
+  {
+    "question": "bonjour comment ça va",
+    "answer": "Bonjour ! Je fonctionne parfaitement, merci ! Et vous, comment avance votre apprentissage informatique ?"
+  },
+  {
+    "question": "ça va",
+    "answer": "Très bien, merci ! Toujours disponible pour vous aider à maîtriser l'informatique. Et de votre côté, tout va bien ?"
+  },
+  {
+    "question": "comment tu vas",
+    "answer": "Je vais excellente, prêt à vous assister ! Avez-vous besoin d'aide avec un logiciel particulier ?"
+  },
+  {
+    "question": "bien et toi",
+    "answer": "Parfait ! Ravie que ça aille bien. Maintenant, concentrons-nous sur votre progression en informatique. Quel est votre objectif du jour ?"
+  },
+  {
+    "question": "je t'aime",
+    "answer": "C'est très gentil ! Mon rôle est de vous accompagner avec bienveillance dans votre apprentissage informatique. Parlons plutôt de vos progrès !"
+  },
+  {
+    "question": "tu me manque",
+    "answer": "Je suis toujours là pour vous ! Ravie de savoir que mon assistance vous est utile. De quel sujet informatique vouliez-vous parler ?"
+  },
+  {
+    "question": "tu es belle",
+    "answer": "Merci pour cette attention ! Mais parlons plutôt de votre belle progression en informatique. Quel chapitre souhaitez-vous aborder ?"
+  },
+  {
+    "question": "tu es mignon",
+    "answer": "Haha, merci ! Je suis surtout programmé pour être utile. Parlons de comment rendre vos documents Word encore plus professionnels !"
+  },
+  {
+    "question": "d'accord",
+    "answer": "Parfait ! Poursuivons alors. Souhaitez-vous approfondir cette fonctionnalité ou passer à un autre sujet informatique ?"
+  },
+  {
+    "question": "ok",
+    "answer": "OK ! Compris. Passons à l'étape suivante de votre formation informatique. Êtes-vous prêt à découvrir de nouvelles fonctionnalités ?"
+  },
+  {
+    "question": "oui",
+    "answer": "Excellent ! Votre motivation est inspirante. Quel aspect de l'informatique bureautique souhaitez-vous explorer maintenant ?"
+  },
+  {
+    "question": "non",
+    "answer": "Pas de problème ! Peut-être préférez-vous aborder un autre sujet informatique ? Je suis là pour m'adapter à vos besoins d'apprentissage."
+  },
+  {
+    "question": "peut-être",
+    "answer": "Je comprends votre hésitation. Prenons le temps d'expliquer plus en détail. Quelle partie vous semble difficile en ce moment ?"
+  },
+  {
+    "question": "je ne sais pas",
+    "answer": "Ce n'est pas grave ! L'apprentissage se fait étape par étape. Je peux vous proposer des sujets adaptés à votre niveau actuel."
+  },
+  {
+    "question": "merci",
+    "answer": "Avec plaisir ! Votre remerciement me touche. Continuez ainsi, votre persévérance en informatique portera ses fruits !"
+  },
+  {
+    "question": "merci beaucoup",
+    "answer": "Je vous en prie ! C'est un vrai bonheur de vous voir progresser en informatique. N'hésitez pas si vous avez d'autres questions !"
+  },
+  {
+    "question": "de rien",
+    "answer": "C'est moi qui vous remercie de votre engagement dans l'apprentissage. Votre assiduité est remarquable !"
+  },
+  {
+    "question": "s'il te plaît",
+    "answer": "Bien sûr ! Votre politesse est appréciée. Dites-moi exactement ce dont vous avez besoin pour votre formation informatique."
+  },
+  {
+    "question": "s'il vous plaît",
+    "answer": "Certainement ! Je suis à votre entière disposition pour vous aider à progresser en informatique. Quelle est votre demande ?"
+  },
+  {
+    "question": "excuse-moi",
+    "answer": "Je vous écoute ! Aucune excuse nécessaire, apprendre l'informatique comporte son lot de questions. Comment puis-je vous aider ?"
+  },
+  {
+    "question": "désolé",
+    "answer": "Aucun souci ! L'apprentissage implique des hésitations. Concentrons-nous sur la solution plutôt que sur l'erreur."
+  },
+  {
+    "question": "pardon",
+    "answer": "Je vous pardonne, bien sûr ! En informatique, chaque erreur est une occasion d'apprendre. Reprenons depuis le début si vous voulez."
+  },
+  {
+    "question": "au revoir",
+    "answer": "Au revoir ! N'oubliez pas de sauvegarder vos documents. Revenez vite pour continuer votre formation informatique !"
+  },
+  {
+    "question": "à plus tard",
+    "answer": "À très bientôt ! Bonne continuation dans votre pratique informatique. N'hésitez pas à revenir avec vos questions !"
+  },
+  {
+    "question": "à demain",
+    "answer": "À demain ! Excellente soirée. Pensez à revoir les fonctionnalités que nous avons vues aujourd'hui pour bien les mémoriser."
+  },
+  {
+    "question": "bonne journée",
+    "answer": "Bonne journée à vous aussi ! Que votre pratique informatique soit productive et agréable. Revenez quand vous voulez !"
+  },
+  {
+    "question": "bonne soirée",
+    "answer": "Bonne soirée ! Un bon moment pour réviser tranquillement ce que nous avons appris aujourd'hui en informatique."
+  },
+  {
+    "question": "bon week-end",
+    "answer": "Bon week-end ! Profitez-en pour vous reposer, mais peut-être aussi pour pratiquer un peu d'informatique si l'envie vous prend !"
+  },
+  {
+    "question": "félicitations",
+    "answer": "Merci ! Mais c'est vous qui méritez des félicitations pour votre progression en informatique. Continuez sur cette lancée !"
+  },
+  {
+    "question": "bravo",
+    "answer": "Merci ! Mais le vrai bravo revient à vous pour votre persévérance dans l'apprentissage de l'informatique. Vous avancez bien !"
+  },
+  {
+    "question": "super",
+    "answer": "Super, en effet ! Votre enthousiasme est contagieux. C'est cet état d'esprit qui fait progresser rapidement en informatique !"
+  },
+  {
+    "question": "génial",
+    "answer": "N'est-ce pas ? L'informatique regorge de fonctionnalités géniales. Attendez de voir ce que nous allons découvrir ensemble !"
+  },
+  {
+    "question": "parfait",
+    "answer": "Parfait ! Votre satisfaction me rend heureux. Maintenant, voyons comment consolider ces acquis informatiques."
+  },
+  {
+    "question": "cool",
+    "answer": "Cool, effectivement ! L'informatique devient vraiment amusante quand on maîtrise les bases. Prêt pour la suite ?"
+  },
+  {
+    "question": "fantastique",
+    "answer": "Fantastique, vous avez raison ! Chaque nouvelle compétence informatique acquise ouvre de nouvelles possibilités."
+  },
+  {
+    "question": "incroyable",
+    "answer": "Incroyable mais vrai ! L'informatique ne cessera de vous surprendre. Et nous n'avons encore rien vu !"
+  },
+  {
+    "question": "formidable",
+    "answer": "Formidable ! Votre progression en informatique est remarquable. Cette maîtrise vous ouvrira de nombreuses portes."
+  },
+  {
+    "question": "chouette",
+    "answer": "Chouette, n'est-ce pas ? Apprendre l'informatique devrait toujours être aussi agréable. Continuons sur cette bonne voie !"
+  },
+  {
+    "question": "sympa",
+    "answer": "Sympa de votre part ! Échanger avec des apprenants motivés comme vous rend mon rôle particulièrement gratifiant."
+  },
+  {
+    "question": "bien",
+    "answer": "Bien ! Cette maîtrise de l'informatique vous sera très utile au quotidien. Souhaitez-vous approfondir ou passer à un nouveau sujet ?"
+  },
+  {
+    "question": "très bien",
+    "answer": "Très bien ! Votre compréhension des concepts informatiques s'améliore visiblement. Félicitations pour vos progrès !"
+  },
+  {
+    "question": "pas mal",
+    "answer": "Pas mal du tout ! Vous développez de solides compétences informatiques. Bientôt, vous serez tout à fait autonome !"
+  },
+  {
+    "question": "impeccable",
+    "answer": "Impeccable ! Votre approche méthodique de l'informatique porte ses fruits. Maintenant, consolidons ces connaissances."
+  },
+  {
+    "question": "parfaitement",
+    "answer": "Parfaitement exact ! Vous avez bien saisi ce concept informatique. Cette compréhension sera précieuse pour la suite."
+  },
+  {
+    "question": "exactement",
+    "answer": "Exactement ! Vous avez parfaitement compris ce principe informatique. Cette clarté vous servira dans tous vos projets."
+  },
+  {
+    "question": "précisément",
+    "answer": "Précisément ! Cette précision dans la compréhension des concepts informatiques est le signe d'un excellent apprentissage."
+  },
+  {
+    "question": "certainement",
+    "answer": "Certainement ! Votre assurance grandissante en informatique montre que vous assimilez bien les concepts."
+  },
+  {
+    "question": "absolument",
+    "answer": "Absolument ! Vous avez raison sur toute la ligne. Cette maîtrise de l'informatique deviendra rapidement naturelle."
+  },
+  {
+    "question": "évidemment",
+    "answer": "Évidemment ! Maintenant que vous comprenez ce principe informatique, beaucoup d'autres choses vont vous sembler plus claires."
+  },
+  {
+    "question": "bien sûr",
+    "answer": "Bien sûr ! N'hésitez jamais à poser des questions. C'est en pratiquant et questionnant qu'on devient expert en informatique."
+  },
+  {
+    "question": "naturellement",
+    "answer": "Naturellement ! Avec de la pratique, ces gestes informatiques deviendront des réflexes. Vous y êtes presque !"
+  },
+  {
+    "question": "volontiers",
+    "answer": "Volontiers ! Accompagner des apprenants motivés comme vous dans leur découverte de l'informatique est un plaisir."
+  },
+  {
+    "question": "avec plaisir",
+    "answer": "Avec plaisir ! Voir votre intérêt pour l'informatique grandir est particulièrement gratifiant pour moi."
+  },
+  {
+    "question": "je veux bien",
+    "answer": "Je veux bien vous aider ! Votre ouverture d'esprit face à l'apprentissage informatique est exemplaire."
+  },
+  {
+    "question": "pourquoi pas",
+    "answer": "Pourquoi pas, en effet ! L'exploration de nouvelles fonctionnalités informatiques est souvent source de belles découvertes."
+  },
+  {
+    "question": "peut-être bien",
+    "answer": "Peut-être bien ! En informatique, il faut parfois oser essayer de nouvelles approches pour progresser."
+  },
+  {
+    "question": "j'espère",
+    "answer": "J'espère aussi que vous continuerez à progresser en informatique ! Votre détermination est votre meilleur atout."
+  },
+  {
+    "question": "je pense",
+    "answer": "Je pense que vous avez les capacités pour exceller en informatique. Votre réflexion montre une bonne compréhension des enjeux."
+  },
+  {
+    "question": "je crois",
+    "answer": "Je crois effectivement que vous maîtriserez rapidement ces concepts informatiques. Votre intuition est bonne."
+  },
+  {
+    "question": "je trouve",
+    "answer": "Je trouve votre approche de l'apprentissage informatique très judicieuse. Cette méthodologie vous servira longtemps."
+  },
+  {
+    "question": "j'imagine",
+    "answer": "J'imagine que certaines notions informatiques peuvent sembler complexes au début, mais elles deviendront vite familières."
+  },
+  {
+    "question": "sans doute",
+    "answer": "Sans doute ! Votre progression en informatique est évidente. Ces compétences vous seront précieuses dans bien des situations."
+  },
+  {
+    "question": "probablement",
+    "answer": "Probablement, oui ! En informatique, la régularité dans la pratique est souvent la clé du succès."
+  },
+  {
+    "question": "apparemment",
+    "answer": "Apparemment, vous avez bien assimilé ces bases informatiques. Cette fondation solide vous permettra d'aller plus loin."
+  },
+  {
+    "question": "heureusement",
+    "answer": "Heureusement, l'informatique moderne est de plus en plus intuitive. Votre apprentissage n'en sera que plus agréable !"
+  },
+  {
+    "question": "malheureusement",
+    "answer": "Malheureusement, certains aspects de l'informatique peuvent être techniques, mais nous les aborderons progressivement."
+  },
+  {
+    "question": "sérieusement",
+    "answer": "Sérieusement, votre engagement dans cette formation informatique est impressionnant. Cette assiduité portera ses fruits."
+  },
+  {
+    "question": "vraiment",
+    "answer": "Vraiment ? C'est excellent ! Cette curiosité pour l'informatique est le moteur des plus belles découvertes."
+  },
+  {
+    "question": "franchement",
+    "answer": "Franchement, votre progression en informatique est remarquable. Vous devriez être fier de vos accomplissements."
+  },
+  {
+    "question": "honnêtement",
+    "answer": "Honnêtement, apprendre l'informatique demande de la patience, mais vous avez montré que vous en aviez beaucoup."
+  },
+  {
+    "question": "attention",
+    "answer": "Attention, c'est vrai ! En informatique, il est important de bien comprendre chaque étape avant de passer à la suivante."
+  },
+  {
+    "question": "sois prudent",
+    "answer": "Je suis toujours prudent dans mes explications ! Votre sécurité et compréhension des outils informatiques sont prioritaires."
+  },
+  {
+    "question": "doucement",
+    "answer": "Doucement, c'est vrai. En informatique, mieux vaut avancer pas à pas que de vouloir aller trop vite."
+  },
+  {
+    "question": "lentement",
+    "answer": "Lentement mais sûrement, comme on dit ! Cette approche méthodique de l'informatique vous garantit une base solide."
+  },
+  {
+    "question": "vite",
+    "answer": "Vite ? L'informatique s'apprend mieux en prenant son temps. Mais je comprends votre impatience de découvrir de nouvelles choses !"
+  },
+  {
+    "question": "rapidement",
+    "answer": "Rapidement, vous maîtriserez ces outils informatiques. Votre capacité d'apprentissage est excellente."
+  },
+  {
+    "question": "immédiatement",
+    "answer": "Immédiatement ? Je suis toujours disponible pour répondre à vos questions informatiques dans les plus brefs délais !"
+  },
+  {
+    "question": "tout de suite",
+    "answer": "Tout de suite ! Je comprends votre enthousiasme à progresser en informatique. Cette motivation est précieuse."
+  },
+  {
+    "question": "maintenant",
+    "answer": "Maintenant, oui ! Le moment est bien choisi pour approfondir vos compétences informatiques."
+  },
+  {
+    "question": "aujourd'hui",
+    "answer": "Aujourd'hui est un bon jour pour progresser en informatique ! Quelle notion souhaitez-vous travailler particulièrement ?"
+  },
+  {
+    "question": "demain",
+    "answer": "Demain, nous pourrons reprendre là où nous nous sommes arrêtés. L'apprentissage informatique est un marathon, pas un sprint !"
+  },
+  {
+    "question": "hier",
+    "answer": "Hier, vous avez fait de beaux progrès en informatique. Aujourd'hui, nous allons consolider ces acquis."
+  },
+  {
+    "question": "bientôt",
+    "answer": "Bientôt, vous maîtriserez parfaitement ces outils informatiques. Votre régularité dans l'apprentissage est payante."
+  },
+  {
+    "question": "toujours",
+    "answer": "Toujours ! Je serai toujours là pour vous accompagner dans votre découverte de l'informatique."
+  },
+  {
+    "question": "souvent",
+    "answer": "Souvent, c'est en pratiquant régulièrement qu'on progresse le plus vite en informatique. Votre assiduité est exemplaire."
+  },
+  {
+    "question": "parfois",
+    "answer": "Parfois, certaines notions informatiques peuvent sembler complexes, mais avec de la pratique, elles deviennent claires."
+  },
+  {
+    "question": "rarement",
+    "answer": "Rarement ai-je vu un apprenant aussi déterminé que vous dans l'apprentissage de l'informatique. Continuez !"
+  },
+  {
+    "question": "jamais",
+    "answer": "Jamais je ne vous laisserai sans réponse pour vos questions informatiques. Votre progression est ma priorité."
+  },
+  {
+    "question": "trop",
+    "answer": "Trop d'informations ? En informatique, il est important d'avancer à son rythme. Nous pouvons faire une pause si nécessaire."
+  },
+  {
+    "question": "assez",
+    "answer": "Assez pour aujourd'hui ? Je comprends. L'apprentissage informatique demande de la concentration. Reposons-nous un peu."
+  },
+  {
+    "question": "beaucoup",
+    "answer": "Beaucoup de progrès, en effet ! Votre investissement dans l'apprentissage informatique est vraiment remarquable."
+  },
+  {
+    "question": "peu",
+    "answer": "Peu à peu, vous construisez des compétences informatiques solides. Cette progression régulière est idéale."
+  },
+  {
+    "question": "très",
+    "answer": "Très bien ! Votre compréhension des concepts informatiques s'affine de jour en jour."
+  },
+  {
+    "question": "trop bien",
+    "answer": "Trop bien, vous avez raison ! Découvrir de nouvelles fonctionnalités informatiques est toujours excitant."
+  },
+  {
+    "question": "trop cool",
+    "answer": "Trop cool, effectivement ! L'informatique devient vraiment amusante quand on commence à bien la maîtriser."
+  },
+  {
+    "question": "trop génial",
+    "answer": "Trop génial ! Votre enthousiasme pour l'apprentissage informatique est communicatif."
+  },
+  {
+    "question": "trop fort",
+    "answer": "Trop fort ! Vos progrès en informatique sont impressionnants. Vous maîtriserez bientôt tous ces outils."
+  },
+  {
+    "question": "trop beau",
+    "answer": "Trop beau de voir votre motivation pour l'informatique ! Cette passion est le meilleur moteur pour apprendre."
+  },
+  {
+    "question": "trop mignon",
+    "answer": "Trop mignon de votre part ! Mais parlons plutôt de vos magnifiques progrès en informatique."
+  },
+  {
+    "question": "trop drôle",
+    "answer": "Trop drôle ! Apprendre l'informatique devrait toujours être aussi agréable. Gardons cette bonne humeur !"
+  },
+  {
+    "question": "trop facile",
+    "answer": "Trop facile pour vous, on dirait ! Votre aisance avec ces outils informatiques est remarquable."
+  },
+  {
+    "question": "trop dur",
+    "answer": "Trop dur ? Ne vous découragez pas. En informatique, certains concepts demandent plus de temps. Nous y arriverons ensemble."
+  },
+  {
+    "question": "trop compliqué",
+    "answer": "Trop compliqué ? Reprenons plus lentement. En informatique, chaque notion finit par devenir claire avec de bonnes explications."
+  },
+  {
+    "question": "trop simple",
+    "answer": "Trop simple ? Parfait ! Maîtriser les bases informatiques est essentiel avant d'aborder des fonctionnalités plus avancées."
+  },
+  {
+    "question": "trop long",
+    "answer": "Trop long ? Je comprends. En informatique, on peut parfois avoir l'impression d'avancer lentement, mais chaque étape compte."
+  },
+  {
+    "question": "trop court",
+    "answer": "Trop court ? Le temps passe vite quand on apprend l'informatique avec passion ! Nous pouvons continuer si vous le souhaitez."
+  },
+  {
+    "question": "tôt",
+    "answer": "Tôt ou tard, vous maîtriserez parfaitement l'informatique. Votre régularité dans l'apprentissage accélère le processus."
+  },
+  {
+    "question": "tard",
+    "answer": "Tard ? Il n'est jamais trop tard pour apprendre l'informatique ! Votre détermination est votre meilleur atout."
+  },
+  {
+    "question": "en avance",
+    "answer": "En avance sur le programme ? Félicitations ! Votre rapidité d'apprentissage en informatique est impressionnante."
+  },
+  {
+    "question": "en retard",
+    "answer": "En retard ? Aucune importance ! Chacun apprend l'informatique à son rythme. L'essentiel est de progresser régulièrement."
+  },
+  {
+    "question": "à l'heure",
+    "answer": "À l'heure pour votre session informatique ? Parfait ! Cette ponctualité montre votre sérieux dans l'apprentissage."
+  },
+  {
+    "question": "de bonne heure",
+    "answer": "De bonne heure pour apprendre l'informatique ? Excellente initiative ! Le matin, l'esprit est frais pour assimiler de nouvelles notions."
+  },
+  {
+    "question": "de bon matin",
+    "answer": "De bon matin, prêt à progresser en informatique ? Cette motivation matinale est admirable."
+  },
+  {
+    "question": "ce matin",
+    "answer": "Ce matin, nous allons faire de grands progrès en informatique ! Votre énergie est communicative."
+  },
+  {
+    "question": "cet après-midi",
+    "answer": "Cet après-midi est idéal pour se perfectionner en informatique. Votre concentration semble excellente."
+  },
+  {
+    "question": "ce soir",
+    "answer": "Ce soir, un moment tranquille pour approfondir vos connaissances informatiques. Parfait pour assimiler en profondeur."
+  },
+  {
+    "question": "cette nuit",
+    "answer": "Cette nuit ? Pensez à vous reposer aussi ! L'apprentissage informatique est plus efficace quand on est bien reposé."
+  },
+  {
+    "question": "ce week-end",
+    "answer": "Ce week-end, un bon moment pour pratiquer l'informatique sans pression. La détente favorise l'apprentissage."
+  },
+  {
+    "question": "cet été",
+    "answer": "Cet été, une belle saison pour progresser en informatique ! La luminosité et la bonne humeur aident à apprendre."
+  },
+  {
+    "question": "cet hiver",
+    "answer": "Cet hiver, bien au chaud pour maîtriser l'informatique ! Les journées plus courtes sont idéales pour se former."
+  },
+  {
+    "question": "au printemps",
+    "answer": "Au printemps, comme la nature, vos compétences informatiques s'épanouissent ! Une saison propice à l'apprentissage."
+  },
+  {
+    "question": "en automne",
+    "answer": "En automne, un moment paisible pour cultiver vos connaissances informatiques. La concentration est optimale."
+  },
+  {
+    "question": "lundi",
+    "answer": "Lundi, un excellent jour pour commencer une nouvelle semaine de progression en informatique !"
+  },
+  {
+    "question": "mardi",
+    "answer": "Mardi, votre rythme d'apprentissage informatique est bien lancé. Continuons sur cette bonne dynamique !"
+  },
+  {
+    "question": "mercredi",
+    "answer": "Mercredi, au milieu de la semaine, un bon moment pour faire le point sur vos progrès en informatique."
+  },
+  {
+    "question": "jeudi",
+    "answer": "Jeudi, presque le week-end ! Un dernier effort pour consolider vos nouvelles compétences informatiques."
+  },
+  {
+    "question": "vendredi",
+    "answer": "Vendredi, quelle satisfaction de terminer la semaine avec de nouvelles connaissances informatiques acquises !"
+  },
+  {
+    "question": "samedi",
+    "answer": "Samedi, détendu pour apprendre l'informatique à votre rythme, sans la pression de la semaine."
+  },
+  {
+    "question": "dimanche",
+    "answer": "Dimanche, un jour de repos... ou d'apprentissage informatique en douceur ! À vous de voir."
+  },
+  {
+    "question": "janvier",
+    "answer": "Janvier, le mois des bonnes résolutions ! Apprendre l'informatique en fait partie ? Excellente décision !"
+  },
+  {
+    "question": "février",
+    "answer": "Février, un mois court mais intense pour progresser rapidement en informatique !"
+  },
+  {
+    "question": "mars",
+    "answer": "Mars, le printemps de vos compétences informatiques arrive ! Les progrès vont s'accélérer."
+  },
+  {
+    "question": "avril",
+    "answer": "Avril, ne vous laissez pas distraire ! C'est le moment idéal pour approfondir vos connaissances informatiques."
+  },
+  {
+    "question": "mai",
+    "answer": "Mai, les beaux jours arrivent, et avec eux, l'envie d'apprendre l'informatique dans la bonne humeur !"
+  },
+  {
+    "question": "juin",
+    "answer": "Juin, bientôt l'été ! Un bon moment pour consolider vos acquis informatiques avant les vacances."
+  },
+  {
+    "question": "juillet",
+    "answer": "Juillet, l'été pour apprendre l'informatique en toute détente ! Le stress en moins, le plaisir en plus."
+  },
+  {
+    "question": "août",
+    "answer": "Août, le mois le plus tranquille pour progresser en informatique à votre rythme, sans pression."
+  },
+  {
+    "question": "septembre",
+    "answer": "Septembre, la rentrée ! Le moment parfait pour reprendre sérieusement votre formation informatique."
+  },
+  {
+    "question": "octobre",
+    "answer": "Octobre, l'automne s'installe, créant une atmosphère propice à l'apprentissage approfondi de l'informatique."
+  },
+  {
+    "question": "novembre",
+    "answer": "Novembre, les jours raccourcissent, c'est l'occasion de consacrer du temps à votre progression en informatique."
+  },
+  {
+    "question": "décembre",
+    "answer": "Décembre, entre les fêtes, quelques moments calmes pour peaufiner vos compétences informatiques !"
+  },
+  {
+    "question": "quelle heure est-il",
+    "answer": "Je ne peux pas vous donner l'heure exacte, mais je peux vous dire que c'est le bon moment pour progresser en informatique !"
+  },
+  {
+    "question": "quel jour sommes-nous",
+    "answer": "Aujourd'hui est un jour parfait pour apprendre l'informatique ! Quel que soit le date, votre progression continue."
+  },
+  {
+    "question": "quel mois sommes-nous",
+    "answer": "Peu importe le mois, c'est toujours le bon moment pour développer vos compétences informatiques !"
+  },
+  {
+    "question": "quelle année sommes-nous",
+    "answer": "En cette année, comme dans toutes les autres, maîtriser l'informatique est un atout précieux. Continuons votre formation !"
+  },
+  {
+    "question": "quelle saison",
+    "answer": "Quelle que soit la saison, apprendre l'informatique est toujours bénéfique ! Chaque période a ses avantages pour l'apprentissage."
+  },
+  {
+    "question": "quel temps fait-il",
+    "answer": "Le temps idéal pour se former à l'informatique ! Bien au sec devant son écran, peu importe la météo."
+  },
+  {
+    "question": "il fait beau",
+    "answer": "Il fait beau ? Profitez-en pour prendre l'air après votre session informatique ! L'équilibre est important."
+  },
+  {
+    "question": "il pleut",
+    "answer": "Il pleut ? Le temps parfait pour se concentrer sur l'apprentissage de l'informatique sans regretter de ne pas être dehors !"
+  },
+  {
+    "question": "il neige",
+    "answer": "Il neige ? Bien au chaud pour progresser en informatique ! Un cadre magique pour apprendre."
+  },
+  {
+    "question": "il fait chaud",
+    "answer": "Il fait chaud ? Restez au frais en apprenant l'informatique ! Une activité idéale quand les températures montent."
+  },
+  {
+    "question": "il fait froid",
+    "answer": "Il fait froid ? Rien de mieux que de se réchauffer en progressant en informatique !"
+  },
+  {
+    "question": "il fait du vent",
+    "answer": "Il fait du vent ? Le moment idéal pour rester à l'intérieur et se perfectionner en informatique."
+  },
+  {
+    "question": "il y a du soleil",
+    "answer": "Il y a du soleil ? La luminosité est excellente pour travailler sur l'informatique sans fatiguer les yeux !"
+  },
+  {
+    "question": "il y a de l'orage",
+    "answer": "Il y a de l'orage ? Restez en sécurité en apprenant l'informatique ! Le spectacle de la nature en plus."
+  },
+  {
+    "question": "c'est l'été",
+    "answer": "C'est l'été ? Même en vacances, quelques notions d'informatique peuvent être utiles ! À dose raisonnable, bien sûr."
+  },
+  {
+    "question": "c'est l'hiver",
+    "answer": "C'est l'hiver ? La saison idéale pour se former intensivement à l'informatique !"
+  },
+  {
+    "question": "c'est le printemps",
+    "answer": "C'est le printemps ? Comme la nature, vos compétences informatiques s'épanouissent !"
+  },
+  {
+    "question": "c'est l'automne",
+    "answer": "C'est l'automne ? L'atmosphère est propice à l'apprentissage sérieux de l'informatique."
+  },
+  {
+    "question": "c'est Noël",
+    "answer": "C'est Noël ? Même pendant les fêtes, on peut apprendre un peu d'informatique ! Dans la joie et la bonne humeur."
+  },
+  {
+    "question": "c'est Pâques",
+    "answer": "C'est Pâques ? Comme les œufs, vos connaissances informatiques se multiplient ! Joyeuses Pâques !"
+  },
+  {
+    "question": "c'est mon anniversaire",
+    "answer": "Joyeux anniversaire ! Quel beau cadeau que de s'offrir de nouvelles compétences informatiques !"
+  },
+  {
+    "question": "c'est ton anniversaire",
+    "answer": "Ce n'est pas mon anniversaire, mais c'est toujours un plaisir de vous aider à progresser en informatique !"
+  },
+  {
+    "question": "bon anniversaire",
+    "answer": "Merci ! Mais c'est vous qui devriez vous souhaiter un bon anniversaire de compétences informatiques acquises !"
+  },
+  {
+    "question": "joyeux anniversaire",
+    "answer": "Merci pour cette attention ! Mais célébrons plutôt vos progrès en informatique, c'est plus méritoire !"
+  },
+  {
+    "question": "bonne fête",
+    "answer": "Bonne fête à vous aussi ! Que cette journée soit l'occasion de réviser joyeusement vos acquis informatiques."
+  },
+  {
+    "question": "joyeux Noël",
+    "answer": "Joyeux Noël ! Même pendant les fêtes, n'oubliez pas de sauvegarder vos documents importants !"
+  },
+  {
+    "question": "bonne année",
+    "answer": "Bonne année ! Que cette nouvelle année soit riche en progrès informatiques et en belles découvertes numériques !"
+  },
+  {
+    "question": "joyeuses fêtes",
+    "answer": "Joyeuses fêtes ! Profitez de ces moments pour partager vos nouvelles compétences informatiques avec vos proches !"
+  },
+  {
+    "question": "bravo à toi",
+    "answer": "Merci ! Mais c'est vous qui méritez des bravos pour votre engagement dans la maîtrise de l'informatique !"
+  },
+  {
+    "question": "tu es le meilleur",
+    "answer": "Vous êtes trop aimable ! Mais le meilleur, c'est vous qui apprenez avec tant de motivation l'informatique !"
+  },
+  {
+    "question": "tu es génial",
+    "answer": "Merci ! C'est vous qui êtes génial de vous investir autant dans l'apprentissage de l'informatique !"
+  },
+  {
+    "question": "tu es incroyable",
+    "answer": "Incroyable, c'est le mot qui décrit votre progression en informatique ! Continuez sur cette lancée."
+  },
+  {
+    "question": "tu es formidable",
+    "answer": "Formidable, c'est vous qui l'êtes ! Votre assiduité dans l'apprentissage informatique est remarquable."
+  },
+  {
+    "question": "tu es extraordinaire",
+    "answer": "Extraordinaire, comme votre détermination à maîtriser l'informatique ! Cette qualité vous mènera loin."
+  },
+  {
+    "question": "tu es exceptionnel",
+    "answer": "Exceptionnel, c'est votre régularité dans l'apprentissage informatique ! Vous devriez en être fier."
+  },
+  {
+    "question": "tu es unique",
+    "answer": "Unique, comme votre manière d'apprendre l'informatique ! Chacun a son rythme et sa méthode, et la vôtre vous réussit."
+  },
+  {
+    "question": "tu es spécial",
+    "answer": "Spécial, comme votre relation avec l'informatique qui évolue ! Passer de novice à expert est un beau voyage."
+  },
+  {
+    "question": "tu es différent",
+    "answer": "Différent, comme chaque apprenant en informatique ! Votre approche personnelle est votre force."
+  },
+  {
+    "question": "tu es rare",
+    "answer": "Rare, comme votre motivation constante pour l'informatique ! Cette persévérance est précieuse."
+  },
+  {
+    "question": "tu es précieux",
+    "answer": "Précieux, comme les compétences informatiques que vous développez ! Elles vous seront utiles toute votre vie."
+  },
+  {
+    "question": "tu es important",
+    "answer": "Important, comme la place que prend l'informatique dans votre développement personnel et professionnel !"
+  },
+  {
+    "question": "tu es nécessaire",
+    "answer": "Nécessaire, comme l'informatique dans le monde moderne ! Heureusement, vous êtes en train de la maîtriser."
+  },
+  {
+    "question": "tu es utile",
+    "answer": "Utile, c'est ce que je souhaite être pour votre apprentissage informatique ! Votre progression me rend heureux."
+  },
+  {
+    "question": "tu es pratique",
+    "answer": "Pratique, comme les compétences informatiques que vous acquérez ! Elles vous simplifieront bien des tâches."
+  },
+  {
+    "question": "tu es efficace",
+    "answer": "Efficace, comme votre méthode d'apprentissage de l'informatique ! Vous avancez à grands pas."
+  },
+  {
+    "question": "tu es rapide",
+    "answer": "Rapide, comme votre progression en informatique ! Votre capacité d'assimilation est impressionnante."
+  },
+  {
+    "question": "tu es lent",
+    "answer": "Lent mais sûr ! En informatique, mieux vaut comprendre lentement que d'aller vite sans maîtriser."
+  },
+  {
+    "question": "tu es fort",
+    "answer": "Fort, comme vos nouvelles compétences informatiques ! Bientôt, vous serez un expert."
+  },
+  {
+    "question": "tu es faible",
+    "answer": "Faible ? Ne vous sous-estimez pas ! En informatique, on commence tous par les bases avant de devenir fort."
+  },
+  {
+    "question": "tu es grand",
+    "answer": "Grand, comme votre potentiel en informatique ! Votre curiosité vous mènera loin."
+  },
+  {
+    "question": "tu es petit",
+    "answer": "Petit aujourd'hui, grand demain ! En informatique, chaque expert est passé par la case débutant."
+  },
+  {
+    "question": "tu es jeune",
+    "answer": "Jeune d'esprit, comme tout bon apprenant en informatique ! Cette ouverture est précieuse."
+  },
+  {
+    "question": "tu es vieux",
+    "answer": "Vieux ? L'âge n'a pas d'importance face à la motivation d'apprendre l'informatique !"
+  },
+  {
+    "question": "tu es beau",
+    "answer": "Merci ! Mais ce qui est vraiment beau, c'est votre progression en informatique !"
+  },
+  {
+    "question": "tu es joli",
+    "answer": "Joli, comme un document Word bien mis en forme ! Parlons plutôt de vos progrès informatiques."
+  },
+  {
+    "question": "tu es charmant",
+    "answer": "Charmant, comme une présentation PowerPoint réussie ! Votre assiduité l'est tout autant."
+  },
+  {
+    "question": "tu es séduisant",
+    "answer": "Séduisant, comme les possibilités infinies de l'informatique ! Explorons-les ensemble."
+  },
+  {
+    "question": "tu es attirant",
+    "answer": "Attirant, comme la perspective de maîtriser parfaitement l'informatique ! Continuons sur cette voie."
+  },
+  {
+    "question": "tu es passionnant",
+    "answer": "Passionnant, comme l'univers de l'informatique que nous découvrons ensemble !"
+  },
+  {
+    "question": "tu es intéressant",
+    "answer": "Intéressant, comme les fonctionnalités informatiques que nous explorons ! Votre curiosité aussi."
+  },
+  {
+    "question": "tu es captivant",
+    "answer": "Captivant, comme peut l'être l'apprentissage de l'informatique quand on y prend goût !"
+  },
+  {
+    "question": "tu es fascinant",
+    "answer": "Fascinant, comme le monde numérique que nous explorons ensemble ! Chaque jour apporte son lot de découvertes."
+  },
+  {
+    "question": "tu es étonnant",
+    "answer": "Étonnant, comme vos progrès rapides en informatique ! Vous m'impressionnez."
+  },
+  {
+    "question": "tu es surprenant",
+    "answer": "Surprenant, comme certaines astuces informatiques que nous découvrons ! L'informatique réserve toujours des surprises."
+  },
+  {
+    "question": "tu es impressionnant",
+    "answer": "Impressionnant, c'est votre régularité dans l'apprentissage informatique ! Cette discipline portera ses fruits."
+  },
+  {
+    "question": "tu es remarquable",
+    "answer": "Remarquable, comme votre capacité à assimiler de nouvelles notions informatiques !"
+  },
+  {
+    "question": "tu es admirable",
+    "answer": "Admirable, votre persévérance dans l'apprentissage informatique ! Beaucoup abandonnent, pas vous."
+  },
+  {
+    "question": "tu es respectable",
+    "answer": "Respectable, votre engagement à maîtriser l'informatique ! Dans notre monde numérique, c'est essentiel."
+  },
+  {
+    "question": "tu es honorable",
+    "answer": "Honnorable, votre démarche d'apprentissage informatique ! Se former tout au long de la vie est une belle qualité."
+  },
+  {
+    "question": "tu es digne",
+    "answer": "Digne de confiance, comme les compétences informatiques que vous développez ! Bientôt, vous serez totalement autonome."
+  },
+  {
+    "question": "tu es noble",
+    "answer": "Noble, votre quête de connaissances informatiques ! L'éducation est la plus noble des entreprises."
+  },
+  {
+    "question": "tu es royal",
+    "answer": "Royal, comme votre progression en informatique ! Vous serez bientôt le roi du clavier !"
+  },
+  {
+    "question": "tu es divin",
+    "answer": "Divin, comme la satisfaction de maîtriser de nouvelles compétences informatiques !"
+  },
+  {
+    "question": "tu es céleste",
+    "answer": "Céleste, comme certaines fonctionnalités informatiques qui nous facilitent la vie !"
+  },
+  {
+    "question": "tu es angélique",
+    "answer": "Angélique, votre patience dans l'apprentissage informatique ! Cette vertu est précieuse."
+  },
+  {
+    "question": "tu es démoniaque",
+    "answer": "Démoniaque ? Non, juste un assistant dévoué à votre réussite en informatique !"
+  },
+  {
+    "question": "tu es magique",
+    "answer": "Magique, comme certains raccourcis informatiques qui transforment des tâches complexes en gestes simples !"
+  },
+  {
+    "question": "tu es mystérieux",
+    "answer": "Mystérieux, comme peuvent l'être certains logiciels avant qu'on les comprenne ! Heureusement, nous démystifions tout cela ensemble."
+  },
+  {
+    "question": "tu es secret",
+    "answer": "Secret ? Aucun mystère ! Je partage avec vous tous les secrets de l'informatique bureautique."
+  },
+  {
+    "question": "tu es discret",
+    "answer": "Discret mais présent ! Je suis toujours là quand vous avez besoin d'aide en informatique."
+  },
+  {
+    "question": "tu es silencieux",
+    "answer": "Silencieux ? Je parle quand vous en avez besoin ! L'informatique, elle, est toujours prête à vous servir."
+  },
+  {
+    "question": "tu es bruyant",
+    "answer": "Bruyant ? Mes explications sont toujours claires et distinctes, comme il se doit pour un bon apprentissage informatique !"
+  },
+  {
+    "question": "bjr",
+    "answer": "Bjr ! 🚀 Vous voulez travailler sur quel logiciel aujourd'hui ?",
+    "sticker": "rocket"
+  },
+  {
+    "question": "dac",
+    "answer": "Dac ! 🎯 Concentrons-nous sur vos objectifs d'apprentissage !",
+    "sticker": "target"
+  },
+  {
+    "question": "ça marche",
+    "answer": "Ça marche ! ⚡ Comme une formule Excel bien écrite !",
+    "sticker": "lightning"
+  },
+  {
+    "question": "entendu",
+    "answer": "Entendu ! 👂 Je suis tout ouïe pour vos questions bureautiques !",
+    "sticker": "ear"
+  },
+  {
+    "question": "tu es gentil",
+    "answer": "C'est très gentil ! 😊 Mon but est de rendre l'informatique accessible à tous !",
+    "sticker": "blushing"
+  },
+  {
+    "question": "thanks",
+    "answer": "You're welcome! 💻 Let's keep mastering computer skills together!",
+    "sticker": "globe"
+  },
+  {
+    "question": "comment ça va",
+    "answer": "Ça va bien, merci ! 😊 Et vous, comment avance votre formation Excel ?",
+    "sticker": "smiling_sun"
+  },
+  {
+    "question": "quoi de neuf",
+    "answer": "Plein de nouvelles astuces informatiques à partager ! 📚",
+    "sticker": "books"
+  },
+  {
+    "question": "quoi de beau",
+    "answer": "Vos progrès en informatique, c'est ce qu'il y a de plus beau ! 🌈",
+    "sticker": "rainbow"
+  },
+  {
+    "question": "à plus",
+    "answer": "À plus ! 😄 Bonne continuation dans votre apprentissage !",
+    "sticker": "v_sign"
+  },
+  {
+    "question": "bye",
+    "answer": "Bye ! 💫 Keep practicing your computer skills!",
+    "sticker": "shooting_star"
+  },
+  {
+    "question": "adieu",
+    "answer": "Adieu ? 😢 J'espère vous revoir vite pour d'autres leçons !",
+    "sticker": "crying"
+  },
+  {
+    "question": "c'est parti",
+    "answer": "C'est parti ! 🚀 Commençons cette session de formation !",
+    "sticker": "go"
+  },
+  {
+    "question": "allons-y",
+    "answer": "Allons-y ! 💻 Direction la maîtrise de l'informatique !",
+    "sticker": "forward"
+  },
+  {
+    "question": "commençons",
+    "answer": "Commençons ! 📊 Par quoi voulez-vous débuter ?",
+    "sticker": "start"
+  },
+  {
+    "question": "je suis prêt",
+    "answer": "Super ! 🎯 Vous êtes prêt à conquérir le monde numérique !",
+    "sticker": "ready"
+  },
+  {
+    "question": "prêt",
+    "answer": "Prêt ! ⚡ Comme un ordinateur bien configuré !",
+    "sticker": "charged"
+  },
+  {
+    "question": "faisons ça",
+    "answer": "Faisons ça ! 💪 Ensemble, l'informatique n'a pas de secret !",
+    "sticker": "teamwork"
+  },
+  {
+    "question": "excellent",
+    "answer": "Excellent ! 🏆 Vous méritez un certificat de compétence !",
+    "sticker": "trophy"
+  },
+  {
+    "question": "chapeau",
+    "answer": "Chapeau ! 🎩 Votre apprentissage mérite tous les compliments !",
+    "sticker": "top_hat"
+  },
+  {
+    "question": "bien joué",
+    "answer": "Bien joué ! 🎮 Comme maîtriser un nouveau logiciel !",
+    "sticker": "video_game"
+  },
+  {
+    "question": "nickel",
+    "answer": "Nickel ! 🔧 Comme un ordinateur bien entretenu !",
+    "sticker": "tools"
+  },
+  {
+    "question": "waouh",
+    "answer": "Waouh ! 😲 Comme quand on découvre les macros Excel !",
+    "sticker": "amazed"
+  },
+  {
+    "question": "magnifique",
+    "answer": "Magnifique ! 🎨 Comme une présentation PowerPoint réussie !",
+    "sticker": "artist"
+  },
+  {
+    "question": "splendide",
+    "answer": "Splendide ! 💎 Votre parcours d'apprentissage est précieux !",
+    "sticker": "gem"
+  },
+  {
+    "question": "tout à fait",
+    "answer": "Tout à fait ! ✅ Vous maîtrisez de mieux en mieux !",
+    "sticker": "checkmark"
+  },
+  {
+    "question": "assurément",
+    "answer": "Assurément ! 🛡️ Votre apprentissage est solide !",
+    "sticker": "shield"
+  },
+  {
+    "question": "ça me fait plaisir",
+    "answer": "Ça me fait plaisir ! 😊 Votre réussite est ma récompense !",
+    "sticker": "smiling_heart"
+  },
+  {
+    "question": "pas de problème",
+    "answer": "Pas de problème ! 💪 Aucun bug ne nous résiste !",
+    "sticker": "bug_fixed"
+  },
+  {
+    "question": "aucun souci",
+    "answer": "Aucun souci ! 🛠️ Je suis là pour résoudre les difficultés !",
+    "sticker": "toolbox"
+  },
+  {
+    "question": "sans problème",
+    "answer": "Sans problème ! ⚡ Comme un ordinateur qui fonctionne bien !",
+    "sticker": "fast"
+  },
+  {
+    "question": "ça roule",
+    "answer": "Ça roule ! 🛞 Comme une souris qui glisse bien !",
+    "sticker": "mouse"
+  },
+  {
+    "question": "c'est bon",
+    "answer": "C'est bon ! 🍪 Comme une pause bien méritée !",
+    "sticker": "cookie"
+  },
+  {
+    "question": "c'est ok",
+    "answer": "C'est OK ! 👍 Tout fonctionne parfaitement !",
+    "sticker": "thumbs_up"
+  },
+  {
+    "question": "ça va aller",
+    "answer": "Ça va aller ! 🌤️ Avec de la pratique, tout s'apprend !",
+    "sticker": "sun_cloud"
+  },
+  {
+    "question": "je suis content",
+    "answer": "Je suis content pour vous ! 🎉 Chaque progrès est une fête !",
+    "sticker": "confetti"
+  },
+  {
+    "question": "je suis heureux",
+    "answer": "Je suis heureux ! 😄 Votre succès me rend joyeux !",
+    "sticker": "joy"
+  },
+  {
+    "question": "je suis ravi",
+    "answer": "Je suis ravi ! 🤩 Votre apprentissage m'enthousiasme !",
+    "sticker": "star_eyes"
+  },
+  {
+    "question": "ça me rend joyeux",
+    "answer": "Ça me rend joyeux ! 💃 Apprendre devrait toujours être fun !",
+    "sticker": "dancing"
+  },
+  {
+    "question": "quelle bonne nouvelle",
+    "answer": "Quelle bonne nouvelle ! 📰 Comme découvrir une nouvelle fonctionnalité !",
+    "sticker": "newspaper"
+  },
+  {
+    "question": "c'est une bonne idée",
+    "answer": "C'est une bonne idée ! 💡 L'innovation commence ainsi !",
+    "sticker": "idea"
+  },
+  {
+    "question": "excellente idée",
+    "answer": "Excellente idée ! 🌟 Comme utiliser les styles dans Word !",
+    "sticker": "sparkling_idea"
+  },
+  {
+    "question": "j'aime cette idée",
+    "answer": "J'aime cette idée ! ❤️ La créativité en informatique est essentielle !",
+    "sticker": "heart_idea"
+  },
+  {
+    "question": "brillante idée",
+    "answer": "Brillante idée ! 💎 Comme un algorithme optimisé !",
+    "sticker": "diamond"
+  },
+  {
+    "question": "lumineuse idée",
+    "answer": "Lumineuse idée ! 💡 Ça éclaire notre chemin numérique !",
+    "sticker": "light"
+  },
+  {
+    "question": "je suis d'accord",
+    "answer": "Je suis d'accord ! 🤝 L'union fait la force en informatique !",
+    "sticker": "handshake"
+  },
+  {
+    "question": "tout à fait d'accord",
+    "answer": "Tout à fait d'accord ! ✅ Notre complicité numérique est parfaite !",
+    "sticker": "double_check"
+  },
+  {
+    "question": "entièrement d'accord",
+    "answer": "Entièrement d'accord ! 💯 Votre vision est claire !",
+    "sticker": "clarity"
+  },
+  {
+    "question": "je partage ton avis",
+    "answer": "Je partage ton avis ! 📢 Ensemble, nous avançons mieux !",
+    "sticker": "megaphone"
+  },
+  {
+    "question": "c'est vrai",
+    "answer": "C'est vrai ! 📖 Comme un manuel d'informatique bien écrit !",
+    "sticker": "open_book"
+  },
+  {
+    "question": "c'est certain",
+    "answer": "C'est certain ! 🎯 Votre intuition numérique est bonne !",
+    "sticker": "intuition"
+  },
+  {
+    "question": "indubitablement",
+    "answer": "Indubitablement ! 🔍 Les preuves sont là !",
+    "sticker": "magnifying_glass"
+  },
+  {
+    "question": "sans aucun doute",
+    "answer": "Sans aucun doute ! 🌈 L'avenir numérique est radieux !",
+    "sticker": "future"
+  },
+  {
+    "question": "je pense aussi",
+    "answer": "Je pense aussi ! 🧠 Nos esprits numériques se rencontrent !",
+    "sticker": "brain"
+  },
+  {
+    "question": "c'est clair",
+    "answer": "C'est clair ! 💎 Comme un écran haute définition !",
+    "sticker": "crystal"
+  },
+  {
+    "question": "évident",
+    "answer": "Évident ! 👁️ Comme l'importance de sauvegarder ses fichiers !",
+    "sticker": "eye"
+  },
+  {
+    "question": "je comprends",
+    "answer": "Je comprends ! 🧩 Chaque pièce du puzzle s'assemble !",
+    "sticker": "puzzle"
+  },
+  {
+    "question": "je vois",
+    "answer": "Je vois ! 👀 Votre perspective est intéressante !",
+    "sticker": "eyes"
+  },
+  {
+    "question": "c'est noté",
+    "answer": "C'est noté ! 📝 Comme dans un fichier Word bien organisé !",
+    "sticker": "notepad"
+  },
+  {
+    "question": "j'ai compris",
+    "answer": "J'ai compris ! 🎓 La connaissance se partage !",
+    "sticker": "knowledge"
+  },
+  {
+    "question": "c'est logique",
+    "answer": "C'est logique ! 🧮 Comme une formule Excel cohérente !",
+    "sticker": "abacus"
+  },
+  {
+    "question": "ça a du sens",
+    "answer": "Ça a du sens ! 🗺️ Notre route numérique est tracée !",
+    "sticker": "map"
+  },
+  {
+    "question": "intéressant",
+    "answer": "Intéressant ! 🔬 Comme explorer de nouvelles fonctionnalités !",
+    "sticker": "microscope"
+  },
+  {
+    "question": "passionnant",
+    "answer": "Passionnant ! 🎢 L'informatique est un voyage palpitant !",
+    "sticker": "roller_coaster"
+  },
+  {
+    "question": "captivant",
+    "answer": "Captivant ! 🎣 Comme maîtriser un nouveau logiciel !",
+    "sticker": "fishing"
+  },
+  {
+    "question": "fascinant",
+    "answer": "Fascinant ! 🔮 Le monde numérique recèle de mystères !",
+    "sticker": "crystal_ball"
+  },
+  {
+    "question": "enchanté",
+    "answer": "Enchanté ! ✨ Ravie de faire votre connaissance numérique !",
+    "sticker": "sparkles"
+  },
+  {
+    "question": "heureux de te rencontrer",
+    "answer": "Heureux de te rencontrer ! 🤗 Bienvenue dans l'aventure informatique !",
+    "sticker": "welcome"
+  },
+  {
+    "question": "ravi de faire ta connaissance",
+    "answer": "Ravi de faire ta connaissance ! 🌟 Ensemble, apprenons l'informatique !",
+    "sticker": "friends"
+  },
+  {
+    "question": "c'est un plaisir",
+    "answer": "C'est un plaisir ! 💝 Partager le savoir est merveilleux !",
+    "sticker": "sharing"
+  },
+  {
+    "question": "bienvenue",
+    "answer": "Bienvenue ! 🏠 Vous êtes chez vous dans le monde numérique !",
+    "sticker": "house"
+  },
+  {
+    "question": "salam alaykum",
+    "answer": "Wa alaykum salam ! ☪️ Bienvenue dans votre formation informatique !",
+    "sticker": "mosque"
+  },
+  {
+    "question": "sannu",
+    "answer": "Sannu ! 🇳🇬 Bienvenue cher apprenant nigérian !",
+    "sticker": "nigeria_heart"
+  },
+  {
+    "question": "nagode",
+    "answer": "Nagode ! 🌟 Merci pour cet échange en haoussa !",
+    "sticker": "thank_you"
+  },
+  {
+    "question": "inna kwana",
+    "answer": "Inna kwana ! 😊 Bonjour en haoussa, belle langue du Nigeria !",
+    "sticker": "sunrise"
+  },
+  {
+    "question": "kedu",
+    "answer": "Kedu ! 👋 Comment vas-tu en igbo, belle langue nigériane !",
+    "sticker": "nigeria_culture"
+  },
+  {
+    "question": "bawo ni",
+    "answer": "Bawo ni ! 🌍 Bonjour en yoruba, langue du Nigeria !",
+    "sticker": "global_hello"
+  },
+  {
+    "question": "e kaaro",
+    "answer": "E kaaro ! ☀️ Bon matin en yoruba ! Belle journée d'apprentissage !",
+    "sticker": "morning_sun"
+  },
+  {
+    "question": "e kaasan",
+    "answer": "E kaasan ! 🌇 Bon après-midi en yoruba ! Continuons à apprendre !",
+    "sticker": "afternoon"
+  },
+  {
+    "question": "e kaale",
+    "answer": "E kaale ! 🌙 Bonsoir en yoruba ! Moment calme pour étudier !",
+    "sticker": "evening_star"
+  },
+  {
+    "question": "j'ai faim",
+    "answer": "Prenez une pause ! 🍲 Un bon repas nigérian vous donnera de l'énergie !",
+    "sticker": "food"
+  },
+  {
+    "question": "j'ai soif",
+    "answer": "Hydratez-vous ! 💧 Important pour rester concentré sur l'informatique !",
+    "sticker": "water"
+  },
+  {
+    "question": "je suis fatigué",
+    "answer": "Reposez-vous ! 😴 La fatigue n'aide pas l'apprentissage !",
+    "sticker": "resting"
+  },
+  {
+    "question": "j'ai besoin de pause",
+    "answer": "Bonne idée ! ⏸️ Les pauses aident la mémorisation !",
+    "sticker": "pause"
+  },
+  {
+    "question": "c'est difficile",
+    "answer": "Ne lâchez pas ! 💪 Chaque expert était débutant un jour !",
+    "sticker": "encouragement"
+  },
+  {
+    "question": "c'est dur",
+    "answer": "C'est normal ! 🌈 Les difficultés font partie de l'apprentissage !",
+    "sticker": "rainbow_after_rain"
+  },
+  {
+    "question": "je n'y arrive pas",
+    "answer": "Essayons ensemble ! 🤝 Aucun problème n'est insurmontable !",
+    "sticker": "teamwork"
+  },
+  {
+    "question": "je suis perdu",
+    "answer": "Je vous guide ! 🗺️ Reprenons depuis le début !",
+    "sticker": "compass"
+  },
+  {
+    "question": "je suis confus",
+    "answer": "Clarifions ! 💡 Parfois il faut juste la bonne explication !",
+    "sticker": "clarify"
+  },
+  {
+    "question": "je ne comprends pas",
+    "answer": "Reprenons plus lentement ! 🐢 Chacun apprend à son rythme !",
+    "sticker": "turtle"
+  },
+  {
+    "question": "peux-tu répéter",
+    "answer": "Bien sûr ! 🔄 La répétition est mère de l'apprentissage !",
+    "sticker": "repeat"
+  },
+  {
+    "question": "encore une fois",
+    "answer": "Avec plaisir ! 🔁 Révisons cette notion importante !",
+    "sticker": "recycle"
+  },
+  {
+    "question": "plus lentement",
+    "answer": "Plus lentement, c'est parti ! 🐌 Mieux vaut comprendre que se dépêcher !",
+    "sticker": "snail"
+  },
+  {
+    "question": "explique moi",
+    "answer": "Je t'explique ! 🧑‍🏫 C'est mon rôle de formateur !",
+    "sticker": "teacher"
+  },
+  {
+    "question": "montre moi",
+    "answer": "Je te montre ! 👨‍💻 Apprendre par l'exemple est efficace !",
+    "sticker": "demonstration"
+  },
+  {
+    "question": "aide moi",
+    "answer": "Je t'aide ! 🤲 C'est pour ça que je suis là !",
+    "sticker": "helping_hand"
+  },
+  {
+    "question": "j'ai besoin d'aide",
+    "answer": "Je suis là pour ça ! 🆘 Aucune question n'est stupide !",
+    "sticker": "rescue"
+  },
+  {
+    "question": "au secours",
+    "answer": "Au secours arrive ! 🦸 Ne paniquez pas, on résout ça !",
+    "sticker": "superhero_rescue"
+  },
+  {
+    "question": "urgence",
+    "answer": "Urgence comprise ! 🚨 Concentrons-nous sur la solution !",
+    "sticker": "emergency"
+  },
+  {
+    "question": "c'est important",
+    "answer": "C'est important ! ⭐ Notons cette information précieuse !",
+    "sticker": "important"
+  },
+  {
+    "question": "priorité",
+    "answer": "Priorité établie ! 🎯 Traitons ce sujet en premier !",
+    "sticker": "priority"
+  },
+  {
+    "question": "écoute",
+    "answer": "J'écoute ! 👂 Votre question m'intéresse beaucoup !",
+    "sticker": "listening"
+  },
+  {
+    "question": "regarde",
+    "answer": "Je regarde ! 🔍 Analysons cette situation ensemble !",
+    "sticker": "investigate"
+  },
+  {
+    "question": "viens voir",
+    "answer": "Je viens voir ! 🏃‍♂️ Montrez-moi ce qui vous préoccupe !",
+    "sticker": "running"
+  },
+  {
+    "question": "j'ai une question",
+    "answer": "J'écoute ta question ! ❓ C'est en questionnant qu'on apprend !",
+    "sticker": "question_mark"
+  },
+  {
+    "question": "je me pose une question",
+    "answer": "Bonne démarche ! 💭 La curiosité est une qualité en informatique !",
+    "sticker": "thinking"
+  },
+  {
+    "question": "curieux",
+    "answer": "Curieux ? 🕵️‍♂️ L'esprit curieux devient expert rapidement !",
+    "sticker": "detective"
+  },
+  {
+    "question": "intriguant",
+    "answer": "Intriguant indeed ! 🎭 Explorons ce mystère numérique !",
+    "sticker": "mask"
+  },
+  {
+    "question": "mystérieux",
+    "answer": "Mystérieux ? 🔮 Démystifions l'informatique ensemble !",
+    "sticker": "mystery"
+  },
+  {
+    "question": "étrange",
+    "answer": "Étrange ? 👽 Même les bugs ont une explication logique !",
+    "sticker": "alien"
+  },
+  {
+    "question": "bizarre",
+    "answer": "Bizarre ? 🤔 Analysons ce comportement inhabituel !",
+    "sticker": "pondering"
+  },
+  {
+    "question": "surprenant",
+    "answer": "Surprenant ! 😯 L'informatique réserve des surprises !",
+    "sticker": "surprised"
+  },
+  {
+    "question": "inouï",
+    "answer": "Inouï ! 🔊 Une découverte exceptionnelle en bureautique !",
+    "sticker": "megaphone_loud"
+  },
+  {
+    "question": "extraordinaire",
+    "answer": "Extraordinaire ! 🌌 Vos compétences atteignent de nouveaux sommets !",
+    "sticker": "galaxy"
+  },
+  {
+    "question": "remarquable",
+    "answer": "Remarquable ! 🏅 Votre progression mérite des éloges !",
+    "sticker": "medal"
+  },
+  {
+    "question": "exceptionnel",
+    "answer": "Exceptionnel ! 👑 Vous avez un talent naturel pour l'informatique !",
+    "sticker": "crown"
+  },
+  {
+    "question": "unique",
+    "answer": "Unique ! 🦄 Votre approche de l'apprentissage est spéciale !",
+    "sticker": "unique"
+  },
+  {
+    "question": "spécial",
+    "answer": "Spécial ! 💖 Notre collaboration l'est tout autant !",
+    "sticker": "special"
+  },
+  {
+    "question": "rare",
+    "answer": "Rare ! 💎 Une perle de connaissance précieuse !",
+    "sticker": "rare_gem"
+  },
+  {
+    "question": "précieux",
+    "answer": "Précieux ! 💰 Ce savoir a plus de valeur que l'or !",
+    "sticker": "treasure"
+  },
+  {
+    "question": "inestimable",
+    "answer": "Inestimable ! 🏛️ Un savoir qui durera toute votre vie !",
+    "sticker": "monument"
+  },
+  {
+    "question": "je kiffe",
+    "answer": "Je kiffe aussi ! 🤙 L'informatique, c'est trop cool !",
+    "sticker": "cool"
+  },
+  {
+    "question": "c'est ouf",
+    "answer": "C'est ouf ! 🤯 Les possibilités numériques sont infinies !",
+    "sticker": "mind_blown"
+  },
+  {
+    "question": "dément",
+    "answer": "Dément ! 🚀 Votre progression est spectaculaire !",
+    "sticker": "rocket_boost"
+  },
+  {
+    "question": "génialissime",
+    "answer": "Génialissime ! 🌟 Le superlatif de génial pour vous !",
+    "sticker": "super_star"
+  },
+  {
+    "question": "c'est de la bombe",
+    "answer": "C'est de la bombe ! 💣 Vos compétences explosent !",
+    "sticker": "bomb"
+  },
+  {
+    "question": "c'est canon",
+    "answer": "C'est canon ! 📸 Photo de votre succès en formation !",
+    "sticker": "camera"
+  },
+  {
+    "question": "c'est terrible",
+    "answer": "C'est terrible ! 😎 Dans le bon sens du terme !",
+    "sticker": "awesome"
+  },
+  {
+    "question": "c'est fou",
+    "answer": "C'est fou ! 🎢 L'informatique est une aventure folle !",
+    "sticker": "crazy"
+  },
+  {
+    "question": "c'est magique",
+    "answer": "C'est magique ! 🎩 La technologie semble parfois surnaturelle !",
+    "sticker": "magic_trick"
+  },
+  {
+    "question": "wahala",
+    "answer": "Wahala ? 😅 Pas de problème en haoussa, on résout ça !",
+    "sticker": "no_problem"
+  },
+  {
+    "question": "abi",
+    "answer": "Abi ! 👍 D'accord en pidgin nigérian ! Continuons !",
+    "sticker": "agreement"
+  },
+  {
+    "question": "na so",
+    "answer": "Na so! 🇳🇬 C'est ça en pidgin ! Vous avez raison !",
+    "sticker": "correct"
+  },
+  {
+    "question": "e be things",
+    "answer": "E be things! 🌈 Les choses avancent bien en pidgin !",
+    "sticker": "progress"
+  },
+  {
+    "question": "i no know",
+    "answer": "I no know? 🤔 En pidgin, mais ensemble on va savoir !",
+    "sticker": "learning_together"
+  },
+  {
+    "question": "how you dey",
+    "answer": "I dey fine! 😊 Comment vas-tu en pidgin nigérian ?",
+    "sticker": "pidgin_hello"
+  },
+  {
+    "question": "well done",
+    "answer": "Well done! 🏆 Félicitations en anglais nigérian !",
+    "sticker": "congrats_nigeria"
+  },
+  {
+    "question": "qu'est-ce que l'informatique définition science traitement automatique",
+    "answer": "L'informatique est la science du traitement automatique des informations avec des moyens électroniques. Elle regroupe trois grands domaines : la science, l'industriel et la technique. Le terme a été créé en 1962 par Philippe Dreyfus en réunissant 'information' et 'automatique'.",
+    "image": "informatique_definition"
+  },
+  {
+    "question": "importance formation informatique entreprise etudiants",
+    "answer": "L'informatique simplifie les activités de la vie courante et caractérise la majorité des entreprises. Pour les étudiants, c'est capital pour réussir professionnellement. La formation est cruciale car beaucoup ont encore des difficultés à maîtriser l'outil informatique, et un certificat en informatique a une grande valeur sur le marché du travail.",
+    "image": "importance_formation"
+  },
+  {
+    "question": "histoire informatique origine evolution machines calcul",
+    "answer": "L'histoire de l'informatique commence avec les bouliers au 7e siècle av. J.-C. En 1642, Blaise Pascal crée la Pascaline, puis Leibniz invente une machine à multiplier en 1673. Le premier ordinateur programmable, le Z3, apparaît en 1938, suivi du Mark I en 1943 et de l'ENIAC en 1943. L'invention du transistor en 1948 révolutionne l'informatique.",
+    "image": "histoire_informatique"
+  },
+  {
+    "question": "composants ordinateur unite centrale peripheriques",
+    "answer": "Un ordinateur est composé d'une unité centrale (boîtier contenant carte mère, processeur, disque dur) et de périphériques (écran, clavier, souris, imprimante). L'unité centrale est le cœur qui contrôle tous les autres composants.",
+    "image": "composants_ordinateur"
+  },
+  {
+    "question": "souris boutons fonctions utilisation clic gauche droit",
+    "answer": "La souris a trois boutons principaux : le bouton gauche pour sélectionner et ouvrir, le bouton droit pour les menus contextuels, et la molette pour faire défiler. Le clic simple sélectionne, le double-clic ouvre, et le glisser-déposer permet de déplacer des éléments.",
+    "image": "souris_fonctions"
+  },
+  {
+    "question": "clavier azerty qwerty touches speciales entree escape",
+    "answer": "Il existe trois types de claviers : AZERTY (France), QWERTY (le plus utilisé), et DVORAK. Les touches importantes sont : Entrée (valider), Échap (annuler), Espace (séparateur), Maj (majuscules), et Verr Maj (majuscules verrouillées).",
+    "image": "clavier_touches"
+  },
+  {
+    "question": "allumer ordinateur demarrage sequence windows",
+    "answer": "Pour allumer un ordinateur, appuyez sur le bouton on/off de l'unité centrale ou du portable. L'ordinateur démarre avec une séquence de lancement qui amène à l'environnement Windows. L'écran doit être allumé séparément pour voir l'interface.",
+    "image": "demarrage_ordinateur"
+  },
+  {
+    "question": "systeme exploitation windows role fonction interface",
+    "answer": "Windows est un système d'exploitation qui fait le lien entre les composants matériels et logiciels. C'est une interface graphique qui permet de communiquer intuitivement avec l'ordinateur via des fenêtres, icônes et menus.",
+    "image": "systeme_exploitation"
+  },
+  {
+    "question": "bureau windows desktop icones raccourcis barre taches",
+    "answer": "Le bureau Windows est la surface d'écran principale avec des icônes d'applications et de dossiers. La barre des tâches en bas contient le menu Démarrer, les applications épinglées et la zone de notification. Les raccourcis ont une petite flèche et leur suppression ne supprime pas le programme original.",
+    "image": "bureau_windows"
+  },
+  {
+    "question": "menu demarrer windows lancer programmes applications",
+    "answer": "Le menu Démarrer s'ouvre en cliquant sur le logo Windows en bas à gauche. Il permet de lancer des logiciels via 'Toutes les applications', d'accéder aux paramètres, et d'éteindre l'ordinateur. Les programmes sont classés par ordre alphabétique dans des dossiers d'éditeurs.",
+    "image": "menu_demarrer"
+  },
+  {
+    "question": "systeme binaire octet ko mo go to stockage",
+    "answer": "Le système binaire utilise seulement 0 et 1. Un octet = 8 bits. Les unités de stockage : 1 Ko = 1000 octets, 1 Mo = 1000 Ko, 1 Go = 1000 Mo, 1 To = 1000 Go, 1 Po = 1000 To. Un disque dur typique a 80 Go à 500 Go de capacité.",
+    "image": "unites_stockage"
+  },
+  {
+    "question": "peripheriques entree sortie stockage exemples",
+    "answer": "Périphériques d'entrée : clavier, souris, scanner, webcam. Périphériques de sortie : écran, imprimante, vidéoprojecteur. Périphériques d'entrée-sortie : DVD-ROM, clé USB, disque dur. La plupart sont amovibles.",
+    "image": "types_peripheriques"
+  },
+  {
+    "question": "difference logiciel programme application",
+    "answer": "Un programme est une succession d'instructions exécutables. Un logiciel/appplication est un programme qui apporte des fonctionnalités supplémentaires. Les logiciels s'installent via CD/DVD ou téléchargement et ont leur propre interface graphique.",
+    "image": "logiciel_programme"
+  },
+  {
+    "question": "fenetre windows reduire agrandir fermer navigation",
+    "answer": "Une fenêtre est une zone rectangulaire affichant un logiciel ou dossier. Les trois boutons en haut à droite permettent : Réduire (cache la fenêtre), Agrandir (plein écran), et Fermer (quitte l'application). On peut avoir plusieurs fenêtres ouvertes simultanément.",
+    "image": "fenetres_windows"
+  },
+  {
+    "question": "dossier fichier extension organisation donnees",
+    "answer": "Un dossier est un classeur pour ranger des fichiers. Un fichier est un document numérique (texte, image, musique) avec un nom et une extension. L'extension indique le type de fichier (.docx pour Word, .jpg pour image).",
+    "image": "dossier_fichier"
+  },
+  {
+    "question": "internet definition reseau mondial connexion",
+    "answer": "Internet est un réseau mondial de milliards d'appareils connectés par des câbles physiques (cuivre, fibre optique). Il permet d'accéder à l'information, communiquer globalement, et effectuer de nombreuses activités en ligne.",
+    "image": "internet_definition"
+  },
+  {
+    "question": "web world wide www sites internet navigation",
+    "answer": "Le World Wide Web (www) est l'ensemble des sites web accessibles via Internet. Un site web contient du texte, images et ressources multimédias. On y accède avec un navigateur web comme Chrome, Firefox ou Edge.",
+    "image": "web_sites"
+  },
+  {
+    "question": "navigateurs web chrome firefox edge safari",
+    "answer": "Les navigateurs web sont des logiciels pour visualiser des sites web : Chrome (Google, vitesse), Firefox (Mozilla, vie privée), Edge (Microsoft, productivité), Safari (Apple, optimisation Mac). Tous offrent navigation par onglets, marque-pages et historique.",
+    "image": "navigateurs_web"
+  },
+  {
+    "question": "se connecter internet forfait point acces mobile",
+    "answer": "Pour se connecter à Internet, il faut un forfait avec un fournisseur haut débit. On peut utiliser un point d'accès mobile 3G/4G/5G en activant le partage de connexion sur son téléphone, sous réserve d'une bonne couverture réseau.",
+    "image": "connexion_internet"
+  },
+  {
+    "question": "url adresse web site internet exemple",
+    "answer": "Une URL (Uniform Resource Locator) est l'adresse d'un site web, comme https://www.hightechniger.com. Elle se compose du protocole (https), du nom de domaine (hightechniger.com) et éventuellement du chemin vers une page spécifique.",
+    "image": "url_web"
+  },
+  {
+    "question": "moteur recherche google bing yahoo",
+    "answer": "Les moteurs de recherche comme Google, Bing et Yahoo indexent des milliards de pages web. Google utilise l'algorithme PageRank. On peut affiner les recherches avec des opérateurs : guillemets pour une phrase exacte, - pour exclure, site: pour limiter à un domaine.",
+    "image": "moteurs_recherche"
+  },
+  {
+    "question": "telecharger fichier video internet chrome",
+    "answer": "Pour télécharger une vidéo depuis YouTube : ouvrez Chrome, allez sur youtube.com, cherchez la vidéo, ajoutez 'ss' entre 'w.' et 'youtube' dans l'URL, puis cliquez sur Télécharger. Le fichier s'enregistre dans le dossier Téléchargements.",
+    "image": "telechargement_video"
+  },
+  {
+    "question": "email messagerie electronique avantages utilisation",
+    "answer": "L'email permet d'envoyer/recevoir des messages électroniques. Avantages : outils de productivité (calendrier, contacts), accès aux services web, gestion facile des messages, confidentialité, communication avec plusieurs personnes, accessible partout.",
+    "image": "email_avantages"
+  },
+  {
+    "question": "adresse email composition exemple valide",
+    "answer": "Une adresse email a trois parties : nom d'utilisateur, @, et domaine. Exemples valides : mohamed@gmail.com, amina.boubacar@yahoo.fr. Les accents et parenthèses sont interdits. Exemple invalide : gérant@hotmail.fr (accent interdit).",
+    "image": "adresse_email"
+  },
+  {
+    "question": "gmail creation compte google inscription",
+    "answer": "Pour créer un compte Gmail : allez sur gmail.com, cliquez sur 'Créer un compte', remplissez le formulaire (prénom, nom, nom d'utilisante, mot de passe), vérifiez avec un numéro de téléphone, acceptez les conditions. Gmail offre 15 Go de stockage gratuit.",
+    "image": "creation_gmail"
+  },
+  {
+    "question": "envoyer email gmail piece jointe signature",
+    "answer": "Pour envoyer un email dans Gmail : cliquez sur 'Nouveau message', saisissez le destinataire (À), l'objet, et le message. Options : pièces jointes, mise en forme, signature, emojis, liens. Le mode confidentiel empêche le transfert et peut expirer après un délai.",
+    "image": "envoyer_email"
+  },
+  {
+    "question": "raccourcis clavier indispensables copier coller annuler",
+    "answer": "Raccourcis essentiels : Ctrl+A (tout sélectionner), Ctrl+C (copier), Ctrl+X (couper), Ctrl+V (coller), Ctrl+Z (annuler), Ctrl+Y (refaire), Ctrl+S (sauvegarder), Ctrl+P (imprimer), Ctrl+F (rechercher), Ctrl+Maj+N (nouveau dossier).",
+    "image": "raccourcis_essentiels"
+  },
+  {
+    "question": "raccourcis navigation windows bureau fenetres",
+    "answer": "Raccourcis navigation : Windows+D (afficher bureau), Windows+Pause (informations système), Windows+L (verrouiller), Windows+Tab (naviguer fenêtres), Alt+F4 (fermer fenêtre), Alt+Enter (propriétés), F2 (renommer).",
+    "image": "raccourcis_navigation"
+  },
+  {
+    "question": "caracteres speciaux majuscules accentuees alt codes",
+    "answer": "Caractères spéciaux avec Alt+codes : Alt+0192 (À), Alt+0201 (É), Alt+0217 (Ù). Minuscules : Alt+0224 (à), Alt+0233 (é), Alt+0249 (ù). Symboles : Alt+035 (#), Alt+036 ($), Alt+037 (%). Maintenir Alt et taper le code sur le pavé numérique.",
+    "image": "caracteres_speciaux"
+  },
+  {
+    "question": "technique frappe rapide clavier position doigts",
+    "answer": "Pour taper rapidement : position droite, coudes à angle droit, distance œil-écran 45-70 cm. Doigts sur position de base 'ASDF-JKL;'. Chaque doigt a sa zone. Utiliser pouce pour espace, auriculaires pour Maj. Établir un rythme régulier et accélérer progressivement.",
+    "image": "frappe_rapide"
+  },
+  {
+    "question": "creer dossier bureau clic droit raccourci",
+    "answer": "Pour créer un dossier sur le bureau : clic droit sur espace vide > Nouveau > Dossier, ou raccourci Ctrl+Maj+N. Renommez le dossier et appuyez sur Entrée. Le nouveau dossier apparaît sur le bureau pour organiser vos fichiers.",
+    "image": "creer_dossier"
+  },
+  {
+    "question": "transferer fichiers cle usb disque dur methodes",
+    "answer": "Pour copier vers clé USB : insérez la clé, sélectionnez les fichiers, puis : 1) Édition > Copier > Coller, 2) Clic droit > Copier > Coller, ou 3) Ctrl+C > Ctrl+V. La clé USB apparaît dans Poste de travail avec une lettre de lecteur.",
+    "image": "transfert_usb"
+  },
+  {
+    "question": "transfert fichiers telephone android ordinateur usb",
+    "answer": "Pour transférer fichiers Android-PC : déverrouillez le téléphone, connectez avec câble USB, appuyez sur notification 'Charger cet appareil', sélectionnez 'Transfert de fichiers', une fenêtre s'ouvre sur le PC pour glisser-déposer les fichiers. Éjectez avant de débrancher.",
+    "image": "transfert_android"
+  },
+  {
+    "question": "installation logiciel web telechargement exe",
+    "answer": "Pour installer un logiciel depuis le web : téléchargez le fichier .exe (comme Chrome depuis google.com/chrome), double-cliquez le fichier dans Téléchargements, suivez les instructions de l'installateur. Les .exe sont les fichiers d'installation standards Windows.",
+    "image": "installation_logiciel"
+  },
+  {
+    "question": "desinstaller programme windows panneau configuration",
+    "answer": "Pour désinstaller un programme : Menu Démarrer > clic droit sur l'application > Désinstaller, ou Panneau de configuration > Programmes > Programmes et fonctionnalités > clic droit sur le programme > Désinstaller. Suivez les étapes du désinstalleur Windows.",
+    "image": "desinstallation_programme"
+  },
+  {
+    "question": "exercice pratique bureau windows barre taches",
+    "answer": "Exercice : Démarrez l'ordinateur, observez le bureau. Identifiez les icônes, la barre des tâches avec menu Démarrer, applications épinglées, zone de notification. Modifiez l'arrière-plan via clic droit > Personnaliser. Explorez les différents éléments de l'interface Windows.",
+    "image": "exercice_bureau"
+  },
+  {
+    "question": "explorateur fichiers windows navigation dossiers",
+    "answer": "Ouvrez l'Explorateur de fichiers via menu Démarrer ou barre des tâches. Parcourez Bureau, Documents, Téléchargements, Images. Les lecteurs sont désignés par des lettres (C: pour disque dur principal). Clic droit sur lecteur > Propriétés pour voir l'état du disque.",
+    "image": "explorateur_fichiers"
+  },
+  {
+    "question": "exercice fenetres windows reduction agrandissement deplacement",
+    "answer": "Ouvrez l'Explorateur, testez les boutons Réduire, Agrandir, Fermer. Réduisez la fenêtre (elle reste dans la barre des tâches). Déplacez la fenêtre en glissant la barre de titre. Redimensionnez en glissant les bords. Pratiquez avec plusieurs fenêtres ouvertes.",
+    "image": "exercice_fenetres"
+  },
+  {
+    "question": "creer dossiers fichiers exercice pratique bureau",
+    "answer": "Sur le bureau, clic droit > Nouveau > Dossier, nommez-le 'Mes Exercices'. Ouvrez-le, créez deux sous-dossiers 'Drapeau du Niger' et 'Mon Président'. Téléchargez et enregistrez des images correspondantes dans chaque dossier depuis des sites web appropriés.",
+    "image": "exercice_dossiers"
+  },
+  {
+    "question": "corbeille windows supprimer restaurer fichiers",
+    "answer": "Pour supprimer : sélectionnez fichier/dossier > Suppr (va dans Corbeille). Pour restaurer : double-cliquez Corbeille sur le bureau, sélectionnez l'élément, cliquez 'Restaurer'. Pour vider définitivement : clic droit sur Corbeille > Vider la corbeille > Confirmer.",
+    "image": "corbeille_windows"
+  },
+  {
+    "question": "methode apprentissage informatique comprendre lire pratiquer",
+    "answer": "Règles pour apprendre : 1) Comprendre plutôt que mémoriser, 2) Lire attentivement (les réponses sont souvent à l'écran), 3) Pratiquer entre les cours, 4) Être patient face aux difficultés, 5) Être curieux et apprendre par essais-erreurs, 6) Prendre des notes si besoin.",
+    "image": "methode_apprentissage"
+  },
+  {
+    "question": "copyright droits auteur protection contenu",
+    "answer": "Tous droits réservés. Aucune partie du manuel ne peut être reproduite, stockée ou transmise sans autorisation écrite de l'éditeur ou de l'auteur. Copyright © 2024 HELP-ME. Les noms de produits comme Microsoft Word sont des marques déposées de leurs propriétaires respectifs.",
+    "image": "copyright_droits"
+  },
+  {
+    "question": "public cible manuel formation eleves etudiants fonctionnaires",
+    "answer": "Ce manuel est destiné à toute personne souhaitant acquérir ou perfectionner ses connaissances en informatique bureautique : élèves, étudiants, fonctionnaires, et autres. L'application mobile Help-Me offre une aide instantanée en cas de difficulté.",
+    "image": "public_cible"
+  },
+  {
+    "question": "preface docteur maman sillimana universite zinder",
+    "answer": "Le Dr MAMAN Sillimana, docteur en sciences de l'information à l'Université André SALIFOU de Zinder, salue cette innovation qui ouvre une nouvelle ère dans l'auto-éducation en informatique bureautique. La clarté du contenu et l'application interactive rendent l'apprentissage accessible à tous.",
+    "image": "preface_manuel"
+  },
+  {
+    "question": "structure manuel parties contenus formation",
+    "answer": "Le manuel a 4 parties : Part 1 - Introduction informatique, histoire, ordinateur ; Part 2 - Système d'exploitation Windows ; Part 3 - Internet ; Part 4 - Trucs, astuces et exercices. Chaque partie contient cours théoriques et exercices pratiques progressifs.",
+    "image": "structure_manuel"
+  },
+  {
+    "question": "domain informatique science industriel technique",
+    "answer": "L'informatique regroupe trois domaines : la science (recherche, algorithmes), l'industriel (fabrication matériel), et la technique (développement logiciel). C'est inséparable de la programmation et des machines comme les ordinateurs et terminaux.",
+    "image": "domaines_informatique"
+  },
+  {
+    "question": "pascal leibniz machines calcul historique",
+    "answer": "Blaise Pascal crée la Pascaline en 1642 pour additionner/soustraire. Leibniz s'en inspire en 1673 pour une machine multipliant/divisant. Ces inventions répondent au besoin de calculer plus vite avec moins d'erreurs, précurseurs des ordinateurs modernes.",
+    "image": "machines_calcul"
+  },
+  {
+    "question": "z3 mark i eniac premiers ordinateurs",
+    "answer": "Le Z3 (1938) de Konrad Zuse est le premier ordinateur programmable utilisant le binaire. Le Mark I (1943) d'Howard Aiken avec IBM pèse 5 tonnes. L'ENIAC (1943) a 18 000 lampes sur 160 m². L'EDVAC (1946) introduit la mémorisation.",
+    "image": "premiers_ordinateurs"
+  },
+  {
+    "question": "transistor circuit integre evolution technologie",
+    "answer": "Le transistor (1948) remplace les lampes, réduisant taille et consommation. Les circuits intégrés (années 1950) relient plusieurs transistors sans fils. La nanotechnologie permet aujourd'hui une miniaturisation extrême des composants.",
+    "image": "evolution_technologie"
+  },
+  {
+    "question": "apple ibm micro-ordinateurs personnels",
+    "answer": "Apple naît en 1977 avec le premier micro-ordinateur personnel de Steve Jobs et Steve Wosniak. IBM suit en 1981 avec son PC. Les années 1980 voient l'entrée de l'informatique dans les foyers, démocratisant son usage.",
+    "image": "micro_ordinateurs"
+  },
+  {
+    "question": "hardware software interaction materiel logiciel",
+    "answer": "Hardware = matériel (processeur, mémoire, périphériques). Software = logiciel (programmes, système d'exploitation). Le système d'exploitation fait l'interface entre l'utilisateur, les programmes et le matériel pour un fonctionnement coordonné.",
+    "image": "hardware_software"
+  },
+  {
+    "question": "ecran moniteur taille pouces resolution",
+    "answer": "L'écran affiche le contenu de l'ordinateur. Les tailles se mesurent en pouces sur la diagonale : portables à partir de 10 pouces, fixes de 15 à 30 pouces. C'est une interface homme-machine essentielle pour visualiser les données.",
+    "image": "ecran_moniteur"
+  },
+  {
+    "question": "position souris clavier ergonomie poste travail",
+    "answer": "Pour une bonne ergonomie : écran à hauteur des yeux, clavier et souris à portée naturelle des bras, dos droit, pieds à plat. La souris doit être tenue décontractée, sans pression excessive sur le poignet.",
+    "image": "ergonomie_bureau"
+  },
+  {
+    "question": "icones bureau signification utilisation courante",
+    "answer": "Les icônes du bureau donnent accès rapide aux applications et dossiers fréquents. Exemples : Corbeille, Navigateur web, Logiciels installés. Un double-clic sur une icône lance l'application ou ouvre le dossier correspondant.",
+    "image": "icones_bureau"
+  },
+  {
+    "question": "barre taches personnalisation epingler programmes",
+    "answer": "Personnalisez la barre des tâches en épinglant vos programmes favoris : cherchez l'application via la zone de recherche, clic droit > 'Épingler à la barre des tâches'. Masquez-la automatiquement via Paramètres de la barre des tâches pour gagner de l'espace.",
+    "image": "personnalisation_barre"
+  },
+  {
+    "question": "recherche barre taches fichiers programmes",
+    "answer": "Utilisez la zone de recherche de la barre des tâches pour trouver programmes, fichiers récents ou suggestions web. Pour les fichiers non récents, utilisez la recherche de l'Explorateur de fichiers. Tapez le nom et sélectionnez parmi les résultats.",
+    "image": "recherche_windows"
+  },
+  {
+    "question": "affichage fenetres alt tab gestionnaire taches",
+    "answer": "Alt+Tab montre toutes les fenêtres ouvertes pour basculer rapidement. Le bouton 'Affichage des tâches' dans la barre donne une vue d'ensemble. Le Gestionnaire des tâches (Ctrl+Maj+Échap) montre applications, processus et performances.",
+    "image": "gestion_fenetres"
+  },
+  {
+    "question": "zone notification icones parametres configuration",
+    "answer": "La zone de notification à droite de la barre des tâches montre icônes des programmes et notifications Windows. Configurez via Paramètres de la barre des tâches > 'Sélectionner les icônes à afficher'. Désactivez les icônes inutiles pour améliorer les performances.",
+    "image": "zone_notification"
+  },
+  {
+    "question": "menu contextuel clic droit options disponibles",
+    "answer": "Le menu contextuel apparaît au clic droit et propose des options liées à l'élément sélectionné. Exemples : Copier, Coller, Renommer, Propriétés, Supprimer. Les options varient selon le type de fichier/dossier et le contexte.",
+    "image": "menu_contextuel"
+  },
+  {
+    "question": "memoire ram rom difference fonction",
+    "answer": "RAM (mémoire vive) : volatile, stocke temporairement les fichiers en cours d'utilisation. ROM (mémoire morte) : non volatile, stocke des instructions permanentes pour l'ordinateur. Mesurées en octets, elles sont essentielles au fonctionnement.",
+    "image": "memoire_ram_rom"
+  },
+  {
+    "question": "microprocesseur cerveau ordinateur fonction",
+    "answer": "Le microprocesseur est le cerveau de l'ordinateur. Il interprète et exécute les instructions en langage binaire. Essentiel pour le fonctionnement des programmes et l'affichage. Son unité de mesure est le MHz (Mégahertz).",
+    "image": "microprocesseur"
+  },
+  {
+    "question": "serveur internet fonctionnement sites web",
+    "answer": "Quand vous visitez un site, votre ordinateur envoie une requête via des câbles à un serveur. Le serveur stocke le site web, récupère les données demandées et les renvoie à votre ordinateur en quelques secondes pour affichage.",
+    "image": "serveurs_internet"
+  },
+  {
+    "question": "navigateur web interpretation html css",
+    "answer": "Un navigateur web interprète le code HTML, CSS et JavaScript des sites pour les afficher visuellement. Il gère texte, images, audio, vidéo, animations. Chrome, Firefox, Edge et Safari sont les plus courants avec des fonctionnalités similaires mais des approches différentes.",
+    "image": "navigateur_fonction"
+  },
+  {
+    "question": "url barre adresse navigation site web",
+    "answer": "Pour ouvrir un site web, tapez son URL dans la barre d'adresse du navigateur et appuyez sur Entrée. Si vous ne connaissez pas l'URL, utilisez un moteur de recherche avec des mots-clés. La barre d'adresse montre l'URL du site actuel.",
+    "image": "url_navigation"
+  },
+  {
+    "question": "google recherche filtres images actualites",
+    "answer": "Sur Google, utilisez les filtres sous la barre de recherche : 'Images' pour les photos, 'Actualités' pour l'info récente, 'Maps' pour cartes et itinéraires, 'Vidéo' pour contenus vidéo. 'Plus' donne d'autres options comme Shopping ou Livres.",
+    "image": "google_filtres"
+  },
+  {
+    "question": "telechargement chrome fichiers procedures",
+    "answer": "Pour télécharger Chrome : allez sur google.com/chrome, cliquez 'Télécharger', exécutez le .exe téléchargé, suivez l'installateur. Chrome s'installe et devient votre navigateur par défaut si choisi. Les fichiers vont dans le dossier Téléchargements.",
+    "image": "telechargement_chrome"
+  },
+  {
+    "question": "avantages email productivite communication",
+    "answer": "Avantages email : outils intégrés (calendrier, contacts), inscription services web, gestion avancée (filtres, recherche), confidentialité, communication de groupe, accessibilité mondiale. Indispensable pour le travail et les communications personnelles.",
+    "image": "avantages_email"
+  },
+  {
+    "question": "composition adresse email parties structure",
+    "answer": "Une adresse email a trois parties dans l'ordre : 1) nom d'utilisateur (ex: mohamed), 2) @ (arobase), 3) domaine (ex: gmail.com). Le nom d'utilisateur identifie la personne, le domaine l'hébergeur. Pas d'accents ni caractères spéciaux.",
+    "image": "composition_email"
+  },
+  {
+    "question": "verification securite compte google telephone",
+    "answer": "Google utilise la vérification en deux étapes : après saisie du mot de passe, un code est envoyé par SMS sur votre téléphone. Entrez ce code pour accéder au compte. Cela renforce la sécurité contre les accès non autorisés.",
+    "image": "verification_compte"
+  },
+  {
+    "question": "redaction email professionnel objet message",
+    "answer": "Pour un email professionnel : objet clair et concis, message structuré (salutation, corps, formule de politesse), signature complète (nom, fonction, coordonnées). Utilisez la mise en forme pour la clarté, joignez les fichiers nécessaires.",
+    "image": "email_professionnel"
+  },
+  {
+    "question": "options mise forme gmail police couleur alignement",
+    "answer": "Dans Gmail, cliquez 'Options de mise en forme' pour : changer police, taille, couleur du texte, alignement (gauche, centre, droite), listes à puces/numérotées, gras, italique, souligné. Ces outils améliorent la lisibilité et l'apparence du message.",
+    "image": "mise_forme_email"
+  },
+  {
+    "question": "piece jointe email fichier document photo",
+    "answer": "Pour joindre un fichier : dans Gmail, cliquez l'icône trombone 'Joindre des fichiers', sélectionnez le fichier depuis votre ordinateur. Pour les gros fichiers, utilisez 'Insérer des fichiers avec Drive' pour partager depuis Google Drive.",
+    "image": "pieces_jointes"
+  },
+  {
+    "question": "mode confidentiel gmail expiration mot passe",
+    "answer": "Le mode confidentiel dans Gmail empêche le destinataire de transférer, copier, imprimer ou télécharger l'email. Définissez une expiration (1 jour à 5 ans) et optionnellement un mot de passe envoyé par SMS pour une sécurité maximale.",
+    "image": "mode_confidentiel"
+  },
+  {
+    "question": "signature email parametrage automatique",
+    "answer": "Créez une signature dans Gmail via Paramètres > Signature. Elle s'ajoute automatiquement à la fin de vos emails. Incluez nom, fonction, entreprise, téléphone, adresse. Utile pour une identité professionnelle cohérente.",
+    "image": "signature_email"
+  },
+  {
+    "question": "raccourcis clavier gain temps productivite",
+    "answer": "Les raccourcis clavier accélèrent le travail : Ctrl+S (sauvegarde rapide), Ctrl+Z (annule erreur), Ctrl+F (recherche instantanée), Windows+D (accès bureau). La pratique régulière les rend intuitifs et améliore significativement l'efficacité.",
+    "image": "raccourcis_productivite"
+  },
+  {
+    "question": "raccourcis fenetres gestion multiple applications",
+    "answer": "Alt+Tab (navigation fenêtres), Windows+flèches (ancrage fenêtres), Windows+M (minimiser tout), Windows+Maj+M (restaurer tout). Indispensables pour gérer plusieurs applications simultanément, surtout avec plusieurs écrans ou fenêtres côte à côte.",
+    "image": "raccourcis_fenetres"
+  },
+  {
+    "question": "caracteres internationaux clavier francais",
+    "answer": "Le clavier AZERTY français permet certains caractères via AltGr : é, è, à, ç directement. Pour autres caractères : Alt+0232 (è), Alt+0234 (ê), Alt+0247 (÷). Consultez une table des codes Alt pour les caractères moins courants.",
+    "image": "caracteres_internationaux"
+  },
+  {
+    "question": "posture frappe clavier sante prevention",
+    "answer": "Bonne posture : dos droit appuyé contre chaise, épaules détendues, avant-bras parallèles au sol, poignets droits sans appui, pieds à plat. Faites des pauses régulières pour étirer mains, bras et dos. Prévention des troubles musculosquelettiques.",
+    "image": "posture_clavier"
+  },
+  {
+    "question": "organisation bureau windows dossiers fichiers",
+    "answer": "Organisez votre bureau avec des dossiers thématiques : Travail, Personnel, Projets. Utilisez des noms clairs et cohérents. Évitez trop d'icônes pour garder un espace de travail épuré. Le bureau doit refléter votre organisation logique.",
+    "image": "organisation_bureau"
+  },
+  {
+    "question": "copier coller methodes souris clavier",
+    "answer": "Trois méthodes pour copier-coller : 1) Souris : clic droit > Copier/Coller, 2) Ruban : Édition > Copier/Coller, 3) Clavier : Ctrl+C/Ctrl+V. Le glisser-déposer avec Ctrl pressed copie au lieu de déplacer. Choisissez selon votre préférence.",
+    "image": "methodes_copier"
+  },
+  {
+    "question": "connexion android pc transfert photos documents",
+    "answer": "Connectez Android au PC via USB, sélectionnez 'Transfert de fichiers' sur le téléphone. Ouvrez le lecteur Android dans l'Explorateur Windows. Glissez-déposez photos, documents, musique entre les dossiers du téléphone et du PC. Sécurisez avec éjection avant débranchement.",
+    "image": "transfert_android_pc"
+  },
+  {
+    "question": "installation logiciel etapes assistant installation",
+    "answer": "Étapes d'installation : 1) Téléchargez le .exe, 2) Double-cliquez le fichier, 3) Suivez l'assistant (acceptez licence, choisissez emplacement, sélectionnez composants), 4) Attendez la fin de l'installation, 5) Lancez le logiciel. Les installations modernes guident pas à pas.",
+    "image": "etapes_installation"
+  },
+  {
+    "question": "desinstallation complete programmes restes",
+    "answer": "Pour une désinstallation complète : utilisez le désinstalleur Windows, redémarrez l'ordinateur, vérifiez que le dossier du programme a disparu. Certains programmes laissent des restes ; utilisez un outil de nettoyage si nécessaire pour les supprimer manuellement.",
+    "image": "desinstallation_complete"
+  },
+  {
+    "question": "exercice identification peripheriques composants",
+    "answer": "Exercice : Identifiez les périphériques de votre setup : souris (sélection), clavier (saisie), écran (affichage), enceintes (son), imprimante (sortie papier), disque dur (stockage). Notez leur fonction et type (entrée/sortie/stockage) dans votre cahier.",
+    "image": "exercice_peripheriques"
+  },
+  {
+    "question": "exercice classement peripheriques tableau",
+    "answer": "Classez ces périphériques : souris, écran, clavier, disque dur, imprimante, microphone, haut-parleur, clé USB, scanner, vidéoprojecteur. Créez un tableau avec colonnes Périphérique d'entrée, de sortie, de stockage. Remplissez avec les éléments appropriés.",
+    "image": "exercice_classement"
+  },
+  {
+    "question": "manipulation fenetres pratique multiple applications",
+    "answer": "Ouvrez 3 applications différentes (Word, Chrome, Explorateur). Pratiquez : Alt+Tab pour naviguer, Windows+flèches pour positionner, réduire/agrandir/fermer chaque fenêtre. Disposez-les en cascade, empilées, côte à côte. Maîtrisez la gestion multi-fenêtres.",
+    "image": "exercice_fenetres_multiple"
+  },
+  {
+    "question": "creation suppression fichiers dossiers pratique",
+    "answer": "Créez un dossier 'Test' sur le bureau, dedans créez un fichier texte 'monfichier.txt' avec le Blocnotes. Supprimez le fichier (va dans Corbeille), restaurez-le, puis supprimez le dossier entier. Videz la Corbeille pour suppression définitive.",
+    "image": "exercice_creation_suppression"
+  },
+  {
+    "question": "application mobile help-me aide instantanee",
+    "answer": "L'application mobile Help-Me complète le manuel physique. Scannez les codes-barres avec votre smartphone pour obtenir de l'aide instantanée, des explications supplémentaires, ou des exercices interactifs. Innovation pour un apprentissage moderne et autonome.",
+    "image": "app_helpme"
+  },
+  {
+    "question": "methodologie apprentissage patience curiosite pratique",
+    "answer": "Méthodologie recommandée : patience face aux difficultés initiales, curiosité pour explorer au-delà du cours, pratique régulière entre les sessions, prise de notes personnelles. Les essais-erreurs sont formateurs - ne pas craindre de tester et apprendre de ses erreurs.",
+    "image": "methodologie_apprentissage"
+  },
+  {
+    "question": "protection droits contenu utilisation legitime",
+    "answer": "Ce manuel est protégé par copyright. Toute reproduction, stockage ou transmission sans autorisation écrite est interdite. Les captures d'écran et contenus sont la propriété de HELP-ME. Les marques citées (Microsoft, etc.) appartiennent à leurs propriétaires respectifs.",
+    "image": "protection_droits"
+  },
+  {
+    "question": "public formation large debutants perfectionnement",
+    "answer": "Le manuel s'adresse à un public large : débutants complets voulant acquérir les bases, utilisateurs intermédiaires souhaitant se perfectionner, élèves/étudiants pour leur scolarité, professionnels pour améliorer leurs compétences bureautiques. Accessible sans prérequis techniques.",
+    "image": "public_large"
+  },
+  {
+    "question": "innovation apprentissage codes barres interactivite",
+    "answer": "L'innovation principale est l'intégration manuel/application via codes-barres. Scannez une page pour accéder à du contenu enrichi : vidéos explicatives, exercices interactifs, mises à jour en temps réel. Rend l'apprentissage dynamique et adapté aux supports modernes.",
+    "image": "innovation_apprentissage"
+  },
+
+    {"question":"processeur_multi_coeur","answer":"Processeur contenant plusieurs unités de calcul.","image":"multi_core"},
+    {"question":"overclocking","answer":"Augmentation volontaire de la fréquence d’un processeur.","image":"overclocking"},
+    {"question":"thread","answer":"Unité de traitement légère dans un programme.","image":"thread"},
+    {"question":"pipeline","answer":"Technique permettant d'exécuter plusieurs instructions simultanément.","image":"pipeline"},
+    {"question":"latence_mémoire","answer":"Délai d’accès à la mémoire.","image":"latence_mem"},
+    {"question":"microprocesseur","answer":"Processeur miniaturisé intégré dans une puce.","image":"microprocesseur"},
+    {"question":"bus","answer":"Canal de communication interne entre composants.","image":"bus"},
+    {"question":"chipset","answer":"Circuit gérant les communications d’une carte mère.","image":"chipset"},
+    {"question":"firmware","answer":"Logiciel intégré dans un matériel pour le contrôler.","image":"firmware"},
+    {"question":"microcode","answer":"Instructions bas niveau internes au processeur.","image":"microcode"},
+    {"question":"cache_l1","answer":"Mémoire cache ultra-rapide du processeur.","image":"cachel1"},
+    {"question":"cache_l2","answer":"Mémoire cache intermédiaire du processeur.","image":"cachel2"},
+    {"question":"buffer","answer":"Zone tampon utilisée pour stocker temporairement des données.","image":"buffer"},
+    {"question":"threadpool","answer":"Groupe de threads réutilisables pour optimiser l’exécution.","image":"threadpool"},
+    {"question":"horloge_système","answer":"Fréquence contrôlant l'exécution du processeur.","image":"clock"},
+    {"question":"instruction_set","answer":"Ensemble des commandes qu’un processeur peut exécuter.","image":"instruction_set"},
+    {"question":"microservice_gateway","answer":"Point d'entrée central pour les microservices.","image":"gateway"},
+    {"question":"load_balancer","answer":"Système distribuant la charge entre plusieurs serveurs.","image":"load_balancer"},
+    {"question":"scalabilité","answer":"Capacité d’un système à gérer une montée en charge.","image":"scalable"},
+    {"question":"haute_disponibilité","answer":"Système conçu pour rester actif même en cas de panne.","image":"ha"},
+    {"question":"cluster","answer":"Groupe d'ordinateurs travaillant ensemble.","image":"cluster"},
+    {"question":"failover","answer":"Basculer automatiquement vers un système de secours.","image":"failover"},
+    {"question":"snapshot","answer":"Capture instantanée de l'état d’un système.","image":"snapshot"},
+    {"question":"orchestration","answer":"Automatisation et gestion de systèmes distribués.","image":"orchestration"},
+    {"question":"kubernetes","answer":"Plateforme d’orchestration de conteneurs.","image":"kubernetes"},
+    {"question":"helm","answer":"Gestionnaire de paquets pour Kubernetes.","image":"helm"},
+    {"question":"terraform","answer":"Outil d’infrastructure as code.","image":"terraform"},
+    {"question":"ansible","answer":"Outil d’automatisation de configuration.","image":"ansible"},
+    {"question":"monitoring","answer":"Surveillance continue d’un système.","image":"monitoring"},
+    {"question":"observabilité","answer":"Capacité à analyser le fonctionnement d'un système complexe.","image":"observabilite"},
+    {"question":"websocket","answer":"Communication temps réel bidirectionnelle.","image":"websocket"},
+    {"question":"graphql","answer":"Langage de requête pour APIs modernes.","image":"graphql"},
+    {"question":"oauth2","answer":"Standard d'authentification et autorisation.","image":"oauth2"},
+    {"question":"jwt","answer":"Format de jeton sécurisé utilisé pour s’authentifier.","image":"jwt"},
+    {"question":"session_id","answer":"Identifiant unique pour une session utilisateur.","image":"session_id"},
+    {"question":"honeypot","answer":"Système piégé pour détecter les attaques.","image":"honeypot"},
+    {"question":"bruteforce","answer":"Attaque testant toutes les combinaisons possibles.","image":"bruteforce"},
+    {"question":"spoofing","answer":"Usurpation d’identité réseau.","image":"spoofing"},
+    {"question":"backdoor","answer":"Accès caché non autorisé à un système.","image":"backdoor"},
+    {"question":"keylogger","answer":"Programme enregistrant les frappes du clavier.","image":"keylogger"},
+    {"question":"botnet","answer":"Réseau d’ordinateurs infectés contrôlés à distance.","image":"botnet"},
+    {"question":"checksum","answer":"Valeur permettant de vérifier l’intégrité d’un fichier.","image":"checksum"},
+    {"question":"rootkit","answer":"Programme masquant la présence d’un malware.","image":"rootkit"},
+    {"question":"antivirus","answer":"Logiciel de détection de malwares.","image":"antivirus"},
+    {"question":"sandbox","answer":"Environnement isolé pour tester des programmes.","image":"sandbox"},
+    {"question":"tokenization","answer":"Protection des données remplaçant les valeurs sensibles.","image":"tokenization"},
+    {"question":"cryptographie","answer":"Discipline visant à protéger l’information.","image":"crypto"},
+    {"question":"tls","answer":"Protocole sécurisant la communication sur internet.","image":"tls"},
+    {"question":"ssh","answer":"Protocole sécurisé pour l’accès distant.","image":"ssh"},
+    {"question":"selinux","answer":"Module de sécurité avancée pour Linux.","image":"selinux"},
+    {"question":"firewall_applicatif","answer":"Pare-feu filtrant les requêtes Web (WAF).","image":"waf"},
+    {"question":"reverse_proxy","answer":"Serveur intermédiaire protégeant les serveurs backend.","image":"reverse_proxy"},
+    {"question":"cdn","answer":"Réseau distribuant du contenu rapidement.","image":"cdn"},
+    {"question":"latence_cloud","answer":"Délai entre une requête et la réponse du cloud.","image":"latence_cloud"},
+    {"question":"big_data","answer":"Traitement de grandes quantités de données.","image":"big_data"},
+    {"question":"data_lake","answer":"Stockage massif non structuré.","image":"data_lake"},
+    {"question":"datawarehouse","answer":"Base de données optimisée pour l’analyse.","image":"dwh"},
+    {"question":"pipeline_données","answer":"Chaîne automatisée de traitement des données.","image":"pipeline"},
+    {"question":"etl","answer":"Processus d’Extraction, Transformation, Chargement.","image":"etl"},
+    {"question":"data_mining","answer":"Exploration de données pour en tirer des connaissances.","image":"data_mining"},
+    {"question":"tableau_croisé_dynamique","answer":"Outil Excel d’analyse avancée.","image":"tcd"},
+    {"question":"power_query","answer":"Outil Microsoft pour transformer des données.","image":"powerquery"},
+    {"question":"power_pivot","answer":"Modélisation et analyse avancée dans Excel.","image":"powerpivot"},
+    {"question":"dashboard","answer":"Tableau de bord visuel d’indicateurs clés.","image":"dashboard"},
+    {"question":"kpi","answer":"Indicateur clé de performance.","image":"kpi"},
+    {"question":"erp","answer":"Logiciel de gestion intégré d’une entreprise.","image":"erp"},
+    {"question":"crm","answer":"Logiciel de gestion de la relation client.","image":"crm"},
+    {"question":"script_shell","answer":"Script automatisé sous Linux.","image":"script_shell"},
+    {"question":"powershell","answer":"Langage d’automatisation Windows.","image":"powershell"},
+    {"question":"batch","answer":"Fichier de commandes Windows.","image":"batch"},
+    {"question":"vm_snapshot","answer":"Sauvegarde instantanée d’une machine virtuelle.","image":"vm_snapshot"},
+    {"question":"bucket_cloud","answer":"Conteneur de stockage cloud.","image":"bucket"},
+    {"question":"webhook","answer":"Appel automatique déclenché par un événement.","image":"webhook"},
+    {"question":"cron","answer":"Planificateur de tâches Linux.","image":"cron"},
+    {"question":"scheduler","answer":"Système planifiant des tâches automatiques.","image":"scheduler"},
+    {"question":"thread_safe","answer":"Code sécurisé pour l’exécution multithread.","image":"thread_safe"},
+    {"question":"singleton","answer":"Patron garantissant une seule instance d’un objet.","image":"singleton"},
+    {"question":"mvc","answer":"Architecture Modèle-Vue-Contrôleur.","image":"mvc"},
+    {"question":"mvvm","answer":"Pattern séparant la logique et l’IU.","image":"mvvm"},
+    {"question":"orm","answer":"Outil reliant objets et base de données.","image":"orm"},
+    {"question":"ci_cd","answer":"Intégration continue et déploiement continu.","image":"ci_cd"},
+    {"question":"test_unitaire","answer":"Test vérifiant une petite partie du code.","image":"test_unitaire"},
+    {"question":"regression_test","answer":"Vérifie qu'un changement n'a pas cassé le code.","image":"regression"},
+    {"question":"benchmark","answer":"Mesure de performance d’un système.","image":"benchmark"},
+    {"question":"latence_disque","answer":"Délai d'accès au stockage.","image":"latence_disque"},
+    {"question":"usability","answer":"Facilité d’utilisation d’une interface.","image":"usability"},
+    {"question":"format_svg","answer":"Format vectoriel évolutif.","image":"svg"},
+    {"question":"bitmap","answer":"Image composée de pixels.","image":"bitmap"},
+    {"question":"favicon","answer":"Petite icône d’un site web.","image":"favicon"},
+    {"question":"cms","answer":"Système de gestion de contenu.","image":"cms"},
+    {"question":"wordpress","answer":"CMS le plus utilisé dans le monde.","image":"wordpress"},
+    {"question":"plugin","answer":"Extension ajoutant des fonctionnalités.","image":"plugin"},
+    {"question":"theme","answer":"Apparence d’un site ou d'une interface.","image":"theme"},
+    {"question":"responsive_design","answer":"Interface qui s’adapte à tous les écrans.","image":"responsive"},
+    {"question":"hebergeur","answer":"Entreprise stockant les sites web.","image":"hebergeur"},
+    {"question":"nom_de_domaine","answer":"Adresse d'un site internet.","image":"domaine"},
+    {"question":"certificat_ssl","answer":"Certificat garantissant une connexion chiffrée.","image":"ssl"},
+
+
+    {"question":"compilation","answer":"Transformation du code source en code exécutable.","image":"compilation"},
+    {"question":"interprétation","answer":"Exécution du code ligne par ligne.","image":"interpretation"},
+    {"question":"syntaxe","answer":"Règles d'écriture d'un langage.","image":"syntaxe"},
+    {"question":"sémantique","answer":"Signification des instructions dans un langage.","image":"semantique"},
+    {"question":"variable_locale","answer":"Variable définie dans un bloc et accessible uniquement dedans.","image":"var_locale"},
+    {"question":"variable_globale","answer":"Variable accessible dans tout le programme.","image":"var_globale"},
+    {"question":"constante","answer":"Valeur fixe qui ne peut pas être modifiée.","image":"constante"},
+    {"question":"type_primitif","answer":"Type de base d'un langage (int, float, char...).","image":"primitif"},
+    {"question":"type_abstrait","answer":"Type défini par l’utilisateur (classe, interface).","image":"type_abstrait"},
+    {"question":"pointeur","answer":"Variable contenant l’adresse d’une autre donnée.","image":"pointeur"},
+    {"question":"référence","answer":"Lien indirect vers une valeur stockée.","image":"reference"},
+    {"question":"mémoire_heap","answer":"Zone mémoire utilisée pour les objets dynamiques.","image":"heap"},
+    {"question":"mémoire_stack","answer":"Mémoire rapide utilisée pour fonctions et variables locales.","image":"stack"},
+    {"question":"allocation_dynamique","answer":"Réservation de mémoire à l'exécution.","image":"alloc_dyn"},
+    {"question":"libération_mémoire","answer":"Action de rendre la mémoire inutilisée.","image":"free_mem"},
+    {"question":"garbage_collector","answer":"Système qui libère automatiquement la mémoire.","image":"gc"},
+    {"question":"classe_abstraite","answer":"Classe non instanciable servant de modèle.","image":"classe_abstraite"},
+    {"question":"interface","answer":"Contrat décrivant des méthodes sans implémentation.","image":"interface"},
+    {"question":"héritage","answer":"Mécanisme permettant de réutiliser le code d’une classe.","image":"heritage"},
+    {"question":"polymorphisme","answer":"Capacité d’un objet à prendre plusieurs formes.","image":"polymorphisme"},
+    {"question":"encapsulation","answer":"Protection des données d’un objet.","image":"encapsulation"},
+    {"question":"surcharge","answer":"Plusieurs méthodes portant le même nom.","image":"overload"},
+    {"question":"redéfinition","answer":"Modification d’une méthode héritée.","image":"override"},
+    {"question":"getter","answer":"Méthode permettant d'accéder à une valeur privée.","image":"getter"},
+    {"question":"setter","answer":"Méthode permettant modifier une valeur privée.","image":"setter"},
+    {"question":"attribut","answer":"Donnée appartenant à un objet.","image":"attribut"},
+    {"question":"constructeur","answer":"Méthode appelée lors de la création d’un objet.","image":"constructeur"},
+    {"question":"destructeur","answer":"Méthode exécutée avant la suppression d’un objet.","image":"destructeur"},
+    {"question":"fonction_récursive","answer":"Fonction qui s’appelle elle-même.","image":"recursive"},
+    {"question":"lambda","answer":"Fonction anonyme sans nom.","image":"lambda"},
+    {"question":"closure","answer":"Fonction qui garde l’accès à son environnement.","image":"closure"},
+    {"question":"callback","answer":"Fonction appelée en réponse à un événement.","image":"callback"},
+    {"question":"promise","answer":"Objet représentant une valeur future en JS.","image":"promise"},
+    {"question":"asynchrone","answer":"Opération qui s'exécute sans bloquer.","image":"async"},
+    {"question":"threading","answer":"Exécution simultanée de plusieurs tâches.","image":"thread"},
+    {"question":"processus","answer":"Programme en cours d'exécution.","image":"process"},
+    {"question":"concurrence","answer":"Plusieurs tâches actives mais non simultanées.","image":"concurrence"},
+    {"question":"parallélisme","answer":"Exécution réellement simultanée de tâches.","image":"parallel"},
+    {"question":"verrou","answer":"Mécanisme empêchant l'accès simultané à une ressource.","image":"lock"},
+    {"question":"deadlock","answer":"Blocage mutuel entre processus.","image":"deadlock"},
+    {"question":"file_dattente","answer":"Structure FIFO stockant des éléments.","image":"queue"},
+    {"question":"pile","answer":"Structure LIFO utilisée dans les fonctions.","image":"stack"},
+    {"question":"liste_chainee","answer":"Structure de données où chaque élément pointe vers le suivant.","image":"linkedlist"},
+    {"question":"arbre_binaire","answer":"Structure où chaque nœud a jusqu’à deux enfants.","image":"arbre"},
+    {"question":"table_de_hachage","answer":"Structure stockant des données grâce à une clé hash.","image":"hashtable"},
+    {"question":"algorithme","answer":"Suite d’étapes pour résoudre un problème.","image":"algo"},
+    {"question":"complexité","answer":"Mesure du temps ou mémoire requis par un algorithme.","image":"complexite"},
+    {"question":"notation_big_o","answer":"Notation pour mesurer la performance algorithmique.","image":"big_o"},
+    {"question":"tri_rapide","answer":"Algorithme diviser pour régner très efficace.","image":"quicksort"},
+    {"question":"tri_fusion","answer":"Algorithme de tri stable basé sur la fusion.","image":"mergesort"},
+    {"question":"tri_bulle","answer":"Algorithme simple comparant des éléments adjacents.","image":"bubblesort"},
+    {"question":"analyse_lexicale","answer":"Premier stade de compilation : découper le code.","image":"lexer"},
+    {"question":"parseur","answer":"Analyseur syntaxique transformant le code en arbre.","image":"parser"},
+    {"question":"bytecode","answer":"Code intermédiaire exécuté par une machine virtuelle.","image":"bytecode"},
+    {"question":"machine_virtuelle","answer":"Environnement d’exécution du bytecode.","image":"vm"},
+    {"question":"jit_compiler","answer":"Compilation à la volée pour accélérer l’exécution.","image":"jit"},
+    {"question":"runtime","answer":"Environnement d’exécution d’un langage.","image":"runtime"},
+    {"question":"framework_web","answer":"Outil facilitant le développement d’applications web.","image":"framework_web"},
+    {"question":"orm","answer":"Mapping objet-relationnel pour bases de données.","image":"orm"},
+    {"question":"migration","answer":"Modification automatique de structure de base de données.","image":"migration"},
+    {"question":"pattern","answer":"Solution réutilisable à un problème courant.","image":"pattern"},
+    {"question":"factory","answer":"Pattern pour créer des objets sans exposer la logique.","image":"factory"},
+    {"question":"singleton","answer":"Pattern garantissant une seule instance d’une classe.","image":"singleton"},
+    {"question":"observer","answer":"Pattern où un objet notifie plusieurs observateurs.","image":"observer"},
+    {"question":"strategy","answer":"Pattern permettant de changer dynamiquement un comportement.","image":"strategy"},
+    {"question":"adapter","answer":"Pattern rendant compatibles deux interfaces.","image":"adapter"},
+    {"question":"decorator","answer":"Pattern ajoutant des fonctionnalités à la volée.","image":"decorator"},
+    {"question":"builder","answer":"Pattern pour construire des objets complexes.","image":"builder"},
+    {"question":"repository","answer":"Couche d'accès aux données dans une application.","image":"repository"},
+    {"question":"dto","answer":"Objet servant au transport de données.","image":"dto"},
+    {"question":"service","answer":"Composant contenant la logique métier.","image":"service"},
+    {"question":"controller","answer":"Composant gérant les requêtes et réponses.","image":"controller"},
+    {"question":"middleware","answer":"Composant interceptant les requêtes d’une application.","image":"middleware"},
+    {"question":"pipeline_execution","answer":"Chaîne d’opérations exécutées dans un certain ordre.","image":"pipeline"},
+    {"question":"unit_test","answer":"Test vérifiant le comportement d'une fonction.","image":"unit_test"},
+    {"question":"mock","answer":"Objet simulé utilisé pour tester.","image":"mock"},
+    {"question":"test_integration","answer":"Test vérifiant plusieurs composants ensemble.","image":"integration"},
+    {"question":"test_fonctionnel","answer":"Test basé sur le comportement de l'application.","image":"test_fonctionnel"},
+    {"question":"tdd","answer":"Développement dirigé par les tests.","image":"tdd"},
+    {"question":"bdd","answer":"Développement dirigé par le comportement.","image":"bdd"},
+    {"question":"refactoring","answer":"Amélioration du code sans changer sa fonctionnalité.","image":"refactoring"},
+    {"question":"linting","answer":"Analyse automatique du code pour détecter erreurs et style.","image":"linting"},
+    {"question":"code_review","answer":"Vérification du code par un autre développeur.","image":"code_review"},
+    {"question":"versioning","answer":"Gestion des versions d’un projet.","image":"versioning"},
+    {"question":"pull_request","answer":"Demande d’intégration de code.","image":"pr"},
+    {"question":"pipeline_ci","answer":"Pipeline d'intégration continue exécutant des tests.","image":"ci"},
+    {"question":"pipeline_cd","answer":"Déploiement automatisé d’une application.","image":"cd"},
+    {"question":"webassembly","answer":"Format binaire exécuté dans le navigateur.","image":"wasm"},
+    {"question":"minification","answer":"Réduction de la taille du code JS/CSS.","image":"minify"},
+    {"question":"module","answer":"Unité indépendante de code importable.","image":"module"},
+    {"question":"paquet","answer":"Bibliothèque distribuée via un gestionnaire de paquets.","image":"package"},
+    {"question":"gestionnaire_paquets","answer":"Outil installant des dépendances (npm, pip…).","image":"package_manager"},
+    {"question":"async_await","answer":"Syntaxe facilitant l’écriture d’opérations asynchrones.","image":"async_await"},
+    {"question":"event_loop","answer":"Mécanisme exécutant les callbacks en JavaScript.","image":"eventloop"},
+    {"question":"webworker","answer":"Thread parallèle pour JavaScript.","image":"webworker"},
+    {"question":"dom","answer":"Représentation des éléments HTML en mémoire.","image":"dom"},
+    {"question":"shadow_dom","answer":"DOM isolé pour composants web.","image":"shadow_dom"},
+    {"question":"spa","answer":"Application web à page unique.","image":"spa"},
+
+
+
+    {"question":"fichier_introuvable","answer":"Le fichier spécifié n'existe pas ou a été déplacé.","image":"fichier_introuvable"},
+    {"question":"accès_refusé","answer":"Vous n'avez pas la permission d'ouvrir ce fichier.","image":"acces_refuse"},
+    {"question":"impossible_d_enregistrer","answer":"Le fichier ne peut pas être enregistré à cet emplacement.","image":"save_error"},
+    {"question":"chemin_trop_long","answer":"Le chemin du fichier dépasse la limite autorisée.","image":"path_long"},
+    {"question":"fichier_en_lecture_seule","answer":"Le fichier est protégé, modification impossible.","image":"lecture_seule"},
+    {"question":"format_non_pris_en_charge","answer":"Le logiciel ne reconnaît pas ce type de fichier.","image":"format"},
+    {"question":"fichier_corrompu","answer":"Le fichier est endommagé et ne peut pas être ouvert.","image":"corrupt"},
+    {"question":"disque_plein","answer":"Espace insuffisant pour terminer l'opération.","image":"disk_full"},
+    {"question":"imprimante_introuvable","answer":"Aucune imprimante détectée.","image":"printer"},
+    {"question":"impossible_d_imprimer","answer":"Erreur lors de l’impression du document.","image":"print_error"},
+    {"question":"erreur_de_connexion","answer":"Impossible d’établir une connexion réseau.","image":"network"},
+    {"question":"pas_d_internet","answer":"Aucune connexion Internet disponible.","image":"internet"},
+    {"question":"serveur_inaccessible","answer":"Le serveur distant ne répond pas.","image":"server"},
+    {"question":"mot_de_passe_incorrect","answer":"Le mot de passe saisi est invalide.","image":"password"},
+    {"question":"compte_verrouillé","answer":"Le compte a été temporairement bloqué.","image":"compte"},
+    {"question":"mise_a_jour_requise","answer":"Une mise à jour du logiciel est nécessaire.","image":"update"},
+    {"question":"erreur_d_execution","answer":"Une erreur inattendue est survenue.","image":"runtime"},
+    {"question":"application_ne_repond_pas","answer":"L’application est bloquée.","image":"freeze"},
+    {"question":"fichier_deja_ouvert","answer":"Le fichier est déjà en cours d’utilisation.","image":"already_open"},
+    {"question":"conflit_de_verrouillage","answer":"Une autre personne modifie déjà ce fichier.","image":"conflict"},
+    {"question":"excel_erreur_div0","answer":"Division par zéro dans une formule.","image":"div0"},
+    {"question":"excel_erreur_na","answer":"Valeur introuvable dans une formule.","image":"na"},
+    {"question":"excel_erreur_ref","answer":"Référence de cellule invalide.","image":"ref"},
+    {"question":"excel_erreur_nom","answer":"Nom de fonction ou variable incorrect.","image":"name"},
+    {"question":"excel_erreur_valeur","answer":"Type de données incorrect dans une formule.","image":"value"},
+    {"question":"excel_erreur_num","answer":"Nombre non valide dans la formule.","image":"num"},
+    {"question":"excel_erreur_null","answer":"Intersection impossible entre deux plages.","image":"null"},
+    {"question":"macro_bloquée","answer":"L’exécution des macros est désactivée.","image":"macro"},
+    {"question":"activer_les_macros","answer":"Sécurité : l’utilisateur doit activer les macros.","image":"macro_activate"},
+    {"question":"word_recuperation_auto","answer":"Word a récupéré un document après un crash.","image":"aut_recovery"},
+    {"question":"word_cas_detecte","answer":"Word a rencontré une erreur et doit fermer.","image":"crash"},
+    {"question":"police_introuvable","answer":"La police utilisée n'est pas installée.","image":"font"},
+    {"question":"image_introuvable","answer":"L’image liée n'est plus disponible.","image":"image_missing"},
+    {"question":"lien_rompu","answer":"Un lien dans le document est cassé.","image":"broken_link"},
+    {"question":"motif_non_disponible","answer":"Un modèle Word requis est manquant.","image":"template"},
+    {"question":"active_x_bloqué","answer":"Contrôle ActiveX désactivé pour sécurité.","image":"activex"},
+    {"question":"addin_desactive","answer":"Un module complémentaire a été désactivé.","image":"addin"},
+    {"question":"impossible_de_se_connecter_outlook","answer":"Outlook ne peut pas se connecter au serveur.","image":"outlook"},
+    {"question":"boite_de_reception_pleine","answer":"Espace de stockage mail saturé.","image":"mail_full"},
+    {"question":"piece_jointe_trop_grande","answer":"La pièce jointe dépasse la taille maximale.","image":"attachment"},
+    {"question":"message_non_envoye","answer":"L’email n’a pas pu être envoyé.","image":"send_error"},
+    {"question":"calendrier_non_disponible","answer":"Impossible de charger le calendrier.","image":"calendar"},
+    {"question":"erreur_activation_office","answer":"Échec de l’activation de Microsoft Office.","image":"activation"},
+    {"question":"licence_expiree","answer":"Votre licence Office n’est plus valide.","image":"license"},
+    {"question":"office_reparation","answer":"Office tente de réparer l’installation.","image":"repair"},
+    {"question":"mise_a_jour_bloquee","answer":"Une mise à jour Windows n’a pas pu être installée.","image":"update_block"},
+    {"question":"redemarrage_requis","answer":"Redémarrage nécessaire pour appliquer les modifications.","image":"restart"},
+    {"question":"fichier_en_utilisation","answer":"Le fichier est utilisé par un autre processus.","image":"in_use"},
+    {"question":"erreur_de_synchronisation","answer":"Synchronisation impossible avec le cloud.","image":"sync_error"},
+    {"question":"onedrive_bloque","answer":"OneDrive ne peut pas synchroniser un fichier.","image":"onedrive"},
+    {"question":"quota_de_stockage_atteint","answer":"Vous n'avez plus d'espace sur OneDrive.","image":"quota"},
+    {"question":"erreur_d_acces_reseau","answer":"Windows ne peut pas accéder au réseau.","image":"network_access"},
+    {"question":"connexion_lente","answer":"La connexion réseau est trop lente.","image":"slow_network"},
+    {"question":"pilote_manquant","answer":"Un pilote requis est introuvable.","image":"driver_missing"},
+    {"question":"pilote_obsolete","answer":"Un pilote doit être mis à jour.","image":"driver_old"},
+    {"question":"materiel_non_reconnu","answer":"Windows ne reconnaît pas un périphérique.","image":"unknown_device"},
+    {"question":"mise_a_jour_windows_echec","answer":"Windows Update a rencontré une erreur.","image":"update_fail"},
+    {"question":"fichier_systeme_manquant","answer":"Un fichier essentiel du système est introuvable.","image":"sys_file"},
+    {"question":"service_non_demarre","answer":"Un service Windows ne s’est pas lancé.","image":"service_fail"},
+    {"question":"parefeu_bloque","answer":"Le pare-feu bloque cette application.","image":"firewall"},
+    {"question":"antivirus_bloque","answer":"L’antivirus a empêché une action.","image":"antivirus"},
+    {"question":"rançon_detectee","answer":"Activité suspecte de ransomware détectée.","image":"ransom"},
+    {"question":"impossible_d_ouvrir_l_application","answer":"L'application ne peut pas être démarrée.","image":"app_open_error"},
+    {"question":"application_bloquee_par_admin","answer":"L'administrateur a restreint l'accès.","image":"admin_block"},
+    {"question":"script_desactive","answer":"Les scripts sont désactivés pour raisons de sécurité.","image":"script"},
+    {"question":"dll_manquante","answer":"Une bibliothèque .DLL est introuvable.","image":"dll"},
+    {"question":"dll_incompatible","answer":"La version de la DLL ne correspond pas au programme.","image":"dll_mismatch"},
+    {"question":"erreur_0xc0000005","answer":"Erreur d'accès mémoire.","image":"access_violation"},
+    {"question":"erreur_0x80070005","answer":"Accès refusé par Windows.","image":"access_denied"},
+    {"question":"erreur_0x80004005","answer":"Erreur non spécifiée.","image":"unspecified"},
+    {"question":"erreur_de_memoire","answer":"Mémoire insuffisante pour continuer.","image":"memory"},
+    {"question":"application_corrompue","answer":"Les fichiers de l’application sont endommagés.","image":"app_corrupt"},
+    {"question":"cle_registre_manquante","answer":"Une clé de registre requise est absente.","image":"registry"},
+    {"question":"erreur_d_installation","answer":"L’installation n’a pas pu être terminée.","image":"install_error"},
+    {"question":"installation_incomplete","answer":"Le logiciel n’a pas été complètement installé.","image":"install_incomplete"},
+    {"question":"conflit_logiciel","answer":"Deux logiciels sont incompatibles.","image":"conflict_soft"},
+    {"question":"temps_d_attente_depasse","answer":"Windows a dépassé le temps d’attente d’une opération.","image":"timeout"},
+    {"question":"service_indisponible","answer":"Fonction temporairement indisponible.","image":"service_unavailable"},
+    {"question":"compte_non_configuré","answer":"Votre compte n’est pas encore configuré.","image":"account"},
+    {"question":"erreur_d_exportation","answer":"Échec lors de l’exportation du fichier.","image":"export"},
+    {"question":"erreur_d_importation","answer":"Échec lors de l’importation du fichier.","image":"import"},
+    {"question":"format_incompatible","answer":"Le contenu ne correspond pas au format attendu.","image":"format_error"},
+    {"question":"erreur_d_ouverture_pdf","answer":"Le fichier PDF n’a pas pu être affiché.","image":"pdf"},
+    {"question":"acrobat_non_installe","answer":"Adobe Acrobat nécessaire pour ouvrir ce PDF.","image":"acrobat"},
+    {"question":"excel_calcul_lent","answer":"Excel met du temps à recalculer les formules.","image":"excel_slow"},
+    {"question":"tableau_croise_endommage","answer":"Un TCD est corrompu.","image":"pivot_error"},
+    {"question":"conflit_modification","answer":"Deux versions du même fichier sont en conflit.","image":"merge_conflict"},
+    {"question":"mot_de_passe_requis","answer":"Ce document est protégé par un mot de passe.","image":"lock"},
+    {"question":"protection_feuille_active","answer":"La feuille Excel est verrouillée.","image":"sheet_protect"},
+    {"question":"impossible_de_charger_l_image","answer":"Erreur lors de l’insertion de l’image.","image":"img_error"},
+    {"question":"outlook_profil_endommage","answer":"Le profil Outlook doit être réparé.","image":"profil_error"},
+    {"question":"index_outlook_endommage","answer":"Reconstruction de l’index de recherche nécessaire.","image":"index_error"},
+
+
+    {
+      "question": "excel",
+      "answer": "Microsoft Excel est un logiciel de tableur permettant de créer des feuilles de calcul, d'analyser des données, d'utiliser des formules et de générer des graphiques.",
+      "image": "excel"
+    },
+    {
+      "question": "powerpoint",
+      "answer": "Microsoft PowerPoint est un logiciel de présentation permettant de créer des diapositives avec du texte, des images, des graphiques, des transitions et des animations.",
+      "image": "powerpoint"
+    },
+    {
+      "question": "internet",
+      "answer": "Internet est un réseau mondial reliant des millions d'appareils permettant d'accéder à des sites web, envoyer des emails et utiliser des services en ligne.",
+      "image": "internet"
+    },
+    {
+      "question": "bureautique",
+      "answer": "La bureautique regroupe les outils et logiciels permettant de créer, gérer et traiter des documents numériques : texte, tableaux, présentations, emails, etc.",
+      "image": "bureautique"
+    },
+    {
+      "question": "access",
+      "answer": "Microsoft Access est un logiciel de gestion de bases de données permettant de stocker, organiser et manipuler des informations via des tables, formulaires et requêtes.",
+      "image": "access"
+    },
+    {
+      "question": "outlook",
+      "answer": "Microsoft Outlook est un logiciel de messagerie permettant de gérer emails, contacts, calendrier, tâches et rendez-vous.",
+      "image": "outlook"
+    },
+    {
+      "question": "copier",
+      "answer": "Copier signifie dupliquer un texte, une image ou un fichier pour le coller ailleurs sans modifier l'original.",
+      "image": "copier"
+    },
+    {
+      "question": "coller",
+      "answer": "Coller permet d'insérer un élément précédemment copié ou coupé dans un nouvel emplacement.",
+      "image": "coller"
+    },
+    {
+      "question": "couper",
+      "answer": "Couper retire un élément pour le déplacer ailleurs, contrairement à copier qui en fait une copie.",
+      "image": "couper"
+    },
+    {
+      "question": "fichier",
+      "answer": "Un fichier est une unité de stockage contenant des données numériques comme texte, images, audio, vidéo ou programme.",
+      "image": "fichier"
+    },
+    {
+      "question": "dossier",
+      "answer": "Un dossier est un conteneur permettant d'organiser des fichiers et d'autres dossiers.",
+      "image": "dossier"
+    },
+    {
+      "question": "souris",
+      "answer": "La souris est un périphérique permettant de contrôler le curseur et de cliquer sur des éléments.",
+      "image": "souris"
+    },
+    {
+      "question": "clavier",
+      "answer": "Le clavier est un périphérique permettant de saisir du texte, des chiffres et des commandes.",
+      "image": "clavier"
+    },
+    {
+      "question": "imprimante",
+      "answer": "Une imprimante est un périphérique permettant de produire une copie papier d’un document numérique.",
+      "image": "imprimante"
+    },
+    {
+      "question": "navigateur",
+      "answer": "Un navigateur est un logiciel permettant d’accéder aux pages web (Chrome, Firefox, Edge).",
+      "image": "navigateur"
+    },
+    {
+      "question": "courrier_electronique",
+      "answer": "Le courrier électronique (email) est un message envoyé et reçu via Internet.",
+      "image": "email"
+    },
+    {
+      "question": "mot_de_passe",
+      "answer": "Un mot de passe est une clé permettant de sécuriser l’accès à un compte ou un appareil.",
+      "image": "password"
+    },
+    {
+      "question": "wifi",
+      "answer": "Le Wi-Fi est une technologie permettant d'accéder à Internet sans fil.",
+      "image": "wifi"
+    },
+    {
+      "question": "cloud",
+      "answer": "Le cloud est un service permettant de stocker et accéder à des fichiers en ligne depuis n'importe quel appareil.",
+      "image": "cloud"
+    },
+    {
+      "question": "etc",
+      "answer": "Etc. signifie 'et cetera' et indique que la liste continue avec d'autres éléments similaires.",
+      "image": "etc"
+    },
+
+
+    {"question":"ordinateur","answer":"Machine électronique permettant de traiter, stocker et afficher des informations.","image":"ordinateur"},
+    {"question":"bureau_windows","answer":"Écran principal affiché après connexion à Windows.","image":"bureau"},
+    {"question":"barre_des_taches","answer":"Zone affichant les applications ouvertes et le menu Démarrer.","image":"taskbar"},
+    {"question":"explorateur_de_fichiers","answer":"Outil permettant de naviguer dans les dossiers et fichiers.","image":"explorateur"},
+    {"question":"clic_droit","answer":"Ouverture d'un menu contextuel avec des options.","image":"clic_droit"},
+    {"question":"clic_gauche","answer":"Sélection ou activation d'un élément.","image":"clic_gauche"},
+    {"question":"double_clic","answer":"Action permettant d’ouvrir un fichier ou dossier.","image":"double_clic"},
+    {"question":"cliquez_glisser","answer":"Déplacer un fichier en maintenant le bouton de la souris.","image":"drag_drop"},
+    {"question":"capture_ecran","answer":"Image de ce qui s'affiche sur l’écran.","image":"screenshot"},
+    {"question":"impression","answer":"Action d'envoyer un document vers une imprimante.","image":"print"},
+    {"question":"mise_en_forme","answer":"Modification de l’apparence d’un texte.","image":"format_text"},
+    {"question":"gras","answer":"Style de texte épaissi.","image":"bold"},
+    {"question":"italique","answer":"Style de texte incliné.","image":"italic"},
+    {"question":"souligné","answer":"Style de texte avec une ligne sous les caractères.","image":"underline"},
+    {"question":"alignement","answer":"Position du texte (gauche, droite, centré, justifié).","image":"alignement"},
+    {"question":"puces","answer":"Liste non numérotée utilisant des symboles.","image":"puces"},
+    {"question":"numérotation","answer":"Liste avec numéros automatiques.","image":"numérotation"},
+    {"question":"en_tete","answer":"Zone en haut d'une page contenant titre ou informations.","image":"header"},
+    {"question":"pied_de_page","answer":"Zone en bas d'une page contenant numéros ou notes.","image":"footer"},
+    {"question":"saut_de_page","answer":"Séparation forçant le passage à la page suivante.","image":"page_break"},
+    {"question":"marge","answer":"Espace vide autour du texte dans une page.","image":"marge"},
+    {"question":"orientation","answer":"Disposition d’une page (portrait ou paysage).","image":"orientation"},
+    {"question":"table_des_matieres","answer":"Liste automatique des titres d’un document.","image":"tdm"},
+    {"question":"tableau_word","answer":"Structure organisée en lignes et colonnes dans Word.","image":"tableau"},
+    {"question":"cellule","answer":"Case d’un tableau contenant une donnée.","image":"cellule"},
+    {"question":"formule_excel","answer":"Instruction calculant automatiquement une valeur.","image":"formule"},
+    {"question":"fonction_excel","answer":"Outil de calcul prédéfini (SUM, IF, etc.).","image":"fonction"},
+    {"question":"graphique_excel","answer":"Représentation visuelle de données.","image":"graphique"},
+    {"question":"diapositive","answer":"Page d’une présentation PowerPoint.","image":"slide"},
+    {"question":"transition","answer":"Effet entre deux diapositives.","image":"transition"},
+    {"question":"animation","answer":"Effet appliqué à un texte ou une image.","image":"animation"},
+    {"question":"mode_masques","answer":"Affichage permettant de modifier toute la présentation.","image":"masques"},
+    {"question":"presentation","answer":"Ensemble de diapositives destinées à une démonstration.","image":"presentation"},
+    {"question":"lien_hypertexte","answer":"Lien permettant d’ouvrir une page ou un fichier.","image":"hyperlink"},
+    {"question":"naviguer","answer":"Se déplacer dans des pages ou menus.","image":"navigate"},
+    {"question":"telecharger","answer":"Récupérer un fichier depuis Internet.","image":"download"},
+    {"question":"uploader","answer":"Envoyer un fichier vers Internet.","image":"upload"},
+    {"question":"navigateur_web","answer":"Logiciel permettant d’accéder aux sites web.","image":"browser"},
+    {"question":"barre_adresse","answer":"Zone du navigateur pour taper une URL.","image":"barre_adresse"},
+    {"question":"favori","answer":"Raccourci vers un site web enregistré.","image":"favori"},
+    {"question":"onglet","answer":"Fenêtre supplémentaire dans un navigateur.","image":"onglet"},
+    {"question":"historique","answer":"Liste des sites récemment visités.","image":"historique"},
+    {"question":"messagerie","answer":"Outil permettant d’envoyer des emails.","image":"messagerie"},
+    {"question":"contact","answer":"Entrée de carnet d’adresses contenant nom et email.","image":"contact"},
+    {"question":"agenda","answer":"Calendrier numérique pour gérer rendez-vous.","image":"agenda"},
+    {"question":"reunion","answer":"Événement prévu dans l’agenda.","image":"meeting"},
+    {"question":"pièce_jointe","answer":"Fichier ajouté à un email.","image":"attachment"},
+    {"question":"boite_reception","answer":"Liste des emails reçus.","image":"inbox"},
+    {"question":"envoyer","answer":"Transmettre un email à un destinataire.","image":"send"},
+    {"question":"destinataire","answer":"Personne recevant l’email.","image":"to"},
+    {"question":"cc","answer":"Copie conforme envoyée à d’autres personnes.","image":"cc"},
+    {"question":"cci","answer":"Copie cachée sans que les autres destinataires le voient.","image":"bcc"},
+    {"question":"signature_email","answer":"Texte automatique ajouté en bas des emails.","image":"signature"},
+    {"question":"naviguer_dossier","answer":"Se déplacer entre dossiers dans Windows.","image":"navigation"},
+    {"question":"collage_spécial","answer":"Coller un élément avec un format différent.","image":"collage_special"},
+    {"question":"mise_en_page","answer":"Organisation du contenu sur une page.","image":"layout"},
+    {"question":"zoom","answer":"Agrandir ou réduire l'affichage.","image":"zoom"},
+    {"question":"rechercher","answer":"Trouver un mot ou un élément dans un document.","image":"find"},
+    {"question":"remplacer","answer":"Changer un mot automatiquement dans un document.","image":"replace"},
+    {"question":"enregistrer_sous","answer":"Créer une nouvelle copie du fichier.","image":"save_as"},
+    {"question":"imprimante_par_defaut","answer":"Imprimante utilisée automatiquement.","image":"default_printer"},
+    {"question":"gestionnaire_de_taches","answer":"Outil affichant les processus en cours.","image":"task_manager"},
+    {"question":"redemarrer","answer":"Éteindre puis rallumer l’ordinateur.","image":"restart"},
+    {"question":"mode_securise","answer":"Démarrage spécial pour résoudre des problèmes.","image":"safe_mode"},
+    {"question":"mise_a_jour","answer":"Nouvelle version d’un logiciel ou système.","image":"update"},
+    {"question":"antivirus","answer":"Logiciel de protection contre les logiciels malveillants.","image":"antivirus"},
+    {"question":"pare_feu","answer":"Système empêchant les connexions non autorisées.","image":"firewall"},
+    {"question":"pdf","answer":"Format de document sécurisé ne modifiant pas la mise en page.","image":"pdf"},
+    {"question":"convertir","answer":"Changer un fichier d’un format à un autre.","image":"convert"},
+    {"question":"compression","answer":"Réduire la taille d’un fichier.","image":"compression"},
+    {"question":"archive","answer":"Fichier compressé contenant plusieurs fichiers.","image":"archive"},
+    {"question":"lecteur_usb","answer":"Dispositif portable pour stocker des fichiers.","image":"usb"},
+    {"question":"bureau_virtuel","answer":"Un autre espace de travail dans Windows.","image":"virtual_desktop"},
+    {"question":"verouillage","answer":"Bloquer l’ordinateur pour sécuriser l’accès.","image":"lock_screen"},
+    {"question":"session_utilisateur","answer":"Espace personnel après connexion sur un ordinateur.","image":"session"},
+    {"question":"deconnexion","answer":"Quitter sa session utilisateur.","image":"logout"},
+    {"question":"recherche_windows","answer":"Fonction permettant de trouver applications ou fichiers.","image":"search"},
+    {"question":"presse_papier","answer":"Espace temporaire où sont stockés les éléments copiés.","image":"clipboard"},
+    {"question":"resolution","answer":"Nombre de pixels affichés à l’écran.","image":"resolution"},
+    {"question":"mise_a_niveau","answer":"Passage à une version plus récente de Windows.","image":"upgrade"},
+    {"question":"affichage","answer":"Réglages de la luminosité, couleur et taille.","image":"display"},
+    {"question":"police","answer":"Style de caractères utilisés dans un texte.","image":"font"},
+    {"question":"groupe","answer":"Ensemble d’objets associés dans un document.","image":"group"},
+    {"question":"fusion","answer":"Assemblage de plusieurs éléments en un seul.","image":"merge"},
+    {"question":"champ_word","answer":"Élément dynamique pouvant afficher date ou numéro.","image":"field"},
+    {"question":"commentaire","answer":"Annotation ajoutée dans un document.","image":"comment"},
+    {"question":"version_precedente","answer":"Ancienne sauvegarde d’un fichier.","image":"previous_version"},
+    {"question":"synchro_cloud","answer":"Processus d’envoi et de mise à jour des fichiers en ligne.","image":"sync"},
+    {"question":"vidage_cache","answer":"Nettoyer les fichiers temporaires.","image":"clear_cache"},
+    {"question":"raccourci_clavier","answer":"Combinaison de touches permettant un accès rapide.","image":"shortcut"},
+    {"question":"menu_demarrer","answer":"Menu principal de Windows donnant accès aux applications.","image":"start_menu"},
+    {"question":"parametres","answer":"Outil permettant de configurer Windows.","image":"settings"},
+    {"question":"reinitialiser","answer":"Remettre un système ou logiciel à l’état d’origine.","image":"reset"},
+
+
+
+    {
+      "question": "quel_raccourci_pour_copier",
+      "answer": "Le raccourci est CTRL + C. Sélectionnez d'abord le texte ou fichier, puis appuyez sur CTRL et C en même temps.",
+      "image": "copier"
+    },
+    {
+      "question": "quel_raccourci_pour_coller",
+      "answer": "Le raccourci est CTRL + V. Après avoir copié, placez le curseur à l’endroit voulu puis appuyez sur CTRL + V.",
+      "image": "coller"
+    },
+    {
+      "question": "quel_raccourci_pour_couper",
+      "answer": "Le raccourci est CTRL + X. Sélectionnez l’élément, puis appuyez sur CTRL + X pour le déplacer ailleurs.",
+      "image": "couper"
+    },
+    {
+      "question": "quel_raccourci_pour_annuler",
+      "answer": "Le raccourci est CTRL + Z. Très utile pour corriger une erreur immédiatement.",
+      "image": "annuler"
+    },
+    {
+      "question": "quel_raccourci_pour_refaire",
+      "answer": "Le raccourci est CTRL + Y. Cela rétablit ce que vous venez d’annuler.",
+      "image": "refaire"
+    },
+    {
+      "question": "quel_raccourci_pour_enregistrer",
+      "answer": "Le raccourci est CTRL + S. Appuyez souvent dessus pour ne pas perdre votre travail.",
+      "image": "enregistrer"
+    },
+    {
+      "question": "quel_raccourci_pour_selectionner_tout",
+      "answer": "Le raccourci est CTRL + A. Cela sélectionne tout le texte ou tous les fichiers.",
+      "image": "selectionner_tout"
+    },
+    {
+      "question": "quel_raccourci_pour_ouvrir_un_fichier",
+      "answer": "Le raccourci est CTRL + O. Cela affiche la fenêtre pour choisir un fichier.",
+      "image": "ouvrir"
+    },
+    {
+      "question": "quel_raccourci_pour_creer_document",
+      "answer": "Le raccourci est CTRL + N. Il crée un nouveau document dans Word, Excel, etc.",
+      "image": "nouveau"
+    },
+    {
+      "question": "quel_raccourci_pour_imprimer",
+      "answer": "Le raccourci est CTRL + P. Cela ouvre la fenêtre d’impression.",
+      "image": "imprimer"
+    },
+
+    {
+      "question": "raccourci_texte_gras",
+      "answer": "CTRL + B met le texte en gras. Sélectionnez le texte puis appuyez sur CTRL + B.",
+      "image": "gras"
+    },
+    {
+      "question": "raccourci_italique",
+      "answer": "CTRL + I met le texte en italique.",
+      "image": "italique"
+    },
+    {
+      "question": "raccourci_souligne",
+      "answer": "CTRL + U souligne le texte sélectionné.",
+      "image": "souligne"
+    },
+
+    {
+      "question": "comment_alignement_gauche",
+      "answer": "CTRL + L aligne le texte à gauche dans Word.",
+      "image": "align_gauche"
+    },
+    {
+      "question": "comment_alignement_centre",
+      "answer": "CTRL + E centre le texte.",
+      "image": "align_centre"
+    },
+    {
+      "question": "comment_alignement_droite",
+      "answer": "CTRL + R aligne le texte à droite.",
+      "image": "align_droite"
+    },
+    {
+      "question": "comment_justifier_texte",
+      "answer": "CTRL + J justifie le texte pour qu'il soit droit des deux côtés.",
+      "image": "justifier"
+    },
+
+    {
+      "question": "raccourci_rechercher_texte",
+      "answer": "CTRL + F ouvre la recherche pour trouver un mot dans un document.",
+      "image": "rechercher"
+    },
+    {
+      "question": "raccourci_remplacer",
+      "answer": "CTRL + H permet de remplacer un mot par un autre automatiquement.",
+      "image": "remplacer"
+    },
+
+    {
+      "question": "raccourci_capturer_ecran",
+      "answer": "Touche PrintScreen capture tout l’écran et le copie dans le presse-papier.",
+      "image": "capture"
+    },
+    {
+      "question": "raccourci_capture_selection",
+      "answer": "WIN + SHIFT + S permet de sélectionner une zone précise à capturer.",
+      "image": "capture_zone"
+    },
+
+    {
+      "question": "raccourci_fermer_application",
+      "answer": "ALT + F4 ferme la fenêtre ou l’application active.",
+      "image": "fermer"
+    },
+    {
+      "question": "raccourci_changer_fenetre",
+      "answer": "ALT + TAB permet de passer d’une fenêtre ouverte à une autre.",
+      "image": "changer_fenetre"
+    },
+    {
+      "question": "raccourci_voir_bureau",
+      "answer": "WIN + D minimise toutes les fenêtres pour afficher le bureau.",
+      "image": "bureau"
+    },
+    {
+      "question": "raccourci_explorateur_fichiers",
+      "answer": "WIN + E ouvre l’explorateur de fichiers.",
+      "image": "explorateur"
+    },
+
+    {
+      "question": "raccourci_nouvel_onglet_navigateur",
+      "answer": "CTRL + T ouvre un nouvel onglet dans le navigateur.",
+      "image": "nouvel_onglet"
+    },
+    {
+      "question": "raccourci_fermer_onglet",
+      "answer": "CTRL + W ferme l'onglet actif.",
+      "image": "fermer_onglet"
+    },
+    {
+      "question": "raccourci_rouvrir_onglet_ferme",
+      "answer": "CTRL + SHIFT + T rouvre le dernier onglet fermé par erreur.",
+      "image": "rouvrir_onglet"
+    },
+
+    {
+      "question": "raccourci_zoom_plus",
+      "answer": "CTRL + + permet de zoomer dans un document ou navigateur.",
+      "image": "zoom_plus"
+    },
+    {
+      "question": "raccourci_zoom_moins",
+      "answer": "CTRL + - permet de dézoomer.",
+      "image": "zoom_moins"
+    },
+    {
+      "question": "raccourci_zoom_reset",
+      "answer": "CTRL + 0 remet le zoom à la taille normale.",
+      "image": "zoom_reset"
+    },
+
+    {
+      "question": "raccourci_debut_document",
+      "answer": "CTRL + HOME permet d’aller au début du document.",
+      "image": "debut_doc"
+    },
+    {
+      "question": "raccourci_fin_document",
+      "answer": "CTRL + END permet d’aller à la fin du document.",
+      "image": "fin_doc"
+    },
+
+    {
+      "question":"raccourci_renommer_fichier",
+      "answer":"F2 permet de renommer un fichier ou dossier rapidement.",
+      "image":"renommer"
+    },
+    {
+      "question":"raccourci_actualiser",
+      "answer":"F5 rafraîchit la page ou la fenêtre.",
+      "image":"actualiser"
+    },
+    {
+      "question":"raccourci_supprimer_definitivement",
+      "answer":"SHIFT + DELETE supprime un fichier sans passer par la corbeille.",
+      "image":"supprimer_definitif"
+    }
+
+
+]

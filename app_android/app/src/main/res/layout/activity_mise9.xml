@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <!-- Barre de progression pour le chargement -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        android:indeterminate="true"
+        style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
+        android:backgroundTint="@color/lavender"/>
+
+    <!-- Texte pour afficher le titre -->
+    <TextView
+        android:id="@+id/tvTitle09"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Recherche de nouvelle mise à jour de Help-me"
+        android:textSize="18sp"
+        android:gravity="center"
+        android:padding="16dp"
+        android:visibility="gone" />
+
+    <!-- Bouton de téléchargement -->
+    <Button
+        android:id="@+id/btnUpdate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Télécharger la mise à jour"
+        android:textColor="@color/white"
+        android:layout_marginTop="16dp"
+        android:background="@color/lavender"
+        />
+
+</LinearLayout>

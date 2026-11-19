@@ -1,0 +1,66 @@
+<resources>
+    <string name="app_name">HELP-ME</string>
+    <string name="open_nav">Open HELP-ME</string>
+    <string name="close_nav">Close HELP-ME</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="home_fragment">Home Fragment</string>
+    <string name="je_me_mets_en_informatique_de_bureau">Je me mets en informatique de bureau</string>
+    <string name="apprendre_l_informatique_moderne">Apprendre l\'informatique moderne</string>
+    <string name="login">login</string>
+    <string name="email">email</string>
+    <string name="password">password</string>
+    <string name="identification_du_manuel">Identification du Manuel</string>
+    <string name="valider">Valider</string>
+    <string name="cliquer_pour_enregistrer">Cliquer pour enregistrer</string>
+    <string name="creer_un_nouveau_compte">Creer un nouveau compte</string>
+    <string name="connectez_vous">connectez-vous</string>
+    <string name="logout">Logout</string>
+    <string name="numero">numero</string>
+    <string name="nom_et_domaine">nom et domaine</string>
+    <string name="cr_er_un_nouveau_compte">Créer_un_nouveau_compte</string>
+    <string name="identifiant">Identifiant:</string>
+    <string name="Forum">Forum</string>
+
+    <string name="about_text">À propos de l application Help-me
+
+Help-me est une solution éducative complète et accessible, conçue pour démocratiser l apprentissage des compétences en informatique bureautique. Elle repose sur un écosystème innovant composé de deux manuels pédagogiques et d une application mobile connectée, offrant à chaque apprenant un accompagnement structuré et interactif.
+
+Développée par Mahamadou Hamidou, également connu sous le nom de Mohamed, ingénieur et formateur passionné, Help-me reflète son engagement à rendre la formation en informatique accessible même dans les zones les plus reculées. Que vous soyez étudiant, professionnel ou novice, cette solution a été pensée pour s adapter à vos besoins, quels que soient vos moyens ou votre localisation.
+
+Une solution accessible partout
+
+Les manuels pédagogiques et l application mobile Help-me sont conçus pour être utilisés hors ligne, permettant aux apprenants d accéder au contenu éducatif même dans les zones éloignées, avec une faible ou aucune connexion Internet. Grâce à ce modèle inclusif, Help-me élimine les barrières géographiques et numériques pour toucher le plus grand nombre.
+
+Les deux manuels, intitulés :
+1. L informatique et l ordinateur avec Windows et internet
+2. Guide pratique de bureautique et d outils numériques
+fournissent des bases solides en bureautique, complétées par des exercices interactifs et un suivi personnalisé via l application.
+
+Une vision évolutive
+
+En plus des compétences bureautiques, Help-me vise à évoluer en ajoutant progressivement de nouvelles formations, telles que :
+- Marketing digital et gestion des réseaux sociaux
+- Infographie et montage vidéo
+- Programmation et développement d applications Android et Windows
+
+Avec ce modèle, Help-me ambitionne de devenir une plateforme éducative de référence pour accompagner la transformation numérique des apprenants.
+
+Règles d utilisation et sécurité
+
+L utilisation de Help-me repose sur des principes fondamentaux :
+1. Accessibilité et respect des apprenants : Les données personnelles sont protégées et l application garantit la confidentialité des utilisateurs, conformément aux normes de protection des données.
+2. Utilisation responsable : Toute forme de fraude informatique, piratage ou usage malveillant du contenu manuels et application est strictement interdite.
+3. Engagement éthique : Les connaissances acquises ne doivent en aucun cas être utilisées à des fins illégales. Toute violation des règles d utilisation entraînera des sanctions et la résiliation de l accès.
+
+Pourquoi choisir Help-me ?
+
+- Accessibilité universelle : Même sans Internet, l application et les manuels restent disponibles.
+- Pédagogie complète et interactive : Des outils pratiques pour un apprentissage progressif et autonome.
+- Éthique et sécurité : Une plateforme conçue pour protéger et respecter les apprenants.
+- Évolution constante : Une vision tournée vers l avenir avec des formations enrichies.
+
+Avec Help-me, apprenez l informatique à votre rythme, où que vous soyez, dans un cadre respectueux et sécurisé. Votre réussite est notre priorité</string>
+
+
+</resources>

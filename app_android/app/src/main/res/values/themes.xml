@@ -1,0 +1,69 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- FULLSCREEN AppCompat (ancien écrans si besoin) -->
+    <style name="Theme.AppCompat.Light.NoActionBar.FullScreen" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:textColorPrimary">@color/primaryTextColor</item>
+        <item name="android:textColorSecondary">@color/secondaryTextColor</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowBackground">@color/white</item>
+    </style>
+
+    <!-- ✅ Thème principal HELP-ME (MaterialComponents) -->
+    <style name="Theme.HelpMe" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/premium_blue_900</item>
+        <item name="colorPrimaryVariant">@color/premium_blue_700</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+
+        <item name="colorSecondary">@color/premium_gold</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+
+        <item name="android:statusBarColor">@color/premium_blue_900</item>
+        <item name="android:navigationBarColor">@color/premium_blue_900</item>
+
+        <!-- Support MaterialCardView & rounded shapes -->
+        <item name="materialCardViewStyle">@style/Widget.MaterialComponents.CardView</item>
+    </style>
+
+
+    <!-- ✅ Mode sombre HELP-ME -->
+    <style name="Theme.HelpMe.Dark" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/premium_blue_900</item>
+        <item name="colorOnPrimary">@color/premium_gold</item>
+        <item name="colorSecondary">@color/premium_gold</item>
+
+        <item name="android:statusBarColor">@color/premium_blue_900</item>
+        <item name="android:navigationBarColor">@color/premium_blue_900</item>
+        <item name="android:windowBackground">@color/bg_dark</item>
+    </style>
+
+
+    <!-- ✅ Quiz custom (si tu veux thème spécial quiz) -->
+    <style name="Theme.HelpMeMatchQuiz" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <item name="colorSecondary">@color/accent</item>
+
+        <item name="android:statusBarColor">@color/primary_dark</item>
+    </style>
+
+    <!-- ✅ Buttons -->
+    <style name="RoundedButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:padding">12dp</item>
+        <item name="cornerRadius">24dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="OptionButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:padding">16dp</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+    </style>
+
+</resources>

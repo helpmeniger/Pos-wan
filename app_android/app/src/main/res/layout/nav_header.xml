@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="176dp"
+    android:gravity="bottom"
+    android:padding="16dp"
+    android:background="@drawable/banground1"
+    android:theme="@style/ThemeOverlay.AppCompat.Dark">
+
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="70dp"
+        android:src="@drawable/pagelive" />
+
+    <TextView
+        android:layout_width="325dp"
+        android:layout_height="-30dp"
+        android:text="Apprendre l'informatique de bureau"
+        android:textColor="@color/white"
+        android:textStyle="bold" />
+    <TextView
+        android:layout_width="323dp"
+        android:layout_height="45dp"
+        android:textSize="10sp"
+        android:text="à votre rythme et quand vous voulez."
+        android:textColor="@color/white"
+        android:textStyle="italic" />
+
+
+</LinearLayout>

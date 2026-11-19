@@ -1,0 +1,995 @@
+[
+ {
+  "code": "2020",
+  "titre": "Introduction à l’informatique",
+  "partie": "Le traitement automatique de l’information",
+  "page": 12,
+  "resume": "Contrairement à une idée répandue, l’informatique n’est pas seulement « la science de l’ordinateur ». Elle regroupe trois grands domaines d’activité :",
+  "points_cles": [
+   "1.1 Qu’est-ce que l’informatique ?",
+   "1.2 L’importance de l’informatique",
+   "1.3 Pourquoi se former ?"
+  ],
+  "a_retenir": "Informatique = information + automatique. Elle sert à saisir, traiter, stocker et transmettre des données.",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2021",
+  "titre": "Histoire de l’informatique",
+  "partie": "Le traitement automatique de l’information",
+  "page": 17,
+  "resume": "Le mot « informatique » a été créé en 1962 par l’ingénieur français Philippe Dreyfus, par la contraction des mots information et automatique. En 1967, l’Académie française la définit comme « la science du traitement rationnel, notamment par machines automatiques, de l’information considérée comme le support des connaissances humaines et des communications dans les domaines techniques, économiques et sociaux ».",
+  "points_cles": [
+   "2.1 Un besoin de calculer",
+   "2.2 Les grandes dates",
+   "2.3 De la micro-informatique à l’ère de l’IA"
+  ],
+  "a_retenir": "L’histoire de l’informatique est liée à celle des mathématiques. D’abord militaire et réservée à de grandes machines, elle s’est démocratisée grâce au microprocesseur (1971), au PC (1981), au Web (1991), au smartphone (2007) et aujourd’hui à l’intelligence artificielle.",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2022",
+  "titre": "L’ordinateur et ses composants",
+  "partie": "Le traitement automatique de l’information",
+  "page": 19,
+  "resume": "Entre les deux se trouve le système d’exploitation (Windows, par exemple). Il sert d’intermédiaire entre l’utilisateur, ses programmes et le matériel. Ainsi, l’utilisateur n’a jamais besoin d’agir directement sur les composants.",
+  "points_cles": [
+   "3.1 Les types d’appareils",
+   "3.2 Matériel et logiciel",
+   "3.3 L’unité centrale",
+   "3.4 Les ports de connexion"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2023",
+  "titre": "La souris, le clavier et l’écran",
+  "partie": "Le traitement automatique de l’information",
+  "page": 23,
+  "resume": "Un poste de travail classique se compose d’une unité centrale et de trois périphériques principaux : l’ écran, le clavier et la souris.",
+  "points_cles": [
+   "4.1 La souris",
+   "4.2 Le clavier",
+   "4.3 Les touches importantes",
+   "4.4 L’écran"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2019",
+  "titre": "Allumer, mettre en veille et éteindre",
+  "partie": "Le traitement automatique de l’information",
+  "page": 24,
+  "resume": "Appuyez sur le bouton Marche/Arrêt de l’unité centrale ou du portable. Sur un portable, il se trouve généralement au-dessus du clavier, à gauche ou à droite, ou sur le côté.",
+  "points_cles": [
+   "5.1 Allumer l’ordinateur",
+   "5.2 La séquence de démarrage",
+   "5.3 Veille, redémarrage, arrêt"
+  ],
+  "a_retenir": "On allume avec le bouton et on éteint toujours par le menu Démarrer. Enregistrez vos documents avant d’éteindre.",
+  "video": "vid1",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "2018",
+  "titre": "Windows 11 : le bureau, les icônes et les raccourcis",
+  "partie": "Le système d’exploitation : les bases de Windows 11",
+  "page": 29,
+  "resume": "Il est indispensable au fonctionnement de l’appareil. Il fait le lien entre le matériel et les logiciels : il reçoit les demandes des programmes, leur attribue les ressources (processeur, mémoire, stockage) et évite les conflits entre eux.",
+  "points_cles": [
+   "1.1 Qu’est-ce qu’un système d’exploitation ?",
+   "1.2 Windows 11",
+   "1.3 Le bureau de Windows 11",
+   "1.4 Les icônes",
+   "1.5 Les raccourcis"
+  ],
+  "a_retenir": "Windows 11 est un système d’exploitation à interface graphique. Le bureau contient des icônes, des raccourcis (avec une flèche) et la barre des tâches.",
+  "video": "vid2",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "2001",
+  "titre": "La barre des tâches",
+  "partie": "Le système d’exploitation : les bases de Windows 11",
+  "page": 32,
+  "resume": "La barre des tâches est la bande située en bas de l’écran. Elle permet d’ouvrir le menu Démarrer, de rechercher, de lancer vos applications favorites, de passer d’une fenêtre à l’autre et de voir les notifications.",
+  "points_cles": [
+   "2.1 Rechercher avec la barre des tâches",
+   "2.2 Épingler et détacher une application",
+   "2.3 Afficher le bureau et basculer entre les fenêtres",
+   "2.4 Personnaliser la barre des tâches"
+  ],
+  "a_retenir": "",
+  "video": "vid3",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "2002",
+  "titre": "Le menu Démarrer",
+  "partie": "Le système d’exploitation : les bases de Windows 11",
+  "page": 34,
+  "resume": "Le menu Démarrer permet de lancer les applications, de retrouver ses documents récents, de rechercher, d’accéder aux paramètres, de se déconnecter et d’éteindre l’ordinateur.",
+  "points_cles": [
+   "3.1 Lancer une application"
+  ],
+  "a_retenir": "",
+  "video": "vid4",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "2024",
+  "titre": "Les fenêtres et le multitâche",
+  "partie": "Le système d’exploitation : les bases de Windows 11",
+  "page": 36,
+  "resume": "Une fenêtre est une zone rectangulaire qui affiche le contenu d’une application ou d’un dossier. Elle peut occuper tout l’écran ou seulement une partie. Comme vous pouvez ouvrir plusieurs fenêtres à la fois, vous pouvez utiliser plusieurs applications en même temps : c’est le multitâche.",
+  "points_cles": [
+   "4.1 Ancrer les fenêtres (Snap)",
+   "4.2 Les bureaux virtuels"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2025",
+  "titre": "L’Explorateur de fichiers",
+  "partie": "Le système d’exploitation : les bases de Windows 11",
+  "page": 39,
+  "resume": "L’ Explorateur de fichiers permet de parcourir et d’organiser tout ce qui est enregistré sur l’ordinateur, une clé USB ou le cloud (OneDrive). Pour l’ouvrir : cliquez sur l’icône du dossier jaune dans la barre des tâches, ou appuyez sur Windows + E.",
+  "points_cles": [
+   "5.1 Fichiers et dossiers",
+   "5.2 Les opérations essentielles",
+   "5.3 La Corbeille"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2026",
+  "titre": "Paramètres, mises à jour et sécurité",
+  "partie": "Le système d’exploitation : les bases de Windows 11",
+  "page": 41,
+  "resume": "L’application Paramètres (l’icône d’engrenage) regroupe tous les réglages de Windows. Pour l’ouvrir : Démarrer › Paramètres ou Windows + I.",
+  "points_cles": [
+   "6.1 Changer l’arrière-plan du bureau",
+   "6.2 Les mises à jour",
+   "6.3 Sécurité Windows"
+  ],
+  "a_retenir": "Paramètres : Windows + I. Un ordinateur sûr est à jour, protégé par un antivirus, verrouillé par un code PIN ou un mot de passe, et ses fichiers importants sont sauvegardés (voir la leçon sur le cloud).",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2017",
+  "titre": "Les mots clés de l’informatique",
+  "partie": "Le système d’exploitation : les bases de Windows 11",
+  "page": 43,
+  "resume": "Le système binaire est une façon de compter qui n’utilise que deux chiffres : 0 et 1. L’ordinateur fonctionne en binaire, car ses circuits électroniques n’ont que deux états : le courant passe (1) ou ne passe pas (0). Chaque 0 ou 1 s’appelle un bit (binary digit). Tout nombre décimal peut s’écrire en binaire : 5 s’écrit 101, et 10 s’écrit 1010.",
+  "points_cles": [
+   "7.1 Binaire et bit",
+   "7.2 L’octet et ses multiples",
+   "7.3 Les périphériques",
+   "7.4 Programme, logiciel et application",
+   "7.5 Autres mots clés",
+   "7.6 Les extensions courantes"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": "creer_organiser",
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "2016",
+  "titre": "Internet, le Web et le navigateur",
+  "partie": "Usage d’Internet : s’informer, communiquer, partager et se protéger",
+  "page": 49,
+  "resume": "Internet repose sur un immense réseau de câbles physiques : câbles en cuivre, fibre optique, câbles sous-marins entre les continents, relayés par des antennes et des satellites. Même le Wi-Fi et la 4G/5G finissent par passer par ces câbles.",
+  "points_cles": [
+   "1.1 Qu’est-ce qu’Internet ?",
+   "1.2 Qu’est-ce que le Web ?",
+   "1.3 Le navigateur Web",
+   "1.4 Se connecter à Internet"
+  ],
+  "a_retenir": "",
+  "video": "vid6",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "2003",
+  "titre": "Sites Web, recherche et téléchargement",
+  "partie": "Usage d’Internet : s’informer, communiquer, partager et se protéger",
+  "page": 53,
+  "resume": "Un site Web est un ensemble de pages reliées entre elles et accessibles depuis une page d’accueil. Chaque page a une adresse unique, l’ URL (Uniform Resource Locator).",
+  "points_cles": [
+   "2.1 Qu’est-ce qu’un site Web ?",
+   "2.2 Ouvrir un site Web",
+   "2.3 Trouver une information avec un moteur de recherche",
+   "2.4 Télécharger un fichier"
+  ],
+  "a_retenir": "",
+  "video": "telecharvid9",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "2004",
+  "titre": "La messagerie électronique (e-mail)",
+  "partie": "Usage d’Internet : s’informer, communiquer, partager et se protéger",
+  "page": 58,
+  "resume": "La messagerie électronique (courrier électronique, e-mail ou courriel) permet d’envoyer et de recevoir des messages par Internet. Elle ressemble au courrier postal, mais elle est instantanée et gratuite.",
+  "points_cles": [
+   "3.1 Les avantages de l’e-mail",
+   "3.2 Comprendre les adresses e-mail",
+   "3.3 Créer un compte Gmail",
+   "3.4 Envoyer un e-mail",
+   "3.5 Gérer ses messages"
+  ],
+  "a_retenir": "",
+  "video": "emailvid",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "2027",
+  "titre": "Le cloud : stocker, sauvegarder et partager",
+  "partie": "Usage d’Internet : s’informer, communiquer, partager et se protéger",
+  "page": 61,
+  "resume": "",
+  "points_cles": [
+   "4.1 Les avantages",
+   "4.2 Partager un fichier par un lien"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2028",
+  "titre": "Messagerie instantanée, visioconférence et réseaux sociaux",
+  "partie": "Usage d’Internet : s’informer, communiquer, partager et se protéger",
+  "page": 63,
+  "resume": "Les applications comme WhatsApp, Telegram ou Messenger permettent d’échanger des messages, des photos, des documents et des notes vocales, et de passer des appels audio ou vidéo, à deux ou en groupe.",
+  "points_cles": [
+   "5.1 La messagerie instantanée",
+   "5.2 La visioconférence",
+   "5.3 Les réseaux sociaux"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2029",
+  "titre": "Cybersécurité : se protéger en ligne",
+  "partie": "Usage d’Internet : s’informer, communiquer, partager et se protéger",
+  "page": 67,
+  "resume": "Un bon mot de passe est long (au moins 12 caractères), unique (un mot de passe différent par compte) et secret. Une phrase de passe est à la fois solide et facile à retenir :",
+  "points_cles": [
+   "6.1 Des mots de passe solides",
+   "6.2 La double authentification",
+   "6.3 L’hameçonnage et les arnaques",
+   "6.4 Protéger ses données personnelles"
+  ],
+  "a_retenir": "Des mots de passe longs et uniques, la double authentification, de la méfiance face à l’urgence, des mises à jour et des sauvegardes : ce sont les 5 piliers de votre sécurité numérique.",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2015",
+  "titre": "Les raccourcis clavier indispensables",
+  "partie": "Trucs, astuces et exercices",
+  "page": 69,
+  "resume": "Les raccourcis clavier existent par centaines, mais une vingtaine suffisent au quotidien. La plupart combinent une de ces quatre touches avec une lettre : la touche Windows, Ctrl, Alt et Maj. Maintenez la première touche enfoncée, puis appuyez sur la seconde.",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": "combinaisonvid",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "2005",
+  "titre": "Raccourcis de navigation et caractères spéciaux",
+  "partie": "Trucs, astuces et exercices",
+  "page": 73,
+  "resume": "Le plus simple aujourd’hui : Windows +. (point) ouvre le panneau des émojis et symboles. Sur un ordinateur doté d’un pavé numérique, on peut aussi maintenir Alt enfoncée et taper un code sur le pavé numérique. Vérifiez d’abord que votre clavier est bien en français (AZERTY).",
+  "points_cles": [
+   "2.1 Les raccourcis de navigation",
+   "2.2 Les raccourcis du navigateur Internet",
+   "2.3 Les caractères spéciaux"
+  ],
+  "a_retenir": "",
+  "video": "caracterevid",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "2030",
+  "titre": "Taper rapidement au clavier",
+  "partie": "Trucs, astuces et exercices",
+  "page": 76,
+  "resume": "La saisie tactile (taper sans regarder ses doigts) repose sur une idée simple : chaque doigt a sa zone sur le clavier. Avec un entraînement régulier, vos doigts mémorisent l’emplacement des touches (la mémoire musculaire).",
+  "points_cles": [
+   "3.1 La bonne posture",
+   "3.2 La position des doigts",
+   "3.3 La vitesse"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2031",
+  "titre": "Transférer des fichiers : clé USB et téléphone",
+  "partie": "Trucs, astuces et exercices",
+  "page": 78,
+  "resume": "",
+  "points_cles": [
+   "4.1 Copier des fichiers sur une clé USB ou un disque externe",
+   "4.2 Transférer des fichiers avec un téléphone Android"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2032",
+  "titre": "Installer et désinstaller une application",
+  "partie": "Trucs, astuces et exercices",
+  "page": 80,
+  "resume": "Certains logiciels s’installent depuis le site de leur éditeur. Exemple pour le navigateur Google Chrome : allez sur google.com/chrome et cliquez sur Télécharger Chrome.",
+  "points_cles": [
+   "5.1 Installer depuis le Microsoft Store (recommandé)",
+   "5.2 Installer depuis le site officiel",
+   "5.3 Désinstaller une application"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2033",
+  "titre": "Exercices théoriques",
+  "partie": "Trucs, astuces et exercices",
+  "page": 87,
+  "resume": "Écrivez vos réponses dans votre cahier d’activités. Les corrigés se trouvent en annexe.",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "2034",
+  "titre": "Exercices pratiques",
+  "partie": "Trucs, astuces et exercices",
+  "page": 91,
+  "resume": "Entraînez-vous régulièrement pour construire des bases solides. La suite de votre formation, Word et Excel, se trouve dans les Parties 5 et 6 de ce manuel.",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "1000",
+  "titre": "Découvrir Word : la fenêtre, la saisie et la sélection",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 97,
+  "resume": "Microsoft Word est un logiciel de traitement de texte. Il permet de créer des documents d’aspect professionnel (rapports, CV, lettres, notes de service, bulletins…), de les mettre en forme pour les rendre attrayants et faciles à lire, et de collaborer avec d’autres personnes. Word fait partie de la suite Microsoft 365, avec Excel, PowerPoint et Outlook.",
+  "points_cles": [
+   "1.1 Démarrer Word",
+   "1.2 La fenêtre de Word",
+   "1.3 Les onglets du ruban",
+   "1.4 Saisir du texte",
+   "1.5 Sélectionner du texte",
+   "1.6 Supprimer du texte",
+   "1.7 Annuler et rétablir"
+  ],
+  "a_retenir": "",
+  "video": "vid7",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1001",
+  "titre": "Mettre en forme les caractères et les paragraphes",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 99,
+  "resume": "Sélectionnez d’abord le texte, puis utilisez le groupe Police de l’onglet Accueil, ou la mini-barre qui apparaît près de la sélection.",
+  "points_cles": [
+   "2.1 La police (mise en forme des caractères)",
+   "2.2 Les paragraphes",
+   "2.3 Les retraits"
+  ],
+  "a_retenir": "",
+  "video": "vid8",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1003",
+  "titre": "Les listes à puces et numérotées",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 101,
+  "resume": "Les puces et la numérotation structurent un texte en listes claires : étapes d’une procédure, liste de matériel, plan d’un exposé…",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": "puce",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1004",
+  "titre": "Les bordures et les trames",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 102,
+  "resume": "Les bordures sont des traits ou des cadres autour d’un texte, d’un paragraphe ou de la page. Les trames sont des couleurs de fond. Elles mettent en valeur un titre, un encadré ou une page de garde.",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": "bordure",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1006",
+  "titre": "Rechercher, remplacer et enregistrer",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 103,
+  "resume": "Ensuite, enregistrez régulièrement avec Ctrl + S. Pour créer une copie sous un autre nom ou dans un autre format : Fichier › Enregistrer sous (F12).",
+  "points_cles": [
+   "5.1 Rechercher et remplacer",
+   "5.2 Enregistrer un document"
+  ],
+  "a_retenir": "",
+  "video": "ramplacer",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1007",
+  "titre": "Insérer des pages et des tableaux",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 106,
+  "resume": "Un tableau est un ensemble de colonnes (verticales) et de lignes (horizontales). Leur croisement forme les cellules. Chaque cellule peut contenir du texte, des nombres ou une image.",
+  "points_cles": [
+   "6.1 Les pages",
+   "6.2 Créer un tableau",
+   "6.3 Modifier un tableau"
+  ],
+  "a_retenir": "",
+  "video": "pagegarde",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1008",
+  "titre": "Insérer des images, des formes et des illustrations",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 109,
+  "resume": "",
+  "points_cles": [
+   "7.1 Insérer une image",
+   "7.2 Insérer des formes et des illustrations"
+  ],
+  "a_retenir": "",
+  "video": "code2018",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1008",
+  "titre": "En-têtes, pieds de page, zones de texte et symboles",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 111,
+  "resume": "L’ en-tête (en haut) et le pied de page (en bas) se répètent sur chaque page : titre du document, logo, nom, date, numéro de page…",
+  "points_cles": [
+   "8.1 En-tête, pied de page et numéro de page",
+   "8.2 Zone de texte, lettrine et WordArt",
+   "8.3 Équations et symboles"
+  ],
+  "a_retenir": "",
+  "video": "code2018",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1009",
+  "titre": "La création : thèmes, filigrane et couleur de page",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 113,
+  "resume": "L’onglet Création agit sur l’aspect général du document.",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": "filigranevid",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1010",
+  "titre": "La mise en page : marges, orientation, colonnes et sauts",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 115,
+  "resume": "L’onglet Disposition (ou Mise en page) prépare le document pour l’impression.",
+  "points_cles": [
+   "10.1 Les sauts"
+  ],
+  "a_retenir": "",
+  "video": "sectionvid",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1011",
+  "titre": "Les styles et la table des matières",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 117,
+  "resume": "Un style est un ensemble de mises en forme enregistré sous un nom : Normal, Titre 1, Titre 2, Citation … Il s’applique en un clic depuis Accueil › Styles.",
+  "points_cles": [
+   "11.1 Les styles",
+   "11.2 Insérer une table des matières",
+   "11.3 Mettre à jour la table des matières"
+  ],
+  "a_retenir": "",
+  "video": "tabetmotpassevid",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1011",
+  "titre": "Protéger un document",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 118,
+  "resume": "Les options de protection se trouvent dans Fichier › Informations › Protéger le document.",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": "tabetmotpassevid",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1012",
+  "titre": "Imprimer et exporter en PDF",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 120,
+  "resume": "Fichier › Enregistrer sous, choisissez le type PDF (*.pdf), ou Fichier › Exporter › Créer un document PDF/XPS. Vous pouvez aussi choisir l’imprimante Microsoft Print to PDF.",
+  "points_cles": [
+   "13.1 Créer un PDF"
+  ],
+  "a_retenir": "",
+  "video": "impression",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1019",
+  "titre": "Réviser et collaborer",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 122,
+  "resume": "Word souligne en rouge les fautes d’orthographe et en bleu les problèmes de grammaire ou de style. Faites un clic droit sur le mot souligné pour voir les suggestions, ou lancez Révision › Grammaire et orthographe (F7). Vérifiez que la langue du texte est bien « Français » (barre d’état).",
+  "points_cles": [
+   "14.1 Orthographe et grammaire",
+   "14.2 Commentaires",
+   "14.3 Suivi des modifications",
+   "14.4 Partager et coéditer"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "1020",
+  "titre": "Le publipostage",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 123,
+  "resume": "Le publipostage (mailing) crée automatiquement des documents personnalisés (lettres, convocations, attestations, enveloppes, étiquettes) en fusionnant un document principal avec une liste de destinataires, par exemple un tableau Excel.",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "1021",
+  "titre": "L’intelligence artificielle dans Word",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 124,
+  "resume": "",
+  "points_cles": [
+   "16.1 D’autres outils intelligents de Word"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "1022",
+  "titre": "Exercices Word",
+  "partie": "Microsoft Word : le traitement de texte",
+  "page": 127,
+  "resume": "",
+  "points_cles": [
+   "17.1 Niveau débutant",
+   "17.2 Niveau intermédiaire",
+   "17.3 Niveau avancé"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "1013",
+  "titre": "Découvrir Excel : classeur, cellules et sélection",
+  "partie": "Microsoft Excel : le tableur",
+  "page": 132,
+  "resume": "Microsoft Excel est un tableur : un logiciel qui organise des données dans des tableaux et effectue automatiquement des calculs. Il convient aux débutants comme aux experts : d’une simple liste de courses à l’analyse de milliers de ventes. Les clés pour le maîtriser : patience, pratique et des bases solides.",
+  "points_cles": [
+   "1.1 Démarrer Excel",
+   "1.2 La fenêtre d’Excel",
+   "1.3 Cellules et adresses",
+   "1.4 Saisir des données",
+   "1.5 Sélectionner des cellules"
+  ],
+  "a_retenir": "",
+  "video": "saisirdonnee",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1014",
+  "titre": "Recopier et mettre en forme les données",
+  "partie": "Microsoft Excel : le tableur",
+  "page": 135,
+  "resume": "La poignée de recopie (le petit carré ■ en bas à droite de la cellule active) copie le contenu et la mise en forme d’une cellule vers les cellules voisines : cliquez sur la cellule, saisissez la poignée, puis faites glisser vers le bas ou vers la droite.",
+  "points_cles": [
+   "2.1 La recopie",
+   "2.2 La recopie incrémentée (séries)",
+   "2.3 La mise en forme",
+   "2.4 Les formats de nombres"
+  ],
+  "a_retenir": "",
+  "video": "copieexcel",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1015",
+  "titre": "Les formules et les fonctions essentielles",
+  "partie": "Microsoft Excel : le tableur",
+  "page": 138,
+  "resume": "Une formule effectue un calcul à partir de valeurs ou du contenu d’autres cellules. Elle se met à jour automatiquement quand les données changent : c’est la grande force d’Excel. On gagne du temps et on réduit les erreurs.",
+  "points_cles": [
+   "3.1 Les formules",
+   "3.2 Les fonctions",
+   "3.3 Insérer une fonction",
+   "3.4 Les messages d’erreur"
+  ],
+  "a_retenir": "",
+  "video": "formuleexcel",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1023",
+  "titre": "Recopier des formules : références relatives et absolues",
+  "partie": "Microsoft Excel : le tableur",
+  "page": 140,
+  "resume": "Quand on recopie une formule vers le bas, Excel adapte automatiquement les adresses : =A2*B2 devient =A3*B3, puis =A4*B4 … C’est une référence relative. Mais parfois une cellule doit rester fixe (un taux, un prix unitaire) : on utilise alors une référence absolue, avec le signe $.",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "1024",
+  "titre": "Trier, filtrer et mettre en évidence",
+  "partie": "Microsoft Excel : le tableur",
+  "page": 142,
+  "resume": "Cliquez dans une colonne du tableau, puis Données › Trier de A à Z (croissant) ou de Z à A (décroissant). Le bouton Trier permet plusieurs niveaux, par exemple par classe puis par moyenne décroissante.",
+  "points_cles": [
+   "5.1 Trier",
+   "5.2 Filtrer",
+   "5.3 La mise en forme conditionnelle"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "1025",
+  "titre": "Les fonctions utiles au quotidien",
+  "partie": "Microsoft Excel : le tableur",
+  "page": 144,
+  "resume": "RECHERCHEX (Excel 2021 et Microsoft 365) cherche une valeur dans une colonne et renvoie l’information correspondante d’une autre colonne :",
+  "points_cles": [
+   "6.1 Conditions",
+   "6.2 Compter et additionner selon un critère",
+   "6.3 Rechercher une valeur",
+   "6.4 Gérer les erreurs, le texte et les dates"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "1016",
+  "titre": "Les tableaux croisés dynamiques",
+  "partie": "Microsoft Excel : le tableur",
+  "page": 146,
+  "resume": "Un tableau croisé dynamique (TCD) résume en quelques clics une grande quantité de données : totaux, moyennes, comptages, regroupés selon les critères de votre choix. Il est dit « dynamique » parce qu’on réorganise le résumé en glissant-déposant des champs.",
+  "points_cles": [
+   "7.1 Créer un TCD"
+  ],
+  "a_retenir": "",
+  "video": "croiseexcel",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "2014",
+  "titre": "Les tableaux Excel",
+  "partie": "Microsoft Excel : le tableur",
+  "page": 147,
+  "resume": "Un tableau Excel (à ne pas confondre avec une simple plage de cellules) transforme une liste en un objet intelligent :",
+  "points_cles": [
+   "8.1 Créer un tableau"
+  ],
+  "a_retenir": "",
+  "video": "tableauexcel",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1017",
+  "titre": "Les graphiques",
+  "partie": "Microsoft Excel : le tableur",
+  "page": 149,
+  "resume": "Un graphique transforme des chiffres en image facile à comprendre : il met en évidence des tendances, des comparaisons ou des proportions, et aide à prendre des décisions.",
+  "points_cles": [
+   "9.1 Créer un graphique"
+  ],
+  "a_retenir": "",
+  "video": "graphiqueexcel",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1018",
+  "titre": "Imprimer et protéger un classeur",
+  "partie": "Microsoft Excel : le tableur",
+  "page": 150,
+  "resume": "",
+  "points_cles": [
+   "10.1 Préparer l’impression",
+   "10.2 Imprimer",
+   "10.3 Protéger"
+  ],
+  "a_retenir": "",
+  "video": "protectionetmotsexcel",
+  "demo": null,
+  "statut": "conservé (même code et même contenu que l'original)"
+ },
+ {
+  "code": "1026",
+  "titre": "L’intelligence artificielle dans Excel",
+  "partie": "Microsoft Excel : le tableur",
+  "page": 153,
+  "resume": "",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "1027",
+  "titre": "Exercices Excel",
+  "partie": "Microsoft Excel : le tableur",
+  "page": 155,
+  "resume": "Les solutions des principales formules se trouvent en annexe.",
+  "points_cles": [
+   "12.1 Niveau débutant",
+   "12.2 Niveau intermédiaire",
+   "12.3 Niveau avancé"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "3001",
+  "titre": "Qu’est-ce que l’intelligence artificielle ?",
+  "partie": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
+  "page": 159,
+  "resume": "Un programme classique suit des règles écrites à l’avance par un programmeur : « si le solde est inférieur à 0, alors afficher une alerte ». Un système d’IA, lui, apprend à partir d’exemples : on lui montre des milliers de photos de chats, et il apprend seul à reconnaître un chat sur une photo qu’il n’a jamais vue.",
+  "points_cles": [
+   "1.1 L’IA est déjà partout",
+   "1.2 Les grandes familles d’IA"
+  ],
+  "a_retenir": "L’IA est un ensemble de techniques informatiques qui permettent à une machine d’apprendre à partir de données pour reconnaître, prédire, décider ou créer. Elle est déjà présente dans votre téléphone.",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "3002",
+  "titre": "Brève histoire de l’intelligence artificielle",
+  "partie": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
+  "page": 161,
+  "resume": "",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "3003",
+  "titre": "Comment fonctionne l’IA ?",
+  "partie": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
+  "page": 164,
+  "resume": "Un enfant apprend à reconnaître une mangue en en voyant beaucoup. L’IA fait un peu pareil : on lui montre des milliers d’ exemples (des photos, des textes, des sons) et elle apprend peu à peu à reconnaître ce qu’ils ont en commun. Ces exemples s’appellent des données.",
+  "points_cles": [
+   "3.1 L’IA apprend avec des exemples",
+   "3.2 Le « cerveau » de l’IA",
+   "3.3 Comment un assistant comme ChatGPT écrit ses réponses"
+  ],
+  "a_retenir": "L’IA apprend avec beaucoup d’exemples. Un assistant conversationnel écrit ses réponses en devinant les mots les plus probables : il peut se tromper.",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "3004",
+  "titre": "Les outils d’IA aujourd’hui",
+  "partie": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
+  "page": 168,
+  "resume": "On leur écrit (ou on leur parle) en langage courant, en français ou dans d’autres langues, et ils répondent : explications, rédaction, résumé, traduction, calculs, idées, code informatique… La plupart proposent une version gratuite (avec des limites) et une version payante.",
+  "points_cles": [
+   "4.1 Les assistants conversationnels",
+   "4.2 Les autres outils d’IA"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "3005",
+  "titre": "Bien dialoguer avec une IA : l’art du prompt",
+  "partie": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
+  "page": 171,
+  "resume": "Un prompt (on dit aussi « invite » ou « requête ») est la demande que l’on écrit à l’IA. La qualité de la réponse dépend beaucoup de la qualité de la demande. Une IA est comme un nouveau collaborateur très compétent, mais qui ne sait rien de votre situation : il faut tout lui expliquer.",
+  "points_cles": [
+   "5.1 La méthode RCTF",
+   "5.2 Les bonnes pratiques",
+   "5.3 Des demandes utiles au quotidien"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "3006",
+  "titre": "L’IA au bureau",
+  "partie": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
+  "page": 173,
+  "resume": "L’IA est désormais intégrée aux outils de bureau : Microsoft 365 Copilot (Word, Excel, PowerPoint, Outlook, Teams), Gemini dans Google Workspace (Gmail, Docs, Sheets), et Copilot directement dans Windows 11. Sur les ordinateurs récents, une touche Copilot permet même de l’ouvrir directement depuis le clavier.",
+  "points_cles": [
+   "6.1 Exemple : une formule Excel",
+   "6.2 Exemple : un compte rendu de réunion"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "3007",
+  "titre": "L’IA dans tous les domaines",
+  "partie": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
+  "page": 177,
+  "resume": "L’IA transforme presque tous les secteurs d’activité. Voici, pour chaque domaine, ce qu’elle permet déjà, avec un point de vigilance.",
+  "points_cles": [
+   "7.1 Éducation",
+   "7.2 Santé",
+   "7.3 Agriculture et élevage",
+   "7.4 Commerce, artisanat et PME",
+   "7.5 Banque, assurance et mobile money",
+   "7.6 Administration et services publics",
+   "7.7 Médias, communication et culture",
+   "7.8 Droit et ressources humaines"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "3008",
+  "titre": "Les limites et les risques de l’IA",
+  "partie": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
+  "page": 179,
+  "resume": "",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "3009",
+  "titre": "Utiliser l’IA de façon responsable",
+  "partie": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
+  "page": 181,
+  "resume": "Dans un devoir, un mémoire ou un rapport, indiquez par exemple en note : « Plan et reformulation réalisés avec l’aide de l’assistant [nom], le [date] ; contenu vérifié et complété par l’auteur. »",
+  "points_cles": [
+   "9.1 Les 10 règles d’or",
+   "9.2 Citer l’usage de l’IA",
+   "9.3 Les règles et les lois"
+  ],
+  "a_retenir": "Une IA utile est une IA vérifiée, transparente et respectueuse des personnes et de leurs données.",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "3010",
+  "titre": "L’IA et l’avenir : métiers et compétences",
+  "partie": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
+  "page": 183,
+  "resume": "L’IA automatise surtout des tâches (saisie, tri, traduction simple, premiers jets), plus rarement des métiers entiers. Ceux qui savent utiliser l’IA deviennent plus productifs. On dit souvent : « Ce n’est pas l’IA qui vous remplacera, mais une personne qui sait l’utiliser. »",
+  "points_cles": [
+   "10.1 Les compétences les plus utiles",
+   "10.2 Des métiers d’avenir"
+  ],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ },
+ {
+  "code": "3011",
+  "titre": "Exercices et projet : intelligence artificielle",
+  "partie": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
+  "page": 187,
+  "resume": "Les corrigés des exercices 1 à 3 se trouvent en annexe.",
+  "points_cles": [],
+  "a_retenir": "",
+  "video": null,
+  "demo": null,
+  "statut": "nouveau"
+ }
+]

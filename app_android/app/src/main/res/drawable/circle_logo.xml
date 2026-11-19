@@ -1,0 +1,21 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Cercle rouge -->
+    <item>
+        <shape
+            android:shape="oval">
+            <solid android:color="#FF0000" /> <!-- Couleur rouge -->
+            <size
+                android:width="200dp"
+                android:height="200dp" /> <!-- Taille du cercle -->
+        </shape>
+    </item>
+
+    <!-- Texte -->
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/logobook" /> <!-- Image du texte -->
+    </item>
+
+</layer-list>

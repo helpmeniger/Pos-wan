@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/primary_light"
+    app:cardBackgroundColor="@color/white">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:text="Bienvenue 👋"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/lavender"
+            android:layout_marginBottom="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:text="Entre ton nom une seule fois pour jouer en ligne"
+            android:textColor="@color/black"
+            android:layout_marginBottom="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:boxBackgroundMode="outline"
+            app:boxStrokeColor="@color/primary">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etName"
+                android:hint="Nom d'utilisateur"
+                android:textColor="@color/black"
+                android:textColorHint="@color/light_gray"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStart"
+            android:text="Entrer dans le lobby"
+            android:layout_marginTop="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            app:cornerRadius="16dp"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            app:iconPadding="8dp"
+            android:background="@drawable/corner_btn"
+            app:backgroundTint="@color/lavender"
+            android:textColor="@color/on_primary"/>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

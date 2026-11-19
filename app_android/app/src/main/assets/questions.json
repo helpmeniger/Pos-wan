@@ -1,0 +1,2131 @@
+[
+  {
+    "category": "Ordinateur",
+    "question": "Qu'est-ce qu'un ordinateur ?",
+    "options": ["Un appareil pour cuire", "Un appareil électronique qui traite des données", "Un logiciel", "Un téléphone"],
+    "answer": "Un appareil électronique qui traite des données",
+    "explanation": "Un ordinateur est un appareil électronique capable de traiter et stocker des données."
+  },
+  {
+    "category": "Ordinateur",
+    "question": "Que signifie RAM ?",
+    "options": ["Read Access Memory", "Random Access Memory", "Rapid Application Manager", "Remote Access Memory"],
+    "answer": "Random Access Memory",
+    "explanation": "RAM signifie Random Access Memory, c'est la mémoire vive de l'ordinateur."
+  },
+  {
+    "category": "Ordinateur",
+    "question": "Que signifie CPU ?",
+    "options": ["Central Processing Unit", "Computer Power Unit", "Central Program Utility", "Computer Processing Unit"],
+    "answer": "Central Processing Unit",
+    "explanation": "Le CPU (Unité Centrale de Traitement) est le cerveau de l'ordinateur qui exécute les instructions des programmes."
+  },
+  {
+    "category": "Ordinateur",
+    "question": "Quel composant stocke les données à long terme ?",
+    "options": ["La RAM", "Le disque dur", "Le processeur", "La carte mère"],
+    "answer": "Le disque dur",
+    "explanation": "Contrairement à la RAM (mémoire volatile), le disque dur conserve les données même lorsque l'ordinateur est éteint."
+  },
+  {
+    "category": "Ordinateur",
+    "question": "Que signifie 'OS' dans le domaine informatique ?",
+    "options": ["Office System", "Operating System", "Online Service", "Optical Sensor"],
+    "answer": "Operating System",
+    "explanation": "L'OS, comme Windows ou Linux, est le logiciel principal qui gère les ressources de l'ordinateur et permet d'exécuter d'autres programmes."
+  },
+  {
+    "category": "Ordinateur",
+    "question": "Quel est le rôle principal d'une carte mère ?",
+    "options": ["Afficher l'image", "Stocker les données", "Relier tous les composants", "Alimenter l'ordinateur"],
+    "answer": "Relier tous les composants",
+    "explanation": "La carte mère est le circuit imprimé principal sur lequel le CPU, la RAM et d'autres composants sont connectés."
+  },
+  {
+    "category": "Ordinateur",
+    "question": "Qu'est-ce qu'un périphérique d'entrée ?",
+    "options": ["Un écran", "Une imprimante", "Un appareil qui envoie des données à l'ordinateur", "Un disque dur"],
+    "answer": "Un appareil qui envoie des données à l'ordinateur",
+    "explanation": "Les périphériques d'entrée permettent à l'utilisateur d'interagir avec l'ordinateur (ex: clavier, souris)."
+  },
+  {
+    "category": "Ordinateur",
+    "question": "Quel type de logiciel est un navigateur web ?",
+    "options": ["Système d'exploitation", "Logiciel d'application", "Pilote matériel", "Firmware"],
+    "answer": "Logiciel d'application",
+    "explanation": "Un navigateur comme Chrome ou Firefox est un logiciel d'application utilisé pour accéder à internet."
+  },
+  {
+    "category": "Ordinateur",
+    "question": "Que fait un antivirus ?",
+    "options": ["Accélérer l'ordinateur", "Détecter et supprimer les logiciels malveillants", "Nettoyer l'écran", "Augmenter la mémoire RAM"],
+    "answer": "Détecter et supprimer les logiciels malveillants",
+    "explanation": "Un antivirus est un programme conçu pour protéger l'ordinateur contre les virus, les vers et autres menaces."
+  },
+  {
+    "category": "Ordinateur",
+    "question": "Quelle est la principale différence entre un HDD et un SSD ?",
+    "options": ["Le SSD est plus rapide", "Le HDD est plus cher", "Le SSD utilise plus d'énergie", "Le HDD est plus silencieux"],
+    "answer": "Le SSD est plus rapide",
+    "explanation": "Un HDD utilise des plateaux magnétiques et une tête de lecture, tandis qu'un SSD utilise de la mémoire flash, ce qui le rend beaucoup plus rapide."
+  },
+
+
+
+
+    {
+      "category": "Ordinateur",
+      "question": "Que signifie 'GPU' ?",
+      "options": ["Graphic Processing Unit", "General Power Unit", "Global Processing Utility", "General Purpose Unit"],
+      "answer": "Graphic Processing Unit",
+      "explanation": "Le GPU est responsable du rendu des images et vidéos."
+    },
+    {
+      "category": "Ordinateur",
+      "question": "Quel est le système de fichiers de Windows ?",
+      "options": ["NTFS", "EXT4", "FAT32", "APFS"],
+      "answer": "NTFS",
+      "explanation": "Windows utilise principalement NTFS pour stocker les fichiers."
+    },
+    {
+      "category": "Ordinateur",
+      "question": "Quel périphérique permet de numériser des documents ?",
+      "options": ["Imprimante", "Scanner", "Caméra", "Disque dur"],
+      "answer": "Scanner",
+      "explanation": "Le scanner convertit les documents papier en fichiers numériques."
+    },
+    {
+      "category": "Ordinateur",
+      "question": "Quelle unité mesure la vitesse d’un processeur ?",
+      "options": ["GHz", "MB", "Gbps", "RPM"],
+      "answer": "GHz",
+      "explanation": "La vitesse du processeur est mesurée en gigahertz (GHz)."
+    },
+    {
+      "category": "Ordinateur",
+      "question": "Que signifie 'bit' ?",
+      "options": ["Binary Digit", "Binary Data", "Bitrate", "Basic Information Type"],
+      "answer": "Binary Digit",
+      "explanation": "Un bit est la plus petite unité de donnée en informatique."
+    },
+    {
+      "category": "Ordinateur",
+      "question": "Quel composant est considéré comme le cerveau de l’ordinateur ?",
+      "options": ["CPU", "RAM", "GPU", "SSD"],
+      "answer": "CPU",
+      "explanation": "Le processeur (CPU) exécute les instructions logicielles."
+    },
+    {
+      "category": "Ordinateur",
+      "question": "Quelle unité mesure la capacité de stockage ?",
+      "options": ["Byte", "Hertz", "Pixel", "Volt"],
+      "answer": "Byte",
+      "explanation": "Les capacités de stockage sont mesurées en octets (Ko, Mo, Go, To)."
+    },
+    {
+      "category": "Ordinateur",
+      "question": "Quel est le rôle du BIOS ?",
+      "options": ["Initialiser le matériel", "Afficher des images", "Gérer Internet", "Contrôler le clavier"],
+      "answer": "Initialiser le matériel",
+      "explanation": "Le BIOS initialise les composants avant le démarrage du système."
+    },
+    {
+      "category": "Ordinateur",
+      "question": "Quel composant conserve les données même éteint ?",
+      "options": ["Disque dur", "RAM", "Processeur", "Carte mère"],
+      "answer": "Disque dur",
+      "explanation": "Les disques durs et SSD conservent les données sans alimentation."
+    },
+    {
+      "category": "Ordinateur",
+      "question": "Que signifie l’acronyme USB ?",
+      "options": ["Universal Serial Bus", "Unified System Bridge", "Universal Setup Base", "User Serial Board"],
+      "answer": "Universal Serial Bus",
+      "explanation": "L’USB permet la connexion de périphériques externes."
+    },
+
+
+
+
+
+
+
+  {
+    "category": "Word",
+    "question": "Quelle fonction permet de mettre un texte en gras ?",
+    "options": ["Ctrl + B", "Ctrl + I", "Ctrl + U", "Ctrl + G"],
+    "answer": "Ctrl + B",
+    "explanation": "Dans Word, Ctrl + B met le texte sélectionné en gras."
+  },
+  {
+    "category": "Word",
+    "question": "Quel onglet permet d'insérer une image ?",
+    "options": ["Accueil", "Insertion", "Mise en page", "Références"],
+    "answer": "Insertion",
+    "explanation": "L'onglet Insertion permet d'ajouter des images, tableaux, graphiques, etc."
+  },
+  {
+    "category": "Word",
+    "question": "Comment s'appelle la fonction qui vérifie l'orthographe ?",
+    "options": ["Vérification orthographique", "Correction automatique", "Grammaire avancée", "Dictionnaire des synonymes"],
+    "answer": "Vérification orthographique",
+    "explanation": "Cette fonction est accessible via l'onglet 'Révision' et souligne les mots suspects en rouge."
+  },
+  {
+    "category": "Word",
+    "question": "Quel raccourci permet d'enregistrer un document ?",
+    "options": ["Ctrl + S", "Ctrl + E", "Ctrl + N", "Ctrl + O"],
+    "answer": "Ctrl + S",
+    "explanation": "Ctrl + S enregistre le document. Si c'est la première fois, il ouvrira la fenêtre 'Enregistrer sous'."
+  },
+  {
+    "category": "Word",
+    "question": "Comment créer une liste à puces ?",
+    "options": ["Onglet Insertion > Puces", "Onglet Accueil > Puces", "Onglet Mise en page > Puces", "Onglet Références > Puces"],
+    "answer": "Onglet Accueil > Puces",
+    "explanation": "Sélectionnez le texte et cliquez sur le bouton représentant des puces dans le groupe 'Paragraphe' de l'onglet Accueil."
+  },
+  {
+    "category": "Word",
+    "question": "Quelle fonction permet de voir le document tel qu'il sera imprimé ?",
+    "options": ["Mode Lecture", "Mode Web", "Mode Plan", "Mode Brouillon"],
+    "answer": "Mode Lecture",
+    "explanation": "L'onglet 'Affichage' permet d'accéder au 'Mode Lecture' pour voir le document final."
+  },
+  {
+    "category": "Word",
+    "question": "Que fait la touche F7 ?",
+    "options": ["Ouvre l'aide", "Lance la vérification orthographique", "Met en gras", "Imprime le document"],
+    "answer": "Lance la vérification orthographique",
+    "explanation": "Appuyer sur F7 est un raccourci pour ouvrir le volet de vérification linguistique."
+  },
+  {
+    "category": "Word",
+    "question": "Comment insérer un saut de page ?",
+    "options": ["Ctrl + Entrée", "Ctrl + Espace", "Alt + Entrée", "Shift + Entrée"],
+    "answer": "Ctrl + Entrée",
+    "explanation": "Un saut de page force le contenu suivant à passer sur une nouvelle page."
+  },
+  {
+    "category": "Word",
+    "question": "Quel est le rôle du Presse-papiers ?",
+    "options": ["Imprimer des documents", "Stocker temporairement les éléments copiés", "Modifier la police", "Ajuster les marges"],
+    "answer": "Stocker temporairement les éléments copiés",
+    "explanation": "Les commandes Copier (Ctrl+C), Couper (Ctrl+X) et Coller (Ctrl+V) utilisent le Presse-papiers."
+  },
+  {
+    "category": "Word",
+    "question": "Comment modifier les marges d'un document ?",
+    "options": ["Onglet Insertion > Marges", "Onglet Accueil > Marges", "Onglet Mise en page > Marges", "Onglet Références > Marges"],
+    "answer": "Onglet Mise en page > Marges",
+    "explanation": "Vous pouvez choisir des marges prédéfinies ou personnalisées dans cette section."
+  },
+
+
+
+
+
+
+
+    {
+      "category": "Word",
+      "question": "Quel raccourci permet d’ouvrir un document ?",
+      "options": ["Ctrl + O", "Ctrl + N", "Ctrl + S", "Ctrl + E"],
+      "answer": "Ctrl + O",
+      "explanation": "Ce raccourci ouvre un fichier Word existant."
+    },
+    {
+      "category": "Word",
+      "question": "Comment changer la couleur du texte ?",
+      "options": ["Accueil > Police > Couleur", "Insertion > Image", "Mise en page > Bordure", "Révision > Grammaire"],
+      "answer": "Accueil > Police > Couleur",
+      "explanation": "La couleur du texte se modifie dans le groupe Police de l’onglet Accueil."
+    },
+    {
+      "category": "Word",
+      "question": "Quelle extension de fichier correspond à un document Word ?",
+      "options": [".docx", ".xlsx", ".pptx", ".txt"],
+      "answer": ".docx",
+      "explanation": "Les documents Word récents utilisent l’extension .docx."
+    },
+    {
+      "category": "Word",
+      "question": "Quel outil permet de trouver un mot et de le remplacer ?",
+      "options": ["Ctrl + H", "Ctrl + F", "Ctrl + G", "Ctrl + T"],
+      "answer": "Ctrl + H",
+      "explanation": "Ce raccourci ouvre la fonction Rechercher et remplacer."
+    },
+    {
+      "category": "Word",
+      "question": "Comment insérer une note de bas de page ?",
+      "options": ["Références > Insérer une note", "Accueil > Paragraphe", "Insertion > Texte", "Affichage > Lecture"],
+      "answer": "Références > Insérer une note",
+      "explanation": "Les notes se gèrent dans l’onglet Références."
+    },
+    {
+      "category": "Word",
+      "question": "Quel onglet permet de modifier les marges du document ?",
+      "options": ["Mise en page", "Insertion", "Révision", "Création"],
+      "answer": "Mise en page",
+      "explanation": "Les marges sont modifiables dans l’onglet Mise en page."
+    },
+    {
+      "category": "Word",
+      "question": "Quel raccourci permet d’imprimer un document ?",
+      "options": ["Ctrl + P", "Ctrl + I", "Ctrl + M", "Ctrl + L"],
+      "answer": "Ctrl + P",
+      "explanation": "Ctrl + P ouvre la fenêtre d’impression du document."
+    },
+    {
+      "category": "Word",
+      "question": "Comment insérer un tableau dans un document ?",
+      "options": ["Insertion > Tableau", "Accueil > Bordure", "Mise en page > Grille", "Création > Thème"],
+      "answer": "Insertion > Tableau",
+      "explanation": "L’onglet Insertion permet d’ajouter des tableaux personnalisés."
+    },
+    {
+      "category": "Word",
+      "question": "Quel outil permet de corriger automatiquement les fautes ?",
+      "options": ["Correction automatique", "Grammaire avancée", "Dictionnaire des synonymes", "Vérification du style"],
+      "answer": "Correction automatique",
+      "explanation": "Word peut remplacer automatiquement des mots mal orthographiés."
+    },
+    {
+      "category": "Word",
+      "question": "Comment ajouter une en-tête ou un pied de page ?",
+      "options": ["Insertion > En-tête/Pied de page", "Accueil > Police", "Création > Thème", "Affichage > Lecture"],
+      "answer": "Insertion > En-tête/Pied de page",
+      "explanation": "Cet outil permet d’ajouter des éléments visibles sur toutes les pages."
+    },
+
+
+
+
+
+
+    {
+      "category": "Excel",
+      "question": "Quel est le symbole pour une formule dans Excel ?",
+      "options": ["@", "=", "#", "$"],
+      "answer": "=",
+      "explanation": "Toutes les formules dans Excel commencent par le signe égal (=)."
+    },
+    {
+      "category": "Excel",
+      "question": "Quelle fonction permet de calculer la somme d'une plage de cellules ?",
+      "options": ["MOYENNE", "SOMME", "COMPTE", "SI"],
+      "answer": "SOMME",
+      "explanation": "La fonction SOMME additionne les valeurs d'une plage de cellules."
+    },
+    {
+      "category": "Excel",
+      "question": "Comment s'appelle l'intersection d'une ligne et d'une colonne ?",
+      "options": ["Formulaire", "Cellule", "Tableau", "Graphique"],
+      "answer": "Cellule",
+      "explanation": "Chaque cellule est identifiée par une référence unique, comme A1 (colonne A, ligne 1)."
+    },
+    {
+      "category": "Excel",
+      "question": "Quelle fonction permet de compter le nombre de cellules contenant des nombres ?",
+      "options": ["SOMME", "NB", "MOYENNE", "MAX"],
+      "answer": "NB",
+      "explanation": "La fonction NB compte uniquement les cellules contenant des nombres."
+    },
+    {
+      "category": "Excel",
+      "question": "Comment figer les volets (lignes ou colonnes) ?",
+      "options": ["Onglet Formules > Figer les volets", "Onglet Données > Figer les volets", "Onglet Affichage > Figer les volets", "Onglet Accueil > Figer les volets"],
+      "answer": "Onglet Affichage > Figer les volets",
+      "explanation": "Cela permet de garder visibles certaines lignes ou colonnes lors du défilement."
+    },
+    {
+      "category": "Excel",
+      "question": "Quelle fonction permet de trouver la valeur maximale dans une plage ?",
+      "options": ["MIN", "MAX", "SOMME", "NB"],
+      "answer": "MAX",
+      "explanation": "La fonction MAX renvoie la plus grande valeur dans une plage de cellules."
+    },
+    {
+      "category": "Excel",
+      "question": "Comment créer un graphique à partir de données ?",
+      "options": ["Onglet Formules > Graphique", "Onglet Insertion > Graphique", "Onglet Données > Graphique", "Onglet Accueil > Graphique"],
+      "answer": "Onglet Insertion > Graphique",
+      "explanation": "L’onglet Insertion permet d’ajouter des graphiques (histogrammes, camemberts, etc.)."
+    },
+    {
+      "category": "Excel",
+      "question": "Que fait la fonction SI ?",
+      "options": ["Additionne des valeurs", "Compte des cellules", "Effectue un test logique", "Affiche la moyenne"],
+      "answer": "Effectue un test logique",
+      "explanation": "La fonction SI renvoie une valeur si une condition est vraie, et une autre si elle est fausse."
+    },
+    {
+      "category": "Excel",
+      "question": "Comment trier les données du plus grand au plus petit ?",
+      "options": ["Trier de A à Z", "Trier du plus grand au plus petit", "Filtrer", "Trier par couleur"],
+      "answer": "Trier du plus grand au plus petit",
+      "explanation": "Sélectionnez une cellule dans la colonne, puis allez dans 'Accueil' > 'Trier et filtrer'."
+    },
+    {
+      "category": "Excel",
+      "question": "Quelle fonction permet d'assembler du texte de plusieurs cellules ?",
+      "options": ["SOMME", "CONCATENER", "JOINDRE.TEXTE", "COLLER"],
+      "answer": "CONCATENER",
+      "explanation": "La fonction CONCATENER assemble le texte de plusieurs cellules."
+    },
+    {
+      "category": "Excel",
+      "question": "Quelle fonction permet de calculer la moyenne d'une plage de cellules ?",
+      "options": ["MOYENNE", "SOMME", "MAX", "MIN"],
+      "answer": "MOYENNE",
+      "explanation": "La fonction MOYENNE calcule la moyenne d'une série de valeurs."
+    },
+    {
+      "category": "Excel",
+      "question": "Quelle fonction permet d'obtenir la plus petite valeur d'une plage ?",
+      "options": ["MIN", "PETIT", "INFERIEUR", "MOINDRE"],
+      "answer": "MIN",
+      "explanation": "La fonction MIN renvoie la plus petite valeur d'une plage de cellules."
+    },
+    {
+      "category": "Excel",
+      "question": "Quelle fonction compte toutes les cellules non vides ?",
+      "options": ["NBVAL", "NB", "NBVIDE", "COMPTE"],
+      "answer": "NBVAL",
+      "explanation": "NBVAL compte toutes les cellules contenant des données, qu'elles soient numériques ou textuelles."
+    },
+    {
+      "category": "Excel",
+      "question": "Quelle fonction permet de rechercher une valeur dans un tableau ?",
+      "options": ["RECHERCHEV", "RECHERCHEH", "INDEX", "EQUIV"],
+      "answer": "RECHERCHEV",
+      "explanation": "RECHERCHEV permet de chercher une valeur dans la première colonne d’un tableau et de renvoyer une valeur correspondante."
+    },
+    {
+      "category": "Excel",
+      "question": "Quelle fonction permet de combiner plusieurs textes ?",
+      "options": ["CONCATENER", "JOINDRE.TEXTE", "COLLER", "TEXTE"],
+      "answer": "CONCATENER",
+      "explanation": "CONCATENER regroupe plusieurs textes dans une seule cellule."
+    },
+    {
+      "category": "Excel",
+      "question": "Quelle fonction affiche la plus grande valeur d'une plage ?",
+      "options": ["MAX", "HAUT", "SUP", "PLUSGRAND"],
+      "answer": "MAX",
+      "explanation": "MAX retourne la plus grande valeur numérique d'une plage."
+    },
+    {
+      "category": "Excel",
+      "question": "Comment afficher uniquement les lignes correspondant à un critère ?",
+      "options": ["Filtre automatique", "Trier de A à Z", "Masquer les lignes", "Coller spécial"],
+      "answer": "Filtre automatique",
+      "explanation": "Le filtre automatique permet de n'afficher que les lignes répondant à un critère choisi."
+    },
+    {
+      "category": "Excel",
+      "question": "Comment garder visible la première ligne d’un tableau pendant le défilement ?",
+      "options": ["Figer les volets", "Trier les données", "Masquer les lignes", "Filtrer"],
+      "answer": "Figer les volets",
+      "explanation": "La commande 'Figer les volets' maintient la première ligne visible à l’écran."
+    },
+    {
+      "category": "Excel",
+      "question": "Quelle fonction calcule la différence entre deux dates ?",
+      "options": ["DATEDIF", "JOURS", "NB.JOURS.OUVRES", "ANNEE"],
+      "answer": "DATEDIF",
+      "explanation": "DATEDIF renvoie le nombre de jours, mois ou années entre deux dates."
+    },
+    {
+      "category": "Excel",
+      "question": "Quel est le raccourci pour insérer une nouvelle ligne dans Excel ?",
+      "options": ["Ctrl + +", "Ctrl + Entrée", "Alt + N", "Shift + Entrée"],
+      "answer": "Ctrl + +",
+      "explanation": "Ce raccourci insère une nouvelle ligne au-dessus de la cellule active."
+    },
+
+
+
+
+
+
+    {
+      "category": "PowerPoint",
+      "question": "Quel onglet permet de choisir un modèle de présentation ?",
+      "options": ["Accueil", "Création", "Insertion", "Diaporama"],
+      "answer": "Création",
+      "explanation": "L'onglet Création permet de sélectionner le thème et le modèle de la présentation."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Quel raccourci permet de lancer le diaporama depuis la première diapositive ?",
+      "options": ["F5", "Ctrl + F5", "Shift + F5", "Alt + F5"],
+      "answer": "F5",
+      "explanation": "La touche F5 démarre le diaporama depuis la première diapositive."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment ajouter une nouvelle diapositive ?",
+      "options": ["Ctrl + M", "Ctrl + N", "Ctrl + D", "Ctrl + A"],
+      "answer": "Ctrl + M",
+      "explanation": "Le raccourci Ctrl + M insère une nouvelle diapositive avec la mise en page par défaut."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Où se trouve le mode 'Tri des diapositives' ?",
+      "options": ["Onglet Accueil", "Onglet Affichage", "Onglet Insertion", "Onglet Diaporama"],
+      "answer": "Onglet Affichage",
+      "explanation": "Le mode 'Tri des diapositives' permet de réorganiser les diapositives facilement."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment ajouter une transition entre deux diapositives ?",
+      "options": ["Onglet Animations", "Onglet Transitions", "Onglet Création", "Onglet Diaporama"],
+      "answer": "Onglet Transitions",
+      "explanation": "Les transitions sont des effets visuels appliqués au passage d'une diapositive à une autre."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Quelle fonction permet de reproduire la mise en forme d'un élément ?",
+      "options": ["Copier-coller", "Reproduire la mise en forme", "Format painter", "Dupliquer la forme"],
+      "answer": "Reproduire la mise en forme",
+      "explanation": "L'outil 'Reproduire la mise en forme' permet d'appliquer rapidement le même style à un autre élément."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment insérer une forme (rectangle, cercle, flèche) ?",
+      "options": ["Onglet Insertion > Formes", "Onglet Accueil > Formes", "Onglet Création > Formes", "Onglet Diaporama > Formes"],
+      "answer": "Onglet Insertion > Formes",
+      "explanation": "L'onglet Insertion permet d'ajouter diverses formes sur les diapositives."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Que fait le mode 'Commentaires' ?",
+      "options": ["Affiche les diapositives", "Permet d'ajouter des notes", "Lance le diaporama", "Modifie les transitions"],
+      "answer": "Permet d'ajouter des notes",
+      "explanation": "Les commentaires permettent d’échanger des remarques entre collaborateurs sans apparaître dans le diaporama."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment regrouper plusieurs objets (formes, images) ?",
+      "options": ["Ctrl + G", "Ctrl + B", "Ctrl + U", "Ctrl + R"],
+      "answer": "Ctrl + G",
+      "explanation": "Ctrl + G regroupe les objets sélectionnés pour les déplacer ou redimensionner ensemble."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Quel raccourci permet de lancer le diaporama à partir de la diapositive actuelle ?",
+      "options": ["F5", "Shift + F5", "Ctrl + F5", "Alt + F5"],
+      "answer": "Shift + F5",
+      "explanation": "Shift + F5 démarre la présentation à partir de la diapositive en cours."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment dupliquer rapidement une diapositive ?",
+      "options": ["Ctrl + D", "Ctrl + N", "Ctrl + M", "Alt + D"],
+      "answer": "Ctrl + D",
+      "explanation": "Ctrl + D crée une copie exacte de la diapositive sélectionnée."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment changer le thème de la présentation ?",
+      "options": ["Création > Thèmes", "Affichage > Thèmes", "Insertion > Modèles", "Accueil > Thèmes"],
+      "answer": "Création > Thèmes",
+      "explanation": "L'onglet Création permet de modifier le thème global et les couleurs de la présentation."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment insérer une image dans une diapositive ?",
+      "options": ["Insertion > Images", "Création > Thème", "Affichage > Média", "Accueil > Police"],
+      "answer": "Insertion > Images",
+      "explanation": "L'option Insertion > Images permet d'ajouter des images depuis un fichier ou Internet."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Quel format de fichier est utilisé pour enregistrer une présentation PowerPoint ?",
+      "options": [".pptx", ".docx", ".xlsx", ".pdf"],
+      "answer": ".pptx",
+      "explanation": "Les présentations PowerPoint sont enregistrées au format .pptx par défaut."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment insérer une vidéo dans une diapositive ?",
+      "options": ["Insertion > Vidéo", "Création > Média", "Affichage > Animation", "Accueil > Insertion"],
+      "answer": "Insertion > Vidéo",
+      "explanation": "Vous pouvez insérer une vidéo locale ou en ligne depuis l’onglet Insertion."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment ajouter une animation à un texte ou un objet ?",
+      "options": ["Animations > Ajouter une animation", "Transitions > Effets", "Création > Thèmes", "Accueil > Style"],
+      "answer": "Animations > Ajouter une animation",
+      "explanation": "Les animations rendent les éléments dynamiques lors de la présentation."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment afficher le mode Présentateur ?",
+      "options": ["Diaporama > Utiliser le mode Présentateur", "Affichage > Présentateur", "Création > Outils", "Accueil > Présentation"],
+      "answer": "Diaporama > Utiliser le mode Présentateur",
+      "explanation": "Ce mode affiche les notes et outils pour le présentateur, invisibles pour le public."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment enregistrer une narration audio pour les diapositives ?",
+      "options": ["Diaporama > Enregistrer le diaporama", "Insertion > Audio", "Création > Média", "Outils > Sons"],
+      "answer": "Diaporama > Enregistrer le diaporama",
+      "explanation": "Cette option enregistre la voix et le minutage des diapositives pour une présentation autonome."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment modifier l’arrière-plan d’une diapositive ?",
+      "options": ["Création > Arrière-plan", "Accueil > Police", "Affichage > Couleurs", "Insertion > Formes"],
+      "answer": "Création > Arrière-plan",
+      "explanation": "Cet outil permet de changer la couleur ou l’image de fond de la diapositive."
+    },
+    {
+      "category": "PowerPoint",
+      "question": "Comment afficher toutes les diapositives sous forme de miniatures ?",
+      "options": ["Affichage > Tri des diapositives", "Accueil > Sélection", "Création > Thèmes", "Insertion > Aperçu"],
+      "answer": "Affichage > Tri des diapositives",
+      "explanation": "Le mode 'Tri des diapositives' permet de réorganiser rapidement la présentation."
+    },
+
+
+
+
+
+
+    {
+      "category": "Windows",
+      "question": "Quelle combinaison ouvre le Gestionnaire des tâches ?",
+      "options": ["Ctrl + Shift + Échap", "Alt + F4", "Windows + E", "Ctrl + Alt + Suppr"],
+      "answer": "Ctrl + Shift + Échap",
+      "explanation": "Ctrl + Shift + Échap ouvre directement le Gestionnaire des tâches."
+    },
+    {
+      "category": "Windows",
+      "question": "Que fait la touche Windows + D ?",
+      "options": ["Ferme Windows", "Affiche le Bureau", "Ouvre l'explorateur", "Redémarre l'ordinateur"],
+      "answer": "Affiche le Bureau",
+      "explanation": "Windows + D minimise toutes les fenêtres et affiche le Bureau."
+    },
+    {
+      "category": "Windows",
+      "question": "Quel raccourci ouvre l'Explorateur de fichiers ?",
+      "options": ["Windows + E", "Windows + D", "Windows + R", "Windows + S"],
+      "answer": "Windows + E",
+      "explanation": "Ce raccourci permet d'accéder rapidement aux fichiers et dossiers."
+    },
+    {
+      "category": "Windows",
+      "question": "Comment renommer un fichier sélectionné ?",
+      "options": ["F2", "F1", "F5", "F12"],
+      "answer": "F2",
+      "explanation": "Appuyez sur F2 pour modifier le nom d'un fichier sélectionné."
+    },
+    {
+      "category": "Windows",
+      "question": "Que fait la combinaison Ctrl + C ?",
+      "options": ["Copier", "Couper", "Coller", "Annuler"],
+      "answer": "Copier",
+      "explanation": "Ctrl + C copie le texte, l'image ou le fichier sélectionné."
+    },
+    {
+      "category": "Windows",
+      "question": "Où trouve-t-on les paramètres de l'ordinateur ?",
+      "options": ["Panneau de configuration", "Paramètres Windows", "Gestionnaire de périphériques", "Explorateur de fichiers"],
+      "answer": "Paramètres Windows",
+      "explanation": "L'application Paramètres permet de configurer l'apparence, le réseau et la sécurité."
+    },
+    {
+      "category": "Windows",
+      "question": "Comment fermer une application qui ne répond pas ?",
+      "options": ["Alt + F4", "Ctrl + Alt + Suppr", "Via le Gestionnaire des tâches", "Windows + X"],
+      "answer": "Via le Gestionnaire des tâches",
+      "explanation": "Ouvrez le Gestionnaire des tâches et cliquez sur 'Fin de tâche'."
+    },
+    {
+      "category": "Windows",
+      "question": "Que fait la touche Impr. écran (PrtScn) ?",
+      "options": ["Imprime le document", "Capture tout l'écran", "Ferme la fenêtre", "Ouvre le menu Démarrer"],
+      "answer": "Capture tout l'écran",
+      "explanation": "La capture est enregistrée dans le Presse-papiers."
+    },
+    {
+      "category": "Windows",
+      "question": "Comment réduire toutes les fenêtres sauf celle active ?",
+      "options": ["Windows + Home", "Windows + D", "Windows + M", "Alt + Tab"],
+      "answer": "Windows + Home",
+      "explanation": "Ce raccourci permet de se concentrer sur une seule application."
+    },
+    {
+      "category": "Windows",
+      "question": "Où vont les fichiers supprimés par défaut ?",
+      "options": ["Ils sont supprimés définitivement", "Dans la Corbeille", "Dans le dossier Téléchargements", "Sur le Bureau"],
+      "answer": "Dans la Corbeille",
+      "explanation": "Les fichiers supprimés vont dans la Corbeille avant d'être vidés définitivement."
+    },
+    {
+      "category": "Windows",
+      "question": "Quelle combinaison de touches verrouille l’ordinateur ?",
+      "options": ["Windows + L", "Ctrl + L", "Alt + F4", "Shift + L"],
+      "answer": "Windows + L",
+      "explanation": "Windows + L verrouille instantanément la session en cours."
+    },
+    {
+      "category": "Windows",
+      "question": "Comment accéder rapidement au menu Démarrer ?",
+      "options": ["Touche Windows", "Ctrl + E", "Alt + Entrée", "F10"],
+      "answer": "Touche Windows",
+      "explanation": "La touche Windows ouvre ou ferme le menu Démarrer."
+    },
+    {
+      "category": "Windows",
+      "question": "Quelle combinaison permet d’ouvrir la boîte Exécuter ?",
+      "options": ["Windows + R", "Ctrl + R", "Alt + R", "Shift + R"],
+      "answer": "Windows + R",
+      "explanation": "Windows + R ouvre la boîte de commande 'Exécuter'."
+    },
+    {
+      "category": "Windows",
+      "question": "Que permet de faire la combinaison Alt + Tab ?",
+      "options": ["Changer de fenêtre active", "Fermer un programme", "Afficher le Bureau", "Ouvrir le menu contextuel"],
+      "answer": "Changer de fenêtre active",
+      "explanation": "Alt + Tab permet de basculer entre les applications ouvertes."
+    },
+    {
+      "category": "Windows",
+      "question": "Comment afficher les fichiers cachés dans l’Explorateur ?",
+      "options": ["Affichage > Éléments masqués", "Accueil > Trier", "Affichage > Options", "Fichier > Propriétés"],
+      "answer": "Affichage > Éléments masqués",
+      "explanation": "Activez l’option 'Éléments masqués' pour voir les fichiers cachés."
+    },
+    {
+      "category": "Windows",
+      "question": "Quelle combinaison ouvre le centre de notifications ?",
+      "options": ["Windows + A", "Windows + N", "Windows + C", "Windows + I"],
+      "answer": "Windows + A",
+      "explanation": "Windows + A ouvre le centre de notifications et de réglages rapides."
+    },
+    {
+      "category": "Windows",
+      "question": "Comment effectuer une capture d’écran partielle ?",
+      "options": ["Windows + Shift + S", "Windows + Impr. écran", "Alt + Impr. écran", "Ctrl + S"],
+      "answer": "Windows + Shift + S",
+      "explanation": "Cette combinaison lance l’outil de capture d’écran intégré à Windows."
+    },
+    {
+      "category": "Windows",
+      "question": "Quelle combinaison ouvre les Paramètres Windows ?",
+      "options": ["Windows + I", "Ctrl + I", "Alt + I", "Shift + I"],
+      "answer": "Windows + I",
+      "explanation": "Windows + I permet d’ouvrir directement la fenêtre des Paramètres."
+    },
+    {
+      "category": "Windows",
+      "question": "Comment accéder à la gestion des disques ?",
+      "options": ["Windows + X > Gestion du disque", "Ctrl + D", "Alt + F3", "Windows + G"],
+      "answer": "Windows + X > Gestion du disque",
+      "explanation": "Cette commande permet de créer, formater ou supprimer des partitions."
+    },
+    {
+      "category": "Windows",
+      "question": "Comment afficher les propriétés d’un fichier ?",
+      "options": ["Alt + Entrée", "Ctrl + P", "Shift + F10", "F3"],
+      "answer": "Alt + Entrée",
+      "explanation": "Alt + Entrée affiche les informations détaillées d’un fichier ou d’un dossier."
+    },
+
+
+  {
+    "category": "Internet",
+    "question": "Que signifie URL ?",
+    "options": ["Universal Resource Link", "Uniform Resource Locator", "United Radio Location", "Universal Reference Link"],
+    "answer": "Uniform Resource Locator",
+    "explanation": "C'est l'adresse web unique d'une page sur Internet, comme 'https://www.example.com'."
+  },
+  {
+    "category": "Internet",
+    "question": "Quel raccourci permet d'actualiser une page web ?",
+    "options": ["F5", "F1", "F2", "F12"],
+    "answer": "F5",
+    "explanation": "Cela recharge la page pour afficher le contenu le plus récent."
+  },
+  {
+    "category": "Internet",
+    "question": "Comment enregistrer un site web dans ses favoris ?",
+    "options": ["Ctrl + D", "Ctrl + S", "Ctrl + F", "Ctrl + B"],
+    "answer": "Ctrl + D",
+    "explanation": "Cliquer sur l'icône en forme d'étoile dans la barre d'adresse permet d'ajouter la page aux favoris."
+  },
+  {
+    "category": "Internet",
+    "question": "Que fait le bouton 'Précédent' dans un navigateur ?",
+    "options": ["Avance d'une page", "Revient à la page précédente", "Actualise la page", "Ouvre un nouvel onglet"],
+    "answer": "Revient à la page précédente",
+    "explanation": "Il vous permet de naviguer dans l'historique de votre session en cours."
+  },
+  {
+    "category": "Internet",
+    "question": "Qu'est-ce qu'un moteur de recherche ?",
+    "options": ["Un site de jeux", "Un site qui trouve des pages web", "Un réseau social", "Un magasin en ligne"],
+    "answer": "Un site qui trouve des pages web",
+    "explanation": "Vous saisissez une requête et le moteur de recherche renvoie une liste de résultats pertinents."
+  },
+  {
+    "category": "Internet",
+    "question": "Comment ouvrir un nouvel onglet ?",
+    "options": ["Ctrl + T", "Ctrl + N", "Ctrl + W", "Ctrl + O"],
+    "answer": "Ctrl + T",
+    "explanation": "Cela ouvre un nouvel onglet vide dans la même fenêtre du navigateur."
+  },
+  {
+    "category": "Internet",
+    "question": "Que signifie 'https://' au début d'une URL ?",
+    "options": ["Hyper Transfer Text Protocol", "HyperText Transfer Protocol Secure", "High Tech Transfer Protocol", "Hyper Transfer Text Protocol Safe"],
+    "answer": "HyperText Transfer Protocol Secure",
+    "explanation": "Le 's' signifie 'Secure' et indique que la connexion entre votre navigateur et le site est chiffrée et sécurisée."
+  },
+  {
+    "category": "Internet",
+    "question": "Comment vider l'historique de navigation ?",
+    "options": ["Ctrl + Shift + Suppr", "Ctrl + H", "Ctrl + J", "Ctrl + F"],
+    "answer": "Ctrl + Shift + Suppr",
+    "explanation": "Cela ouvre la fenêtre pour supprimer l'historique, les cookies et autres données temporaires."
+  },
+  {
+    "category": "Internet",
+    "question": "Quel est le rôle de la barre d'adresse ?",
+    "options": ["Afficher les favoris", "Afficher l'URL et permettre la navigation", "Afficher les paramètres", "Afficher les téléchargements"],
+    "answer": "Afficher l'URL et permettre la navigation",
+    "explanation": "C'est l'outil principal pour naviguer vers un site spécifique ou effectuer une recherche."
+  },
+  {
+    "category": "Internet",
+    "question": "Qu'est-ce qu'une extension de navigateur ?",
+    "options": ["Un virus", "Un programme qui ajoute des fonctionnalités", "Un type de fichier", "Un moteur de recherche"],
+    "answer": "Un programme qui ajoute des fonctionnalités",
+    "explanation": "Les extensions se téléchargent depuis le magasin officiel du navigateur pour ajouter des fonctions comme les bloqueurs de pubs."
+  },
+
+  {
+    "category": "Réseaux",
+    "question": "Que signifie LAN ?",
+    "options": ["Large Area Network", "Local Area Network", "Long Access Network", "Limited Area Network"],
+    "answer": "Local Area Network",
+    "explanation": "Un LAN est un réseau qui connecte des appareils dans une zone limitée, comme une maison ou un bureau."
+  },
+  {
+    "category": "Réseaux",
+    "question": "Quel appareil connecte un réseau local à Internet ?",
+    "options": ["Le switch", "Le routeur", "Le modem", "Le hub"],
+    "answer": "Le routeur",
+    "explanation": "Le routeur dirige le trafic entre votre réseau domestique et Internet."
+  },
+  {
+    "category": "Réseaux",
+    "question": "Qu'est-ce qu'un pare-feu (firewall) ?",
+    "options": ["Un antivirus", "Un système de sécurité qui contrôle le trafic réseau", "Un routeur", "Un câble réseau"],
+    "answer": "Un système de sécurité qui contrôle le trafic réseau",
+    "explanation": "Il bloque les connexions non autorisées pour protéger les ordinateurs."
+  },
+  {
+    "category": "Réseaux",
+    "question": "Que signifie VPN ?",
+    "options": ["Virtual Private Network", "Very Private Network", "Virtual Public Network", "Visual Private Network"],
+    "answer": "Virtual Private Network",
+    "explanation": "Un VPN crée un tunnel chiffré entre votre appareil et un serveur distant, sécurisant et masquant votre connexion."
+  },
+  {
+    "category": "Réseaux",
+    "question": "Comment vérifier si votre connexion Internet fonctionne ?",
+    "options": ["Redémarrer l'ordinateur", "Utiliser la commande 'ping'", "Ouvrir le Panneau de configuration", "Vérifier les câbles"],
+    "answer": "Utiliser la commande 'ping'",
+    "explanation": "La commande 'ping 8.8.8.8' teste la connectivité avec un serveur DNS public de Google."
+  },
+  {
+    "category": "Réseaux",
+    "question": "Qu'est-ce qu'un phishing (hameçonnage) ?",
+    "options": ["Un type de virus", "Une tentative d'obtenir des informations sensibles frauduleusement", "Un réseau Wi-Fi public", "Un protocole de sécurité"],
+    "answer": "Une tentative d'obtenir des informations sensibles frauduleusement",
+    "explanation": "Méfiez-vous des emails ou sites web qui demandent vos mots de passe ou coordonnées bancaires."
+  },
+  {
+    "category": "Réseaux",
+    "question": "Quel est le rôle d'un mot de passe fort ?",
+    "options": ["Accélérer Internet", "Rendre difficile l'accès non autorisé", "Améliorer le Wi-Fi", "Protéger contre les virus"],
+    "answer": "Rendre difficile l'accès non autorisé",
+    "explanation": "Un mot de passe fort est long, unique et utilise un mélange de lettres, chiffres et symboles."
+  },
+  {
+    "category": "Réseaux",
+    "question": "Que signifie Wi-Fi ?",
+    "options": ["Wireless Fidelity", "Wide Frequency", "Wireless Frequency", "Wired Fidelity"],
+    "answer": "Wireless Fidelity",
+    "explanation": "Le Wi-Fi permet aux appareils de se connecter à un réseau sans câble."
+  },
+  {
+    "category": "Réseaux",
+    "question": "Qu'est-ce qu'une mise à jour de sécurité ?",
+    "options": ["Une nouvelle version d'un jeu", "Un correctif qui répare des vulnérabilités", "Une mise à jour du matériel", "Un nouveau logiciel"],
+    "answer": "Un correctif qui répare des vulnérabilités",
+    "explanation": "Il est crucial de les installer rapidement pour protéger votre ordinateur contre les menaces."
+  },
+  {
+    "category": "Réseaux",
+    "question": "Que fait la commande 'ipconfig' dans l'invite de commandes Windows ?",
+    "options": ["Teste la connexion Internet", "Affiche la configuration IP", "Redémarre le réseau", "Configure le Wi-Fi"],
+    "answer": "Affiche la configuration IP",
+    "explanation": "Elle affiche la configuration IP actuelle de votre ordinateur (adresse IP, passerelle, etc.)."
+  },
+
+  {
+    "category": "Matériel",
+    "question": "Quel composant affiche l'image sur l'écran ?",
+    "options": ["Le processeur", "La carte graphique", "La RAM", "Le disque dur"],
+    "answer": "La carte graphique",
+    "explanation": "La carte graphique traite et envoie les données visuelles à votre moniteur."
+  },
+  {
+    "category": "Matériel",
+    "question": "À quoi sert l'alimentation (bloc d'alimentation) ?",
+    "options": ["Afficher l'image", "Convertir le courant pour les composants", "Stocker les données", "Traiter les données"],
+    "answer": "Convertir le courant pour les composants",
+    "explanation": "Elle convertit le courant alternatif (prise murale) en courant continu pour les composants de l'ordinateur."
+  },
+  {
+    "category": "Matériel",
+    "question": "Quel port est universellement utilisé pour connecter des périphériques ?",
+    "options": ["Port HDMI", "Port USB", "Port Ethernet", "Port VGA"],
+    "answer": "Port USB",
+    "explanation": "L'USB est une norme standard pour connecter et alimenter des appareils électroniques."
+  },
+  {
+    "category": "Matériel",
+    "question": "Quel type de mémoire est plus rapide : le cache L1 du CPU ou la RAM ?",
+    "options": ["La RAM", "Le cache L1 du CPU", "Ils ont la même vitesse", "Le disque dur"],
+    "answer": "Le cache L1 du CPU",
+    "explanation": "Le cache L1 est une petite mémoire intégrée au processeur, extrêmement rapide, pour stocker les instructions fréquemment utilisées."
+  },
+  {
+    "category": "Matériel",
+    "question": "Qu'est-ce qu'un SSD NVMe ?",
+    "options": ["Un type de RAM", "Un type de SSD très rapide", "Un processeur", "Une carte mère"],
+    "answer": "Un type de SSD très rapide",
+    "explanation": "Il est beaucoup plus rapide qu'un SSD SATA traditionnel pour le transfert de données."
+  },
+  {
+    "category": "Matériel",
+    "question": "Quel composant est responsable du refroidissement du CPU ?",
+    "options": ["Le disque dur", "La carte mère", "Le ventilateur du radiateur", "L'alimentation"],
+    "answer": "Le ventilateur du radiateur",
+    "explanation": "Il dissipe la chaleur générée par le processeur pour l'empêcher de surchauffer."
+  },
+  {
+    "category": "Matériel",
+    "question": "Que mesure le Hertz (Hz) d'un moniteur ?",
+    "options": ["La taille de l'écran", "La fréquence de rafraîchissement", "La résolution", "La luminosité"],
+    "answer": "La fréquence de rafraîchissement",
+    "explanation": "Un taux de rafraîchissement plus élevé (ex: 144 Hz) offre une image plus fluide, surtout dans les jeux."
+  },
+  {
+    "category": "Matériel",
+    "question": "Quel est le rôle du chipset sur une carte mère ?",
+    "options": ["Afficher l'image", "Gérer la communication entre les composants", "Stocker les données", "Alimenter l'ordinateur"],
+    "answer": "Gérer la communication entre les composants",
+    "explanation": "C'est le centre de contrôle de la carte mère."
+  },
+  {
+    "category": "Matériel",
+    "question": "Quelle interface utilise un disque dur SATA traditionnel ?",
+    "options": ["Port PCIe", "Port SATA", "Port USB", "Port HDMI"],
+    "answer": "Port SATA",
+    "explanation": "SATA (Serial ATA) est une norme de connexion pour les disques durs et les lecteurs optiques."
+  },
+  {
+    "category": "Matériel",
+    "question": "Qu'est-ce que la résolution d'un écran ?",
+    "options": ["La taille physique", "Le nombre de pixels", "La fréquence", "La luminosité"],
+    "answer": "Le nombre de pixels",
+    "explanation": "Le nombre de pixels (points) qui composent l'affichage, exprimé en largeur x hauteur (ex: 1920x1080)."
+  },
+
+  {
+    "category": "Concepts Généraux",
+    "question": "Que signifie 'FAQ' ?",
+    "options": ["Frequently Asked Questions", "Fast Answers Quickly", "Frequent Answers Quality", "Free Answers Quest"],
+    "answer": "Frequently Asked Questions",
+    "explanation": "Une section sur un site web qui répond aux questions les plus courantes des utilisateurs."
+  },
+  {
+    "category": "Concepts Généraux",
+    "question": "Quel raccourci permet de sélectionner tout le texte dans un document ?",
+    "options": ["Ctrl + A", "Ctrl + C", "Ctrl + V", "Ctrl + X"],
+    "answer": "Ctrl + A",
+    "explanation": "'A' pour 'All' (Tout). Ce raccourci fonctionne dans la plupart des applications."
+  },
+  {
+    "category": "Concepts Généraux",
+    "question": "Que fait la commande 'Ctrl + Z' ?",
+    "options": ["Annuler", "Refaire", "Copier", "Coller"],
+    "answer": "Annuler",
+    "explanation": "C'est l'un des raccourcis les plus utiles pour corriger une erreur."
+  },
+  {
+    "category": "Concepts Généraux",
+    "question": "Qu'est-ce que le 'Cloud Computing' ?",
+    "options": ["Un type de virus", "L'utilisation de services informatiques via Internet", "Un réseau local", "Un système d'exploitation"],
+    "answer": "L'utilisation de services informatiques via Internet",
+    "explanation": "Des exemples incluent Google Drive, Dropbox et Microsoft Azure."
+  },
+  {
+    "category": "Concepts Généraux",
+    "question": "Quel raccourci ouvre la boîte de dialogue 'Imprimer' ?",
+    "options": ["Ctrl + P", "Ctrl + I", "Ctrl + O", "Ctrl + S"],
+    "answer": "Ctrl + P",
+    "explanation": "'P' pour 'Print'. Cela ouvre la fenêtre pour configurer et lancer une impression."
+  },
+  {
+    "category": "Concepts Généraux",
+    "question": "Que signifie 'BIOS' ?",
+    "options": ["Basic Input/Output System", "Binary Input Output Service", "Basic Internet Operating System", "Binary Internet Output System"],
+    "answer": "Basic Input/Output System",
+    "explanation": "C'est le premier logiciel qui s'exécute au démarrage de l'ordinateur, initialisant le matériel."
+  },
+  {
+    "category": "Concepts Généraux",
+    "question": "Quel raccourci permet de rechercher un mot sur la page actuelle ?",
+    "options": ["Ctrl + F", "Ctrl + R", "Ctrl + H", "Ctrl + G"],
+    "answer": "Ctrl + F",
+    "explanation": "'F' pour 'Find' (Trouver). Cela ouvre une petite barre de recherche pour localiser du texte."
+  },
+  {
+    "category": "Concepts Généraux",
+    "question": "Qu'est-ce qu'un algorithme ?",
+    "options": ["Un type de virus", "Un composant matériel", "Une suite d'instructions pour résoudre un problème", "Un langage de programmation"],
+    "answer": "Une suite d'instructions pour résoudre un problème",
+    "explanation": "C'est le fondement de la programmation informatique."
+  },
+  {
+    "category": "Concepts Généraux",
+    "question": "Que fait la touche 'Verrouillage numérique' (Num Lock) ?",
+    "options": ["Verrouille le clavier", "Active le pavé numérique", "Verrouille les majuscules", "Active le scroll"],
+    "answer": "Active le pavé numérique",
+    "explanation": "Quand elle est désactivée, les touches du pavé numérique fonctionnent comme des touches de navigation."
+  },
+  {
+    "category": "Concepts Généraux",
+    "question": "Qu'est-ce que l'IA (Intelligence Artificielle) ?",
+    "options": ["Un type d'ordinateur", "Un domaine créant des machines intelligentes", "Un logiciel de traitement de texte", "Un réseau social"],
+    "answer": "Un domaine créant des machines intelligentes",
+    "explanation": "L'IA est utilisée dans la reconnaissance vocale, la vision par ordinateur et les assistants virtuels."
+  },
+
+
+
+
+
+    {
+      "category": "Concepts Généraux",
+      "question": "Que signifie le terme 'fichier' en informatique ?",
+      "options": ["Un dossier vide", "Un ensemble de données enregistrées", "Un virus", "Un raccourci de programme"],
+      "answer": "Un ensemble de données enregistrées",
+      "explanation": "Un fichier est une unité d'information stockée sur un support comme un disque dur ou une clé USB."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu'est-ce qu'un dossier dans un ordinateur ?",
+      "options": ["Un fichier texte", "Un élément qui contient d'autres fichiers", "Une image", "Une application"],
+      "answer": "Un élément qui contient d'autres fichiers",
+      "explanation": "Un dossier permet d'organiser les fichiers pour un rangement plus clair."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Que signifie le terme 'interface utilisateur' ?",
+      "options": ["Une carte graphique", "L'ensemble des éléments visibles permettant d'interagir avec un logiciel", "Un virus", "Une imprimante"],
+      "answer": "L'ensemble des éléments visibles permettant d'interagir avec un logiciel",
+      "explanation": "L'interface utilisateur inclut les menus, boutons et fenêtres d’un programme."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Que veut dire le mot 'donnée' ?",
+      "options": ["Un virus", "Une information brute", "Un logiciel", "Une machine"],
+      "answer": "Une information brute",
+      "explanation": "Une donnée est une information sous forme de texte, chiffre, image ou son."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Que signifie le terme 'navigateur' ?",
+      "options": ["Un moteur de recherche", "Un logiciel pour accéder à Internet", "Un antivirus", "Un système d’exploitation"],
+      "answer": "Un logiciel pour accéder à Internet",
+      "explanation": "Un navigateur (comme Chrome ou Edge) permet d’afficher des pages web."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu'est-ce qu'une clé USB ?",
+      "options": ["Un programme", "Un périphérique de stockage portable", "Une application", "Un antivirus"],
+      "answer": "Un périphérique de stockage portable",
+      "explanation": "La clé USB sert à transférer ou sauvegarder des fichiers facilement."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Que veut dire l’abréviation 'PDF' ?",
+      "options": ["Portable Document Format", "Public Data File", "Program Data Folder", "Print Data Form"],
+      "answer": "Portable Document Format",
+      "explanation": "Le format PDF conserve la mise en forme d’un document quel que soit l’appareil utilisé."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu'est-ce qu'une mise à jour logicielle ?",
+      "options": ["Une suppression de programme", "Une amélioration ou correction d’un logiciel", "Un formatage du disque", "Une copie de données"],
+      "answer": "Une amélioration ou correction d’un logiciel",
+      "explanation": "Les mises à jour apportent de nouvelles fonctions et corrigent les failles de sécurité."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu'est-ce qu'un raccourci clavier ?",
+      "options": ["Une icône sur le bureau", "Une combinaison de touches pour exécuter rapidement une commande", "Une extension de fichier", "Un mot de passe"],
+      "answer": "Une combinaison de touches pour exécuter rapidement une commande",
+      "explanation": "Exemple : Ctrl + C pour copier ou Ctrl + V pour coller."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Que fait la touche 'Suppr' du clavier ?",
+      "options": ["Sauvegarde un fichier", "Supprime l’élément sélectionné", "Ouvre un menu", "Ferme l’ordinateur"],
+      "answer": "Supprime l’élément sélectionné",
+      "explanation": "La touche Suppr (Delete) efface le texte ou un fichier sélectionné."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu'est-ce qu'une sauvegarde ?",
+      "options": ["Un effacement", "Une copie de données pour les protéger", "Un transfert de fichier", "Une mise à jour"],
+      "answer": "Une copie de données pour les protéger",
+      "explanation": "Faire une sauvegarde permet de restaurer les fichiers en cas de perte."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu'est-ce qu'un virus informatique ?",
+      "options": ["Un logiciel malveillant", "Un fichier texte", "Un moteur de recherche", "Une mise à jour"],
+      "answer": "Un logiciel malveillant",
+      "explanation": "Un virus est conçu pour perturber le fonctionnement d’un ordinateur."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Que veut dire 'redémarrer' un ordinateur ?",
+      "options": ["L'éteindre et le rallumer automatiquement", "Le mettre en veille", "Le formater", "Le mettre à jour"],
+      "answer": "L'éteindre et le rallumer automatiquement",
+      "explanation": "Le redémarrage permet de corriger certains problèmes ou appliquer des mises à jour."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu’est-ce qu’un mot de passe fort ?",
+      "options": ["Un mot simple et court", "Un mot secret long et complexe", "Un nom d’utilisateur", "Un code de couleur"],
+      "answer": "Un mot secret long et complexe",
+      "explanation": "Un mot de passe fort contient des lettres, chiffres et symboles."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Que signifie 'multimédia' ?",
+      "options": ["L'utilisation de plusieurs formes de contenu (texte, son, image, vidéo)", "Un type d’écran", "Un programme antivirus", "Une clé USB spéciale"],
+      "answer": "L'utilisation de plusieurs formes de contenu (texte, son, image, vidéo)",
+      "explanation": "Le multimédia combine plusieurs supports d’information dans un seul outil."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu'est-ce qu'une imprimante ?",
+      "options": ["Un périphérique de sortie", "Un fichier", "Un logiciel", "Une base de données"],
+      "answer": "Un périphérique de sortie",
+      "explanation": "Une imprimante sert à produire sur papier le contenu affiché à l’écran."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Que fait la combinaison Ctrl + Y ?",
+      "options": ["Refaire une action annulée", "Annuler la dernière action", "Copier du texte", "Ouvrir un nouveau fichier"],
+      "answer": "Refaire une action annulée",
+      "explanation": "Ctrl + Y permet de rétablir une action précédemment annulée avec Ctrl + Z."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu'est-ce qu'un réseau informatique ?",
+      "options": ["Un ensemble d’ordinateurs connectés entre eux", "Un virus", "Une clé USB", "Un disque dur"],
+      "answer": "Un ensemble d’ordinateurs connectés entre eux",
+      "explanation": "Les réseaux permettent le partage de fichiers, d’imprimantes et d’Internet."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Que signifie l’unité 'octet' ?",
+      "options": ["Une mesure de stockage de données", "Un type de programme", "Une image numérique", "Une fréquence sonore"],
+      "answer": "Une mesure de stockage de données",
+      "explanation": "Un octet correspond à 8 bits et sert à mesurer la taille des fichiers."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu'est-ce qu'un logiciel libre ?",
+      "options": ["Un programme gratuit et modifiable par tous", "Un jeu vidéo", "Un virus", "Une démo temporaire"],
+      "answer": "Un programme gratuit et modifiable par tous",
+      "explanation": "Les logiciels libres peuvent être utilisés, modifiés et redistribués librement."
+    },
+
+
+
+
+
+    {
+      "category": "Concepts Généraux",
+      "question": "Que signifie l’acronyme ANSI au Niger ?",
+      "options": [
+        "Agence Nationale pour la Société de l'Information",
+        "Association Nigérienne de la Sécurité Informatique",
+        "Agence Nationale du Service Internet",
+        "Autorité Nigérienne des Systèmes Informatiques"
+      ],
+      "answer": "Agence Nationale pour la Société de l'Information",
+      "explanation": "L’ANSI est l’organisme public nigérien chargé de développer et promouvoir la Société de l’Information au Niger."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Quel est le rôle principal de l’ANSI au Niger ?",
+      "options": [
+        "Coordonner les projets numériques et la transformation digitale du pays",
+        "Former des ingénieurs en informatique uniquement",
+        "Gérer les écoles primaires publiques",
+        "Vendre des ordinateurs aux citoyens"
+      ],
+      "answer": "Coordonner les projets numériques et la transformation digitale du pays",
+      "explanation": "L’ANSI pilote les politiques publiques liées au numérique, à la cybersécurité et à l’inclusion digitale au Niger."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "De quel ministère dépend l’Agence Nationale pour la Société de l’Information (ANSI) ?",
+      "options": [
+        "Du Ministère de la Communication, des Postes et de l'Économie Numérique",
+        "Du Ministère de la Santé Publique",
+        "Du Ministère de la Défense",
+        "Du Ministère de l’Agriculture"
+      ],
+      "answer": "Du Ministère de la Communication, des Postes et de l'Économie Numérique",
+      "explanation": "L’ANSI agit sous la tutelle du ministère chargé du numérique et des TIC au Niger."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Quelle est la mission de l’ANSI au Niger ?",
+      "options": [
+        "Promouvoir l’usage des technologies numériques dans l’administration et la société",
+        "Réguler les médias audiovisuels",
+        "Gérer la distribution d’électricité",
+        "Former uniquement les étudiants universitaires"
+      ],
+      "answer": "Promouvoir l’usage des technologies numériques dans l’administration et la société",
+      "explanation": "L’ANSI vise à moderniser l’État, développer les services numériques et favoriser l’accès aux TIC pour tous."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Pourquoi l’ANSI est-elle importante pour le Niger ?",
+      "options": [
+        "Elle soutient la transformation numérique, la gouvernance électronique et la cybersécurité",
+        "Elle remplace le ministère de l’éducation",
+        "Elle gère les réseaux téléphoniques privés",
+        "Elle supprime les cybercafés"
+      ],
+      "answer": "Elle soutient la transformation numérique, la gouvernance électronique et la cybersécurité",
+      "explanation": "Grâce à l’ANSI, le Niger renforce sa transition numérique et favorise un accès équitable aux technologies."
+    },
+
+
+
+
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu'est-ce que le projet Help-me ?",
+      "options": [
+        "Un programme d’assistance informatique pour apprendre la bureautique",
+        "Un réseau social",
+        "Un logiciel de montage vidéo",
+        "Un jeu éducatif"
+      ],
+      "answer": "Un programme d’assistance informatique pour apprendre la bureautique",
+      "explanation": "Help-me est un projet éducatif créé pour rendre l’apprentissage de l’informatique bureautique simple et accessible à tous."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Quelle est l’idée principale du projet Help-me ?",
+      "options": [
+        "Permettre à chaque personne d’apprendre les bases de l’informatique et des logiciels de bureautique",
+        "Créer des jeux vidéo éducatifs",
+        "Vendre du matériel informatique",
+        "Former uniquement des ingénieurs"
+      ],
+      "answer": "Permettre à chaque personne d’apprendre les bases de l’informatique et des logiciels de bureautique",
+      "explanation": "Le projet Help-me vise à démocratiser l’apprentissage du numérique, même sans accès constant à Internet."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu'est-ce que l’application Help-me ?",
+      "options": [
+        "Une application mobile d’apprentissage de l’informatique bureautique",
+        "Un jeu de stratégie",
+        "Une application de messagerie",
+        "Un antivirus"
+      ],
+      "answer": "Une application mobile d’apprentissage de l’informatique bureautique",
+      "explanation": "L’application Help-me contient des cours, des quiz et des manuels pour apprendre Word, Excel, PowerPoint et Internet."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Pourquoi le projet Help-me est-il important pour l’Afrique ?",
+      "options": [
+        "Il favorise l’accès à la formation numérique pour tous",
+        "Il distribue des ordinateurs",
+        "Il remplace les écoles",
+        "Il vend des téléphones portables"
+      ],
+      "answer": "Il favorise l’accès à la formation numérique pour tous",
+      "explanation": "Help-me lutte contre l’exclusion numérique en formant des jeunes, étudiants et professionnels aux outils informatiques."
+    },
+
+
+    {
+      "category": "Concepts Généraux",
+      "question": "Qu'est-ce que la sensibilisation au numérique ?",
+      "options": [
+        "Une campagne d’éducation visant à faire connaître les avantages et risques du numérique",
+        "Une mise à jour logicielle",
+        "Un réseau informatique",
+        "Une méthode de programmation"
+      ],
+      "answer": "Une campagne d’éducation visant à faire connaître les avantages et risques du numérique",
+      "explanation": "La sensibilisation au numérique aide les citoyens à adopter de bonnes pratiques en ligne et à se protéger sur Internet."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Pourquoi est-il important de se former au numérique aujourd’hui ?",
+      "options": [
+        "Parce que les outils informatiques sont indispensables dans tous les métiers",
+        "Parce que c’est obligatoire pour obtenir un diplôme",
+        "Parce que cela permet d’éviter les virus",
+        "Parce que cela remplace les enseignants"
+      ],
+      "answer": "Parce que les outils informatiques sont indispensables dans tous les métiers",
+      "explanation": "La formation numérique est devenue essentielle pour le travail, la communication et l’accès à l’information."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Quels sont les objectifs de Help-me dans le domaine éducatif ?",
+      "options": [
+        "Former, accompagner et rendre autonome chaque apprenant en informatique",
+        "Distribuer des manuels gratuits sans formation",
+        "Créer un moteur de recherche africain",
+        "Former uniquement les enseignants"
+      ],
+      "answer": "Former, accompagner et rendre autonome chaque apprenant en informatique",
+      "explanation": "Help-me combine manuels et application mobile pour offrir une formation continue et pratique."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Que veut dire 'inclusion numérique' ?",
+      "options": [
+        "Donner accès aux technologies à tous les citoyens, même dans les zones éloignées",
+        "Installer des réseaux Wi-Fi gratuits",
+        "Créer des jeux éducatifs",
+        "Remplacer les livres papier"
+      ],
+      "answer": "Donner accès aux technologies à tous les citoyens, même dans les zones éloignées",
+      "explanation": "L’inclusion numérique vise à garantir que personne ne soit exclu des avantages de la technologie."
+    },
+    {
+      "category": "Concepts Généraux",
+      "question": "Comment Help-me contribue à la sensibilisation numérique ?",
+      "options": [
+        "En organisant des formations et en proposant des contenus éducatifs accessibles à tous",
+        "En distribuant du matériel informatique",
+        "En créant des jeux vidéo éducatifs",
+        "En fournissant des logiciels payants"
+      ],
+      "answer": "En organisant des formations et en proposant des contenus éducatifs accessibles à tous",
+      "explanation": "Help-me forme les utilisateurs sur les outils bureautiques et les bonnes pratiques numériques, favorisant ainsi une meilleure culture digitale."
+    },
+
+
+    {
+      "category": "Sécurité Informatique",
+      "question": "Qu'est-ce qu'un spyware ?",
+      "options": ["Un logiciel qui espionne l'utilisateur", "Un antivirus", "Un pilote matériel", "Un navigateur web"],
+      "answer": "Un logiciel qui espionne l'utilisateur",
+      "explanation": "Un spyware collecte des informations sur l'utilisateur sans son consentement."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Que signifie le terme 'cheval de Troie' ?",
+      "options": ["Un virus détruisant le disque dur", "Un programme se faisant passer pour légitime", "Un logiciel de montage", "Une application mobile"],
+      "answer": "Un programme se faisant passer pour légitime",
+      "explanation": "Un cheval de Troie semble inoffensif mais exécute des actions malveillantes."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Quel type de logiciel bloque les connexions non autorisées ?",
+      "options": ["Antivirus", "Pare-feu", "Navigateur", "Driver"],
+      "answer": "Pare-feu",
+      "explanation": "Le pare-feu filtre le trafic réseau pour empêcher les connexions malveillantes."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Qu'est-ce qu'un keylogger ?",
+      "options": ["Un logiciel qui enregistre les frappes clavier", "Un antivirus", "Une extension de navigateur", "Un outil de sauvegarde"],
+      "answer": "Un logiciel qui enregistre les frappes clavier",
+      "explanation": "Les keyloggers volent souvent des mots de passe et des données sensibles."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Quel est le but d'un antivirus ?",
+      "options": ["Supprimer les fichiers", "Détecter et neutraliser les logiciels malveillants", "Accélérer Internet", "Changer la RAM"],
+      "answer": "Détecter et neutraliser les logiciels malveillants",
+      "explanation": "Un antivirus analyse les fichiers et surveille le système en temps réel."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Qu'est-ce que l'hameçonnage (phishing) ?",
+      "options": ["Une attaque physique", "Une tentative de vol d'informations", "Un logiciel de sauvegarde", "Un format de fichier"],
+      "answer": "Une tentative de vol d'informations",
+      "explanation": "Le phishing cherche à obtenir des données en imitant des services légitimes."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Que signifie 'https' dans une adresse web ?",
+      "options": ["Connexion sécurisée", "Fichier audio", "Protocole lent", "Code d'erreur"],
+      "answer": "Connexion sécurisée",
+      "explanation": "HTTPS chiffre les données entre le navigateur et le serveur."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Quel est le rôle d'une mise à jour de sécurité ?",
+      "options": ["Ajouter une nouvelle police", "Corriger une faille", "Changer l'apparence de Windows", "Ajouter un fond d’écran"],
+      "answer": "Corriger une faille",
+      "explanation": "Les mises à jour réparent les vulnérabilités exploitées par les pirates."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Quel est l'objectif d'un ransomware ?",
+      "options": ["Afficher des publicités", "Chiffrer et bloquer les fichiers", "Installer un jeu", "Nettoyer le système"],
+      "answer": "Chiffrer et bloquer les fichiers",
+      "explanation": "Il demande une rançon pour restaurer l'accès aux données."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Qu’est-ce qu’une attaque brute force ?",
+      "options": ["Attaque par imitation", "Essais multiples de mots de passe", "Infection par clé USB", "Manipulation réseau"],
+      "answer": "Essais multiples de mots de passe",
+      "explanation": "L’attaquant teste de nombreuses combinaisons pour deviner un mot de passe."
+    },
+
+    {
+      "category": "Sécurité Informatique",
+      "question": "Que signifie 2FA ?",
+      "options": ["Deux fichiers antivirus", "Authentification à deux facteurs", "Accès filtré avancé", "Analyse automatique"],
+      "answer": "Authentification à deux facteurs",
+      "explanation": "La 2FA ajoute une étape après le mot de passe, comme un code SMS."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Quel est l'objectif d'un VPN ?",
+      "options": ["Accélérer Internet", "Masquer l'adresse IP et chiffrer la connexion", "Partager des fichiers", "Installer des jeux"],
+      "answer": "Masquer l'adresse IP et chiffrer la connexion",
+      "explanation": "Un VPN renforce la confidentialité et contourne certaines restrictions."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Qu'est-ce qu'un botnet ?",
+      "options": ["Un réseau de robots physiques", "Un réseau d'ordinateurs infectés contrôlés à distance", "Un logiciel antivirus", "Une base de données"],
+      "answer": "Un réseau d'ordinateurs infectés contrôlés à distance",
+      "explanation": "Les cybercriminels l’utilisent pour lancer des attaques massives."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Qu'est-ce qu'une faille zero-day ?",
+      "options": ["Un virus détecté", "Une vulnérabilité inconnue du fabricant", "Un bug Windows", "Un fichier temporaire"],
+      "answer": "Une vulnérabilité inconnue du fabricant",
+      "explanation": "Les pirates exploitent ces failles avant que le correctif n'existe."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Que signifie le terme 'cryptage' ?",
+      "options": ["Compression", "Chiffrement des données", "Sauvegarde", "Formatage"],
+      "answer": "Chiffrement des données",
+      "explanation": "Le cryptage rend les données illisibles sans clé de déchiffrement."
+    },
+
+    {
+      "category": "Sécurité Informatique",
+      "question": "Quel outil analyse le trafic réseau ?",
+      "options": ["Wireshark", "Paint", "Excel", "Bloc-notes"],
+      "answer": "Wireshark",
+      "explanation": "Wireshark capture et analyse les paquets réseau."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Qu'est-ce qu'un adware ?",
+      "options": ["Un logiciel affichant des publicités", "Un antivirus", "Un script", "Un câble réseau"],
+      "answer": "Un logiciel affichant des publicités",
+      "explanation": "Les adwares affichent des pubs parfois intrusives."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Que signifie SSD Secure Boot ?",
+      "options": ["Un mode jeu", "Un démarrage sécurisé empêchant les logiciels non signés", "Une sauvegarde automatique", "Un nettoyage de disque"],
+      "answer": "Un démarrage sécurisé empêchant les logiciels non signés",
+      "explanation": "Secure Boot protège le système avant même qu’il ne démarre."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Qu'est-ce qu'un faux site (spoofing) ?",
+      "options": ["Un site lent", "Un site imitant un site officiel", "Un site en panne", "Un site sans images"],
+      "answer": "Un site imitant un site officiel",
+      "explanation": "Le spoofing trompe les utilisateurs pour voler des données."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Que signifie DDoS ?",
+      "options": ["Distribution Data System", "Attaque par déni de service distribué", "Double Data Service", "Disk Driver Optimization"],
+      "answer": "Attaque par déni de service distribué",
+      "explanation": "Cette attaque surcharge un serveur avec un trafic massif."
+    },
+
+    {
+      "category": "Sécurité Informatique",
+      "question": "Qu'est-ce qu'un rootkit ?",
+      "options": ["Un outil de sauvegarde", "Un programme cachant la présence d'un malware", "Un fichier temporaire", "Un antivirus"],
+      "answer": "Un programme cachant la présence d'un malware",
+      "explanation": "Les rootkits masquent les traces d'infections."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Quel est le rôle d'un mot de passe complexe ?",
+      "options": ["Débloquer l'écran", "Empêcher les accès non autorisés", "Accélérer Windows", "Chiffrer les fichiers"],
+      "answer": "Empêcher les accès non autorisés",
+      "explanation": "Il réduit le risque de piratage."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Un email suspect contient souvent...",
+      "options": ["Une adresse inconnue", "Des fautes", "Des liens étranges", "Toutes les réponses"],
+      "answer": "Toutes les réponses",
+      "explanation": "Les mails frauduleux présentent souvent ces signes."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Qu'est-ce que la cybersécurité ?",
+      "options": ["Une mise à jour", "La protection des systèmes informatiques", "Une application Android", "Un stockage externe"],
+      "answer": "La protection des systèmes informatiques",
+      "explanation": "La cybersécurité sécurise réseaux, données et appareils."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Quel protocole sécurise les connexions Wi-Fi ?",
+      "options": ["WEP", "WPA2", "HTTP", "FTP"],
+      "answer": "WPA2",
+      "explanation": "WPA2 est plus sécurisé que WEP."
+    },
+
+    {
+      "category": "Sécurité Informatique",
+      "question": "Quel est le risque des réseaux Wi-Fi publics ?",
+      "options": ["Infection mobile", "Interception des données", "Téléchargement automatique", "Perte de fichiers"],
+      "answer": "Interception des données",
+      "explanation": "Les Wi-Fi publics ne sont pas chiffrés."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Un logiciel open source est-il toujours sûr ?",
+      "options": ["Oui", "Non", "Jamais", "Uniquement sur Mac"],
+      "answer": "Non",
+      "explanation": "Open source ≠ sécurité garantie ; le code peut être modifié par des tiers."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Que signifie 'attaque par ingénierie sociale' ?",
+      "options": ["Attaque physique", "Manipulation psychologique", "Erreur hardware", "Problème réseau"],
+      "answer": "Manipulation psychologique",
+      "explanation": "Le pirate manipule la victime pour obtenir des accès."
+    },
+    {
+      "category": "Sécurité Informatique",
+      "question": "Un certificat expiré signifie...",
+      "options": ["Site lent", "Site potentiellement non sécurisé", "Site correct", "Pas d'images"],
+      "answer": "Site potentiellement non sécurisé",
+      "explanation": "Les certificats expirés peuvent être falsifiés."
+    },
+
+
+    {
+      "category": "Cloud",
+      "question": "Qu’est-ce que le cloud computing ?",
+      "options": ["Un logiciel", "L'utilisation de ressources via Internet", "Un type de disque dur", "Un antivirus"],
+      "answer": "L'utilisation de ressources via Internet",
+      "explanation": "Le cloud permet d'utiliser stockage, services ou logiciels en ligne."
+    },
+    {
+      "category": "Cloud",
+      "question": "Quel service de Google permet de stocker des fichiers en ligne ?",
+      "options": ["Gmail", "Google Drive", "Google Maps", "Google Play"],
+      "answer": "Google Drive",
+      "explanation": "Drive est la plateforme cloud de Google."
+    },
+    {
+      "category": "Cloud",
+      "question": "Que signifie SaaS ?",
+      "options": ["Software as a Service", "Storage at a Server", "System as a Solution", "Secure and Safe"],
+      "answer": "Software as a Service",
+      "explanation": "SaaS désigne les logiciels accessibles en ligne sans installation."
+    },
+    {
+      "category": "Cloud",
+      "question": "Que permet OneDrive ?",
+      "options": ["Créer des jeux", "Stocker et synchroniser des fichiers", "Améliorer la RAM", "Installer Windows"],
+      "answer": "Stocker et synchroniser des fichiers",
+      "explanation": "OneDrive est le cloud intégré à Windows."
+    },
+    {
+      "category": "Cloud",
+      "question": "Qu’est-ce que la synchronisation cloud ?",
+      "options": ["Compresser les fichiers", "Mettre à jour les fichiers entre plusieurs appareils", "Effacer les fichiers", "Crypter les emails"],
+      "answer": "Mettre à jour les fichiers entre plusieurs appareils",
+      "explanation": "La synchronisation maintient les fichiers identiques partout."
+    },
+
+    {
+      "category": "Cloud",
+      "question": "AWS signifie...",
+      "options": ["Amazon Web Services", "Advanced Windows System", "Automatic Website Sync", "Azure Web Storage"],
+      "answer": "Amazon Web Services",
+      "explanation": "AWS est le leader mondial du cloud."
+    },
+    {
+      "category": "Cloud",
+      "question": "Quel service Microsoft permet d’héberger des applications ?",
+      "options": ["Azure", "Chrome", "DirectX", "Visual Basic"],
+      "answer": "Azure",
+      "explanation": "Azure propose ressources, serveurs et IA."
+    },
+    {
+      "category": "Cloud",
+      "question": "Qu’est-ce qu’un serveur cloud ?",
+      "options": ["Un clavier virtuel", "Un serveur accessible via Internet", "Un fichier compressé", "Un moteur de recherche"],
+      "answer": "Un serveur accessible via Internet",
+      "explanation": "Le serveur cloud remplace un serveur physique sur site."
+    },
+    {
+      "category": "Cloud",
+      "question": "Que signifie IaaS ?",
+      "options": ["Internet as a Service", "Infrastructure as a Service", "Internal Advanced System", "Integration at Server"],
+      "answer": "Infrastructure as a Service",
+      "explanation": "IaaS fournit serveurs, réseaux et machines virtuelles."
+    },
+    {
+      "category": "Cloud",
+      "question": "Dropbox sert à...",
+      "options": ["Créer des diaporamas", "Stocker et partager des fichiers", "Programmer en Python", "Gérer des antivirus"],
+      "answer": "Stocker et partager des fichiers",
+      "explanation": "Dropbox est un des premiers services cloud grand public."
+    },
+
+    {
+      "category": "Cloud",
+      "question": "Qu'est-ce qu'un backup cloud ?",
+      "options": ["Un fichier ZIP", "Une sauvegarde sur un serveur distant", "Une mise à jour Windows", "Un cache de navigateur"],
+      "answer": "Une sauvegarde sur un serveur distant",
+      "explanation": "Le cloud sert à sauvegarder les données en cas de panne locale."
+    },
+    {
+      "category": "Cloud",
+      "question": "Quel service est utilisé pour héberger des sites web dans le cloud ?",
+      "options": ["YouTube", "AWS S3", "Excel", "WordPad"],
+      "answer": "AWS S3",
+      "explanation": "S3 permet l’hébergement de sites statiques."
+    },
+    {
+      "category": "Cloud",
+      "question": "Qu’est-ce qu’un disque cloud ?",
+      "options": ["Un CD", "Un espace de stockage accessible en ligne", "Un SSD interne", "Une clé USB"],
+      "answer": "Un espace de stockage accessible en ligne",
+      "explanation": "Les disques cloud permettent d'accéder aux données partout."
+    },
+    {
+      "category": "Cloud",
+      "question": "Le cloud permet de...",
+      "options": ["Créer du bruit", "Stocker des fichiers en ligne", "Formater un disque", "Réparer Windows"],
+      "answer": "Stocker des fichiers en ligne",
+      "explanation": "L'un des usages principaux est le stockage."
+    },
+    {
+      "category": "Cloud",
+      "question": "Quel service Apple permet de stocker des données dans le cloud ?",
+      "options": ["iTunes", "iCloud", "Final Cut", "Safari"],
+      "answer": "iCloud",
+      "explanation": "iCloud synchronise photos, messages et fichiers Apple."
+    },
+
+    {
+      "category": "Cloud",
+      "question": "Le cloud facilite...",
+      "options": ["La perte de données", "Le partage de fichiers", "La suppression automatique", "Le bruit du PC"],
+      "answer": "Le partage de fichiers",
+      "explanation": "Le cloud permet d’envoyer des liens plutôt que des pièces jointes."
+    },
+    {
+      "category": "Cloud",
+      "question": "Qu’est-ce que GCP ?",
+      "options": ["Google Cloud Platform", "Google Candy Program", "General Cloud Protection", "Google Central Point"],
+      "answer": "Google Cloud Platform",
+      "explanation": "GCP est la plateforme cloud de Google dédiée aux entreprises."
+    },
+    {
+      "category": "Cloud",
+      "question": "Pourquoi le cloud est-il fiable ?",
+      "options": ["À cause des sauvegardes automatiques", "Parce qu'il est gratuit", "Car il supprime les virus", "Car il ferme les ports"],
+      "answer": "À cause des sauvegardes automatiques",
+      "explanation": "Les données sont répliquées dans plusieurs centres."
+    },
+    {
+      "category": "Cloud",
+      "question": "Qu’est-ce que PaaS ?",
+      "options": ["Platform as a Service", "Program at Server", "Personal Access Storage", "Platform at System"],
+      "answer": "Platform as a Service",
+      "explanation": "PaaS fournit outils et plateformes pour développer des applications."
+    },
+    {
+      "category": "Cloud",
+      "question": "Qu'est-ce qu'un cloud privé ?",
+      "options": ["Un cloud pour une seule organisation", "Un cloud gratuit", "Un cloud pour téléphone", "Un cloud pour vidéos uniquement"],
+      "answer": "Un cloud pour une seule organisation",
+      "explanation": "Il garantit plus de sécurité et contrôle."
+    },
+
+    {
+      "category": "Cloud",
+      "question": "Qu’est-ce qu’un cloud hybride ?",
+      "options": ["Un cloud avec musique", "Une combinaison de cloud privé et public", "Un cloud pour jeux", "Un cloud sans réseau"],
+      "answer": "Une combinaison de cloud privé et public",
+      "explanation": "Les entreprises utilisent souvent un mix des deux."
+    },
+    {
+      "category": "Cloud",
+      "question": "Quel avantage principal offre le cloud ?",
+      "options": ["Plus de bruit", "Accessibilité depuis partout", "Installation obligatoire", "Dépendance au matériel"],
+      "answer": "Accessibilité depuis partout",
+      "explanation": "Il suffit d'une connexion Internet."
+    },
+    {
+      "category": "Cloud",
+      "question": "Qu'est-ce qu'une VM (machine virtuelle) dans le cloud ?",
+      "options": ["Une vidéo", "Un ordinateur simulé", "Un navigateur", "Un smartphone"],
+      "answer": "Un ordinateur simulé",
+      "explanation": "Les VM remplacent des serveurs physiques."
+    },
+    {
+      "category": "Cloud",
+      "question": "Comment accède-t-on au cloud ?",
+      "options": ["Via Internet", "Via DVD", "Via USB", "Via Bluetooth"],
+      "answer": "Via Internet",
+      "explanation": "Une connexion suffit pour accéder aux ressources cloud."
+    },
+    {
+      "category": "Cloud",
+      "question": "Quel est le principal risque du cloud ?",
+      "options": ["Perte de batterie", "Piraterie et accès non autorisés", "Surchauffe", "Clavier bloqué"],
+      "answer": "Piraterie et accès non autorisés",
+      "explanation": "La sécurité dépend du chiffrement et des mots de passe."
+    },
+
+    {
+      "category": "Cloud",
+      "question": "Qu’est-ce que la réplication cloud ?",
+      "options": ["Copier les données sur plusieurs serveurs", "Supprimer les copies", "Ajouter un thème", "Changer le clavier"],
+      "answer": "Copier les données sur plusieurs serveurs",
+      "explanation": "Cela garantit la disponibilité des données même en cas de panne."
+    },
+    {
+      "category": "Cloud",
+      "question": "La plupart des clouds utilisent...",
+      "options": ["Des disques HDD", "Des serveurs SSD haute performance", "Des clés USB", "Des CD"],
+      "answer": "Des serveurs SSD haute performance",
+      "explanation": "Les SSD améliorent la rapidité et la fiabilité."
+    },
+    {
+      "category": "Cloud",
+      "question": "Qu’est-ce qu’un centre de données ?",
+      "options": ["Un cybercafé", "Un bâtiment remplis de serveurs", "Un disque dur externe", "Un logiciel Windows"],
+      "answer": "Un bâtiment remplis de serveurs",
+      "explanation": "Les data centers hébergent les infrastructures cloud."
+    },
+    {
+      "category": "Cloud",
+      "question": "Qu’est-ce qu’un partage cloud ?",
+      "options": ["Télécharger un jeu", "Envoyer un lien pour accéder à un fichier", "Créer un PDF", "Changer un mot de passe"],
+      "answer": "Envoyer un lien pour accéder à un fichier",
+      "explanation": "Le cloud remplace les pièces jointes lourdes."
+    },
+    {
+      "category": "Cloud",
+      "question": "Qu'est-ce qu'un bucket cloud ?",
+      "options": ["Un dossier de stockage", "Un fichier système", "Une base de données", "Un cloud privé"],
+      "answer": "Un dossier de stockage",
+      "explanation": "Un bucket contient des objets dans des services comme AWS S3."
+    },
+
+    {
+      "category": "Cloud",
+      "question": "Quel cloud propose Google pour stocker les bases de données ?",
+      "options": ["Sheets", "Cloud SQL", "Analytics", "Meet"],
+      "answer": "Cloud SQL",
+      "explanation": "Cloud SQL gère les bases MySQL, PostgreSQL et SQL Server."
+    },
+    {
+      "category": "Cloud",
+      "question": "Quels fichiers peuvent être stockés sur le cloud ?",
+      "options": ["Seulement images", "Tout type de fichiers", "Seulement Excel", "Seulement vidéos"],
+      "answer": "Tout type de fichiers",
+      "explanation": "Le cloud accepte presque tous les formats."
+    },
+    {
+      "category": "Cloud",
+      "question": "Le cloud réduit...",
+      "options": ["La nécessité d’un disque local", "La rapidité du PC", "La sécurité", "La batterie"],
+      "answer": "La nécessité d’un disque local",
+      "explanation": "Le stockage en ligne complète ou remplace le stockage physique."
+    },
+    {
+      "category": "Cloud",
+      "question": "Quel protocole sécurise souvent les échanges cloud ?",
+      "options": ["FTP", "HTTPS", "IRC", "SMTP"],
+      "answer": "HTTPS",
+      "explanation": "HTTPS chiffre les communications."
+    },
+    {
+      "category": "Cloud",
+      "question": "Quel est un exemple de stockage cloud ?",
+      "options": ["Dropbox", "Bloc-notes", "Paint", "WordPad"],
+      "answer": "Dropbox",
+      "explanation": "Dropbox est un fournisseur de stockage cloud."
+    },
+
+    {
+      "category": "Cloud",
+      "question": "Qu'est-ce que la facturation cloud ?",
+      "options": ["Le paiement selon l'utilisation", "Un abonnement fixe", "Une mise à jour", "Un antivirus"],
+      "answer": "Le paiement selon l'utilisation",
+      "explanation": "Le cloud est généralement facturé au volume consommé."
+    },
+    {
+      "category": "Cloud",
+      "question": "Pourquoi le cloud est-il scalable ?",
+      "options": ["Car il change de couleur", "Car on peut augmenter les ressources à volonté", "Car il ralentit", "Car il crée des virus"],
+      "answer": "Car on peut augmenter les ressources à volonté",
+      "explanation": "Le cloud s’adapte automatiquement aux besoins."
+    },
+
+    {
+      "category": "IA",
+      "question": "Que signifie IA ?",
+      "options": ["Interface Audio", "Intelligence Artificielle", "Internet Avancé", "Instruction Automatique"],
+      "answer": "Intelligence Artificielle",
+      "explanation": "L’IA désigne des systèmes capables d’accomplir des tâches normalement réalisées par l’humain."
+    },
+    {
+      "category": "IA",
+      "question": "Quel domaine permet aux machines d'apprendre à partir des données ?",
+      "options": ["Deep Web", "Machine Learning", "Cloud Storage", "DevOps"],
+      "answer": "Machine Learning",
+      "explanation": "Le machine learning est une branche de l’IA basée sur les données."
+    },
+    {
+      "category": "IA",
+      "question": "Qu’est-ce qu’un algorithme d’IA ?",
+      "options": ["Une vidéo", "Une suite d’instructions logiques", "Un composant matériel", "Une imprimante"],
+      "answer": "Une suite d’instructions logiques",
+      "explanation": "Les algorithmes d’IA permettent de prendre des décisions automatisées."
+    },
+    {
+      "category": "IA",
+      "question": "Que signifie NLP ?",
+      "options": ["Network Language Protocol", "Natural Language Processing", "Numeric Learning Program", "Neural Logic Processor"],
+      "answer": "Natural Language Processing",
+      "explanation": "Le NLP permet aux ordinateurs de comprendre le langage humain."
+    },
+    {
+      "category": "IA",
+      "question": "Quel est l’objectif principal de l’IA ?",
+      "options": ["Imprimer des documents", "Imiter l’intelligence humaine", "Effacer des fichiers", "Créer du matériel informatique"],
+      "answer": "Imiter l’intelligence humaine",
+      "explanation": "L’IA vise à automatiser des tâches complexes."
+    },
+
+    {
+      "category": "IA",
+      "question": "ChatGPT est basé sur...",
+      "options": ["Des feuilles Excel", "Un modèle de langage", "Un antivirus", "Une machine virtuelle"],
+      "answer": "Un modèle de langage",
+      "explanation": "Les LLM analysent et génèrent du texte."
+    },
+    {
+      "category": "IA",
+      "question": "Que signifie Deep Learning ?",
+      "options": ["Apprentissage profond", "Stockage profond", "Connexion distante", "Compression avancée"],
+      "answer": "Apprentissage profond",
+      "explanation": "Le deep learning utilise des réseaux neuronaux très profonds."
+    },
+    {
+      "category": "IA",
+      "question": "Qu’est-ce qu’un dataset dans l’IA ?",
+      "options": ["Une clé USB", "Un ensemble de données", "Un virus", "Un système d’exploitation"],
+      "answer": "Un ensemble de données",
+      "explanation": "Les datasets servent à entraîner les modèles."
+    },
+    {
+      "category": "IA",
+      "question": "Qu’est-ce qu’un réseau neuronal ?",
+      "options": ["Une connexion Wi-Fi", "Un modèle inspiré du cerveau humain", "Une base de données", "Une carte mère"],
+      "answer": "Un modèle inspiré du cerveau humain",
+      "explanation": "Ces réseaux apprennent par ajustement de poids."
+    },
+    {
+      "category": "IA",
+      "question": "Quels objets utilisent l’IA au quotidien ?",
+      "options": ["Montres connectées", "Téléphones intelligents", "Assistants vocaux", "Tous ces objets"],
+      "answer": "Tous ces objets",
+      "explanation": "L’IA est partout dans les appareils modernes."
+    },
+
+    {
+      "category": "IA",
+      "question": "Quel terme désigne une IA capable de créer du texte, image ou audio ?",
+      "options": ["IA descriptive", "IA générative", "IA réseau", "IA statique"],
+      "answer": "IA générative",
+      "explanation": "L’IA générative crée de nouveaux contenus."
+    },
+    {
+      "category": "IA",
+      "question": "Quelle IA est utilisée pour la traduction automatique ?",
+      "options": ["NLP", "VPN", "HTML", "JPEG"],
+      "answer": "NLP",
+      "explanation": "Le traitement du langage permet la traduction."
+    },
+    {
+      "category": "IA",
+      "question": "Une IA peut-elle reconnaître une image ?",
+      "options": ["Oui", "Non", "Seulement avec un disque dur", "Seulement sous Windows"],
+      "answer": "Oui",
+      "explanation": "La vision par ordinateur permet la reconnaissance d’images."
+    },
+    {
+      "category": "IA",
+      "question": "L’IA dans les voitures autonomes sert à...",
+      "options": ["Jouer de la musique", "Analyser l’environnement", "Changer les pneus", "Charger la batterie"],
+      "answer": "Analyser l’environnement",
+      "explanation": "Les capteurs et IA permettent la conduite autonome."
+    },
+    {
+      "category": "IA",
+      "question": "Quel langage est souvent utilisé en IA ?",
+      "options": ["Python", "HTML", "CSS", "Excel"],
+      "answer": "Python",
+      "explanation": "Python possède de nombreuses bibliothèques IA (TensorFlow, PyTorch)."
+    },
+
+    {
+      "category": "IA",
+      "question": "Que fait une IA d’apprentissage supervisé ?",
+      "options": ["Elle apprend sans données", "Elle apprend avec des données étiquetées", "Elle supprime des fichiers", "Elle programme seule"],
+      "answer": "Elle apprend avec des données étiquetées",
+      "explanation": "Supervisé = exemples + réponses correctes."
+    },
+    {
+      "category": "IA",
+      "question": "Que fait une IA d’apprentissage non supervisé ?",
+      "options": ["Elle apprend sans étiquettes", "Elle imprime un document", "Elle crée un cloud", "Elle supprime des données"],
+      "answer": "Elle apprend sans étiquettes",
+      "explanation": "Elle découvre des structures dans les données."
+    },
+    {
+      "category": "IA",
+      "question": "Quel est le principal risque lié à l’IA ?",
+      "options": ["Erreur d’analyse", "Biais", "Mauvaise utilisation", "Tous les précédents"],
+      "answer": "Tous les précédents",
+      "explanation": "L’IA peut amplifier les erreurs humaines."
+    },
+    {
+      "category": "IA",
+      "question": "Un chatbot IA sert à...",
+      "options": ["Cuisiner", "Dialoguer automatiquement avec les utilisateurs", "Créer des virus", "Formater un PC"],
+      "answer": "Dialoguer automatiquement avec les utilisateurs",
+      "explanation": "Les chatbots automatisent le support."
+    },
+    {
+      "category": "IA",
+      "question": "Qu’est-ce qu’un modèle pré-entraîné ?",
+      "options": ["Un antivirus", "Un modèle déjà entraîné sur de grandes données", "Un fichier ZIP", "Un serveur"],
+      "answer": "Un modèle déjà entraîné sur de grandes données",
+      "explanation": "Les modèles pré-entraînés accélèrent les projets IA."
+    },
+
+    {
+      "category": "IA",
+      "question": "Qu'est-ce que la vision artificielle (Computer Vision) ?",
+      "options": ["Un outil de cloud", "Une IA analysant des images et vidéos", "Un type de souris", "Un écran spécial"],
+      "answer": "Une IA analysant des images et vidéos",
+      "explanation": "Elle permet reconnaissance faciale, détection d’objets, etc."
+    },
+    {
+      "category": "IA",
+      "question": "Quel outil est utilisé pour entraîner des IA ?",
+      "options": ["Excel", "TensorFlow", "Paint", "Word"],
+      "answer": "TensorFlow",
+      "explanation": "TensorFlow est un framework open-source créé par Google."
+    },
+    {
+      "category": "IA",
+      "question": "La génération d’images par IA utilise...",
+      "options": ["Des disques USB", "Des modèles de diffusion", "Un antivirus", "WordPress"],
+      "answer": "Des modèles de diffusion",
+      "explanation": "Les modèles Diffusion créent images réalistes."
+    },
+    {
+      "category": "IA",
+      "question": "Qu’est-ce que l’entraînement d’un modèle ?",
+      "options": ["Installer Windows", "Apprendre à un modèle à partir de données", "Redémarrer un PC", "Créer une police"],
+      "answer": "Apprendre à un modèle à partir de données",
+      "explanation": "L'entraînement ajuste les paramètres du modèle."
+    },
+    {
+      "category": "IA",
+      "question": "L’IA peut-elle reconnaître une voix ?",
+      "options": ["Oui", "Non", "Seulement sur Mac", "Seulement en Wi-Fi"],
+      "answer": "Oui",
+      "explanation": "L’IA analyse fréquences et patterns vocaux."
+    },
+
+    {
+      "category": "IA",
+      "question": "Qu'est-ce que l’IA faible (narrow AI) ?",
+      "options": ["Une IA générale", "Une IA spécialisée dans une tâche", "Une IA militaire", "Une IA qui contrôle l'électricité"],
+      "answer": "Une IA spécialisée dans une tâche",
+      "explanation": "Elle est conçue pour une fonction unique."
+    },
+    {
+      "category": "IA",
+      "question": "Quel est l’inconvénient de l’IA ?",
+      "options": ["Elle ne dort jamais", "Elle peut reproduire des biais humains", "Elle ne peut pas parler", "Elle n’utilise pas Internet"],
+      "answer": "Elle peut reproduire des biais humains",
+      "explanation": "Les données imparfaites entraînent des IA imparfaites."
+    },
+    {
+      "category": "IA",
+      "question": "Qu’est-ce qu’un prompt ?",
+      "options": ["Un virus", "Une instruction donnée à une IA", "Une clé USB", "Une base de données"],
+      "answer": "Une instruction donnée à une IA",
+      "explanation": "Les prompts guident les modèles génératifs."
+    },
+    {
+      "category": "IA",
+      "question": "Quel domaine utilise l’IA pour détecter des maladies ?",
+      "options": ["Médecine", "Agriculture", "Musique", "Cuisine"],
+      "answer": "Médecine",
+      "explanation": "La radiologie et diagnostic automatisé utilisent l’IA."
+    },
+    {
+      "category": "IA",
+      "question": "L’IA peut analyser...",
+      "options": ["Texte", "Images", "Audio", "Toutes ces données"],
+      "answer": "Toutes ces données",
+      "explanation": "L’IA est multimodale."
+    },
+
+    {
+      "category": "IA",
+      "question": "Quel est l’outil d’IA utilisé pour écrire automatiquement ?",
+      "options": ["ChatGPT", "Excel", "Chrome", "WinRAR"],
+      "answer": "ChatGPT",
+      "explanation": "Les LLM génèrent texte et réponses."
+    },
+    {
+      "category": "IA",
+      "question": "Les IA génératives créent...",
+      "options": ["Des virus", "Des contenus nouveaux", "Des cartes mère", "Des ports USB"],
+      "answer": "Des contenus nouveaux",
+      "explanation": "Elles produisent texte, images, audio, etc."
+    },
+    {
+      "category": "IA",
+      "question": "Qu’est-ce que le surapprentissage (overfitting) ?",
+      "options": ["Une erreur Windows", "Un modèle trop adapté aux données d’entraînement", "Une panne d’ordinateur", "Un fichier cassé"],
+      "answer": "Un modèle trop adapté aux données d’entraînement",
+      "explanation": "Le modèle n’arrive plus à généraliser."
+    },
+    {
+      "category": "IA",
+      "question": "Quel type d’IA peut apprendre par essais et erreurs ?",
+      "options": ["IA supervisée", "IA non supervisée", "Apprentissage par renforcement", "IA statique"],
+      "answer": "Apprentissage par renforcement",
+      "explanation": "La machine apprend par récompenses et punitions."
+    },
+    {
+      "category": "IA",
+      "question": "Les IA qui reconnaissent des objets utilisent...",
+      "options": ["La vision par ordinateur", "Le cloud", "Excel", "Réseaux sociaux"],
+      "answer": "La vision par ordinateur",
+      "explanation": "L’IA analyse pixels et formes."
+    },
+
+    {
+      "category": "IA",
+      "question": "Qu’est-ce que la modélisation prédictive ?",
+      "options": ["Créer des vidéos TikTok", "Prédire résultats à partir de données historiques", "Créer une clé USB", "Formater un disque"],
+      "answer": "Prédire résultats à partir de données historiques",
+      "explanation": "L’IA analyse tendances et probabilités."
+    },
+    {
+      "category": "IA",
+      "question": "Que signifie AGI (Artificial General Intelligence) ?",
+      "options": ["IA très spécialisée", "IA avec capacités humaines générales", "IA faible", "IA militaire"],
+      "answer": "IA avec capacités humaines générales",
+      "explanation": "L’AGI serait capable de tout faire comme un humain."
+    },
+    {
+      "category": "IA",
+      "question": "Quel outil IA est utilisé pour analyser les sentiments dans un texte ?",
+      "options": ["NLP", "BIOS", "FTP", "RAM"],
+      "answer": "NLP",
+      "explanation": "Le NLP permet la classification des émotions."
+    },
+    {
+      "category": "IA",
+      "question": "Quel risque existe avec les deepfakes ?",
+      "options": ["Images truquées réalistes", "Suppression automatique des fichiers", "Corruption du disque", "Perte de RAM"],
+      "answer": "Images truquées réalistes",
+      "explanation": "Les deepfakes utilisent l’IA pour manipuler vidéos et voix."
+    },
+    {
+      "category": "IA",
+      "question": "Quelle IA est utilisée pour générer du texte réaliste ?",
+      "options": ["LLM", "VPN", "JPEG", "SQL"],
+      "answer": "LLM",
+      "explanation": "Les LLM sont des modèles de langage entraînés sur de vastes corpus."
+    },
+
+    {
+      "category": "IA",
+      "question": "L’IA peut aider les entreprises à...",
+      "options": ["Accélérer les analyses", "Automatiser des tâches", "Réduire les coûts", "Toutes les réponses"],
+      "answer": "Toutes les réponses",
+      "explanation": "L’IA augmente performance et efficacité."
+    },
+    {
+      "category": "IA",
+      "question": "Qu’est-ce qu’un modèle multimodal ?",
+      "options": ["Un modèle pour musique", "Un modèle qui comprend texte, image et audio", "Un modèle cloud", "Une imprimante intelligente"],
+      "answer": "Un modèle qui comprend texte, image et audio",
+      "explanation": "Les modèles multimodaux analysent plusieurs types de données simultanément."
+    }
+  ]
+
+
+
+

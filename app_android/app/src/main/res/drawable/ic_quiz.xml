@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Badge circulaire bleu -->
+    <path
+        android:fillColor="#35B83B"
+        android:pathData="M12,2
+            a10,10 0 1,0 0,20
+            a10,10 0 1,0 0,-20" />
+
+    <!-- Tige antenne -->
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M11.6,6 L12.4,6 12.4,8 11.6,8 Z" />
+
+    <!-- Antenne (petit cercle) -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M12,5
+            m-1,0
+            a1,1 0 1,0 2,0
+            a1,1 0 1,0 -2,0" />
+
+    <!-- Tête du robot (rectangle arrondi via arcs) -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M7,8
+            h10
+            a2,2 0 0 1 2,2
+            v4
+            a2,2 0 0 1 -2,2
+            h-10
+            a2,2 0 0 1 -2,-2
+            v-4
+            a2,2 0 0 1 2,-2
+            z" />
+
+    <!-- Bandeau haut de la tête (contraste) -->
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M7,8 h10 v2 h-10 z" />
+
+    <!-- Yeux -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M9.5,12
+            m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0" />
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M14.5,12
+            m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0" />
+
+    <!-- Bouche (petit rectangle arrondi simplifié) -->
+    <path
+        android:fillColor="#90CAF9"
+        android:pathData="M9.2,15.2 h5.6 v1.2 h-5.6 z" />
+
+    <!-- Bulle “quiz” en bas-droite -->
+    <path
+        android:fillColor="#42A5F5"
+        android:pathData="M18,15
+            a3,3 0 1,0 0,6
+            a3,3 0 1,0 0,-6" />
+
+    <!-- Point d'interrogation dans la bulle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M18,16.6
+            c-0.9,0 -1.6,0.7 -1.6,1.5
+            h0.9
+            c0,-0.4 0.4,-0.8 0.8,-0.8
+            s0.8,0.3 0.8,0.8
+            c0,0.8 -1.2,0.7 -1.2,2
+            h0.9
+            c0,-1 1.2,-1.1 1.2,-2
+            c0,-0.8 -0.7,-1.5 -1.6,-1.5 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M18,20.9
+            m-0.4,0
+            a0.4,0.4 0 1,0 0.8,0
+            a0.4,0.4 0 1,0 -0.8,0" />
+
+</vector>

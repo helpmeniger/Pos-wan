@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/etTitle"
+        android:textStyle="bold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Titre"
+        android:inputType="text" />
+
+    <EditText
+        android:id="@+id/etLink"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Lien web"
+        android:inputType="textUri" />
+
+    <EditText
+        android:id="@+id/etDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Description"
+        android:inputType="textMultiLine" />
+
+    <Button
+        android:id="@+id/btnAdd"
+        android:background="@drawable/button_background"
+        android:layout_width="300dp"
+        android:textColor="@color/white"
+        android:layout_gravity="center"
+        android:layout_height="wrap_content"
+        android:text="Ajouter" />
+
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp" />
+
+
+    <ProgressBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/progressBar02"
+        android:layout_centerVertical="true"
+        android:indeterminateTint="@color/lavender"
+        style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
+        android:indeterminate="true"
+        android:layout_marginTop="-4dp"
+        android:visibility="gone"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/tvLoading"
+        android:textAlignment="center"
+        android:layout_centerVertical="true"
+        android:textSize="18sp"
+        android:text="Patientez..."/>
+</LinearLayout>

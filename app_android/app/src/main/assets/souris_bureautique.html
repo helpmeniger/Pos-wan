@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>HELP-ME | Antistress Bureautique</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{
+            height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:radial-gradient(circle at top,#0a84ff 0,#021f3d 55%,#000 100%);
+            font-family:system-ui,Arial,sans-serif;
+            color:#fff;
+        }
+        #gameContainer{
+            position:relative;
+            width:320px;
+            height:550px;
+            background:linear-gradient(180deg,#eef3ff 0,#dde7ff 40%,#cfd9ff 100%);
+            border-radius:22px;
+            overflow:hidden;
+            box-shadow:0 15px 40px rgba(0,0,0,.55);
+            border:2px solid rgba(255,255,255,.7);
+        }
+
+        /* En-tête */
+        #header{
+            position:absolute;
+            top:0;
+            left:0;
+            right:0;
+            height:60px;
+            padding:8px 10px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            backdrop-filter:blur(10px);
+            background:linear-gradient(90deg,rgba(10,132,255,.95),rgba(0,95,204,.95));
+            color:#fff;
+            z-index:5;
+        }
+        #headerLeft{
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+        #logoBubble{
+            width:32px;
+            height:32px;
+            border-radius:999px;
+            background:#fff;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:18px;
+            color:#0a84ff;
+        }
+        #titleBlock{
+            display:flex;
+            flex-direction:column;
+            line-height:1.1;
+        }
+        #titleBlock span:first-child{
+            font-size:14px;
+            font-weight:700;
+        }
+        #titleBlock span:last-child{
+            font-size:11px;
+            opacity:.9;
+        }
+        #headerRight{
+            text-align:right;
+            font-size:10px;
+        }
+        #level, #multiplier, #modeLabel, #timerLabel{
+            display:block;
+        }
+
+        /* Zone de jeu */
+        #playArea{
+            position:absolute;
+            left:16px;
+            right:16px;
+            top:70px;
+            bottom:72px;
+            border-radius:18px;
+            background:linear-gradient(180deg,#f8fbff 0,#e9f0ff 55%,#dde7ff 100%);
+            overflow:hidden;
+            box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);
+        }
+
+        .laneLine{
+            position:absolute;
+            top:-40px;
+            bottom:-40px;
+            width:3px;
+            background:linear-gradient(180deg,rgba(10,132,255,0) 0,rgba(10,132,255,.4) 40%,rgba(10,132,255,0) 100%);
+            opacity:.45;
+        }
+
+        /* Bannière pédagogiques */
+        #tipBanner{
+            position:absolute;
+            top:6px;
+            left:50%;
+            transform:translateX(-50%);
+            max-width:90%;
+            padding:4px 8px;
+            border-radius:999px;
+            background:rgba(10,61,143,.9);
+            color:#fff;
+            font-size:10px;
+            text-align:center;
+            opacity:0;
+            pointer-events:none;
+            transition:opacity .25s ease;
+            z-index:3;
+        }
+        #tipBanner.show{
+            opacity:1;
+        }
+
+       #cursor{
+    position:absolute;
+    width:78px;          /* ajuste si besoin */
+    height:78px;
+    background-image:url('souris.webp'); /* chemin de ton sticker */
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    transform-origin:50% 50%;
+    transform:scale(1);
+    transition:transform 0.12s ease-out;
+}
+
+/* on désactive l’ancienne “queue” de la souris */
+#cursor::after{
+    content:none;
+}
+
+
+        .cursor-hit{
+            animation: cursorPulse 0.18s ease-out;
+        }
+     @keyframes cursorPulse{
+    0%{ transform:scale(1); }
+    50%{ transform:scale(1.1); }
+    100%{ transform:scale(1); }
+}
+
+
+        /* Items */
+        .item{
+            position:absolute;
+            font-size:22px;
+            width:42px;
+            height:42px;
+            border-radius:14px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            box-shadow:0 6px 12px rgba(0,0,0,.2);
+            user-select:none;
+            transition:transform 0.22s ease, opacity 0.22s ease;
+        }
+        .good{ background:#ffffff; }
+        .bad{  background:#ffe5e7; }
+        .gold{ background:#fff4c4; }
+
+        .hit-good{
+            transform:scale(0.2) translateY(-8px);
+            opacity:0;
+        }
+        .hit-gold{
+            transform:scale(1.4) translateY(-10px);
+            opacity:0;
+        }
+        .hit-bad{
+            transform:scale(1.1) translateY(8px) rotate(8deg);
+            opacity:0;
+        }
+
+        /* HUD bas */
+        #footer{
+            position:absolute;
+            left:0;
+            right:0;
+            bottom:0;
+            height:90px;
+            padding:6px 8px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:6px;
+            background:rgba(255,255,255,.95);
+            backdrop-filter:blur(10px);
+            border-top:1px solid rgba(0,0,0,.05);
+            font-size:11px;
+            color:#12386b;
+        }
+        #footerLeft{
+            display:flex;
+            flex-direction:column;
+            gap:1px;
+        }
+        #scoreLine{
+            font-weight:700;
+            font-size:13px;
+        }
+        #bestScoreLine, #streakLine, #badgeLine{
+            font-size:11px;
+        }
+        #streakLine{ opacity:.85; }
+        #footerMid{
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:3px;
+            text-align:center;
+        }
+        #shieldIndicator{
+            font-size:11px;
+        }
+        #controlHint{
+            font-size:10px;
+            opacity:.75;
+        }
+        #footerRight{
+            display:flex;
+            gap:4px;
+        }
+        .btn{
+            border-radius:999px;
+            border:none;
+            padding:6px 8px;
+            font-size:11px;
+            font-weight:600;
+            display:flex;
+            align-items:center;
+            gap:4px;
+            cursor:pointer;
+            box-shadow:0 4px 9px rgba(0,0,0,.2);
+        }
+        .btn-primary{
+            background:#0a84ff;
+            color:#fff;
+        }
+        .btn-ghost{
+            background:#f1f4ff;
+            color:#12386b;
+        }
+
+        /* Overlay (start + game over) */
+        #overlay{
+            position:absolute;
+            inset:0;
+            background:rgba(5,17,43,.88);
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            text-align:center;
+            padding:24px;
+            opacity:0;
+            pointer-events:none;
+            transition:opacity .3s;
+        }
+        #overlay.show{
+            opacity:1;
+            pointer-events:auto;
+        }
+        #overlay h1{
+            margin-bottom:8px;
+            font-size:22px;
+        }
+        #overlay p{
+            font-size:13px;
+            margin-bottom:12px;
+        }
+        #overlayStats{
+            font-size:12px;
+            margin-bottom:16px;
+        }
+        #modeButtons{
+            display:flex;
+            gap:10px;
+            margin-bottom:10px;
+        }
+
+        /* Panneau des scores */
+        #scoresPanel{
+            position:absolute;
+            right:12px;
+            top:76px;
+            width:260px;
+            max-height:360px;
+            background:rgba(255,255,255,.98);
+            color:#12386b;
+            border-radius:14px;
+            box-shadow:0 12px 25px rgba(0,0,0,.35);
+            padding:10px 12px;
+            font-size:11px;
+            display:none;
+            flex-direction:column;
+            z-index:6;
+        }
+        #scoresPanelHeader{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:4px;
+        }
+        #scoresPanelHeader h2{
+            font-size:13px;
+            margin:0;
+        }
+        #scoresList{
+            margin-top:4px;
+            border-top:1px solid rgba(0,0,0,.08);
+            padding-top:4px;
+            overflow-y:auto;
+        }
+        .scoreRow{
+            display:flex;
+            justify-content:space-between;
+            padding:3px 0;
+            border-bottom:1px dashed rgba(0,0,0,.05);
+        }
+        .scoreRow span{
+            display:block;
+        }
+        .tag{
+            font-size:10px;
+            padding:1px 6px;
+            border-radius:999px;
+            background:#eef3ff;
+        }
+    </style>
+</head>
+<body>
+<div id="gameContainer">
+    <div id="header">
+        <div id="headerLeft">
+            <div id="logoBubble">🖱️</div>
+            <div id="titleBlock">
+                <span>Antistress Bureautique</span>
+                <span>Attrape le numérique, évite les bugs</span>
+            </div>
+        </div>
+        <div id="headerRight">
+            <span id="modeLabel">Mode : -</span>
+            <span id="level">Niveau 1</span>
+            <span id="multiplier">x1 combo</span>
+            <span id="timerLabel"></span>
+        </div>
+    </div>
+
+    <div id="playArea">
+        <div class="laneLine" style="left:25%;"></div>
+        <div class="laneLine" style="left:50%;"></div>
+        <div class="laneLine" style="left:75%;"></div>
+        <div id="tipBanner"></div>
+        <div id="cursor"></div>
+    </div>
+
+    <div id="footer">
+        <div id="footerLeft">
+            <div id="scoreLine">Score : <span id="score">0</span></div>
+            <div id="bestScoreLine">Meilleur score : <span id="bestScore">0</span></div>
+            <div id="streakLine">Meilleure série : <span id="bestStreak">0</span></div>
+            <div id="badgeLine">Badge HELP-ME : <span id="badgeLabel">-</span></div>
+        </div>
+        <div id="footerMid">
+            <div id="shieldIndicator">Bouclier : <span id="shieldText">désactivé</span></div>
+            <div id="controlHint">Contrôles : ⬅️ ➡️ / glisser le doigt dans la zone</div>
+        </div>
+        <div id="footerRight">
+            <button id="btnSound"  class="btn btn-ghost">🎵</button>
+            <button id="btnScores" class="btn btn-ghost">🏅</button>
+            <button id="btnPause"  class="btn btn-ghost">⏸️</button>
+            <button id="btnShield" class="btn btn-primary">🛡️</button>
+        </div>
+    </div>
+
+    <div id="overlay" class="show">
+        <h1>Mini-jeu HELP-ME</h1>
+        <p>
+            Choisis ton mode :<br/>
+            <b>Entraînement</b> pour t’amuser et progresser,<br/>
+            <b>Examen</b> pour un défi chronométré 🔥
+        </p>
+        <div id="modeButtons">
+            <button class="btn btn-primary" id="btnStartTraining">🎮 Entraînement</button>
+            <button class="btn btn-ghost"   id="btnStartExam">📚 Examen</button>
+        </div>
+        <div id="overlayStats"></div>
+    </div>
+
+    <!-- Panneau historique des scores -->
+    <div id="scoresPanel">
+        <div id="scoresPanelHeader">
+            <h2>Historique des scores</h2>
+            <button id="btnCloseScores" class="btn btn-ghost">✕</button>
+        </div>
+        <div><span class="tag">Dernier :</span> <span id="lastScoreText">-</span></div>
+        <div><span class="tag">Meilleur :</span> <span id="bestScoreText">-</span></div>
+        <div id="scoresList"></div>
+    </div>
+
+    <!-- Audio -->
+    <audio id="bgMusic"  src="bg_music.mp3" loop></audio>
+    <audio id="goodSound" src="good.mp3"></audio>
+    <audio id="badSound"  src="fail.mp3"></audio>
+</div>
+
+<script>
+(function(){
+    const STORAGE_KEY_SCORES = 'helpme_mouse_scores_v1';
+    const STORAGE_KEY_SOUND  = 'helpme_mouse_sound_on';
+
+    const playArea       = document.getElementById('playArea');
+    const cursor         = document.getElementById('cursor');
+    const tipBanner      = document.getElementById('tipBanner');
+
+    const scoreEl        = document.getElementById('score');
+    const bestScoreEl    = document.getElementById('bestScore');
+    const bestStreakEl   = document.getElementById('bestStreak');
+    const badgeLabelEl   = document.getElementById('badgeLabel');
+    const levelEl        = document.getElementById('level');
+    const multEl         = document.getElementById('multiplier');
+    const modeLabelEl    = document.getElementById('modeLabel');
+    const timerLabelEl   = document.getElementById('timerLabel');
+
+    const shieldText     = document.getElementById('shieldText');
+    const btnPause       = document.getElementById('btnPause');
+    const btnShield      = document.getElementById('btnShield');
+    const btnSound       = document.getElementById('btnSound');
+
+    const overlay        = document.getElementById('overlay');
+    const overlayStats   = document.getElementById('overlayStats');
+    const btnStartTraining = document.getElementById('btnStartTraining');
+    const btnStartExam     = document.getElementById('btnStartExam');
+
+    const scoresPanel    = document.getElementById('scoresPanel');
+    const btnScores      = document.getElementById('btnScores');
+    const btnCloseScores = document.getElementById('btnCloseScores');
+    const scoresListEl   = document.getElementById('scoresList');
+    const lastScoreText  = document.getElementById('lastScoreText');
+    const bestScoreText  = document.getElementById('bestScoreText');
+
+    const bgMusic   = document.getElementById('bgMusic');
+    const goodSound = document.getElementById('goodSound');
+    const badSound  = document.getElementById('badSound');
+
+    const areaRect = ()=>playArea.getBoundingClientRect();
+
+    let cx = 140, cy = 360;
+    const cursorW = 28, cursorH = 44;
+
+    let running = false;
+    let hasStarted = false;
+    let gameMode = null; // 'training' ou 'exam'
+
+    let score = 0;
+    let streak = 0;
+    let bestStreak = 0;
+    let multiplier = 1;
+    let level = 1;
+    let shield = false;
+    let shieldCooldown = 0;
+
+    let items = [];
+    let frame = 0;
+
+    const EXAM_DURATION = 60; // secondes
+    let examTimeLeft = 0;
+    let frameForTimer = 0;
+
+    let storedScores = loadScores();
+    let bestScoreGlobal = computeBestScore(storedScores);
+
+    let soundEnabled = loadSoundPreference();
+    updateSoundUI();
+
+    updateGlobalScoreUI();
+
+    const keys = {ArrowLeft:false, ArrowRight:false, ArrowUp:false, ArrowDown:false};
+
+    window.addEventListener('keydown', e=>{
+        if(e.key in keys){
+            keys[e.key] = true;
+            e.preventDefault();
+        }
+        if(e.key === ' ' && hasStarted){
+            togglePause();
+        }
+    });
+    window.addEventListener('keyup', e=>{
+        if(e.key in keys){
+            keys[e.key] = false;
+            e.preventDefault();
+        }
+    });
+
+    function pointerMove(clientX, clientY){
+        const r = areaRect();
+        const x = clientX - r.left;
+        const y = clientY - r.top;
+        cx = Math.max(8, Math.min(r.width - cursorW - 8, x - cursorW/2));
+        cy = Math.max(40, Math.min(r.height - cursorH - 10, y - cursorH/2));
+    }
+    playArea.addEventListener('mousemove', e=>{
+        if(!running && !hasStarted) return;
+        pointerMove(e.clientX,e.clientY);
+    });
+    playArea.addEventListener('touchmove', e=>{
+        if(!running && !hasStarted) return;
+        const t = e.touches[0];
+        pointerMove(t.clientX,t.clientY);
+    },{passive:false});
+
+    function updateCursor(){
+        const r = areaRect();
+        const speed = 3.2;
+        if(keys.ArrowLeft)  cx -= speed;
+        if(keys.ArrowRight) cx += speed;
+        if(keys.ArrowUp)    cy -= speed;
+        if(keys.ArrowDown)  cy += speed;
+
+        cx = Math.max(8, Math.min(r.width - cursorW - 8, cx));
+        cy = Math.max(40, Math.min(r.height - cursorH - 10, cy));
+
+        cursor.style.left = cx + 'px';
+        cursor.style.top  = cy + 'px';
+    }
+
+    const goodIcons = [
+        '💻','🖱️','⌨️','🖨️','🖥️','📁','📄','📂','📑',
+        '📝','📊','📈','📉','🎨','🗂️',
+        '🌐','☁️','📶','🔗','💾','🔍','🛜','📷','🎥','🎧',
+        '🗒️',
+        '⭐','🏆','💡','🔓','💼'
+    ];
+    const badIcons  = [
+        '🐞','❌','🐌','📵','⌛','💣','🔥','⚠️','🛑','💣','🚫',
+        '🧨','🪲','💥','💣','🪫','💣','❗','🔧','🧊','📛'
+    ];
+    const goldIcons = ['⭐','🏆','⚡'];
+
+    function spawnItem(){
+        const r = areaRect();
+        let type = 'good';
+        const rnd = Math.random();
+        if(rnd > 0.8) type = 'bad';
+        if(rnd > 0.93) type = 'gold';
+
+        const el = document.createElement('div');
+        el.className = 'item ' + type;
+
+        if(type === 'good'){
+            el.textContent = goodIcons[Math.floor(Math.random()*goodIcons.length)];
+        }else if(type === 'bad'){
+            el.textContent = badIcons[Math.floor(Math.random()*badIcons.length)];
+        }else{
+            el.textContent = goldIcons[Math.floor(Math.random()*goldIcons.length)];
+        }
+
+        const x = 10 + Math.random() * (r.width - 52);
+        const y = -60;
+        let baseVy = 1.8 + level*0.3;
+        // Mode examen un peu plus rapide
+        if(gameMode === 'exam') baseVy += 0.6;
+        const vy = baseVy + Math.random()*0.8;
+
+        el.style.left = x+'px';
+        el.style.top  = y+'px';
+        playArea.appendChild(el);
+
+        items.push({el,x,y,vy,type,removed:false,symbol:el.textContent});
+    }
+
+    function pulseCursor(){
+        cursor.classList.remove('cursor-hit');
+        void cursor.offsetWidth;
+        cursor.classList.add('cursor-hit');
+    }
+
+    function animateHit(it, mode){
+        if(it.removed) return;
+        it.removed = true;
+
+        if(mode === 'good') it.el.classList.add('hit-good');
+        else if(mode === 'gold') it.el.classList.add('hit-gold');
+        else if(mode === 'bad') it.el.classList.add('hit-bad');
+
+        setTimeout(()=>{
+            if(it.el && it.el.parentNode){
+                it.el.parentNode.removeChild(it.el);
+            }
+        }, 220);
+    }
+
+    function activateShield(){
+        if(shieldCooldown>0 || shield || !hasStarted) return;
+        shield = true;
+        shieldCooldown = 600;
+        shieldText.textContent = 'ACTIF';
+        cursor.style.boxShadow = '0 0 0 2px #00c853, 0 0 18px rgba(0,200,83,0.8)';
+        cursor.style.background = '#eafff0';
+        setTimeout(()=>{
+            shield = false;
+            shieldText.textContent = 'désactivé';
+            cursor.style.boxShadow = '0 0 0 2px rgba(0,0,0,.4),0 8px 15px rgba(0,0,0,.35)';
+            cursor.style.background = '#fff';
+        },4500);
+    }
+
+    btnShield.addEventListener('click', activateShield);
+
+    function togglePause(){
+        if(!hasStarted) return;
+        running = !running;
+        btnPause.textContent = running ? '⏸️' : '▶️';
+        if(running){
+            if(soundEnabled){
+                bgMusic.play().catch(()=>{});
+            }
+            requestAnimationFrame(loop);
+        }else{
+            bgMusic.pause();
+        }
+    }
+
+    btnPause.addEventListener('click', togglePause);
+
+    btnSound.addEventListener('click', ()=>{
+        soundEnabled = !soundEnabled;
+        saveSoundPreference(soundEnabled);
+        updateSoundUI();
+
+        if(!soundEnabled){
+            bgMusic.pause();
+        }else{
+            if(running){
+                bgMusic.play().catch(()=>{});
+            }
+        }
+    });
+
+    function updateSoundUI(){
+        btnSound.textContent = soundEnabled ? '🎵' : '🔇';
+    }
+
+    function rectOf(el){
+        const r = el.getBoundingClientRect();
+        const pr = areaRect();
+        return {
+            left:r.left-pr.left,
+            right:r.right-pr.left,
+            top:r.top-pr.top,
+            bottom:r.bottom-pr.top
+        };
+    }
+
+    function collide(a,b){
+        return !(a.right<b.left || a.left>b.right || a.top>b.bottom || a.bottom<b.top);
+    }
+
+    function getBadgeForScore(s){
+        if(s >= 500) return 'Expert HELP-ME';
+        if(s >= 200) return 'Assistant bureautique';
+        if(s > 0)    return 'Débutant numérique';
+        return '-';
+    }
+
+    function updateStatsDisplay(){
+        scoreEl.textContent = score;
+        bestStreakEl.textContent = bestStreak;
+        levelEl.textContent = 'Niveau '+level;
+        multEl.textContent  = 'x'+multiplier+' combo';
+        badgeLabelEl.textContent = getBadgeForScore(score);
+
+        if(shieldCooldown>0) shieldCooldown--;
+
+        // Timer mode examen
+        if(gameMode === 'exam' && hasStarted && running){
+            frameForTimer++;
+            if(frameForTimer >= 60){
+                frameForTimer = 0;
+                examTimeLeft--;
+                if(examTimeLeft < 0) examTimeLeft = 0;
+                timerLabelEl.textContent = 'Temps examen : '+examTimeLeft+'s';
+                if(examTimeLeft <= 0){
+                    // fin d'examen = fin de partie mais sans erreur
+                    gameOver(true);
+                }
+            }
+        }
+    }
+
+    let tipTimeout = null;
+    function showTip(text){
+        if(!text) return;
+        clearTimeout(tipTimeout);
+        tipBanner.textContent = text;
+        tipBanner.classList.add('show');
+        tipTimeout = setTimeout(()=>{
+            tipBanner.classList.remove('show');
+        }, 2200);
+    }
+
+    function getTipForIcon(symbol){
+        // Word / doc
+        if(['📄','📝','📑'].includes(symbol)){
+            return 'Word : créer et mettre en forme des documents.';
+        }
+        // Excel
+        if(['📊','📈','📉','🧮'].includes(symbol)){
+            return 'Excel : tableaux, calculs et analyses de données.';
+        }
+        // PowerPoint / design
+        if(['🎨'].includes(symbol)){
+            return 'PowerPoint : présentations visuelles et diaporamas.';
+        }
+        // Fichiers / dossiers
+        if(['📁','📂','📎','🗂️'].includes(symbol)){
+            return 'Organise tes fichiers dans des dossiers bien nommés.';
+        }
+        // Matériel
+        if(['💻','🖱️','⌨️','🖨️','🖥️'].includes(symbol)){
+            return 'Matériel bureautique : souris, clavier, écran, imprimante.';
+        }
+        // Internet / cloud
+        if(['🌐','☁️','📶','🛜','🔗','🔍'].includes(symbol)){
+            return 'Internet & Cloud : recherche, partage et stockage en ligne.';
+        }
+        // Productivité
+        if(['⏱️','📆','🗒️','✔️','🧠','💼'].includes(symbol)){
+            return 'Organisation : notes, agenda et gestion du temps.';
+        }
+        // Bonus
+        if(['⭐','🏆','💡','🔓'].includes(symbol)){
+            return 'Bravo ! Tu débloques des compétences numériques.';
+        }
+        return 'Bonne pratique bureautique renforcée !';
+    }
+
+    function startGame(mode){
+        if(hasStarted) return;
+        gameMode = mode;
+        hasStarted = true;
+        running = true;
+        overlay.classList.remove('show');
+
+        modeLabelEl.textContent = 'Mode : ' + (mode === 'exam' ? 'Examen' : 'Entraînement');
+
+        const r0 = areaRect();
+        cx = (r0.width - cursorW)/2;
+        cy = r0.height - cursorH - 24;
+        cursor.style.left = cx+'px';
+        cursor.style.top  = cy+'px';
+
+        if(mode === 'exam'){
+            examTimeLeft = EXAM_DURATION;
+            timerLabelEl.textContent = 'Temps examen : '+examTimeLeft+'s';
+        }else{
+            timerLabelEl.textContent = '';
+        }
+
+        if(soundEnabled){
+            bgMusic.volume = 0.35;
+            bgMusic.play().catch(()=>{});
+        }
+
+        requestAnimationFrame(loop);
+    }
+
+    btnStartTraining.addEventListener('click', ()=>startGame('training'));
+    btnStartExam.addEventListener('click', ()=>startGame('exam'));
+
+    function gameOver(fromTimer){
+        if(!running && !hasStarted) return;
+        running = false;
+        bgMusic.pause();
+
+        if(!fromTimer && soundEnabled){
+            try{ badSound.currentTime = 0; badSound.play(); }catch(e){}
+        }
+
+        const entry = {
+            score: score,
+            level: level,
+            bestStreak: bestStreak,
+            date: new Date().toISOString(),
+            mode: gameMode,
+            badge: getBadgeForScore(score)
+        };
+        storedScores.push(entry);
+        if(storedScores.length > 30) {
+            storedScores = storedScores.slice(storedScores.length - 30);
+        }
+        saveScores(storedScores);
+
+        bestScoreGlobal = computeBestScore(storedScores);
+        updateGlobalScoreUI();
+        renderScoresPanel();
+
+        overlay.classList.add('show');
+        const title = fromTimer
+            ? 'Examen terminé'
+            : 'Échec bureautique';
+        const text = fromTimer
+            ? 'Le temps est écoulé. Regarde ton score et essaie de faire mieux au prochain examen !'
+            : 'Tu as touché un bug numérique. Réessaie pour améliorer ton agilité avec les outils bureautiques !';
+
+        overlay.querySelector('h1').textContent = title;
+        overlay.querySelector('p').textContent  = text.replace('\n','<br/>');
+
+        overlayStats.innerHTML =
+            'Score de cette partie : <b>'+score+'</b><br>' +
+            'Meilleure série : <b>'+bestStreak+'</b><br>' +
+            'Niveau atteint : <b>'+level+'</b><br>' +
+            'Mode : <b>'+(gameMode === 'exam' ? 'Examen' : 'Entraînement')+'</b><br>' +
+            'Badge HELP-ME : <b>'+getBadgeForScore(score)+'</b>';
+
+        // On change les boutons du mode pour "Rejouer"
+        btnStartTraining.textContent = '🔁 Rejouer (Entraînement)';
+        btnStartExam.textContent     = '🔁 Rejouer (Examen)';
+        btnStartTraining.onclick = ()=>location.reload();
+        btnStartExam.onclick     = ()=>location.reload();
+    }
+
+    function loop(){
+        if(!running) return;
+        frame++;
+
+        updateCursor();
+
+        const spawnRateBase = Math.max(18, 40 - level*3);
+        const spawnRate = (gameMode === 'exam') ? Math.max(14, spawnRateBase - 4) : spawnRateBase;
+
+        if(frame % spawnRate === 0) spawnItem();
+
+        if(frame % 1200 === 0){
+            level++;
+            multiplier = Math.min(5, multiplier+1);
+        }
+
+        const cursorRect = {
+            left:cx, right:cx+cursorW, top:cy, bottom:cy+cursorH
+        };
+
+        items.forEach(it=>{
+            if(it.removed) return;
+
+            it.y += it.vy;
+            it.el.style.top = it.y+'px';
+
+            const r = rectOf(it.el);
+            if(collide(cursorRect,r)){
+                pulseCursor();
+
+                if(it.type === 'good'){
+                    streak++;
+                    bestStreak = Math.max(bestStreak,streak);
+                    score += 10*multiplier;
+                    animateHit(it,'good');
+                    showTip(getTipForIcon(it.symbol));
+                    if(soundEnabled){
+                        try{ goodSound.currentTime = 0; goodSound.play(); }catch(e){}
+                    }
+                }else if(it.type === 'gold'){
+                    streak++;
+                    bestStreak = Math.max(bestStreak,streak);
+                    score += 40*multiplier;
+                    multiplier = Math.min(5, multiplier+1);
+                    animateHit(it,'gold');
+                    showTip('Super bonus ! Tu renforces toutes tes compétences numériques.');
+                    if(soundEnabled){
+                        try{ goodSound.currentTime = 0; goodSound.play(); }catch(e){}
+                    }
+                }else if(it.type === 'bad'){
+                    showTip('Attention : mauvais réflexe numérique à éviter.');
+                    if(shield){
+                        shield = false;
+                        shieldText.textContent = 'désactivé';
+                        cursor.style.boxShadow = '0 0 0 2px rgba(0,0,0,.4),0 8px 15px rgba(0,0,0,.35)';
+                        cursor.style.background = '#fff';
+                        animateHit(it,'bad');
+                    }else{
+                        animateHit(it,'bad');
+                        gameOver(false);
+                        return;
+                    }
+                }
+            }
+
+            if(it.y > areaRect().height+60 && !it.removed){
+                it.removed = true;
+                if(it.el && it.el.parentNode){
+                    it.el.parentNode.removeChild(it.el);
+                }
+            }
+        });
+
+        items = items.filter(obj=>!obj.removed);
+
+        updateStatsDisplay();
+        if(running) requestAnimationFrame(loop);
+    }
+
+    /* ---------- Gestion des scores dans localStorage ---------- */
+
+    function loadScores(){
+        try{
+            const raw = localStorage.getItem(STORAGE_KEY_SCORES);
+            if(!raw) return [];
+            const data = JSON.parse(raw);
+            if(!Array.isArray(data)) return [];
+            return data;
+        }catch(e){
+            return [];
+        }
+    }
+
+    function saveScores(scores){
+        try{
+            localStorage.setItem(STORAGE_KEY_SCORES, JSON.stringify(scores));
+        }catch(e){
+            // stockage désactivé ou plein
+        }
+    }
+
+    function computeBestScore(scores){
+        if(!scores.length) return 0;
+        return Math.max(...scores.map(s=>s.score));
+    }
+
+    function updateGlobalScoreUI(){
+        bestScoreEl.textContent = bestScoreGlobal;
+
+        if(storedScores.length){
+            const last = storedScores[storedScores.length-1];
+            lastScoreText.textContent =
+                last.score + ' pts ('+(last.mode === 'exam' ? 'Exam' : 'Entr.')+', '+last.badge+')';
+            bestScoreText.textContent = bestScoreGlobal + ' pts';
+        }else{
+            lastScoreText.textContent = '-';
+            bestScoreText.textContent = '-';
+        }
+    }
+
+    function renderScoresPanel(){
+        scoresListEl.innerHTML = '';
+        if(!storedScores.length){
+            scoresListEl.innerHTML = '<p>Aucun score enregistré pour le moment.</p>';
+            return;
+        }
+
+        const reversed = [...storedScores].reverse();
+        reversed.forEach(s=>{
+            const row = document.createElement('div');
+            row.className = 'scoreRow';
+
+            const left = document.createElement('span');
+            left.textContent = s.score + ' pts';
+
+            const right = document.createElement('span');
+            const d = new Date(s.date);
+            const modeShort = s.mode === 'exam' ? 'Exam' : 'Entr.';
+            right.textContent =
+                modeShort+' | '+s.badge+' | Niv.'+s.level+' | '+d.toLocaleDateString()+' '+d.toLocaleTimeString().slice(0,5);
+
+            row.appendChild(left);
+            row.appendChild(right);
+
+            scoresListEl.appendChild(row);
+        });
+
+        updateGlobalScoreUI();
+    }
+
+    /* ---------- Panneau scores : boutons ---------- */
+
+    btnScores.addEventListener('click', ()=>{
+        if(scoresPanel.style.display === 'flex'){
+            scoresPanel.style.display = 'none';
+        }else{
+            renderScoresPanel();
+            scoresPanel.style.display = 'flex';
+        }
+    });
+
+    btnCloseScores.addEventListener('click', ()=>{
+        scoresPanel.style.display = 'none';
+    });
+
+    /* ---------- Préférences son ---------- */
+
+    function loadSoundPreference(){
+        try{
+            const raw = localStorage.getItem(STORAGE_KEY_SOUND);
+            if(raw === null) return true; // par défaut ON
+            return raw === 'true';
+        }catch(e){
+            return true;
+        }
+    }
+
+    function saveSoundPreference(val){
+        try{
+            localStorage.setItem(STORAGE_KEY_SOUND, val ? 'true' : 'false');
+        }catch(e){}
+    }
+
+})();
+</script>
+</body>
+</html>

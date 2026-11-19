@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/white"
+    tools:context=".Login">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="30dp">
+        <!-- 🟡 LOGO HELP-ME dans une carte ovale -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="125dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="30dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="60dp"
+            app:cardElevation="6dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:contentDescription="Logo HELP-ME"
+                android:padding="10dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/logobook" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 🎯 Message d’accueil motivant -->
+        <TextView
+            android:id="@+id/tvWelcome"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Bienvenue sur HELP-ME !\nVotre réussite commence ici."
+            android:textAlignment="center"
+            android:textStyle="bold"
+            android:textColor="@color/premium_ink"
+            android:textSize="18sp"
+            android:layout_marginBottom="20dp" />
+
+        <!-- 🔷 Titre -->
+        <TextView
+            android:id="@+id/textStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Identification du manuel"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:gravity="center"
+            android:paddingVertical="10dp"
+            android:background="@drawable/button_background"
+            android:elevation="6dp"
+            android:layout_marginBottom="25dp" />
+
+        <!-- Champ Nom & Domaine -->
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:id="@+id/textInputLayoutEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nom et domaine"
+            app:startIconDrawable="@drawable/ic_person_24"
+            app:startIconTint="@color/premium_gold"
+            app:boxBackgroundMode="outline"
+            app:boxStrokeColor="@color/premium_gold"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusBottomEnd="14dp"
+            android:layout_marginBottom="14dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/email"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textEmailAddress"
+                android:textColor="@color/premium_ink"
+                android:paddingVertical="14dp"
+                android:textCursorDrawable="@null" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Champ Numéro -->
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:id="@+id/textInputLayoutPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Numéro de téléphone"
+            app:startIconDrawable="@drawable/ic_phone_24"
+            app:startIconTint="@color/premium_gold"
+            app:boxBackgroundMode="outline"
+            app:boxStrokeColor="@color/premium_gold"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusBottomEnd="14dp"
+            android:layout_marginBottom="20dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="phone"
+                android:textColor="@color/premium_ink"
+                android:paddingVertical="14dp"
+                android:textCursorDrawable="@null" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ProgressBar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:visibility="gone"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/lavender"
+            style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="18dp" />
+
+        <!-- Bouton de connexion -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_login"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Valider mon accès"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+
+            android:textAllCaps="false"
+            android:clickable="true"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:layout_marginBottom="20dp"
+            android:elevation="6dp"
+            android:backgroundTint="@color/lavender"
+            android:background="@drawable/corner_btn"
+            app:icon="@drawable/ic_lock_24"
+            app:iconTint="@color/white"
+            app:iconPadding="8dp"
+            app:cornerRadius="50dp"
+            android:focusable="true"
+            tools:ignore="KeyboardInaccessibleWidget" />
+
+        <!-- Texte d’inscription / assistance -->
+        <TextView
+            android:id="@+id/registerNow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Besoin d’aide ? Contactez le support HELP-ME"
+            android:textColor="@color/premium_ink"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:paddingTop="10dp" />
+
+        <!-- Contact en cas d’assistance -->
+        <TextView
+            android:id="@+id/tvSupport"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="📞 Assistance : +227 92 08 12 82  |  ✉️ bureau@helpme.ne"
+            android:textColor="#555"
+            android:textSize="13sp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="10dp" />
+
+    </LinearLayout>
+</ScrollView>
