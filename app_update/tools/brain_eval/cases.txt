@@ -1,0 +1,149 @@
+# Jeu de test de l'assistant HELP-ME (hors ligne)
+# Format :  question => attendu1 | attendu2      (la réponse doit contenir l'un des attendus, sans tenir compte
+#           des accents ni des majuscules ; expressions régulières permises)
+#           > question => ...                    suite de la conversation précédente (contexte conservé)
+#           ~SMALLTALK  : réponse de conversation attendue ;  ~NOANSWER : ne doit PAS donner de réponse
+#           technique (question hors sujet : il vaut mieux proposer des pistes que répondre faux)
+
+## --- L'ordinateur
+qu'est ce que l'informatique => traitement automatique de l.information
+c'est quoi un ordinateur => machine|appareil electronique
+quels sont les composants d'un ordinateur => processeur|composants
+c quoi la ram => memoire vive
+a quoi sert le processeur => cerveau|calcul|instructions
+difference entre materiel et logiciel => materiel|hardware
+c'est quoi un peripherique => peripherique
+comment allumer l'ordinateur correctement => bouton|demarr|allum
+comment eteindre le pc => arreter|eteindre|marche/arret
+c'est quoi un octet => octet|bit
+les touches du clavier => touche
+comment utiliser la souris => clic
+
+## --- Windows
+comment créer un dossier => nouveau.*dossier|ctrl ?\+ ?(maj|shift) ?\+ ?n
+comment renommer un fichier => renommer|f2
+comment récupérer un fichier supprimé => corbeille
+comment faire une capture d'écran => maj \+ s|shift \+ s|impr
+je veux faire un screenshot => maj \+ s|shift \+ s|impr
+comment ouvrir l'explorateur de fichiers => windows ?\+ ?e|win ?\+ ?e|explorateur
+comment copier des fichiers sur une clé usb => cle usb
+comment installer un logiciel => install
+comment desinstaller un programme => desinstall
+mon ordi est trop lent => lent|ralenti|performance|demarrage
+mettre a jour windows => windows update|mises? a jour
+c'est quoi le bureau de windows => bureau
+comment changer le fond d'ecran => arriere-plan|fond d.ecran|personnalis
+comment fermer une application bloquée => gestionnaire des taches|alt \+ f4|ctrl \+ maj \+ (echap|esc)
+a quoi sert la barre des taches => barre des taches
+c'est quoi une extension de fichier => extension|\.docx
+comment afficher le bureau rapidement => windows \+ d|win \+ d
+
+## --- Internet et sécurité
+c'est quoi internet => reseau mondial|reseau
+comment bien chercher sur google => mots?.cles|guillemets
+comment creer une adresse gmail => gmail
+comment envoyer un mail avec une piece jointe => pieces? jointes?|trombone|joindre
+c'est quoi un navigateur => navigateur
+comment creer un mot de passe solide => 12 caracteres|long|unique
+c'est quoi le phishing => hameconnage|escroquerie|arnaque|faux|voler
+comment se proteger des virus => antivirus
+comment telecharger un fichier => telecharg
+c'est quoi le cloud => cloud|nuage|en ligne|stockage
+comment proteger mes donnees personnelles => donnees personnelles|minimum d.informations|confidentialit
+c'est quoi la navigation privee => navigation privee|historique
+comment se connecter au wifi => wi-?fi
+
+## --- Word
+comment mettre un texte en gras dans word => ctrl \+ (g|b)|gras
+comment insérer un tableau dans word => insertion.*tableau
+comment inserer une image dans word => image|illustration
+comment faire un sommaire automatique => table des matieres|styles titre
+comment numéroter les pages dans word => numero de page|numeros de page|pied de page
+comment mettre une page de garde => page de garde
+comment changer l'interligne => interligne
+comment justifier un texte => justifi|ctrl \+ j
+comment enregistrer un document word en pdf => pdf
+comment faire une lettre de motivation => lettre
+comment ajouter un en tete => en-tete
+comment faire une liste a puces => puces
+comment remplacer un mot partout dans word => remplacer|ctrl \+ h
+comment mettre en page un document => mise en page|marges|orientation
+
+## --- Excel
+comment faire une somme dans excel => somme|alt \+ =
+comment calculer une moyenne dans excel => moyenne
+c'est quoi une cellule => cellule
+comment faire un graphique dans excel => graphique
+comment utiliser la fonction SI => =si\(|fonction si|si\(
+comment faire une recherchev => recherche(v|x)
+comment trier des données => trier|tri
+comment faire un filtre dans excel => filtre
+comment figer la premiere ligne => figer
+comment imprimer un tableau excel => imprim
+c'est quoi une reference absolue => \$|absolue|f4
+comment faire un tableau croisé dynamique => tableau croise|tcd
+mise en forme conditionnelle excel => mise en forme conditionnelle|conditions
+comment proteger une feuille excel => proteger la feuille|protection|proteger
+
+## --- PowerPoint
+comment créer une présentation powerpoint => diapositive|powerpoint|presentation
+ajouter une transition entre les diapositives => transition
+comment ajouter une animation dans powerpoint => animation
+
+## --- Intelligence artificielle
+c'est quoi l'intelligence artificielle => intelligence artificielle|imiter|machines?
+c'est quoi chatgpt => chatgpt|assistant|conversationnel
+comment ecrire un bon prompt => prompt|role|contexte
+pourquoi l'ia se trompe => hallucin|invente|erreur|verifi
+c'est quoi le machine learning => apprentissage|apprend|donnees
+quels metiers avec l'ia => metier|analyste|emploi|compet
+l'ia peut elle remplacer mon travail => metier|emploi|travail|remplac
+comment utiliser l'ia pour reviser mes cours => reviser|quiz|cours|etud|apprendre|explique
+est ce que je peux faire confiance a l'ia => verifi|hallucin|limite|risque|confiance
+
+## --- Fautes, abréviations, langage familier
+coment fair une somme sur exel => somme
+mettre en gra sur wrod => gras|ctrl \+ (g|b)
+cmt creer un dosier => dossier
+kel est le racourci pour copier => ctrl \+ c|copier
+c koi la memoir vive => memoire vive|ram
+comment fe une captur d ecran => maj \+ s|shift \+ s|impr
+power point animation => animation
+mdp securisé => mots? de passe|12 caracteres|long
+tableur moyenne => moyenne
+ctrl+z sert a quoi => annul|corriger
+
+## --- Erreurs et dépannage
+erreur 0x80070005 => acces refuse
+ecran bleu windows => ecran bleu|bsod|redemarr
+l'imprimante ne marche pas => imprimante
+pas de connexion internet => connexion|reseau|wi-?fi|routeur|box
+
+## --- Suites de conversation
+comment insérer un tableau dans word => insertion.*tableau
+> et dans excel ? => tableau
+comment faire une somme dans excel => somme
+> et la moyenne ? => moyenne
+comment mettre en gras dans word => gras
+> et en italique => italique|ctrl \+ i
+c'est quoi la ram => memoire vive
+> et le disque dur ? => disque dur|stockage
+comment faire une capture d'ecran => maj \+ s|shift \+ s|impr
+> merci => ~SMALLTALK
+
+## --- Conversation
+bonjour => ~SMALLTALK
+salut ca va => ~SMALLTALK
+merci beaucoup => ~SMALLTALK
+qui es tu => ~SMALLTALK
+au revoir => ~SMALLTALK
+aide moi => ~SMALLTALK
+comment vous contacter => 92 08 12 82
+combien font 125*4 => 500
+15% de 2000 => 300
+
+## --- Hors sujet : ne pas répondre n'importe quoi
+quelle est la capitale du japon => ~NOANSWER
+recette du riz au gras => ~NOANSWER
+qui a gagne la coupe du monde => ~NOANSWER
+comment reparer un moteur de voiture => ~NOANSWER

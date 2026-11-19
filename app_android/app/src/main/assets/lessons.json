@@ -53,7 +53,7 @@
   "titre": "La souris, le clavier et l’écran",
   "partie": "Le traitement automatique de l’information",
   "page": 23,
-  "resume": "Un poste de travail classique se compose d’une unité centrale et de trois périphériques principaux : l’ écran, le clavier et la souris.",
+  "resume": "Un poste de travail classique se compose d’une unité centrale et de trois périphériques principaux : l’écran, le clavier et la souris.",
   "points_cles": [
    "4.1 La souris",
    "4.2 Le clavier",
@@ -150,7 +150,7 @@
   "titre": "L’Explorateur de fichiers",
   "partie": "Le système d’exploitation : les bases de Windows 11",
   "page": 39,
-  "resume": "L’ Explorateur de fichiers permet de parcourir et d’organiser tout ce qui est enregistré sur l’ordinateur, une clé USB ou le cloud (OneDrive). Pour l’ouvrir : cliquez sur l’icône du dossier jaune dans la barre des tâches, ou appuyez sur Windows + E.",
+  "resume": "L’Explorateur de fichiers permet de parcourir et d’organiser tout ce qui est enregistré sur l’ordinateur, une clé USB ou le cloud (OneDrive). Pour l’ouvrir : cliquez sur l’icône du dossier jaune dans la barre des tâches, ou appuyez sur Windows + E.",
   "points_cles": [
    "5.1 Fichiers et dossiers",
    "5.2 Les opérations essentielles",
@@ -218,7 +218,7 @@
   "titre": "Sites Web, recherche et téléchargement",
   "partie": "Usage d’Internet : s’informer, communiquer, partager et se protéger",
   "page": 53,
-  "resume": "Un site Web est un ensemble de pages reliées entre elles et accessibles depuis une page d’accueil. Chaque page a une adresse unique, l’ URL (Uniform Resource Locator).",
+  "resume": "Un site Web est un ensemble de pages reliées entre elles et accessibles depuis une page d’accueil. Chaque page a une adresse unique, l’URL (Uniform Resource Locator).",
   "points_cles": [
    "2.1 Qu’est-ce qu’un site Web ?",
    "2.2 Ouvrir un site Web",
@@ -506,7 +506,7 @@
   "titre": "En-têtes, pieds de page, zones de texte et symboles",
   "partie": "Microsoft Word : le traitement de texte",
   "page": 111,
-  "resume": "L’ en-tête (en haut) et le pied de page (en bas) se répètent sur chaque page : titre du document, logo, nom, date, numéro de page…",
+  "resume": "L’en-tête (en haut) et le pied de page (en bas) se répètent sur chaque page : titre du document, logo, nom, date, numéro de page…",
   "points_cles": [
    "8.1 En-tête, pied de page et numéro de page",
    "8.2 Zone de texte, lettrine et WordArt",
@@ -859,7 +859,7 @@
   "titre": "Comment fonctionne l’IA ?",
   "partie": "L’intelligence artificielle : comprendre, utiliser, maîtriser",
   "page": 164,
-  "resume": "Un enfant apprend à reconnaître une mangue en en voyant beaucoup. L’IA fait un peu pareil : on lui montre des milliers d’ exemples (des photos, des textes, des sons) et elle apprend peu à peu à reconnaître ce qu’ils ont en commun. Ces exemples s’appellent des données.",
+  "resume": "Un enfant apprend à reconnaître une mangue en en voyant beaucoup. L’IA fait un peu pareil : on lui montre des milliers d’exemples (des photos, des textes, des sons) et elle apprend peu à peu à reconnaître ce qu’ils ont en commun. Ces exemples s’appellent des données.",
   "points_cles": [
    "3.1 L’IA apprend avec des exemples",
    "3.2 Le « cerveau » de l’IA",

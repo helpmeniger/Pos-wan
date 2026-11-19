@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Exporte le contenu du manuel HELP-ME vers les données de l'application.
 
-Sorties (app_update/assets/) :
- - lessons.json          : une fiche par code-barres (65), pour l'écran affiché après le scan ;
- - knowledge_manuel.json : une fiche par section du manuel, au format lu par AIChatActivity
-                           (intent, question[], tags[], answer, image).
+Sorties :
+ - app_android/.../assets/lessons.json  : une fiche par code-barres (65), pour l'écran affiché après le scan ;
+ - app_update/knowledge/knowledge_manuel.json : une fiche par section du manuel, source de l'assistant
+   (puis python3 app_update/tools/build_brain.py fabrique assets/brain.json).
 """
 import json
 import re
@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 HTML = ROOT / "manuel" / "build" / "manuel.html"
 CODES = ROOT / "manuel" / "codes-helpme.json"
 OUT = ROOT / "app_android" / "app" / "src" / "main" / "assets"
+KNOW = ROOT / "app_update" / "knowledge"        # sources de l'assistant (build_brain.py en fait brain.json)
 
 # Vidéos existantes de l'application (MainActivity8 d'origine)
 VIDEOS = {"1000": "vid7", "2019": "vid1", "2018": "vid2", "2001": "vid3", "2002": "vid4", "2016": "vid6",
@@ -36,7 +37,40 @@ tout tous toute toutes faire peut peuvent si mais donc car aussi très bien""".s
 def clean(t):
     t = re.sub(r"§§[A-Z]+\d+§§", "", t)
     t = re.sub(r"\s+", " ", t).strip()
+    t = re.sub(r"([’'])\s+(?=\w)", r"\1", t)
     return re.sub(r"\s+([.,;:)»!?])", lambda m: m.group(1) if m.group(1) in ".,)" else " " + m.group(1), t).replace("( ", "(")
+
+
+def render(n):
+    """Texte lisible pour l'application : listes en lignes numérotées, tableaux en « • a : b »."""
+    name = n.name
+    if name in ("ul", "ol"):
+        items = [clean(li.get_text(" ")) for li in n.find_all("li", recursive=False)]
+        return "\n".join((f"{i}. " if name == "ol" else "• ") + t for i, t in enumerate(items, 1) if t)
+    if name == "table":
+        rows = []
+        for tr in n.select("tbody tr") or n.select("tr")[1:]:
+            cells = [clean(td.get_text(" ")) for td in tr.find_all(["td", "th"])]
+            cells = [c for c in cells if c]
+            if cells and re.fullmatch(r"\d+", cells[0]) and len(cells) > 1:
+                rows.append(f"{cells[0]}. " + " : ".join(cells[1:]))
+            elif cells:
+                rows.append("• " + cells[0] + (" : " + " ; ".join(cells[1:]) if len(cells) > 1 else ""))
+        return "\n".join(rows)
+    if name == "div" and n.select_one(".t"):
+        t = n.select_one(".t")
+        head = clean(t.get_text(" "))
+        t.extract()
+        return f"{head} : {clean(n.get_text(' '))}"
+    return clean(n.get_text(" "))
+
+
+def shorten(body, limit=900):
+    if len(body) <= limit:
+        return body
+    cut = body[:limit]
+    k = max(cut.rfind("\n"), cut.rfind(". "))
+    return (cut[:k + 1] if k > limit * 0.5 else cut).rstrip() + " …"
 
 
 def norm(w):
@@ -84,7 +118,7 @@ def main():
                     subs.append(cur)
                     cur = {"titre": clean(n.get_text(" ")), "texte": []}
                 elif n.name in ("p", "ul", "ol", "table", "div"):
-                    t = clean(n.get_text(" "))
+                    t = render(n)
                     if t and not t.startswith("Objectifs"):
                         cur["texte"].append(t)
             subs.append(cur)
@@ -99,21 +133,25 @@ def main():
                                 "demo": DEMOS.get(c["code"]),
                                 "statut": c["statut"]})
             for s in subs:
-                body = " ".join(s["texte"]).strip()
+                body = "\n".join(s["texte"]).strip()
                 if len(body) < 60:
                     continue
-                st = re.sub(r"^\d+(\.\d+)?\s*", "", s["titre"])
-                lt = re.sub(r"^\d+\.\s*", "", title)
-                qs = [st, f"comment {st}", f"qu'est-ce que {st}", lt]
-                knowledge.append({"intent": "manuel", "question": qs,
+                st = re.sub(r"^\d+(\.\d+)*\.?\s*", "", s["titre"])
+                lt = re.sub(r"^\d+(\.\d+)*\.?\s*", "", title)
+                qs = [st] + ([lt, f"{lt} : {st}"] if lt != st else [])
+                codes_ch = [c["code"] for c in code_by_chapter.get(title, [])]
+                knowledge.append({"intent": "manuel", "title": st, "chapter": lt,
+                                  "part": re.sub(r"^\s*\w+\s+partie\s*", "", part, flags=re.I) or part,
+                                  "question": qs,
                                   "tags": keywords(st + " " + st + " " + body),
-                                  "answer": (body[:900] + ("…" if len(body) > 900 else ""))
-                                            + f"\n\nPour aller plus loin : manuel HELP-ME, {part}, chapitre « {lt} ».",
+                                  "answer": shorten(body),
+                                  "code": codes_ch[0] if codes_ch else None,
                                   "image": None})
     lessons.sort(key=lambda x: x["page"])
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "lessons.json").write_text(json.dumps(lessons, ensure_ascii=False, indent=1), encoding="utf-8")
-    (OUT / "knowledge_manuel.json").write_text(json.dumps(knowledge, ensure_ascii=False, indent=1), encoding="utf-8")
+    KNOW.mkdir(parents=True, exist_ok=True)
+    (KNOW / "knowledge_manuel.json").write_text(json.dumps(knowledge, ensure_ascii=False, indent=1), encoding="utf-8")
     print(len(lessons), "fiches leçons ;", len(knowledge), "fiches de connaissances ;",
           sum(1 for l in lessons if l["video"]), "avec vidéo,", sum(1 for l in lessons if l["demo"]), "avec démonstration animée")
 

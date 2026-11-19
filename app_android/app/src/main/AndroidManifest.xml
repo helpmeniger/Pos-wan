@@ -2,6 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Android 11+ : dictée vocale et lecture à voix haute utilisées par l'assistant -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
@@ -78,7 +88,8 @@
         <activity
             android:name=".AIChatActivity"
             android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
+            android:theme="@style/Theme.HelpMe.Chat"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
 
         <receiver
             android:name=".NotificationScheduler$NotificationReceiver"

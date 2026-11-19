@@ -1,0 +1,74 @@
+# Jeu de CONTRÔLE : questions écrites à part, jamais utilisées pour régler le moteur.
+# Il mesure si l'assistant généralise au-delà de cases.txt (même format).
+
+## --- Ordinateur et Windows
+a quoi sert la carte mere => carte mere
+c'est quoi un systeme d'exploitation => systeme d.exploitation|logiciel principal|windows
+comment vider la corbeille => corbeille
+comment ouvrir le gestionnaire des taches => ctrl ?\+ ?(maj|shift) ?\+ ?(echap|esc)|gestionnaire des taches
+comment changer la luminosite de l'ecran => luminosite
+je veux deplacer un fichier dans un autre dossier => couper|deplac|glisser
+comment voir les fichiers telecharges => telechargements
+comment brancher une imprimante => imprimante
+comment reduire toutes les fenetres => windows ?\+ ?d|win ?\+ ?d|reduire
+a quoi sert la touche entree => entree
+comment taper l'arobase => altgr
+l'ordinateur ne s'allume pas => alimentation|cable|prise|batterie|bouton
+## --- Internet
+comment creer un compte facebook => facebook|compte|inscri
+comment reconnaitre un faux email => hameconnage|faux|expediteur|lien|arnaque
+c'est quoi un antivirus => antivirus|virus|protege
+comment utiliser whatsapp sur le pc => whatsapp
+c'est quoi youtube => youtube|video
+comment envoyer une video trop lourde par mail => lien|drive|onedrive|volumineu|lourd
+comment savoir si un site est securise => https|cadenas|securis
+## --- Word
+comment souligner un mot => soulign|ctrl ?\+ ?u|ctrl ?\+ ?s
+comment centrer un titre dans word => centr|ctrl ?\+ ?e
+comment changer la police d'ecriture => police
+comment ajouter des numeros de page => numero de page|numeros de page|pied de page
+comment mettre une feuille en paysage => paysage
+comment corriger les fautes d'orthographe => orthographe|f7
+comment inserer une note de bas de page => note de bas de page|notes de bas de page|references
+## --- Excel
+comment additionner une colonne => somme|alt ?\+ ?=
+comment trouver la note la plus haute => max
+comment compter le nombre d'eleves => nb|nbval|compter
+comment mettre en pourcentage => pourcentage|%
+comment agrandir une colonne => largeur|bordure|double-clic
+que veut dire #div/0 => division|zero
+comment calculer l'age => datedif|aujourdhui|age
+comment faire une facture sur excel => facture|total|prix|quantite|somme
+## --- PowerPoint
+comment lancer le diaporama => f5
+comment ajouter une nouvelle diapositive => nouvelle diapositive|ctrl ?\+ ?m
+comment mettre une image en arriere plan d'une diapo => arriere-plan|image|fond
+## --- IA
+chatgpt est il gratuit => gratuit|chatgpt
+l'ia peut elle se tromper => hallucin|invente|trompe|verifi|erreur
+quels sont les risques de l'ia => risque|limite|hallucin|biais|donnees
+comment l'ia apprend => exemples|donnees|apprend|entrain
+comment faire un resume avec l'ia => resum
+peut on utiliser l'ia pour ecrire une lettre => lettre|redig|ecri
+## --- Fautes
+coment inserer une imaje => image|illustration
+exell graphik => graphique
+fair un tablo sur word => tableau
+captur ecrant => maj ?\+ ?s|shift ?\+ ?s|impr
+wifi marche pa => wi-?fi|connexion|reseau|routeur
+## --- Suites
+comment mettre en gras => gras
+> et souligner ? => soulign
+comment insérer une image dans word => image
+> et dans powerpoint => image|insertion
+## --- Conversation
+bonsoir => ~SMALLTALK
+tu t'appelles comment => ~SMALLTALK
+c'est super merci => ~SMALLTALK
+## --- Hors sujet
+quel temps fait il a niamey => ~NOANSWER
+donne moi une recette de cuisine => ~NOANSWER
+qui est le president de la france => ~NOANSWER
+comment jouer au football => ~NOANSWER
+quel est le prix du riz => ~NOANSWER
+raconte moi une blague => ~NOANSWER

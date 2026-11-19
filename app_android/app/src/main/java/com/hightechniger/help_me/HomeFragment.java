@@ -63,6 +63,7 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         addNav(R.id.msexcel, ExcelActivity9.class);
         addNav(R.id.mspoint, PointActivity9.class);
         addNav(R.id.iaid, AIChatActivity.class);
+        com.hightechniger.help_me.brain.BrainHolder.preload(context);   // l'assistant se prépare en arrière-plan
         addNav(R.id.msastuce, AstuceActivity9.class);
         addNav(R.id.quiz2, QuizActivity.class);
 // Loader pour quiz2

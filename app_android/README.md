@@ -28,7 +28,12 @@ Prérequis : JDK 17 ou 21, SDK Android (plateforme 35). Puis, à la racine de ce
 - `MainActivity11` et `MainActivity12` (déclarées sans code) retirées du manifeste.
 - **Vidéos remplacées provisoirement par des images** du manuel (`res/drawable-nodpi/lecon_*.webp`, 1,2 Mo au lieu de ~714 Mo) via `MediaImages` et `ImageLessonActivity`.
 - Scan des codes du manuel : `MainActivity8` → `LessonActivity` (65 fiches, `assets/lessons.json`).
-- Assistant : base `assets/knowledge_manuel.json` (209 fiches tirées du manuel).
+- **Assistant IA hors ligne refait** (`brain/` + `AIChatActivity`) : une seule base `assets/brain.json`
+  (2 347 fiches après fusion de 3 410 fiches et suppression de 1 063 doublons, dont les 209 sections du manuel et
+  40 fiches nouvelles), compréhension des fautes et abréviations, suites de conversation, avis « Utile / Pas utile »
+  mémorisés, dictée vocale et lecture à voix haute. Évaluation : 98 % de bonnes réponses sur le jeu de réglage
+  (ancien moteur : 43 %), 89 % sur le jeu de contrôle (ancien : 31 %). Voir `app_update/README.md`.
 - Démonstration animée en code « Créer et organiser » (`demo/`).
 
-Régénérer les données du manuel : `python3 app_update/tools/export_manuel.py` (à la racine du dépôt).
+Régénérer les données du manuel et de l'assistant (à la racine du dépôt) :
+`python3 app_update/tools/export_manuel.py && python3 app_update/tools/build_brain.py`.

@@ -1,55 +1,39 @@
-# Application HELP-ME — mise à jour liée au manuel (étape 1)
+# Outils de l'application HELP-ME
 
-Fichiers à intégrer au projet Android Studio de l'application (`com.hightechniger.help_me`).
+Le projet Android complet se trouve dans `app_android/`. Ce dossier contient les **outils** et les **sources de
+données** qui alimentent l'application à partir du manuel.
 
-## Contenu
+| Dossier / fichier | Rôle |
+|---|---|
+| `tools/export_manuel.py` | Lit le manuel (`manuel/build/manuel.html`) et écrit `assets/lessons.json` (65 fiches de leçon, une par code-barres) et `knowledge/knowledge_manuel.json` |
+| `knowledge/` | Sources de l'assistant : `knowledge_manuel.json` (manuel), `knowledge_plus.json` (fiches rédigées pour combler les manques), `knowledge_pro.json`, `data_clean.json`, `data.json` (bases d'origine de l'application) |
+| `tools/build_brain.py` | Fusionne les sources, supprime les doublons, classe par thème, calcule les fiches voisines → `app_android/app/src/main/assets/brain.json` |
+| `tools/brain_eval/` | Évaluation de l'assistant : `cases.txt` (réglage), `cases_controle.txt` (contrôle), comparaison avec l'ancien moteur |
+| `tools/preview/` | Rendu sur ordinateur des démonstrations animées (même code de scène que l'application) |
+| `preview/` | Aperçu vidéo de la démonstration « Créer et organiser » |
 
-| Fichier | Où le mettre | Rôle |
-|---|---|---|
-| `assets/lessons.json` | `app/src/main/assets/` | 65 fiches de leçons (une par code-barres du manuel) : titre, partie, page, résumé, points clés, « À retenir », vidéo |
-| `assets/knowledge_manuel.json` | `app/src/main/assets/` | 209 fiches de connaissances tirées du manuel pour l'assistant IA (format `intent / question / tags / answer / image`) |
-| `java/.../MainActivity8.java` | remplace l'existant | Le scan ouvre la fiche de leçon pour **tous** les codes (28 d'origine + 35 nouveaux) |
-| `java/.../LessonActivity.java` | nouveau | Écran de leçon moderne (animations d'apparition, vidéo, points clés, bouton vers l'assistant) |
-| `java/.../AIChatActivity.java` | remplace l'existant | Charge `knowledge_manuel.json` en priorité ; reçoit la question venant d'une leçon |
+## Mettre à jour l'assistant après une modification du manuel
 
-| `java/.../demo/*.java` | nouveau paquet `com.hightechniger.help_me.demo` | Démonstrations animées dessinées en code (moteur + scène « Créer et organiser ») |
-| `java/.../MainActivity4.java` | remplace l'existant | Le menu « Créer et organiser » ouvre la démonstration animée au lieu de `vid5.mp4` |
-
-À ajouter dans `AndroidManifest.xml`, dans `<application>` :
-
-```xml
-<activity android:name=".LessonActivity" android:exported="false" />
-<activity android:name=".demo.DemoActivity" android:exported="false"
-    android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+```
+python3 manuel/tools/build.py              # reconstruit le manuel
+python3 app_update/tools/export_manuel.py  # fiches de leçon + fiches du manuel
+python3 app_update/tools/build_brain.py    # base unique de l'assistant (brain.json)
+app_update/tools/brain_eval/probe.sh "comment faire une somme dans excel"   # essai en ligne de commande
+CLS=Eval app_update/tools/brain_eval/probe.sh                               # évaluation chiffrée
+CASES=cases_controle.txt CLS=Eval app_update/tools/brain_eval/probe.sh
 ```
 
-## Vidéo remplacée par une animation en code : `vid5.mp4`
+Pour ajouter une connaissance : ajouter une fiche dans `knowledge/knowledge_plus.json`
+(`intent` = thème, `title`, `question` = plusieurs façons de demander, `tags`, `answer`), puis relancer `build_brain.py`.
 
-`vid5.mp4` (« Créer et organiser », code 2017, **17,4 Mo**) est remplacée par la démonstration
-`CreerOrganiserScene`, dessinée en direct (code compilé : environ 40 Ko).
-Contenu identique au manuel : clic droit › Nouveau › Dossier, nommer, ouvrir, Ctrl + Maj + N, F2,
-glisser-déposer, Suppr, Corbeille › Restaurer, puis un écran « À retenir ». Sous-titres synchronisés,
-boutons Précédent / Lecture-Pause / Suivant / Rejouer, barre de progression.
+## L'assistant hors ligne
 
-Après intégration, **supprimer `app/src/main/res/raw/vid5.mp4`** (vérifier d'abord qu'aucun autre fichier
-ne référence `R.raw.vid5`, sinon la compilation échoue).
+Le moteur est dans `app_android/app/src/main/java/com/hightechniger/help_me/brain/` (Java pur, sans Internet) :
 
-Aperçu de l'animation : `preview/demo_creer_organiser_apercu.mp4` (rendu ici avec le même code de scène).
-Pour créer une nouvelle démonstration : écrire une classe qui étend `DemoScene`, l'ajouter dans
-`DemoActivity.create()`, et indiquer son identifiant dans le champ `demo` de `lessons.json`
-(table `DEMOS` de `tools/export_manuel.py`).
-
-Les 28 codes d'origine gardent leur vidéo (même correspondance que l'ancien `MainActivity8`). Les 35 nouveaux codes affichent la fiche de leçon en attendant leurs vidéos : il suffira d'ajouter la vidéo dans `res/raw` et son nom dans le champ `video` de `lessons.json`.
-
-## Régénérer les données après une modification du manuel
-
-```bash
-python3 manuel/tools/build.py           # reconstruit le manuel (et codes-helpme.json)
-python3 app_update/tools/export_manuel.py
-```
-
-## Points relevés dans l'application actuelle
-
-1. **Sécurité (urgent)** : `res/raw/helpmebot.json` est une clé privée de compte de service Google Cloud embarquée dans l'APK. À révoquer dans la console Google Cloud et à remplacer par un appel via un serveur. Ce fichier n'est pas copié ici.
-2. **Taille** : environ 714 Mo de vidéos dans `res/raw` — au-delà des limites de Google Play pour le module de base : utiliser des packs de ressources (Play Asset Delivery) ou le streaming.
-3. `assets/bookone.pdf` est l'ancien manuel : à remplacer par le nouveau PDF.
+- **Compréhension** : accents, apostrophes, fautes de frappe (« coment fair une somme sur exel »), abréviations
+  (mdp, ppt, pc), expressions (« mot de passe », « capture d'écran », « tableau croisé dynamique »), synonymes.
+- **Recherche** : BM25F sur les questions, les mots-clés et les réponses ; priorité au manuel ; détection du logiciel
+  (Word, Excel, Windows…) ; précision de la question ; confiance mesurée.
+- **Conversation** : salutations, aide, contact, calculs (« 15 % de 2000 »), suites de question (« et dans Excel ? »),
+  « plus de détails », « non, autre chose », propositions quand la question est ambiguë, réponse honnête hors sujet.
+- **Apprentissage local** : les avis « Utile / Pas utile » sont mémorisés sur le téléphone et améliorent les réponses suivantes.

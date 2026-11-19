@@ -1,60 +1,20 @@
-package com.hightechniger.help_me;
-
-import android.content.Context;
-import android.os.Bundle;
-import android.text.TextUtils;
-import android.util.Pair;
-import android.view.View;
-import android.widget.EditText;
-import android.widget.HorizontalScrollView;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
-import android.widget.TextView;
-
-import androidx.appcompat.app.AppCompatActivity;
-
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.text.Normalizer;
+import java.util.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-
-/**
- * AIChatActivity - version améliorée et fusionnant local JSONs
- *
- * - Charge dans l'ordre : knowledge_pro.json (priorité haute) -> data_clean.json -> data.json
- * - Merge intelligent des tokens via fields: patterns, question, tags, legacy question
- * - TF-IDF weights, cosine similarity, synonym boosting, simple spellfix, conversation context
- * - 100% offline
- *
- * Remplace ton ancien fichier par celui-ci ; conserve les drawables et layout existants.
- */
-public class AIChatActivity extends AppCompatActivity {
-
-    private EditText inputBox;
-    private LinearLayout chatContainer;
-
+/** Ancien moteur de l'assistant (copie de AIChatActivity avant la refonte), pour comparaison. */
+class OldEngine {
+    static class Pair<A, B> { final A first; final B second; Pair(A a, B b) { first = a; second = b; } }
+    private final Path assets, know;
     private List<KBItem> kb = new ArrayList<>();
     private final Map<String, List<Integer>> invertedIndex = new HashMap<>();
     private final Map<String, Set<String>> synonyms = new HashMap<>();
-
-    // idf map and vocabulary
     private final Map<String, Double> idf = new HashMap<>();
     private final Set<String> vocabulary = new HashSet<>();
-
     private final Set<String> stopWords = new HashSet<>(Arrays.asList(
             "le","la","les","de","du","des","dans","un","une","pour","comment","faire",
             "mon","ma","mes","avec","au","aux","ce","cette","sur","est","que","quoi","ou","où",
@@ -62,9 +22,6 @@ public class AIChatActivity extends AppCompatActivity {
             "en","par","plus","moins","tres","très","bien","aujourd","hui","d’","l’","d","l"
     ));
 
-    private final Random random = new Random();
-
-    // small spelling correction map (expandable)
     private final Map<String, String> spellFix = new HashMap<>();
 
     // conversation context
@@ -73,268 +30,9 @@ public class AIChatActivity extends AppCompatActivity {
     // confidence threshold for returning an answer (tuneable)
     private static final double CONFIDENCE_THRESHOLD = 0.25;
 
-    private final String[] welcomeLines = new String[]{
-            "Bonjour 👋 Je suis HELP-ME, votre guide numérique ! Ensemble, découvrons la puissance de l’informatique bureautique 💻.",
-            "Salut 👋 prêt(e) à apprendre ? Word, Excel, PowerPoint et Internet n’auront plus de secret pour vous ! 🚀",
-            "Bienvenue 👋 Je suis HELP-ME 🤖. Apprenons pas à pas comment maîtriser les outils du bureau moderne 🧠.",
-            "Coucou 👋 Ravi de vous revoir ! Avez-vous envie de progresser aujourd’hui dans Word ou Excel ? 😃",
-            "Hello 👋 Je suis HELP-ME, votre assistant informatique. Ensemble, développons vos compétences numériques 💪.",
-            "Bienvenue 👋 Comment puis-je vous aider aujourd’hui à mieux utiliser votre ordinateur ? 🖥️",
-            "Bonjour 🌞 Je suis HELP-ME. Le numérique est un atout incontournable — commençons à l’explorer ensemble ! 💡",
-            "Salut 👋 Chaque clic compte ! Découvrez aujourd’hui un nouvel outil bureautique avec HELP-ME 🧩.",
-            "Bonjour 👋 et bienvenue dans votre espace d’apprentissage ! Ici, le numérique devient facile et amusant 😄.",
-            "Je suis HELP-ME 🤖. Dites-moi ce que vous voulez apprendre : Word, Excel, PowerPoint ou Internet 🌐.",
-            "Bienvenue 👋 Ensemble, faisons du numérique un véritable levier pour votre réussite professionnelle 💼.",
-            "Salut 🙌 Envie de créer des documents, des tableaux ou des présentations ? Je suis là pour vous accompagner 🧭.",
-            "Bonjour 👋 La maîtrise des outils bureautiques ouvre de nombreuses portes. Apprenons ensemble à les utiliser 🔑.",
-            "Hey 👋 Je suis HELP-ME ! Utiliser le numérique, c’est investir dans votre avenir 🌍. Prêt(e) à commencer ?",
-            "Bienvenue 💫 Votre aventure numérique commence ici. Choisissez un sujet et je vous guide pas à pas 📘.",
-            "Salut 👋 Saviez-vous qu’Excel peut vous faire gagner du temps ? Et Word rendre vos rapports plus pros ? 😎",
-            "Bonjour 🌟 Je suis HELP-ME. Découvrons ensemble comment Internet peut vous aider à mieux travailler 📡.",
-            "Bienvenue 👋 L’informatique n’est pas compliquée — avec un peu de pratique, tout devient simple ! 💡",
-            "Salut 👋 Les outils bureautiques sont vos alliés du quotidien. Prêt(e) à les maîtriser comme un pro ? 🧠",
-            "Bonjour 👋 Avec HELP-ME, chaque jour est une opportunité d’apprendre quelque chose de nouveau 💻✨",
-            "Bienvenue 🎉 Ensemble, rendons le numérique accessible à tous. Commencez par une question, et je m’occupe du reste 🤝",
-            "Salut 👋 Avez-vous pensé à perfectionner vos compétences Word ou Excel aujourd’hui ? C’est le bon moment ⏰",
-            "Bonjour 🌈 Votre futur numérique commence ici. Parlons bureautique, efficacité et créativité ! 💡"
-    };
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_aichat);
-
-        inputBox = findViewById(R.id.inputBox);
-        chatContainer = findViewById(R.id.chatContainer);
-        ImageButton sendButton = findViewById(R.id.sendButton);
-
-        initSpellFix();
-        initSynonyms();
-        loadKnowledgeMerged(); // <-- load & merge all JSONs
-
-        // Message de bienvenue aléatoire
-        addMessage(welcomeLines[random.nextInt(welcomeLines.length)], false, "assistanimg");
-
-        // Suggestions au démarrage
-        showStartupSuggestions();
-
-        // Question transmise depuis une fiche de leçon (scan d'un code du manuel)
-        String fromLesson = getIntent().getStringExtra("question");
-        if (fromLesson != null && !fromLesson.trim().isEmpty()) {
-            inputBox.setText(fromLesson);
-            inputBox.setSelection(inputBox.getText().length());
-        }
-
-        sendButton.setOnClickListener(v -> {
-
-
-            hideKeyboard(inputBox);
-
-            String question = inputBox.getText().toString().trim();
-            if (!TextUtils.isEmpty(question)) {
-                addMessage("Vous : " + question, true, null);
-
-                AnswerResult res = findBestAnswer(question);
-                addMessage("HELP-ME 🤖 : " + res.answer, false, "assistantimg1");
-
-                if (res.showSuggestions) addSuggestionChips(res.suggestions);
-
-                inputBox.setText("");
-            }
-        });
-    }
-    private void hideKeyboard(View view) {
-        try {
-            android.view.inputmethod.InputMethodManager imm =
-                    (android.view.inputmethod.InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-
-            if (imm != null) {
-                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-            }
-        } catch (Exception ignored) {}
-    }
-
-    // ================= UI (identique à ta version améliorée) =================
-
-    private void showStartupSuggestions() {
-        List<String> suggestions = Arrays.asList(
-                "📘 Découvrir les composants d’un ordinateur",
-                "💾 Comprendre le système d’exploitation Windows",
-                "🖥️ Explorer le bureau Windows et ses icônes",
-                "📂 Gérer ses fichiers et dossiers avec l’Explorateur",
-                "⚙️ Configurer les paramètres Windows",
-                "🧹 Optimiser et entretenir son PC",
-                "🛡️ Sécuriser son ordinateur (antivirus, firewall)",
-                "🗂️ Apprendre Word : mise en page et styles",
-                "📄 Créer un CV professionnel sur Word",
-                "🧾 Insérer des tableaux et images dans Word",
-                "🔢 Maîtriser Excel : formules et fonctions de base",
-                "📊 Créer des graphiques et tableaux croisés dynamiques",
-                "🧮 Analyser des données avec Excel",
-                "🎞️ Concevoir des présentations PowerPoint",
-                "🎨 Personnaliser un thème PowerPoint moderne",
-                "🎬 Ajouter des animations et transitions",
-                "🌐 Naviguer sur Internet efficacement",
-                "🔍 Bien utiliser Google et les moteurs de recherche",
-                "📧 Configurer sa messagerie Gmail ou Outlook",
-                "💬 Utiliser les réseaux sociaux de manière professionnelle",
-                "☁️ Découvrir le stockage cloud (OneDrive, Google Drive)",
-                "📹 Organiser une visioconférence (Teams, Zoom, Meet)",
-                "🛒 Comprendre le commerce électronique et les paiements sécurisés",
-                "🏠 Créer un réseau Wi-Fi sécurisé à la maison",
-                "🏢 Travailler à distance : outils de collaboration",
-                "🤖 Introduction à l’intelligence artificielle",
-                "🧠 Comprendre le machine learning et ses applications",
-                "💡 Explorer le traitement du langage naturel (NLP)",
-                "👁️ Découvrir la vision par ordinateur",
-                "🧰 Les outils de développement IA : TensorFlow, PyTorch",
-                "🌍 Sécurité sur Internet et bonnes pratiques",
-                "📱 Utiliser les outils numériques pour la bureautique",
-                "💼 Améliorer sa productivité avec les outils numériques",
-                "🎯 Astuces Excel pour les professionnels",
-                "🗣️ Comment rédiger un rapport Word bien présenté",
-                "📈 Créer un tableau de bord interactif dans Excel",
-                "🧭 Découvrir les raccourcis clavier utiles",
-                "🧑‍💻 Bonnes pratiques pour le télétravail",
-                "📚 Différence entre Word, Excel et PowerPoint",
-                "🚀 Développer ses compétences numériques pas à pas"
-        );
-
-        LinearLayout container = new LinearLayout(this);
-        container.setOrientation(LinearLayout.VERTICAL);
-        container.setPadding(25, 25, 25, 25);
-        container.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
-
-        TextView title = new TextView(this);
-        title.setText("Suggestions rapides 💡");
-        title.setTextSize(17f);
-        title.setTextColor(getResources().getColor(android.R.color.black));
-        title.setPadding(0, 10, 0, 20);
-        title.setGravity(android.view.Gravity.CENTER);
-        title.setTypeface(null, android.graphics.Typeface.BOLD);
-        container.addView(title);
-
-        HorizontalScrollView scrollHorizontal = new HorizontalScrollView(this);
-        scrollHorizontal.setHorizontalScrollBarEnabled(false);
-        scrollHorizontal.setOverScrollMode(View.OVER_SCROLL_NEVER);
-        scrollHorizontal.setPadding(10, 5, 10, 5);
-
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.HORIZONTAL);
-        layout.setGravity(android.view.Gravity.CENTER_VERTICAL);
-
-        for (String s : suggestions) {
-            TextView chip = new TextView(this);
-            chip.setText(s);
-            chip.setPadding(40, 22, 40, 22);
-            chip.setBackgroundResource(R.drawable.chip_bg);
-            chip.setTextSize(15f);
-            chip.setTextColor(getResources().getColor(android.R.color.black));
-
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT);
-            p.setMargins(15, 15, 15, 15);
-            chip.setLayoutParams(p);
-
-            chip.setOnClickListener(v -> inputBox.setText(s));
-            layout.addView(chip);
-        }
-
-        scrollHorizontal.addView(layout);
-        container.addView(scrollHorizontal);
-        chatContainer.addView(container);
-
-        ScrollView scroll = findViewById(R.id.scrollView);
-        scroll.postDelayed(() -> scroll.fullScroll(View.FOCUS_DOWN), 300);
-    }
-
-    private void addSuggestionChips(List<String> suggestions) {
-        LinearLayout container = new LinearLayout(this);
-        container.setOrientation(LinearLayout.VERTICAL);
-        container.setPadding(20, 10, 20, 20);
-        container.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
-
-        TextView title = new TextView(this);
-        title.setText("Autres idées 💭");
-        title.setTextSize(16f);
-        title.setTextColor(getResources().getColor(android.R.color.black));
-        title.setPadding(0, 10, 0, 15);
-        title.setGravity(android.view.Gravity.CENTER);
-        title.setTypeface(null, android.graphics.Typeface.BOLD);
-        container.addView(title);
-
-        HorizontalScrollView scrollHorizontal = new HorizontalScrollView(this);
-        scrollHorizontal.setHorizontalScrollBarEnabled(false);
-        scrollHorizontal.setOverScrollMode(View.OVER_SCROLL_NEVER);
-        scrollHorizontal.setPadding(10, 5, 10, 5);
-
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.HORIZONTAL);
-        layout.setGravity(android.view.Gravity.CENTER_VERTICAL);
-
-        for (String s : suggestions) {
-            TextView chip = new TextView(this);
-            chip.setText(s);
-            chip.setPadding(40, 22, 40, 22);
-            chip.setBackgroundResource(R.drawable.chip_bg);
-            chip.setTextSize(15f);
-            chip.setTextColor(getResources().getColor(android.R.color.black));
-
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT);
-            p.setMargins(15, 15, 15, 15);
-            chip.setLayoutParams(p);
-
-            chip.setOnClickListener(v -> inputBox.setText(s));
-            layout.addView(chip);
-        }
-
-        scrollHorizontal.addView(layout);
-        container.addView(scrollHorizontal);
-        chatContainer.addView(container);
-
-        ScrollView scroll = findViewById(R.id.scrollView);
-        scroll.postDelayed(() -> scroll.fullScroll(View.FOCUS_DOWN), 300);
-    }
-
-    private void addMessage(String text, boolean isUser, String imageName) {
-        LinearLayout wrapper = new LinearLayout(this);
-        wrapper.setOrientation(LinearLayout.HORIZONTAL);
-        wrapper.setPadding(8,8,8,8);
-
-        if (!isUser) {
-            ImageView avatar = new ImageView(this);
-            int id = getResources().getIdentifier(imageName, "drawable", getPackageName());
-            avatar.setImageResource(id);
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(90,90);
-            p.setMargins(4,4,12,4);
-            avatar.setLayoutParams(p);
-            wrapper.addView(avatar);
-        }
-
-        TextView msg = new TextView(this);
-        msg.setText(text);
-        msg.setTextSize(16f);
-        msg.setPadding(22,16,22,16);
-        msg.setBackgroundResource(isUser ? R.drawable.bubble_user : R.drawable.bubble_ai);
-
-        LinearLayout.LayoutParams paramsMsg = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        paramsMsg.setMargins(8,8,8,8);
-        msg.setLayoutParams(paramsMsg);
-
-        wrapper.addView(msg);
-        chatContainer.addView(wrapper);
-
-        ScrollView scroll = findViewById(R.id.scrollView);
-        scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
-    }
-
-    // ================= Knowledge / NLP Engine =================
-
+    OldEngine(Path assets, Path know) { this.assets = assets; this.know = know; initSpellFix(); initSynonyms(); loadKnowledgeMerged(); }
+    String answer(String q) { return findBestAnswer(q).answer; }
     static class KBItem {
         String intent;
         List<String> patterns;
@@ -439,7 +137,7 @@ public class AIChatActivity extends AppCompatActivity {
 
     private JSONArray tryLoadJson(String name) {
         try {
-            InputStream is = getAssets().open(name);
+            InputStream is = Files.newInputStream(know.resolve(name));
             byte[] buffer = new byte[is.available()];
             int r = is.read(buffer);
             is.close();

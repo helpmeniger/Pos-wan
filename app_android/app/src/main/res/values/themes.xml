@@ -9,6 +9,16 @@
         <item name="android:windowBackground">@color/white</item>
     </style>
 
+    <!-- Assistant HELP-ME : pas de plein écran (le clavier doit pouvoir redimensionner la fenêtre) -->
+    <style name="Theme.HelpMe.Chat" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">#326FBF</item>
+        <item name="colorPrimaryVariant">#2A5FA6</item>
+        <item name="colorAccent">#326FBF</item>
+        <item name="android:statusBarColor">#2A5FA6</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowBackground">@color/light_gray</item>
+    </style>
+
     <!-- ✅ Thème principal HELP-ME (MaterialComponents) -->
     <style name="Theme.HelpMe" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/premium_blue_900</item>
