@@ -45,5 +45,22 @@ verif "MariaDB arrêtée proprement" "for i in \$(seq 1 20); do grep -q 'Shutdow
 verif "second démarrage (base existante, mots de passe réutilisés)" demarrer
 verif "même mot de passe d'application" "grep -q \"\$(grep '^app=' '$T/donnees/secret/bd.ini' | cut -d= -f2)\" '$T/app/.env'"
 verif "arrêt final" arreter
+
+# Fenêtre comme sous Windows (Edge confie la fenêtre à un autre de ses processus) : POS Marwa doit rester en marche tant
+# que la fenêtre envoie ses signes de vie, puis s'arrêter seul après sa fermeture. Nécessite Chromium et Xvfb.
+CHROME=${POS_BUREAU_CHROMIUM:-$(ls /opt/pw-browsers/chromium-*/chrome-linux64/chrome 2>/dev/null | head -1)}
+if [ -n "$CHROME" ] && command -v Xvfb >/dev/null; then
+  echo "== Fenêtre (signes de vie, fermeture)"
+  Xvfb :93 -screen 0 1366x800x24 >/dev/null 2>&1 & XV=$!
+  printf '#!/bin/sh\nnohup "%s" --no-sandbox "$@" >/dev/null 2>&1 &\nexit 0\n' "$CHROME" > "$T/faux-edge.sh"; chmod +x "$T/faux-edge.sh"
+  ( DISPLAY=:93 POS_BUREAU_NAVIGATEUR="$T/faux-edge.sh" POS_BUREAU_INACTIF=20 "$T/lanceur" --dossier="$T" >> "$T/essai.log" 2>&1 & )
+  sleep 45
+  verif "fenêtre ouverte 45 s : toujours en marche, signes de vie reçus" "curl -s http://127.0.0.1:8740/__bureau/sante | grep -Eq 'pret=true inactif=([0-9]|1[0-9])s'"
+  pkill -f "$T/donnees/fenetre" || true
+  verif "fenêtre fermée : arrêt automatique (délai d'essai 20 s)" "( for i in \$(seq 1 20); do curl -s -m 1 http://127.0.0.1:8740/__bureau/sante >/dev/null || exit 0; sleep 3; done; exit 1 )"
+  kill $XV 2>/dev/null || true
+else
+  echo "(Chromium ou Xvfb absent : essai de la fenêtre non fait)"
+fi
 echo "Résultat : $ok réussi(s), $ko échec(s) — journal : $T/essai.log"
 [ "$ko" -eq 0 ]

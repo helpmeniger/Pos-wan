@@ -16,7 +16,7 @@ AUCUN autre logiciel n'est nécessaire : ni WampServer, ni XAMPP, ni serveur à 
 La fenêtre utilise Microsoft Edge (présent sur Windows 10 et 11) ; à défaut Google Chrome.
 
 UTILISATION
-  - Fermer la fenêtre arrête POS Marwa et sa base de données (proprement).
+  - Fermer la fenêtre arrête POS Marwa et sa base de données (proprement), environ 3 minutes plus tard.
   - « Arrêter POS Marwa » (menu Démarrer) arrête tout si une fenêtre est restée ouverte ailleurs.
   - Menu de gestion en tuiles (bouton « Menu ») ; modifiable dans Configuration → Paramètres.
   - Réglages avancés : fichier pos-marwa.ini (ports, autres postes du réseau, impression directe).

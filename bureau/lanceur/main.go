@@ -21,6 +21,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -235,6 +236,8 @@ type launcher struct {
 	ownDB    bool
 	workers  []*worker
 	jeton    string
+	t0       time.Time    // départ (horloge monotone : le temps de mise en veille du PC n'est pas compté)
+	lastBeat atomic.Int64 // dernier signe de vie d'une fenêtre (requête ou battement), en ns depuis t0
 	ready    atomic.Bool
 	stopping atomic.Bool
 	stopOnce sync.Once
@@ -476,6 +479,7 @@ func (l *launcher) startPHP() error {
 			r.Header.Set("X-Bureau-Jeton", l.jeton)
 		}
 		rp.FlushInterval = -1 // réponses en continu (assistant MARWA AI, flux)
+		rp.ModifyResponse = injectBeat
 		rp.ErrorHandler = func(rw http.ResponseWriter, r *http.Request, err error) {
 			log.Printf("Requête %s %s : %v", r.Method, r.URL.Path, err)
 			rw.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -538,10 +542,23 @@ b{color:#f39c12}</style></head><body><div class="r"></div><div style="font-size:
 }
 
 func (l *launcher) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	if !strings.HasPrefix(r.URL.Path, "/__bureau/") {
+		l.beat()
+	}
 	switch r.URL.Path {
+	case "/__bureau/battement":
+		l.beat()
+		rw.Header().Set("Cache-Control", "no-store")
+		rw.WriteHeader(http.StatusNoContent)
+		return
+	case "/__bureau/battement.js":
+		rw.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+		rw.Header().Set("Cache-Control", "no-store")
+		io.WriteString(rw, beatJS)
+		return
 	case "/__bureau/sante":
 		rw.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		fmt.Fprintf(rw, "POS Marwa Bureau %s pret=%v", version, l.ready.Load())
+		fmt.Fprintf(rw, "POS Marwa Bureau %s pret=%v inactif=%ds", version, l.ready.Load(), int((time.Since(l.t0)-time.Duration(l.lastBeat.Load()))/time.Second))
 		return
 	case "/__bureau/arret":
 		// Arrêt demandé par « POS Marwa.exe --arreter », seulement depuis ce PC et avec le jeton du fichier local
@@ -569,6 +586,7 @@ func (l *launcher) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		io.WriteString(rw, pageAttente("Un instant : le serveur redémarre…"))
 		return
 	}
+	l.beat()
 	w.busy.Add(1)
 	defer w.busy.Add(-1)
 	w.proxy.ServeHTTP(rw, r)
@@ -599,18 +617,61 @@ func (l *launcher) openWindow() (func(), error) {
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
-	started := time.Now()
-	// Avec son propre profil (--user-data-dir), le navigateur lancé ici est le processus principal de la fenêtre :
-	// il se termine quand la dernière fenêtre de POS Marwa est fermée. S'il se termine presque aussitôt, il a confié
-	// la fenêtre à un navigateur déjà ouvert avec ce profil : on ne peut pas savoir quand elle sera fermée, les
-	// serveurs restent en marche (« Arrêter POS Marwa » ou fermeture de la session Windows les arrête).
-	return func() {
-		err := cmd.Wait()
-		if time.Since(started) < 8*time.Second {
-			log.Printf("Fenêtre confiée à un navigateur déjà ouvert (%v) : POS Marwa reste en marche jusqu'à « Arrêter POS Marwa »", err)
-			select {} // attente sans fin : l'arrêt viendra de --arreter ou du système
+	go cmd.Wait()
+	// La fermeture n'est pas déduite du processus du navigateur (Edge peut se relancer ou confier la fenêtre à un
+	// autre de ses processus) : chaque page de POS Marwa envoie un signe de vie ; sans signe de vie, arrêt (watchdog).
+	return func() {}, nil
+}
+
+// Script ajouté aux pages : signe de vie toutes les 15 s (une fenêtre réduite en envoie au moins un par minute)
+const beatJS = `(function(){var u='/__bureau/battement';function b(){try{fetch(u,{cache:'no-store',keepalive:true}).catch(function(){});}catch(e){}}b();setInterval(b,15000);document.addEventListener('visibilitychange',b);})();`
+
+// Insère <script src="/__bureau/battement.js"> avant </body> dans les pages HTML complètes (pas les fragments,
+// ni le JSON, les fichiers ou les flux).
+func injectBeat(resp *http.Response) error {
+	ct := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(ct, "text/html") || resp.Header.Get("Content-Encoding") != "" || resp.Request.Method != http.MethodGet {
+		return nil
+	}
+	const max = 8 << 20
+	body, err := io.ReadAll(io.LimitReader(resp.Body, max+1))
+	if err != nil {
+		resp.Body.Close()
+		return err
+	}
+	if len(body) > max { // très grande page : transmise telle quelle
+		resp.Body = struct {
+			io.Reader
+			io.Closer
+		}{io.MultiReader(bytes.NewReader(body), resp.Body), resp.Body}
+		return nil
+	}
+	resp.Body.Close()
+	if i := bytes.LastIndex(bytes.ToLower(body), []byte("</body>")); i >= 0 {
+		body = append(body[:i:i], append([]byte(`<script src="/__bureau/battement.js"></script>`), body[i:]...)...)
+	}
+	resp.Body = io.NopCloser(bytes.NewReader(body))
+	resp.ContentLength = int64(len(body))
+	resp.Header.Set("Content-Length", strconv.Itoa(len(body)))
+	return nil
+}
+
+func (l *launcher) beat() { l.lastBeat.Store(int64(time.Since(l.t0))) }
+
+// Arrêt automatique quand plus aucune fenêtre (de ce PC ou d'un autre poste) ne donne signe de vie depuis « idle ».
+func (l *launcher) watchdog(idle time.Duration) {
+	l.beat()
+	for {
+		select {
+		case <-l.done:
+			return
+		case <-time.After(10 * time.Second):
 		}
-	}, nil
+		if time.Since(l.t0)-time.Duration(l.lastBeat.Load()) > idle {
+			l.stop("plus aucune fenêtre ouverte depuis " + idle.String())
+			return
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -691,7 +752,7 @@ func main() {
 	}
 
 	// Déjà en marche : on ouvre seulement une fenêtre
-	l := &launcher{c: c, jeton: randomHex(24), done: make(chan struct{})}
+	l := &launcher{c: c, jeton: randomHex(24), done: make(chan struct{}), t0: time.Now()}
 	if running(c.portWeb) {
 		if c.fenetre {
 			if _, err := l.openWindow(); err != nil {
@@ -747,7 +808,11 @@ func main() {
 
 	go waitSignal(func() { l.stop("signal du système") })
 	if wait != nil {
-		go func() { wait(); l.stop("fenêtre fermée") }()
+		idle := 3 * time.Minute
+		if n, err := strconv.Atoi(os.Getenv("POS_BUREAU_INACTIF")); err == nil && n >= 10 { // essais : délai en secondes
+			idle = time.Duration(n) * time.Second
+		}
+		go l.watchdog(idle)
 	}
 	<-l.done
 }

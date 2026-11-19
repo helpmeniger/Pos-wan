@@ -25,7 +25,7 @@ POS Marwa.exe ──► MariaDB 10.11   (127.0.0.1:3407, donnees\mysql)
 |---|---|
 | Premier démarrage | `mariadb-install-db` crée la base ; mot de passe root et mot de passe de l'application tirés au hasard (`donnees\secret\bd.ini`) ; base `poswan` et compte `poswan` (droits sur cette base seulement) ; `app\.env` écrit (clé `APP_KEY` aléatoire, `MENU_STYLE=tuiles`, `POS_EDITION=bureau`). Un premier démarrage interrompu est refait : le dossier inachevé est mis de côté (`donnees\mysql-inacheve-…`), jamais supprimé. |
 | Démarrage suivant | Base démarrée avec `donnees\mariadb.ini` (réécrit à chaque fois) ; une base restée démarrée (lanceur arrêté de force) est réutilisée. |
-| Fenêtre | Ouverte tout de suite sur une page « Démarrage… » qui se recharge seule. Fermer la fenêtre arrête les serveurs PHP puis la base (`mariadb-admin shutdown`). |
+| Fenêtre | Ouverte tout de suite sur une page « Démarrage… » qui se recharge seule. Chaque page envoie un signe de vie toutes les 15 s (`/__bureau/battement.js`, ajouté par le répartiteur). Sans signe de vie depuis 3 minutes (dernière fenêtre fermée, sur ce PC ou un autre poste), arrêt des serveurs PHP puis de la base (`mariadb-admin shutdown`). La mise en veille du PC n'est pas comptée. |
 | Double-clic alors que POS Marwa tourne | Une nouvelle fenêtre s'ouvre ; rien n'est redémarré. |
 | `POS Marwa.exe --arreter` | Arrête tout (raccourci « Arrêter POS Marwa ») ; jeton local `donnees\secret\arret.jeton`. |
 | `POS Marwa.exe --sans-fenetre` | Serveurs seuls (poste serveur pour d'autres caisses, essais). |

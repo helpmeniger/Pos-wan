@@ -2,6 +2,13 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.13.3] — 2026-11-19
+
+### Corrigé (POS Marwa Bureau, signalé au troisième essai sous Windows)
+- Après l'écran « Démarrage… », la fenêtre affichait une erreur de connexion : POS Marwa arrêtait encore ses serveurs en croyant la fenêtre fermée, Edge ne gardant pas la fenêtre dans le processus lancé par POS Marwa. La fermeture n'est plus déduite du navigateur : chaque page envoie un signe de vie toutes les 15 s, et POS Marwa ne s'arrête que si plus aucune fenêtre (de ce PC ou d'un autre poste) n'en a envoyé depuis 3 minutes. La mise en veille du PC n'est pas comptée.
+- Point de contrôle `/__bureau/sante` : temps écoulé depuis le dernier signe de vie (dépannage).
+- Essai automatique : fenêtre Chromium confiée à un autre processus (comme Edge) restée en marche, puis arrêt après fermeture (15 vérifications).
+
 ## [3.13.2] — 2026-11-19
 
 ### Corrigé (POS Marwa Bureau, signalé au deuxième essai sous Windows)
