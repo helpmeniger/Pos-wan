@@ -2,6 +2,22 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.13.0] — 2026-11-19
+
+### Ajouté
+- **POS Marwa Bureau** (`bureau/`) : installateur Windows `POS-Marwa-Bureau-<version>-Setup.exe` (Windows 10 / 11, 64 bits). Aucun WampServer ni serveur à installer : PHP 8.3 et MariaDB 10.11 portables sont livrés et démarrés sans fenêtre par `POS Marwa.exe`, qui ouvre POS Marwa dans sa propre fenêtre (Edge ou Chrome en mode application) et arrête tout à sa fermeture. Programme, base de données, sauvegardes et journaux restent dans le dossier du logiciel (C:\POS Marwa par défaut).
+- Premier démarrage automatique : base créée, mots de passe tirés au hasard, `.env` écrit ; l'assistant d'installation ne demande plus la base de données dans cette édition.
+- Édition gestion commerciale : logiciel complet et modules banques, comptabilité, doublons, Fiscal Connect, livraisons, MARWA AI, Marwa Pay ; les autres modules ne sont pas livrés.
+- Sécurité : base et serveurs n'écoutant que sur le PC (réseau local seulement sur option, avec règle de pare-feu limitée), routeur qui n'exécute que l'application, adresse du poste protégée par jeton, serveurs arrêtés si le lanceur est fermé de force, données conservées à la désinstallation (suppression seulement après deux confirmations).
+- **Menu de gestion en tuiles** : réglage « Présentation du menu de gestion » (liste latérale ou tuiles) ; en tuiles, l'accueil de la gestion est l'écran « Menu de gestion » et le menu latéral disparaît. Par défaut en tuiles dans l'édition Bureau, inchangé (liste) dans la version web.
+
+### Corrigé
+- Contrôle de saisie de l'identifiant (installation, utilisateurs, inscription SaaS) refusé par les navigateurs récents : la vérification dans le navigateur ne se faisait pas.
+
+### Essais et limites
+- Lanceur essayé sous Linux avec le PHP et le MariaDB du système (`bureau/essai-linux.sh`, 12 vérifications), installation complète dans Chromium à travers le lanceur ; suite complète 195 / 195.
+- **Non exécuté sous Windows** : l'installateur, `POS Marwa.exe`, PHP et MariaDB pour Windows n'ont pas pu être lancés dans l'environnement de construction (pas de PC Windows, Wine inutilisable). Vérifié sans exécution : bibliothèques toutes présentes, programme sans console, contenu de l'installateur. Installateur non signé (avertissement SmartScreen).
+
 ## [3.12.0] — 2026-11-16
 
 ### Ajouté

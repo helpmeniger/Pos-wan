@@ -94,6 +94,9 @@ final class InstallController extends Controller
     {
         $hasEnv = is_file(BASE_PATH . '/.env');
         $typed = Request::str('db_name') !== '' || Request::str('db_user') !== '';
+        if ($hasEnv && Env::get('POS_EDITION', '') === 'bureau') {
+            $typed = false; // édition Bureau : base préparée par le lanceur, jamais modifiée depuis ce formulaire
+        }
         if (!$typed && !$hasEnv) {
             throw new BusinessException('Renseignez la base de données : nom, utilisateur et mot de passe créés dans cPanel (ou phpMyAdmin).');
         }

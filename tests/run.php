@@ -6818,6 +6818,28 @@ require __DIR__ . '/marwa_ai.php';
 // MARWA AI 3.0 : bibliothèque de scénarios, centre d'entraînement
 require __DIR__ . '/marwa_ai3.php';
 
+test('Menu de gestion en tuiles (édition Bureau) : réglage, accueil sur le menu, plus de menu latéral, retour à la liste', function () use ($B) {
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $before = setting('menu_style');
+    try {
+        $pg = $a->req('GET', "$B/settings")['body'];
+        ok(str_contains($pg, 'name="menu_style"') && str_contains($pg, 'Tuiles'), 'réglage « Présentation du menu de gestion »');
+        setting_set('menu_style', 'tuiles');
+        $home = $a->req('GET', "$B/");
+        ok($home['code'] === 302 && preg_match('/^Location:\s*\S*\/menu\s*$/mi', $home['headers']), 'accueil de la gestion : écran « Menu de gestion »');
+        $menu = $a->req('GET', "$B/menu")['body'];
+        ok(str_contains($menu, 'menu-tuiles') && str_contains($menu, 'hub-circle') && str_contains($menu, 'Tableau de bord'), 'tuiles affichées (tableau de bord compris), corps de page en mode tuiles');
+        ok(str_contains((string) file_get_contents(PUBLIC_PATH . '/assets/css/app.css'), '.menu-tuiles .sidebar'), 'menu latéral masqué en mode tuiles');
+        ok(str_contains($a->req('GET', "$B/products")['body'], 'btn-warning fw-semibold'), 'bouton « Menu » mis en avant sur les autres pages');
+        setting_set('menu_style', 'liste');
+        $home = $a->req('GET', "$B/");
+        ok(!str_contains($a->req('GET', "$B/menu")['body'], 'menu-tuiles') && preg_match('/^Location:\s*\S*\/dashboard/mi', $home['headers']), 'retour à la liste : tableau de bord en accueil');
+    } finally {
+        setting_set('menu_style', $before);
+    }
+});
+
 test('Installateur désactivé après installation', function () use ($B) {
     eq(404, (new Http())->req('GET', "$B/install")['code']);
 });

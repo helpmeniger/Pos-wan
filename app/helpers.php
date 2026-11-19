@@ -190,6 +190,19 @@ function fdate(?string $d, bool $time = true): string
 }
 
 /** Paramètres applicatifs stockés en base (table settings). */
+/**
+ * Présentation du menu de gestion : « liste » (menu latéral) ou « tuiles » (écran « Menu de gestion » en icônes).
+ * Réglage de l'établissement, sinon valeur de l'installation (MENU_STYLE dans .env : « tuiles » pour l'édition Bureau).
+ */
+function menu_style(): string
+{
+    $v = (string) setting('menu_style', '');
+    if ($v === '') {
+        $v = (string) App\Core\Env::get('MENU_STYLE', 'liste');
+    }
+    return $v === 'tuiles' ? 'tuiles' : 'liste';
+}
+
 function setting(string $key, ?string $default = null): ?string
 {
     static $cache = null;

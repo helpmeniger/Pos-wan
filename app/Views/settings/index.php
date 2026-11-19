@@ -2,7 +2,7 @@
   <div class="col-xl-7">
     <form method="post" action="<?= e(url('/settings')) ?>"><?= csrf_field() ?>
     <div class="card mb-3"><div class="card-header"><i class="bi bi-building"></i> Entreprise, documents et règles de gestion</div><div class="card-body row g-3">
-      <?php foreach ($fields as $key => $f): [$label, $type] = $f; $val = (string) setting($key, ''); ?>
+      <?php foreach ($fields as $key => $f): [$label, $type] = $f; $val = $key === 'menu_style' ? menu_style() : (string) setting($key, ''); ?>
         <?php if ($type === 'bool'): ?>
           <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="<?= e($key) ?>" value="1" id="s_<?= e($key) ?>" <?= $val === '1' ? 'checked' : '' ?>><label class="form-check-label" for="s_<?= e($key) ?>"><?= e($label) ?></label></div></div>
         <?php elseif ($type === 'textarea'): ?>

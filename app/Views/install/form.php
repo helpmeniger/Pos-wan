@@ -14,6 +14,10 @@
     </ul>
     <form method="post" action="<?= e(url('/install')) ?>" autocomplete="off">
       <?= csrf_field() ?>
+      <?php if (App\Core\Env::get('POS_EDITION', '') === 'bureau' && $hasEnv): ?>
+      <h2 class="h6">2. Base de données</h2>
+      <div class="alert alert-success small"><i class="bi bi-check-circle"></i> Base de données préparée automatiquement sur ce PC par POS Marwa (mots de passe tirés au hasard, accès limité à ce PC). Rien à saisir.</div>
+      <?php else: ?>
       <h2 class="h6">2. Base de données MySQL / MariaDB</h2>
       <p class="small text-secondary">Créez d'abord la base <b>vide</b> et un utilisateur dédié (cPanel → « Bases de données MySQL », ou phpMyAdmin), puis donnez à l'utilisateur <b>tous les privilèges</b> sur cette base. Sur o2switch, l'hôte est <code>localhost</code> et les noms complets commencent par votre identifiant cPanel (ex. <code>moncompte_posmarwa</code>). N'utilisez pas le compte <code>root</code> sans mot de passe.</p>
       <?php if ($hasEnv): ?><div class="alert alert-info small">Un fichier <code>.env</code> existe déjà. Laissez ces champs vides pour utiliser ses paramètres, ou remplissez-les pour les corriger (mot de passe vide : celui du <code>.env</code> est conservé). Le fichier n'est modifié qu'après une connexion réussie.</div><?php endif; ?>
@@ -24,6 +28,7 @@
         <div class="col-md-6"><label class="form-label">Utilisateur complet</label><input name="db_user" class="form-control" value="<?= e(App\Core\Session::old('db_user')) ?>" placeholder="moncompte_posmarwa" <?= $hasEnv ? '' : 'required' ?>></div>
         <div class="col-md-6"><label class="form-label">Mot de passe</label><input type="password" name="db_pass" class="form-control" autocomplete="new-password"></div>
       </div>
+      <?php endif; ?>
       <h2 class="h6">3. Votre commerce</h2>
       <div class="row g-2 mb-3">
         <div class="col-md-6"><label class="form-label required">Nom commercial</label><input name="company" class="form-control" required maxlength="150" value="<?= e(App\Core\Session::old('company')) ?>"></div>
@@ -39,7 +44,7 @@
       </div>
       <h2 class="h6">4. Compte administrateur</h2>
       <div class="row g-2 mb-3">
-        <div class="col-md-4"><label class="form-label required">Identifiant</label><input name="admin_username" class="form-control" required pattern="[A-Za-z0-9._-]{3,50}"></div>
+        <div class="col-md-4"><label class="form-label required">Identifiant</label><input name="admin_username" class="form-control" required pattern="[A-Za-z0-9._\-]{3,50}"></div>
         <div class="col-md-8"><label class="form-label">Nom complet</label><input name="admin_name" class="form-control" maxlength="150"></div>
         <div class="col-md-6"><label class="form-label required">Mot de passe</label><input type="password" name="admin_password" class="form-control" required minlength="10" autocomplete="new-password"></div>
         <div class="col-md-6"><label class="form-label required">Confirmation</label><input type="password" name="admin_password_confirm" class="form-control" required autocomplete="new-password"></div>

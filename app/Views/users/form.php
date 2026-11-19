@@ -2,7 +2,7 @@
 <div class="card" style="max-width:860px"><div class="card-body">
 <form method="post" action="<?= e(url(!empty($x['id']) ? '/users/' . $x['id'] : '/users')) ?>" class="row g-3" autocomplete="off"><?= csrf_field() ?>
   <div class="col-md-6"><label class="form-label required">Nom complet</label><input name="full_name" value="<?= $v('full_name') ?>" class="form-control" required maxlength="150"></div>
-  <div class="col-md-6"><label class="form-label required">Identifiant de connexion</label><input name="username" value="<?= $v('username') ?>" class="form-control" required pattern="[A-Za-z0-9._-]{3,50}" autocomplete="off"></div>
+  <div class="col-md-6"><label class="form-label required">Identifiant de connexion</label><input name="username" value="<?= $v('username') ?>" class="form-control" required pattern="[A-Za-z0-9._\-]{3,50}" autocomplete="off"></div>
   <div class="col-md-6"><label class="form-label">Téléphone</label><input name="phone" value="<?= $v('phone') ?>" class="form-control" maxlength="50"></div>
   <div class="col-md-6"><label class="form-label">E-mail</label><input type="email" name="email" value="<?= $v('email') ?>" class="form-control" maxlength="150"></div>
   <div class="col-md-4"><label class="form-label required">Rôle</label><select name="role_id" class="form-select" required><?php foreach ($roles as $r): ?><option value="<?= (int) $r['id'] ?>" <?= $sel('role_id', $r['id']) ?>><?= e($r['name']) ?></option><?php endforeach; ?></select></div>

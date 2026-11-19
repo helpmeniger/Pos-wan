@@ -14,7 +14,7 @@
           <?php foreach ($types as $k => [$label]): ?><option value="<?= e($k) ?>" <?= ($old['business_type'] ?? '') === $k ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?>
         </select></div>
       <div class="col-md-7"><label class="form-label">Adresse de votre espace</label>
-        <div class="input-group"><span class="input-group-text">https://</span><input name="slug" id="fSlug" class="form-control" required pattern="[a-z0-9][a-z0-9-]{1,38}[a-z0-9]" maxlength="40" value="<?= $o('slug') ?>" placeholder="boutique-awa"><span class="input-group-text">.<?= e($domain) ?></span></div>
+        <div class="input-group"><span class="input-group-text">https://</span><input name="slug" id="fSlug" class="form-control" required pattern="[a-z0-9][a-z0-9\-]{1,38}[a-z0-9]" maxlength="40" value="<?= $o('slug') ?>" placeholder="boutique-awa"><span class="input-group-text">.<?= e($domain) ?></span></div>
         <div class="form-text">Lettres minuscules, chiffres et tirets. Elle ne pourra plus être changée.</div></div>
       <div class="col-md-5"><label class="form-label">Ville</label><input name="city" class="form-control" maxlength="80" value="<?= $o('city', 'Niamey') ?>"></div>
     </div>

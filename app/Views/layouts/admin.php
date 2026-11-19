@@ -29,7 +29,7 @@ $notes = $u ? Notifications::get() : [];
 <link rel="stylesheet" href="<?= e(asset('css/scanner.css')) ?>">
 <?php $addonAssets = App\Core\Addons::globalAssets(); foreach ($addonAssets['css'] as $s): ?><link rel="stylesheet" href="<?= e(asset($s)) ?>"><?php endforeach; ?>
 </head>
-<body class="admin-body <?= setting('menu_position', 'right') === 'left' ? 'menu-left' : 'menu-right' ?>">
+<body class="admin-body <?= setting('menu_position', 'right') === 'left' ? 'menu-left' : 'menu-right' ?><?= menu_style() === 'tuiles' ? ' menu-tuiles' : '' ?>">
 <div class="app-shell">
   <aside class="sidebar d-print-none" id="sidebar">
     <a class="brand" href="<?= e(url('/')) ?>">
@@ -83,7 +83,7 @@ $notes = $u ? Notifications::get() : [];
   <div class="main">
     <header class="topbar d-print-none">
       <button class="btn btn-link text-body d-lg-none" data-toggle-sidebar aria-label="Menu"><i class="bi bi-list fs-4"></i></button>
-      <a href="<?= e(url('/menu')) ?>" class="btn btn-sm btn-outline-secondary me-2" title="Menu de gestion"><i class="bi bi-grid-3x3-gap-fill"></i> <span class="d-none d-md-inline">Menu</span></a>
+      <a href="<?= e(url('/menu')) ?>" class="btn btn-sm <?= menu_style() === 'tuiles' ? 'btn-warning fw-semibold' : 'btn-outline-secondary' ?> me-2" title="Menu de gestion"><i class="bi bi-grid-3x3-gap-fill"></i> <span class="d-none d-md-inline">Menu</span></a>
       <h1 class="page-title"><?= e($title) ?></h1>
       <div class="ms-auto d-flex align-items-center gap-2">
         <span class="clock d-none d-md-inline text-secondary" data-clock></span>

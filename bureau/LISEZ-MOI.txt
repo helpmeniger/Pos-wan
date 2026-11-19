@@ -1,0 +1,40 @@
+POS MARWA BUREAU — logiciel de gestion commerciale pour Windows 10 et 11 (64 bits)
+==================================================================================
+
+INSTALLATION
+  1. Double-cliquez sur POS-Marwa-Bureau-x.y.z-Setup.exe et acceptez la demande de Windows.
+     Si Windows affiche « Windows a protégé votre ordinateur » : « Informations complémentaires » puis
+     « Exécuter quand même » (l'installateur n'est pas signé par un certificat payant).
+  2. Dossier proposé : C:\POS Marwa. Tout le logiciel et toutes ses données y restent :
+       app\        POS Marwa (et ses sauvegardes : app\storage\backups)
+       donnees\    base de données, journaux, profil de la fenêtre
+     Il n'est pas installé dans « Program Files » : POS Marwa doit pouvoir écrire dans son dossier.
+  3. Lancez POS Marwa (icône du bureau). Au premier démarrage, la base de données est créée (quelques secondes)
+     puis l'assistant demande le nom de l'entreprise, l'activité et le compte administrateur.
+
+AUCUN autre logiciel n'est nécessaire : ni WampServer, ni XAMPP, ni serveur à installer.
+La fenêtre utilise Microsoft Edge (présent sur Windows 10 et 11) ; à défaut Google Chrome.
+
+UTILISATION
+  - Fermer la fenêtre arrête POS Marwa et sa base de données (proprement).
+  - « Arrêter POS Marwa » (menu Démarrer) arrête tout si une fenêtre est restée ouverte ailleurs.
+  - Menu de gestion en tuiles (bouton « Menu ») ; modifiable dans Configuration → Paramètres.
+  - Réglages avancés : fichier pos-marwa.ini (ports, autres postes du réseau, impression directe).
+
+SÉCURITÉ
+  - La base de données n'écoute que sur ce PC (127.0.0.1) ; ses mots de passe sont tirés au hasard au premier
+    démarrage (aucun mot de passe par défaut) et gardés dans donnees\secret (lisible par Windows seulement pour
+    les comptes autorisés sur ce dossier).
+  - POS Marwa n'est accessible que depuis ce PC, sauf si vous autorisez les autres postes (RESEAU=1).
+  - Chaque utilisateur se connecte avec son identifiant ; droits par rôle ; journal d'audit.
+  - Sauvegardes : Système & maintenance → Sauvegardes. Copiez-les régulièrement sur une clé USB ou un autre PC.
+
+SAUVEGARDE COMPLÈTE / CHANGEMENT DE PC
+  Fermez POS Marwa, puis copiez tout le dossier C:\POS Marwa (avec donnees\) : c'est une copie complète.
+
+DÉSINSTALLATION
+  Paramètres Windows → Applications → POS Marwa → Désinstaller. Vos données (donnees\ et sauvegardes) sont
+  CONSERVÉES, sauf si vous cochez explicitement leur suppression après avoir confirmé avoir une sauvegarde.
+
+En cas de problème : donnees\journaux\lanceur.log, mariadb.err et php.log.
+Assistance : +227 92 08 12 82 / +227 87 22 52 02
