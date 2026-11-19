@@ -2,6 +2,14 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.13.1] — 2026-11-19
+
+### Corrigé (POS Marwa Bureau, signalé au premier essai sous Windows)
+- « POS Marwa ne peut pas démarrer sa base de données… mysqld.exe n'est pas reconnu » : `mysqld.exe`, que l'outil de création de la base de MariaDB appelle sous ce nom, n'était pas livré. Il l'est.
+- Les serveurs PHP cherchaient leurs extensions dans le mauvais dossier (`extension_dir` relatif au dossier courant) : l'application n'aurait pas pu se connecter à sa base. Le chemin complet est désormais transmis par le lanceur.
+- Construction : arrêt si un fichier indispensable manque au paquet ; l'essai automatique utilise le `php.ini` livré (13 vérifications).
+- Une installation déjà essayée garde sa base inachevée de côté (`donnees\mysql-inacheve-…`) et la recrée automatiquement : rien à supprimer à la main.
+
 ## [3.13.0] — 2026-11-19
 
 ### Ajouté

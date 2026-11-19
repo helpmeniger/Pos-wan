@@ -411,7 +411,8 @@ type worker struct {
 
 func (l *launcher) startWorker(w *worker) error {
 	c := l.c
-	args := []string{"-c", c.phpIni, "-d", "error_log=" + filepath.Join(c.logs, "php.log"),
+	// extension_dir en chemin complet : PHP chercherait sinon « ext » dans le dossier courant (app\), pas à côté de php.exe
+	args := []string{"-c", c.phpIni, "-d", "extension_dir=" + filepath.Join(filepath.Dir(c.phpIni), "ext"), "-d", "error_log=" + filepath.Join(c.logs, "php.log"),
 		"-S", fmt.Sprintf("127.0.0.1:%d", w.port), "-t", filepath.Join(c.app, "public"), filepath.Join(c.app, "routeur.php")}
 	cmd := exec.Command(c.php, args...)
 	cmd.Dir = c.app

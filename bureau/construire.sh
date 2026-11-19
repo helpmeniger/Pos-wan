@@ -65,7 +65,8 @@ cp "$SRC/bureau/php.ini" "$R/php/php.ini"
 echo "-- MariaDB"
 T="$B/mdb"; mkdir -p "$T"; unzip -q "$COMP/$MDBZIP" -d "$T"
 M=$(ls -d "$T"/mariadb-*); mkdir -p "$R/mariadb/bin"
-for f in mariadbd.exe server.dll mariadb.exe mariadb-admin.exe mariadb-install-db.exe mariadb-dump.exe mariadb-upgrade.exe mariadb-check.exe \
+# mysqld.exe : appelé sous ce nom par mariadb-install-db.exe pour créer la base (copie de mariadbd.exe)
+for f in mariadbd.exe mysqld.exe server.dll mariadb.exe mariadb-admin.exe mariadb-install-db.exe mariadb-dump.exe mariadb-upgrade.exe mariadb-check.exe \
          vcruntime140.dll vcruntime140_1.dll msvcp140.dll msvcp140_1.dll msvcp140_2.dll concrt140.dll; do cp "$M/bin/$f" "$R/mariadb/bin/"; done
 cp -r "$M/share" "$R/mariadb/share"
 cp "$M/COPYING" "$R/mariadb/COPYING"; cp "$M/README.md" "$R/mariadb/README.md"
@@ -122,6 +123,14 @@ cp "$SRC/bureau/LISEZ-MOI.txt" "$R/LISEZ-MOI.txt"
 cp "$SRC/bureau/LICENCES-TIERS.txt" "$R/LICENCES-TIERS.txt"
 cp "$SRC/windows/pos-marwa.ico" "$R/pos-marwa.ico"
 mkdir -p "$B/redist"; cp "$COMP/vc_redist.x64.exe" "$B/redist/"
+
+# ---------- 5 bis. Contrôle : fichiers indispensables au démarrage (sans eux, POS Marwa ne démarre pas sous Windows)
+for f in "POS Marwa.exe" php/php.exe php/php.ini php/php8.dll php/vcruntime140.dll php/ext/php_pdo_mysql.dll php/ext/php_mbstring.dll php/ext/php_sodium.dll php/ext/php_intl.dll \
+         mariadb/bin/mariadbd.exe mariadb/bin/mysqld.exe mariadb/bin/server.dll mariadb/bin/mariadb-install-db.exe mariadb/bin/mariadb.exe mariadb/bin/mariadb-admin.exe \
+         mariadb/share/english/errmsg.sys app/routeur.php app/public/index.php app/.env.example pos-marwa.ini; do
+  [ -f "$R/$f" ] || { echo "Fichier indispensable absent du paquet : $f" >&2; exit 1; }
+done
+grep -q '^extension_dir = "ext"' "$R/php/php.ini" && grep -q 'extension_dir=' "$SRC/bureau/lanceur/main.go" || { echo "extension_dir : le lanceur doit fournir le chemin complet" >&2; exit 1; }
 
 # ---------- 6. Installateur
 echo "-- installateur"
