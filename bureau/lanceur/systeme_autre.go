@@ -35,13 +35,15 @@ func findBrowser(pref string) string {
 	return ""
 }
 
-func openDefault(u string) error { return exec.Command("xdg-open", u).Start() }
-
-// Chromium sous Linux : lien symbolique « SingletonLock » présent tant que le navigateur tourne
-func profileFree(lock string) bool {
-	_, err := os.Lstat(lock)
-	return os.IsNotExist(err)
+// Linux (essais en tant que root) : Chromium refuse de démarrer sans --no-sandbox
+func extraBrowserArgs() []string {
+	if os.Geteuid() == 0 {
+		return []string{"--no-sandbox"}
+	}
+	return nil
 }
+
+func openDefault(u string) error { return exec.Command("xdg-open", u).Start() }
 
 func waitSignal(f func()) {
 	ch := make(chan os.Signal, 1)

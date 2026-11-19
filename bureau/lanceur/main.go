@@ -595,35 +595,22 @@ func (l *launcher) openWindow() (func(), error) {
 	if l.c.kiosquePrint {
 		args = append(args, "--kiosk-printing") // tickets imprimés directement sur l'imprimante par défaut
 	}
-	cmd := exec.Command(browser, args...)
+	cmd := exec.Command(browser, append(args, extraBrowserArgs()...)...)
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
-	go cmd.Wait()
-	return func() { waitProfileClosed(l.profileDir()) }, nil
-}
-
-// Le navigateur garde le fichier « lockfile » de son profil ouvert tant qu'une fenêtre est ouverte (Windows).
-func waitProfileClosed(dir string) {
-	lock := filepath.Join(dir, "lockfile")
-	if runtime.GOOS != "windows" {
-		lock = filepath.Join(dir, "SingletonLock")
-	}
-	for i := 0; i < 60; i++ { // la fenêtre s'ouvre
-		if _, err := os.Lstat(lock); err == nil {
-			break
+	started := time.Now()
+	// Avec son propre profil (--user-data-dir), le navigateur lancé ici est le processus principal de la fenêtre :
+	// il se termine quand la dernière fenêtre de POS Marwa est fermée. S'il se termine presque aussitôt, il a confié
+	// la fenêtre à un navigateur déjà ouvert avec ce profil : on ne peut pas savoir quand elle sera fermée, les
+	// serveurs restent en marche (« Arrêter POS Marwa » ou fermeture de la session Windows les arrête).
+	return func() {
+		err := cmd.Wait()
+		if time.Since(started) < 8*time.Second {
+			log.Printf("Fenêtre confiée à un navigateur déjà ouvert (%v) : POS Marwa reste en marche jusqu'à « Arrêter POS Marwa »", err)
+			select {} // attente sans fin : l'arrêt viendra de --arreter ou du système
 		}
-		time.Sleep(500 * time.Millisecond)
-	}
-	for {
-		time.Sleep(2 * time.Second)
-		if profileFree(lock) {
-			time.Sleep(2 * time.Second) // une fenêtre peut se rouvrir aussitôt (changement de fenêtre)
-			if profileFree(lock) {
-				return
-			}
-		}
-	}
+	}, nil
 }
 
 // ---------------------------------------------------------------------------------------------------------------

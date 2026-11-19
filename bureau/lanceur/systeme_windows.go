@@ -85,15 +85,11 @@ func findBrowser(pref string) string {
 	return ""
 }
 
+func extraBrowserArgs() []string { return nil }
+
 func openDefault(u string) error {
 	cmd := exec.Command("rundll32", "url.dll,FileProtocolHandler", u)
 	return cmd.Start()
-}
-
-// Le navigateur tient « lockfile » ouvert en exclusivité : tant qu'il ne peut pas être supprimé, la fenêtre est ouverte.
-func profileFree(lock string) bool {
-	err := os.Remove(lock)
-	return err == nil || os.IsNotExist(err)
 }
 
 func waitSignal(f func()) {

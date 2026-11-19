@@ -2,6 +2,12 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.13.2] — 2026-11-19
+
+### Corrigé (POS Marwa Bureau, signalé au deuxième essai sous Windows)
+- POS Marwa s'arrêtait seul 15 à 30 secondes après son ouverture (« Arrêt (fenêtre fermée) » dans le journal), ce qui bloquait l'assistant d'installation : la fermeture de la fenêtre était déduite d'un fichier de verrou d'Edge, que Windows laisse supprimer même fenêtre ouverte. Le lanceur suit désormais le processus du navigateur qu'il a ouvert (son propre profil) : arrêt seulement quand la fenêtre est réellement fermée. Si la fenêtre est confiée à un navigateur déjà ouvert, POS Marwa reste en marche jusqu'à « Arrêter POS Marwa ».
+- Essai avec un vrai navigateur Chromium (même moteur qu'Edge) : fenêtre ouverte 75 s sans arrêt, puis arrêt propre à sa fermeture.
+
 ## [3.13.1] — 2026-11-19
 
 ### Corrigé (POS Marwa Bureau, signalé au premier essai sous Windows)
