@@ -161,9 +161,19 @@ final class SecefController extends Controller
         $c = $this->attempt(fn() => self::ensureConnector((bool) Secef::config()['actif']), '/fiscal/secef');
         $tok = bin2hex(random_bytes(24));
         Secrets::put((int) $c['id'], 'jeton_pont', $tok, Auth::id());
-        \App\Core\Session::set('secef_jeton_affiche', $tok);
-        Audit::log('secef.jeton', null, null, []);
-        flash('success', 'Nouveau jeton du pont créé : copiez-le maintenant (il ne sera plus affiché), puis redémarrez le pont avec.');
+        // Jeton remis au pont dans son dossier (hors du dossier public) : l'édition Bureau le démarre alors toute seule
+        $file = BASE_PATH . '/addons/fiscal/pont-secef/jeton.txt';
+        $written = is_dir(dirname($file)) && @file_put_contents($file, $tok, LOCK_EX) !== false;
+        if ($written) {
+            @chmod($file, 0600);
+        }
+        \App\Core\Session::set('secef_jeton_affiche', $written ? null : $tok);
+        Audit::log('secef.jeton', null, null, ['fichier' => $written]);
+        flash('success', $written
+            ? (\App\Core\Env::get('POS_EDITION', '') === 'bureau'
+                ? 'Nouveau jeton du pont créé et remis au pont : POS Marwa le démarre automatiquement (dans les 10 secondes).'
+                : 'Nouveau jeton du pont créé et enregistré dans pont-secef\\jeton.txt : (re)démarrez le pont (demarrer-pont-secef.bat).')
+            : 'Nouveau jeton du pont créé : copiez-le maintenant dans pont-secef\\jeton.txt (il ne sera plus affiché), puis redémarrez le pont.');
         redirect('/fiscal/secef');
     }
 

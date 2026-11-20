@@ -7,6 +7,7 @@
 #   php-8.3.37-nts-Win32-vs16-x64.zip    (windows.php.net)
 #   mariadb-10.11.20-winx64.zip          (archive.mariadb.org)
 #   vc_redist.x64.exe                    (Microsoft, Visual C++ 2015-2022)
+#   node-v24.22.3-win-x64.zip + node-v24.22.3.sha (nodejs.org/dist : SHASUMS256.txt) — pont MARWA SECEF CONNECT
 # Outils : makensis (NSIS 3), go (1.22 ou plus), x86_64-w64-mingw32-windres (icône du programme), unzip, php.
 set -euo pipefail
 
@@ -20,6 +21,9 @@ PHPSHA=38808a798485e1c0938dfcce7e942131415fc6c7834f83a5a85a4c4edb5539d6
 MDBZIP=mariadb-10.11.20-winx64.zip
 MDBSHA=$(grep -h "  .*${MDBZIP}\$" "$COMP"/mariadb*.sha 2>/dev/null | awk '{print $1}' | head -1 || true)
 VCSHA=cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b
+NODEV=v24.22.3
+NODEZIP=node-$NODEV-win-x64.zip
+NODESHA=$(grep -h "  ${NODEZIP}\$" "$COMP"/node-$NODEV.sha 2>/dev/null | awk '{print $1}' | head -1 || true)
 
 # Modules de l'édition commerciale (les autres ne sont pas livrés)
 MODULES="banques comptabilite doublons fiscal livraisons marwa_ia pay"
@@ -29,6 +33,8 @@ check() { echo "$2  $COMP/$1" | sha256sum -c --quiet || { echo "Empreinte incorr
 check "$PHPZIP" "$PHPSHA"
 check vc_redist.x64.exe "$VCSHA"
 if [ -n "$MDBSHA" ]; then check "$MDBZIP" "$MDBSHA"; else echo "(empreinte MariaDB : fichier .sha absent, vérification sautée)"; fi
+[ -n "$NODESHA" ] || { echo "Empreinte Node.js absente : téléchargez aussi https://nodejs.org/dist/$NODEV/SHASUMS256.txt sous le nom node-$NODEV.sha" >&2; exit 1; }
+check "$NODEZIP" "$NODESHA"
 
 B="$OUT/construction"
 rm -rf "$B"; mkdir -p "$B/POS Marwa"
@@ -73,6 +79,16 @@ cp "$M/COPYING" "$R/mariadb/COPYING"; cp "$M/README.md" "$R/mariadb/README.md"
 # Bibliothèques Visual C++ à côté de PHP (déploiement local autorisé par Microsoft) : PHP démarre même si le
 # runtime n'est pas installé ; l'installateur l'installe aussi s'il manque.
 for f in vcruntime140.dll vcruntime140_1.dll msvcp140.dll; do cp "$M/bin/$f" "$R/php/"; done
+
+# ---------- 3 bis. Node.js portable (node.exe seul) et dépendances du pont MARWA SECEF CONNECT
+echo "-- Node.js $NODEV et pont MARWA SECEF"
+mkdir -p "$R/node" "$B/node"
+unzip -q -o "$COMP/$NODEZIP" "node-$NODEV-win-x64/node.exe" "node-$NODEV-win-x64/LICENSE" -d "$B/node"
+cp "$B/node/node-$NODEV-win-x64/node.exe" "$R/node/node.exe"
+cp "$B/node/node-$NODEV-win-x64/LICENSE" "$R/node/LICENSE.txt"
+PONT="$R/app/addons/fiscal/pont-secef"
+( cd "$PONT" && npm install --omit=dev --no-audit --no-fund --ignore-scripts >/dev/null 2>&1 ) || { echo "npm install du pont impossible" >&2; exit 1; }
+rm -f "$PONT/jeton.txt"; rm -rf "$PONT/donnees"
 
 # ---------- 4. Lanceur « POS Marwa.exe » (icône et informations de version)
 echo "-- lanceur"
@@ -127,7 +143,8 @@ mkdir -p "$B/redist"; cp "$COMP/vc_redist.x64.exe" "$B/redist/"
 # ---------- 5 bis. Contrôle : fichiers indispensables au démarrage (sans eux, POS Marwa ne démarre pas sous Windows)
 for f in "POS Marwa.exe" php/php.exe php/php.ini php/php8.dll php/vcruntime140.dll php/ext/php_pdo_mysql.dll php/ext/php_mbstring.dll php/ext/php_sodium.dll php/ext/php_intl.dll \
          mariadb/bin/mariadbd.exe mariadb/bin/mysqld.exe mariadb/bin/server.dll mariadb/bin/mariadb-install-db.exe mariadb/bin/mariadb.exe mariadb/bin/mariadb-admin.exe \
-         mariadb/share/english/errmsg.sys app/routeur.php app/public/index.php app/.env.example pos-marwa.ini; do
+         mariadb/share/english/errmsg.sys app/routeur.php app/public/index.php app/.env.example pos-marwa.ini \
+         node/node.exe app/addons/fiscal/pont-secef/serveur.js app/addons/fiscal/pont-secef/node_modules/playwright-core/package.json; do
   [ -f "$R/$f" ] || { echo "Fichier indispensable absent du paquet : $f" >&2; exit 1; }
 done
 grep -q '^extension_dir = "ext"' "$R/php/php.ini" && grep -q 'extension_dir=' "$SRC/bureau/lanceur/main.go" || { echo "extension_dir : le lanceur doit fournir le chemin complet" >&2; exit 1; }

@@ -36,6 +36,10 @@ LICENCE
   ordinateur : Configuration → Licence et activation affiche le code à communiquer à l'auteur.
   Autres ordinateurs du réseau : licence multiposte. Téléphones et tablettes : libres.
 
+FACTURES CERTIFIÉES DGI (Niger, e-SECeF)
+  Configuration → Certification fiscale (MARWA SECEF CONNECT). Le pont qui dialogue avec le portail de la DGI est
+  livré (Node.js inclus) et démarré automatiquement par POS Marwa. Guide : app\documentation\marwa-secef.
+
 CHANGEMENT DE PC
   Le dossier copié sur un autre ordinateur ne démarre pas (protection contre la copie ; rien n'est effacé).
   Pour changer d'ordinateur : Sauvegardes → copiez la dernière sauvegarde sur une clé USB ; installez

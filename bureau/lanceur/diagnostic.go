@@ -144,7 +144,7 @@ func (l *launcher) report() string {
 	if br == "" {
 		br = "(aucune fenêtre ouverte par ce démarrage, ou navigateur par défaut)"
 	}
-	fmt.Fprintf(&b, "Navigateur    : %s\nBase          : 127.0.0.1:%d\n", br, c.portBD)
+	fmt.Fprintf(&b, "Navigateur    : %s\nBase          : 127.0.0.1:%d\nPont e-SECeF  : %s\n", br, c.portBD, l.pontEtat())
 	fmt.Fprintf(&b, "Prêt          : %v — dernier signe de vie d'une fenêtre il y a %d s\n", l.ready.Load(),
 		int((time.Since(l.t0)-time.Duration(l.lastBeat.Load()))/time.Second))
 	b.WriteString("Serveurs PHP  :")
@@ -180,6 +180,7 @@ func (l *launcher) report() string {
 	section("PHP", filepath.Join(c.logs, "php.log"), 6000)
 	section("Application", latestLog(filepath.Join(c.app, "storage", "logs")), 6000)
 	section("MariaDB", filepath.Join(c.logs, "mariadb.err"), 3000)
+	section("Pont MARWA SECEF", filepath.Join(c.logs, "pont-secef.log"), 3000)
 	return b.String()
 }
 

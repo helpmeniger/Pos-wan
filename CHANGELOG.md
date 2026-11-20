@@ -2,6 +2,15 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.15.1] — 2026-11-20
+
+### Édition Bureau : Node.js inclus, pont MARWA SECEF automatique
+- **Node.js 24 LTS livré** dans l'installateur (`node\node.exe` seul, empreinte SHA-256 vérifiée à la construction), avec les dépendances du pont (Playwright) : rien à installer.
+- **Pont démarré, surveillé et arrêté par `POS Marwa.exe`** dès que le jeton existe ; redémarrage espacé en cas d'arrêt ; nouveau jeton → redémarrage ; arrêt avec POS Marwa. Données du pont dans `donnees\pont-secef\`, journal `donnees\journaux\pont-secef.log`, état dans le rapport de diagnostic.
+- La création du jeton (Certification fiscale → MARWA SECEF CONNECT) l'écrit directement dans le dossier du pont : plus de copier-coller ni de fenêtre à laisser ouverte.
+- Navigateur du pont : Edge, repli automatique sur Chrome.
+- Licences tierces : Node.js (MIT), Playwright (Apache 2.0).
+
 ## [3.15.0] — 2026-11-20
 
 ### Ajouté — MARWA SECEF CONNECT (Niger, e-SECeF de la DGI)

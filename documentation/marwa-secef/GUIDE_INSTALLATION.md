@@ -4,17 +4,16 @@
 
 - POS Marwa 3.15 ou plus, module **Marwa Fiscal Connect** activé (Configuration → Modules complémentaires).
 - Un compte e-SECeF actif avec un **e-SFE actif** (NIM attribué) et **au moins un opérateur** enregistré dans l'e-SFE.
-- Sur l'ordinateur qui fait tourner POS Marwa : **Node.js 18 ou plus** et **Microsoft Edge** (présent sur Windows 10/11).
+- **Microsoft Edge** (présent sur Windows 10/11) ou Google Chrome.
 
-## 2. Installer le pont
+## 2. Le pont
 
-```bat
-cd C:\wamp64\www\pos-marwa\addons\fiscal\pont-secef   (ou C:\POS Marwa\app\addons\fiscal\pont-secef)
-npm install
-```
-
-`npm install` installe `playwright-core` ; le pont utilise Edge (aucun navigateur à télécharger). Sous Linux :
-`npx playwright install chromium` puis `PONT_SECEF_NAVIGATEUR=chromium`.
+- **Édition Bureau (setup.exe)** : rien à installer. Node.js est livré (`C:\POS Marwa\node\node.exe`) avec les
+  dépendances du pont ; `POS Marwa.exe` démarre le pont dès que le jeton est créé (étape 3), le surveille (redémarrage
+  espacé en cas d'arrêt) et l'arrête avec POS Marwa. Journal : `donnees\journaux\pont-secef.log` ; données du pont :
+  `donnees\pont-secef\` (registre des factures, PDF officiels, session du portail).
+- **Version web (WampServer)** : installez Node.js 18 ou plus (nodejs.org), puis dans
+  `addons\fiscal\pont-secef` : `npm install` ; le pont se démarre avec `demarrer-pont-secef.bat` (fenêtre à laisser ouverte).
 
 ## 3. Configurer dans POS Marwa
 
@@ -25,8 +24,9 @@ Paramètres → **Certification fiscale (MARWA SECEF CONNECT)** :
 3. Régime : « Impôt synthétique (groupe H) » ou « Assujetti à la TVA » (groupes par taux) ou « Manuel ».
 4. Modes de paiement : vérifiez la correspondance.
 5. **Compte e-SECeF** : identifiant (NIF) et mot de passe — chiffrés, jamais réaffichés.
-6. **Créer le jeton du pont** : copiez-le (affiché une seule fois) dans `addons\fiscal\pont-secef\jeton.txt`.
-7. Démarrez le pont : double-cliquez `demarrer-pont-secef.bat` (laissez la fenêtre ouverte).
+6. **Créer le jeton du pont** : POS Marwa l'écrit lui-même dans `addons\fiscal\pont-secef\jeton.txt`.
+7. Édition Bureau : le pont démarre seul dans les 10 secondes (état « en marche » sur la page). Version web :
+   double-cliquez `demarrer-pont-secef.bat` (laissez la fenêtre ouverte).
 8. **Tester la connexion** : le pont se connecte avec le NIF et ouvre l'e-SFE (première authentification). La session
    est ensuite réutilisée. Si le portail demande une vérification humaine, cochez « Afficher la fenêtre du navigateur ».
 
@@ -49,7 +49,7 @@ Faites une première vente d'essai de faible montant et comparez le reçu avec l
 
 ## 7. Exploitation
 
-- Le pont doit tourner pendant les ventes certifiées (démarrage avec Windows : raccourci de `demarrer-pont-secef.bat`
-  dans le dossier Démarrage).
+- Le pont doit tourner pendant les ventes certifiées : automatique en édition Bureau ; version web : raccourci de
+  `demarrer-pont-secef.bat` dans le dossier Démarrage de Windows.
 - Factures en attente : Fiscal Connect → En attente ; « incertaine » : vérifier dans le Journal de l'e-SFE.
-- Sauvegardez `pont-secef\donnees\` (registre des factures et PDF officiels).
+- Sauvegardez les données du pont (édition Bureau : `donnees\pont-secef\` ; version web : `pont-secef\donnees\`).

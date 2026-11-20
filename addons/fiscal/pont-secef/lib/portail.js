@@ -50,7 +50,14 @@ class Portail {
     const n = this.cfg.navigateur;
     if (n === 'msedge' || n === 'chrome') opts.channel = n;
     else if (n !== 'chromium' && fs.existsSync(n)) opts.executablePath = n;
-    this.ctx = await pw.chromium.launchPersistentContext(this.cfg.profil, opts);
+    try {
+      this.ctx = await pw.chromium.launchPersistentContext(this.cfg.profil, opts);
+    } catch (e) {
+      if (opts.channel !== 'msedge') throw e;
+      this.log('Edge indisponible (' + e.message.split('\n')[0] + ') : essai avec Chrome');
+      opts.channel = 'chrome';
+      this.ctx = await pw.chromium.launchPersistentContext(this.cfg.profil, opts);
+    }
     this.visible = !!visible;
     await this.ctx.route('**/api/**', (route) => {
       const m = route.request().method();

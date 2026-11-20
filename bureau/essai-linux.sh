@@ -53,7 +53,19 @@ verif "MariaDB arrêtée proprement" "for i in \$(seq 1 20); do grep -q 'Shutdow
 printf 'DB_PASSWORD="ancien-mot-de-passe"\nAPP_KEY=ancienne\n' >> "$T/app/.env"   # .env d'une version précédente
 verif "second démarrage (base existante, mots de passe réutilisés)" demarrer
 verif "secrets d'une version précédente retirés d'app/.env, application toujours connectée à sa base" "! grep -Eq '^(APP_KEY|DB_PASSWORD)=' '$T/app/.env' && for i in \$(seq 1 30); do grep -q '^Tout fonctionne' '$T/donnees/journaux/diagnostic.txt' && break; sleep 1; done; grep -q '^Tout fonctionne' '$T/donnees/journaux/diagnostic.txt'"
+# Pont MARWA SECEF CONNECT : démarré par le lanceur dès que POS Marwa a créé son jeton, redémarré sur nouveau jeton
+if command -v node >/dev/null && [ -d "$T/app/addons/fiscal/pont-secef" ]; then
+  export POS_BUREAU_NODE=$(command -v node) POS_BUREAU_PONT_NAVIGATEUR=chromium
+  J1=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n'); echo -n "$J1" > "$T/app/addons/fiscal/pont-secef/jeton.txt"
+  pont() { curl -s --noproxy '*' -m 3 -H "X-Pont-Jeton: $1" http://127.0.0.1:8760/etat; }
+  verif "pont e-SECeF démarré par le lanceur (jeton créé par POS Marwa)" "for i in \$(seq 1 30); do pont $J1 | grep -q '\"ok\":true' && break; sleep 1; done; pont $J1 | grep -q '\"ok\":true' && grep -q 'Pont MARWA SECEF démarré' '$T/donnees/journaux/lanceur.log'"
+  J2=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n'); echo -n "$J2" > "$T/app/addons/fiscal/pont-secef/jeton.txt"
+  verif "nouveau jeton : pont redémarré, ancien jeton refusé" "for i in \$(seq 1 40); do pont $J2 | grep -q '\"ok\":true' && break; sleep 1; done; pont $J2 | grep -q '\"ok\":true' && ! pont $J1 | grep -q '\"ok\":true'"
+  verif "données du pont dans donnees/pont-secef (hors du dossier du logiciel)" "[ -d '$T/donnees/pont-secef/travaux' ]"
+  verif "diagnostic : état du pont" "grep -q 'Pont e-SECeF' '$T/donnees/journaux/diagnostic.txt'"
+fi
 verif "arrêt final" arreter
+verif "pont arrêté avec POS Marwa" "! curl -s --noproxy '*' -m 2 http://127.0.0.1:8760/etat >/dev/null"
 # Dossier copié sur un autre ordinateur : mots de passe illisibles, POS Marwa refuse de démarrer, rien n'est effacé
 avant=$(find "$T/donnees/mysql" -type f | wc -l)
 verif "dossier copié sur un autre ordinateur : démarrage refusé" "! POS_BUREAU_MACHINE=autre-ordinateur-0002 timeout 60 '$T/lanceur' --dossier='$T' --sans-fenetre > '$T/copie.log' 2>&1 && grep -q \"provient d'un autre ordinateur\" '$T/copie.log'"

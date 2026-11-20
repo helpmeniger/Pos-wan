@@ -66,4 +66,5 @@ lignes de tableau `mat-row` ; icône de ligne sous la barre fixe ; seconde tenta
 
 - Remise de ligne ou globale ; paiement en plusieurs modes ; factures d'avoir (FA/EA) : non transmis, message clair.
 - Types FT, ET (acompte) non proposés.
-- Le pont n'est pas encore inclus dans l'installateur de l'édition Bureau (Node.js à installer).
+- Édition Bureau 3.15.1 : Node.js 24 LTS et les dépendances du pont sont livrés ; le pont est démarré par
+  `POS Marwa.exe` (essayé sous Linux ; non exécuté sous Windows).

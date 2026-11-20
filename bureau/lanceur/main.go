@@ -58,6 +58,7 @@ type config struct {
 	portWeb, portBD, workers                                             int
 	reseau, kiosquePrint, fenetre                                        bool
 	navigateur                                                           string
+	node                                                                 string // node.exe livré (pont MARWA SECEF CONNECT)
 }
 
 func exeExt() string {
@@ -80,6 +81,7 @@ func loadConfig(root string) *config {
 	c.installDB = env("POS_BUREAU_INSTALLDB", filepath.Join(mb, "mariadb-install-db"+exeExt()))
 	c.client = env("POS_BUREAU_CLIENT", filepath.Join(mb, "mariadb"+exeExt()))
 	c.admin = env("POS_BUREAU_ADMIN", filepath.Join(mb, "mariadb-admin"+exeExt()))
+	c.node = env("POS_BUREAU_NODE", filepath.Join(root, "node", "node"+exeExt()))
 	if f, err := os.Open(filepath.Join(root, "pos-marwa.ini")); err == nil {
 		sc := bufio.NewScanner(f)
 		for sc.Scan() {
@@ -223,6 +225,7 @@ type launcher struct {
 	recent   []string // dernières requêtes (diagnostic)
 	check    string   // résultat du contrôle de démarrage
 	essai    int64    // premier démarrage sur cet ordinateur (période d'essai)
+	pont     pontSecef
 }
 
 // Empreinte de l'ordinateur (MachineGuid de Windows, /etc/machine-id sous Linux)
@@ -794,6 +797,7 @@ func (l *launcher) stop(why string) {
 			_ = l.srv.Shutdown(ctx)
 			cancel()
 		}
+		l.stopPont()
 		l.stopPHP()
 		l.stopDB()
 		os.Remove(filepath.Join(l.c.data, "secret", "arret.jeton"))
@@ -924,6 +928,7 @@ func main() {
 	log.Printf("Prêt : %s (%d serveurs PHP, base sur le port %d, réseau=%v)", l.appURL(), len(l.workers), c.portBD, c.reseau)
 
 	go l.selfCheck()
+	go l.pontWatch()
 	go waitSignal(func() { l.stop("signal du système") })
 	if wait != nil {
 		idle := 3 * time.Minute

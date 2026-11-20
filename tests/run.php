@@ -6393,9 +6393,9 @@ test('MARWA SECEF CONNECT : choix en caisse, régimes et groupes, articles, pont
         $setPont(['jeton' => $jeton, 'scenario' => 'certifie', 'jobs' => [], 'soumissions' => []]);
         $page = $h->req('GET', "$B/fiscal/secef")['body'];
         ok(str_contains($page, 'MARWA SECEF CONNECT') && str_contains($page, 'en marche') && !str_contains($page, 'mot-de-passe-de-test'), 'page : pont en marche, mot de passe jamais affiché');
-        ok(str_contains($page, $jeton), 'jeton affiché une fois après création');
-        $h->req('POST', "$B/fiscal/secef/jeton/masquer", http_build_query(['_csrf' => $t]));
-        ok(!str_contains($h->req('GET', "$B/fiscal/secef")['body'], $jeton), 'jeton plus jamais affiché ensuite');
+        $jf = BASE_PATH . '/addons/fiscal/pont-secef/jeton.txt';
+        eq($jeton, trim((string) @file_get_contents($jf)), 'jeton remis au pont dans son dossier (démarrage automatique, édition Bureau)');
+        ok(!str_contains($page, $jeton), 'jeton remis au pont : jamais affiché à l\'écran');
         $h->req('POST', "$B/fiscal/secef/tester", http_build_query(['_csrf' => $t]));
         eq('ok', DB::value('SELECT status FROM fiscal_connectors WHERE id = ?', [$con['id']]), 'test de connexion (faux pont)');
         ok(str_contains($h->req('GET', "$B/fiscal/secef/articles")['body'], 'Relever les articles'), 'page Articles');
@@ -6523,6 +6523,7 @@ test('MARWA SECEF CONNECT : choix en caisse, régimes et groupes, articles, pont
         setting_set('fiscal_choix_caisse', $savedChoix ?? 'toutes');
         setting_set('secef_config', $savedCfg);
         @unlink(sys_get_temp_dir() . "/fake-secef-$port.json");
+        @unlink(BASE_PATH . '/addons/fiscal/pont-secef/jeton.txt');
     }
 });
 test('Marwa Pay (phase 3) : migration sûre, devises sans taux, prestataires non déclarés intégrés', function () {

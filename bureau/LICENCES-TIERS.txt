@@ -13,4 +13,11 @@ MariaDB Server 10.11 (dossier mariadb\) — MariaDB Foundation, licence GNU GPL 
 Microsoft Visual C++ 2015-2022 Redistributable — Microsoft Corporation, redistribuable selon les conditions de
   Microsoft (bibliothèques vcruntime140 / msvcp140 dans php\ et mariadb\bin\, et installateur vc_redist.x64.exe).
 
-Fenêtre de l'application : Microsoft Edge ou Google Chrome déjà installé sur le PC (non livré).
+Node.js 24 LTS (dossier node\, node.exe seul) — OpenJS Foundation et contributeurs, licence MIT ; composants
+  tiers inclus dans node.exe sous leurs licences respectives (texte complet : node\LICENSE.txt).
+  Source : https://nodejs.org/dist/v24.22.3/ — sert au pont MARWA SECEF CONNECT (certification e-SECeF).
+
+Playwright (app\addons\fiscal\pont-secef\node_modules\playwright-core) — Microsoft Corporation, licence Apache 2.0
+  (fichier LICENSE du dossier). Pilote le navigateur du pont MARWA SECEF CONNECT.
+
+Fenêtre de l'application et navigateur du pont : Microsoft Edge ou Google Chrome déjà installé sur le PC (non livré).

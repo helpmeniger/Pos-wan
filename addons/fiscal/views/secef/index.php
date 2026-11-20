@@ -83,7 +83,8 @@ $groupes = ['' => '—'] + array_combine(array_keys(Secef::GROUPES), array_map(f
         <form method="post" action="<?= e(url('/fiscal/secef/jeton/masquer')) ?>" class="mt-1"><?= csrf_field() ?><button class="btn btn-sm btn-light">J'ai copié le jeton</button></form></div>
     <?php endif; ?>
     <div class="d-flex flex-wrap gap-1">
-      <?php if (can('fiscal.secrets')): ?><form method="post" action="<?= e(url('/fiscal/secef/jeton')) ?>" data-confirm="Créer un nouveau jeton ? Le pont devra être redémarré avec ce jeton."><?= csrf_field() ?><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-shield-lock"></i> <?= isset($hints['jeton_pont']) ? 'Nouveau jeton' : 'Créer le jeton du pont' ?></button></form><?php endif; ?>
+      <?php if (App\Core\Env::get('POS_EDITION', '') === 'bureau'): ?><div class="w-100 text-secondary mb-1">Édition Bureau : le pont (Node.js livré) est démarré et arrêté automatiquement par POS Marwa dès que le jeton existe.</div><?php endif; ?>
+      <?php if (can('fiscal.secrets')): ?><form method="post" action="<?= e(url('/fiscal/secef/jeton')) ?>" data-confirm="Créer un nouveau jeton ? Le pont redémarrera avec ce jeton."><?= csrf_field() ?><button class="btn btn-sm btn-outline-secondary"><i class="bi bi-shield-lock"></i> <?= isset($hints['jeton_pont']) ? 'Nouveau jeton' : 'Créer le jeton du pont' ?></button></form><?php endif; ?>
       <form method="post" action="<?= e(url('/fiscal/secef/tester')) ?>"><?= csrf_field() ?><button class="btn btn-sm btn-outline-success"><i class="bi bi-plug"></i> Tester la connexion (première authentification)</button></form>
       <form method="post" action="<?= e(url('/fiscal/secef/deconnecter')) ?>"><?= csrf_field() ?><button class="btn btn-sm btn-outline-danger"><i class="bi bi-box-arrow-right"></i> Se déconnecter</button></form>
     </div>
