@@ -29,7 +29,9 @@ function base_path_prefix(): string
         return $prefix = rtrim((string) parse_url($cfg, PHP_URL_PATH), '/');
     }
     $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
-    $dir = rtrim(dirname($script), '/');
+    // dirname('/index.php') vaut « \ » sous Windows (et « / » ailleurs) : sans cette correction, les adresses
+    // deviendraient « \/install », que le navigateur lit « //install » (un autre site : « adresse IP introuvable »)
+    $dir = rtrim(str_replace('\\', '/', dirname($script)), '/');
     return $prefix = ($dir === '.' ? '' : $dir);
 }
 

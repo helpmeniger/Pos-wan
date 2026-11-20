@@ -2,6 +2,11 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.13.5] — 2026-11-20
+
+### Corrigé (POS Marwa Bureau, cause trouvée par le rapport de diagnostic du PC Windows)
+- « Adresse IP introuvable » après l'écran de démarrage : sous Windows, `dirname("/index.php")` vaut `\`, et toutes les adresses de l'application devenaient `\/install`, que le navigateur lit `//install` (un site nommé « install »). Le séparateur est désormais normalisé (`base_path_prefix()`). Concernait aussi la version web installée à la racine d'un serveur Windows.
+
 ## [3.13.4] — 2026-11-20
 
 ### Corrigé (POS Marwa Bureau, signalé au quatrième essai sous Windows)
