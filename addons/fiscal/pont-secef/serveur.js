@@ -122,6 +122,7 @@ async function traiter(t, corps) {
     return travaux.ecrire(t);
   } catch (e) {
     const err = erreur(e);
+    if (portail.page) await portail.capture('erreur-' + String(f.reference_pos || '').replace(/[^A-Za-z0-9-]/g, ''));
     if (t.certification_envoyee) {
       t.etat = 'incertaine';
       t.message = err.message + ' — la certification a pu partir : vérifiez le Journal de l\'e-SFE avant toute nouvelle tentative.';

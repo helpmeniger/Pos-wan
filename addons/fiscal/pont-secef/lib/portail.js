@@ -214,7 +214,7 @@ class Portail {
   }
 
   async remplir(portee, formcontrolname, valeur) {
-    const inp = this.page.locator(`${portee} ion-input[formcontrolname="${formcontrolname}"] input`).last();
+    const inp = this.page.locator(`${portee} ion-input[formcontrolname="${formcontrolname}"] input:visible`).last();
     if (!(await inp.count())) throw new EtatPortail('formulaire', `Champ « ${formcontrolname} » introuvable : le portail a peut-être changé.`);
     await inp.fill(String(valeur));
   }
@@ -247,7 +247,8 @@ class Portail {
   /** Recherche d'une désignation dans la liste visible ; clique sur « sac + » si demandé. */
   async trouverArticle(designation, ajouter) {
     const p = this.page;
-    const inp = p.locator('ion-input input[placeholder="Chercher"]').first();
+    // L'application garde les pages déjà visitées, cachées : seul le champ visible compte
+    const inp = p.locator('ion-input input[placeholder="Chercher"]:visible').first();
     if (await inp.count()) { await inp.fill(designation); await this.cliquer('CHERCHER', null, false); await p.waitForTimeout(2000); }
     return p.evaluate(([d, add]) => {
       const vis = (e) => !!(e.offsetWidth || e.offsetHeight);
@@ -365,8 +366,8 @@ class Portail {
           const b = h && [...h.querySelectorAll('ion-button')].find((x) => /MODIFIER/i.test(x.innerText));
           if (b) b.click();
         });
-        await p.waitForSelector('ion-modal ion-input input, ion-modal ion-textarea textarea', { timeout: 10000 });
-        await p.locator('ion-modal ion-input input, ion-modal ion-textarea textarea').first().fill(f.commentaire);
+        await p.waitForSelector('ion-modal ion-input input:visible, ion-modal ion-textarea textarea:visible', { timeout: 10000 });
+        await p.locator('ion-modal ion-input input:visible, ion-modal ion-textarea textarea:visible').first().fill(f.commentaire);
         await this.cliquer('MODIFIER', 'ion-modal');
         await p.waitForTimeout(1000);
         commentaire = f.commentaire;
@@ -397,8 +398,8 @@ class Portail {
       }
     }
     if (f.paiement && f.paiement !== 'ESPECES') {
-      const sel = p.locator('ion-select').filter({ hasText: /ESPECES|MOBILE|VIREMENT|CARTE|CHEQUES|AUTRE|Paiement/i });
-      const cible = (await sel.count()) ? sel.last() : p.locator('ion-select').last();
+      const sel = p.locator('ion-select:visible').filter({ hasText: /ESPECES|MOBILE|VIREMENT|CARTE|CHEQUES|AUTRE|Paiement/i });
+      const cible = (await sel.count()) ? sel.last() : p.locator('ion-select:visible').last();
       await this.choisirOption(cible, f.paiement);
     }
     const t = await this.texte();
@@ -413,6 +414,17 @@ class Portail {
     }
     const repartition = (t.match(/^[A-L]\s*-\s*\d+%.*$/gm) || []).map((s) => s.replace(/\s+/g, ' '));
     return { total, repartition, commentaire };
+  }
+
+  /** Capture d'écran locale pour le diagnostic (dossier données du pont, jamais transmise). */
+  async capture(nom) {
+    try {
+      const d = path.join(this.cfg.donnees, 'captures');
+      fs.mkdirSync(d, { recursive: true, mode: 0o700 });
+      const f = path.join(d, new Date().toISOString().replace(/[:.]/g, '-') + '-' + nom + '.png');
+      await this.page.screenshot({ path: f, fullPage: true });
+      return f;
+    } catch (e) { return null; }
   }
 
   async annuler() {
