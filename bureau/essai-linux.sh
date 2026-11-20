@@ -21,6 +21,8 @@ for d in storage/logs storage/backups storage/sessions storage/cache storage/tmp
 mkdir -p "$T/php/ext"; cp "$SRC/bureau/php.ini" "$T/php/php.ini"
 SYSEXT=$(php -n -r 'echo ini_get("extension_dir");')
 for e in curl exif fileinfo gd intl mbstring openssl pdo_mysql mysqli sodium zip opcache; do [ -f "$SYSEXT/$e.so" ] && ln -sf "$SYSEXT/$e.so" "$T/php/ext/$e.so"; done
+# Node.js du système pour le pont MARWA SECEF (comme node\node.exe livré sous Windows)
+command -v node >/dev/null && export POS_BUREAU_NODE=$(command -v node) POS_BUREAU_PONT_NAVIGATEUR=chromium
 export POS_BUREAU_MACHINE=essai-machine-origine-0001 POS_BUREAU_MARQUEURS="$T/marqueurs" POS_BUREAU_SUPPORTS="$T/cle-usb"
 mkdir -p "$T/cle-usb"
 export POS_BUREAU_PHP=$(command -v php) POS_BUREAU_PHP_INI="$T/php/php.ini" POS_BUREAU_MARIADBD=$(command -v mariadbd || echo /usr/sbin/mariadbd) \
@@ -55,7 +57,6 @@ verif "second démarrage (base existante, mots de passe réutilisés)" demarrer
 verif "secrets d'une version précédente retirés d'app/.env, application toujours connectée à sa base" "! grep -Eq '^(APP_KEY|DB_PASSWORD)=' '$T/app/.env' && for i in \$(seq 1 30); do grep -q '^Tout fonctionne' '$T/donnees/journaux/diagnostic.txt' && break; sleep 1; done; grep -q '^Tout fonctionne' '$T/donnees/journaux/diagnostic.txt'"
 # Pont MARWA SECEF CONNECT : démarré par le lanceur dès que POS Marwa a créé son jeton, redémarré sur nouveau jeton
 if command -v node >/dev/null && [ -d "$T/app/addons/fiscal/pont-secef" ]; then
-  export POS_BUREAU_NODE=$(command -v node) POS_BUREAU_PONT_NAVIGATEUR=chromium
   J1=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n'); echo -n "$J1" > "$T/app/addons/fiscal/pont-secef/jeton.txt"
   pont() { curl -s --noproxy '*' -m 3 -H "X-Pont-Jeton: $1" http://127.0.0.1:8760/etat; }
   verif "pont e-SECeF démarré par le lanceur (jeton créé par POS Marwa)" "for i in \$(seq 1 30); do pont $J1 | grep -q '\"ok\":true' && break; sleep 1; done; pont $J1 | grep -q '\"ok\":true' && grep -q 'Pont MARWA SECEF démarré' '$T/donnees/journaux/lanceur.log'"
