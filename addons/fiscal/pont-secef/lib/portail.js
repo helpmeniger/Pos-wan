@@ -175,7 +175,7 @@ class Portail {
       const out = [];
       for (const ic of document.querySelectorAll('ion-icon[name="remove-circle-outline"], ion-icon[name="bag-add-outline"]')) {
         if (!vis(ic)) continue;
-        let row = ic.closest('ion-row, ion-item, tr, mat-row');
+        let row = ic.closest('mat-row, tr, ion-item, ion-row');
         if (!row) continue;
         const cells = (row.innerText || '').split('\n').map((s) => s.trim()).filter(Boolean);
         out.push(cells);
@@ -261,7 +261,7 @@ class Portail {
       const n = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
       for (const ic of document.querySelectorAll('ion-icon[name="bag-add-outline"], ion-icon[name="remove-circle-outline"]')) {
         if (!vis(ic)) continue;
-        const row = ic.closest('ion-row, ion-item, tr');
+        const row = ic.closest('mat-row, tr, ion-item, ion-row');
         if (row && n((row.innerText || '').split('\n')[0]) === n(d)) {
           if (add && ic.getAttribute('name') === 'bag-add-outline') (ic.closest('ion-button, button') || ic).click();
           return true;
@@ -293,7 +293,7 @@ class Portail {
       const out = [];
       for (const ic of document.querySelectorAll('ion-icon[name="bag-remove-outline"]')) {
         if (!vis(ic)) continue;
-        const row = ic.closest('ion-row, ion-item, tr');
+        const row = ic.closest('mat-row, tr, ion-item, ion-row');
         if (row) out.push((row.innerText || '').split('\n').map((s) => s.trim()).filter(Boolean));
       }
       return out;
@@ -303,7 +303,7 @@ class Portail {
   /** Quantité (et prix) d'une ligne du panier : menu « trois barres » de la ligne → fenêtre de modification. */
   async ajusterLigne(index, l) {
     const menus = this.page.locator('ion-icon[name="bag-remove-outline"]');
-    const row = menus.nth(index).locator('xpath=ancestor::*[self::ion-row or self::ion-item or self::tr][1]');
+    const row = menus.nth(index).locator('xpath=ancestor::*[self::mat-row or self::tr or self::ion-item or self::ion-row][1]');
     const m = row.locator('ion-icon[name="menu-outline"]');
     if (!(await m.count())) throw new EtatPortail('formulaire', 'Modification de ligne du panier introuvable : le portail a peut-être changé.');
     await m.first().click();
