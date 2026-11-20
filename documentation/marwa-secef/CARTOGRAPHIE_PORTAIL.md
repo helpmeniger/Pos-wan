@@ -1,6 +1,11 @@
 # Cartographie du portail e-SECeF (DGI Niger)
 
-> **État : phase 1 — partie publique seulement (sans connexion).** Observée le 20/11/2026 avec Chromium
+> **État : phase 1 (partie publique) faite ; phase 2 (connecté) faite pour l'espace contribuable, mais
+> l'application e-SFE n'a pas pu s'ouvrir dans le navigateur d'exploration (voir § 7).**
+> Source complémentaire : *Plateforme e-SECeF — Manuel de l'utilisateur*, v1.0, février 2023 (DGI Niger,
+> rubrique Documentation de l'espace contribuable), résumé dans `PROCESSUS_FACTURATION.md`.
+>
+> Phase 1 : Observée le 20/11/2026 avec Chromium
 > (Playwright), sans aucune saisie ni envoi de formulaire. Les écrans réservés aux comptes connectés
 > (facturation, articles, journal, rapports, configuration) **n'ont pas encore été vus** : ce qui les concerne
 > ci-dessous vient uniquement des libellés publics de l'application (`/esfe/assets/i18n/fr.json`, fichier que
@@ -78,6 +83,42 @@ Le portail parle d'**e-MCF** (module de contrôle de facturation côté DGI) : l
 communique avec ce service. ❓ Aucune documentation publique d'intégration e-MCF pour le Niger n'a été trouvée
 (seule celle du Bénin existe, système différent : elle ne doit pas être supposée valable au Niger).
 
+## 7. Phase 2 : espace contribuable (connecté) ✅ — 20/11/2026
+
+Connexion : `https://sygmef.impots.gouv.ne/Account/Login` avec le NIF comme identifiant ; **aucun OTP ni
+CAPTCHA** ; après connexion, retour sur `https://esecef.impots.gouv.ne/Manage`. Le portail bloque le compte
+pour un temps après plusieurs mots de passe erronés (message « Tentatives restantes… »).
+
+### « Gérer les e-SECeF » (`/Manage`)
+
+| Élément | Contenu | Action (formulaire) |
+|---|---|---|
+| En-tête | Raison sociale, NIF, RCCM, e-mail, nombre d'e-SECeF attribués et actifs | — |
+| Tableau des e-SECeF | Colonnes **NIM**, **Type** (ESFE / EMCF), **État**, **Nom du point de vente**, **Factures** (nombre émis) | — |
+| Bouton « e-SFE » | Ouvre l'application de facturation de cet e-SECeF | `POST /Manage/OpenEsfe` (champs : `Nim`, `Tin`) |
+| Bouton « e-MCF (n jetons) » *(compte e-MCF seulement, d'après le manuel)* | Gestion des **jetons** d'accès de l'e-MCF : créer (date d'expiration), supprimer | — |
+| « Modifier » | Demande de modification de l'e-SECeF | `POST /Manage/RequestModification` |
+| « Soumettre une demande pour un nouveau e-SECeF » | Nouvelle demande (type **e-SFE** ou **e-MCF**) | `POST /Manage/RequestNew` |
+| « Imprimer l'état des e-SECeF » | État imprimable | `POST /Manage/TaxpayerStatus` |
+| Lien NIF (en haut) | Changement du mot de passe | `/Account/ChangePassword` |
+| « Documentation » | Manuel d'utilisation v1.0 (PDF, 41 pages) | `/Home/Documentation` |
+| « Se déconnecter » | Fin de session | `/Account/Logoff` |
+
+Le compte exploré possède **un e-SECeF de type e-SFE, actif** (NIM au format `ES0101xxxx-1`), et aucun e-MCF.
+
+### Application e-SFE (`/esfe`) — non ouverte
+
+- Clic sur « e-SFE » → `POST /Manage/OpenEsfe` → `GET /esfe` → `/esfe/init?url=/pos` ; l'application
+  (Angular/Ionic) attend un jeton de session fourni par la page (`VAR_TOKEN`, durée annoncée 3 600 s).
+  Dans le navigateur d'exploration, **ce jeton est arrivé vide** : l'application reste sur l'écran de
+  démarrage (« No window token found »). Cause non déterminée (comportement du portail, session déjà ouverte
+  ailleurs, ou contrôle du navigateur) : **à vérifier par l'utilisateur dans son propre navigateur**.
+- L'application communique avec un service interne `/api/esfeapi/…` (init, items, invoices, postInvoice,
+  finalizeInvoice, reports, createReport…) **non documenté publiquement** : conformément aux règles de la
+  mission, il n'a pas été appelé ni reproduit.
+- Les écrans de facturation sont donc décrits d'après le **manuel officiel** (captures d'écran de la DGI),
+  pas d'après une observation directe.
+
 ## 6. Inconnus à lever en phase 2 (connecté)
 
 1. Liste réelle et taux des **groupes de taxation** (lettres, TVA, exonérations).
@@ -85,4 +126,6 @@ communique avec ce service. ❓ Aucune documentation publique d'intégration e-M
 3. Comportement du bouton CERTIFIER (confirmation ? délai ? message ?), contenu exact du PDF et du QR code.
 4. Présence d'un OTP, durée de session (« Durée de la session »), déconnexion automatique.
 5. Le menu « Test » produit-il des factures **non fiscales** ? (à confirmer avant tout essai de certification).
+7. **Documentation technique e-MCF** : le manuel (p. 41) indique qu'un éditeur de SFE la trouve dans la rubrique
+   Documentation ; sur ce compte (e-SFE seulement), seule la notice utilisateur y figure.
 6. Recherche dans le Journal : par quels critères retrouver une facture (montant, date, référence) ?
