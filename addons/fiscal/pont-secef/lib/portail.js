@@ -338,6 +338,10 @@ class Portail {
     }, [f.type, f.mode]);
     if (!choisi) throw new EtatPortail('formulaire', `Type de facture ${f.type} (${f.mode}) introuvable : type désactivé dans la configuration de l'e-SFE ?`);
     await this.attendreTexte(new RegExp('Type:\\s*' + f.type + ',\\s*Mode:\\s*' + f.mode), 60000);
+    // Le bandeau du type s'affiche avant le formulaire : on attend la liste des articles programmés (icône « sac + »)
+    await p.waitForSelector('ion-icon[name="bag-add-outline"]:visible', { timeout: 120000 })
+      .catch(() => { throw new EtatPortail('reseau', 'Formulaire de facture non chargé à temps.', true); });
+    await p.waitForTimeout(1000);
 
     if (f.client && f.client.nom) {
       await p.evaluate(() => {

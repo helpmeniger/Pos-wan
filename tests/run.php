@@ -6420,31 +6420,13 @@ test('MARWA SECEF CONNECT : choix en caisse, régimes et groupes, articles, pont
         eq('certifiee', DB::value('SELECT mode FROM fiscal_sale_requests WHERE sale_id = ?', [$c['sale_id']]));
         $hc = new Http(); $hc->login($B, 'caissier', 'Mot-de-passe-2026');
         $tc = $hc->token("$B/pos");
-        $res = json_decode($hc->req('POST', "$B/fiscal/ventes/{$c['sale_id']}/certifier", json_encode(['_csrf' => $tc]), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $tc])['body'], true);
-        eq('certified', $res['etat'] ?? null, 'certification suivie par la caisse : ' . json_encode($res));
-        $cert = $E::forSale($c['sale_id']);
-        ok(str_starts_with((string) $cert['fiscal_number'], 'TEST-SECEF-') && $cert['device_id'] === 'TEST-NIM-0001', 'Code SECeF/DGI et NIM tels que renvoyés');
-        $st = $etat();
-        eq(1, count($st['soumissions']), 'une seule soumission au pont');
-        $f = $st['soumissions'][0]['facture'];
-        ok($f['type'] === 'FV' && $f['mode'] === 'TTC' && $f['lignes'][0]['groupe'] === 'H' && (float) $f['lignes'][0]['quantite'] === 2.0 && str_contains((string) $f['commentaire'], $c['number']), 'facture transmise : type, groupe, quantité, référence POS');
-        ok(empty($st['soumissions'][0]['certifier']) === false || true, 'option de certification transmise');
-        ok(!str_contains((string) DB::value('SELECT GROUP_CONCAT(COALESCE(request_redacted, "")) FROM fiscal_invoice_logs WHERE certification_id = ?', [$cert['id']]), 'mot-de-passe-de-test'), 'journaux : aucun mot de passe');
-        $tk = $h->req('GET', "$B/sales/{$c['sale_id']}/ticket")['body'];
-        ok(str_contains($tk, 'Code SECeF/DGI') && str_contains($tk, $cert['fiscal_number']) && str_contains($tk, 'SECeF NIM') && str_contains($tk, 'sygmef.impots.gouv.ne/Verification'), 'ticket : éléments de sécurité e-SECeF et vérification');
-        ok(str_contains($h->req('GET', "$B/sales/{$c['sale_id']}/invoice")['body'], 'FACTURE CERTIFIÉE e-SECeF'), 'facture A4 certifiée');
-        // Nouvel appel : rien n'est renvoyé
-        $hc->req('POST', "$B/fiscal/ventes/{$c['sale_id']}/certifier", json_encode(['_csrf' => $tc]), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $tc]);
-        eq(1, count($etat()['soumissions']), 'certifiée : jamais resoumise');
-        // 5. Certification non autorisée (réglage par défaut) : préparée, jamais certifiée
-        actingAs('admin');
+        $certifier = fn(int $id, bool $relancer = false) => json_decode($hc->req('POST', "$B/fiscal/ventes/$id/certifier", json_encode(['_csrf' => $tc, 'relancer' => $relancer]), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $tc])['body'], true);
+        // 5. Certification réelle non autorisée (réglage par défaut) : préparée et vérifiée, jamais certifiée
         ok(!$X::config()['certification_autorisee'], 'certification réelle désactivée par défaut');
-        actingAs('caissier');
-        $pr = $sell(true);
-        $E::attempt((int) $E::forSale($pr['sale_id'])['id']);
-        $cp = $E::forSale($pr['sale_id']);
-        ok($cp['status'] === 'failed' && str_contains((string) $cp['last_error'], 'préparée') && $cp['fiscal_number'] === null, 'préparée et vérifiée, rien certifié : ' . $cp['last_error']);
-        ok(str_contains($h->req('GET', "$B/sales/{$pr['sale_id']}/ticket")['body'], 'NON CERTIFIÉE'), 'ticket : NON CERTIFIÉE');
+        $res = $certifier($c['sale_id']);
+        ok(($res['etat'] ?? '') === 'failed' && str_contains((string) $res['message'], 'préparée') && $res['fiscal_number'] === null, 'préparée et vérifiée, rien certifié : ' . ($res['message'] ?? ''));
+        eq(false, $etat()['soumissions'][0]['certifier'], 'le pont a reçu « ne pas certifier »');
+        ok(str_contains($h->req('GET', "$B/sales/{$c['sale_id']}/ticket")['body'], 'NON CERTIFIÉE'), 'ticket : NON CERTIFIÉE');
         // 6. Autorisation de la certification réelle : mot de passe et confirmation écrite exigés
         $h->req('POST', "$B/fiscal/secef/autorisation", http_build_query(['_csrf' => $t, 'autoriser' => '1', 'password' => 'mauvais', 'confirmation' => 'CERTIFIER']));
         setting('__reset');
@@ -6452,6 +6434,23 @@ test('MARWA SECEF CONNECT : choix en caisse, régimes et groupes, articles, pont
         $h->req('POST', "$B/fiscal/secef/autorisation", http_build_query(['_csrf' => $t, 'autoriser' => '1', 'password' => 'Essai-Niamey-2026', 'confirmation' => 'CERTIFIER']));
         setting('__reset');
         ok($X::config()['certification_autorisee'], 'certification autorisée par l\'administrateur');
+        // 4. « Réessayer » en caisse : la même facture est certifiée (jamais certifiée avant : renvoi sans risque)
+        $res = $certifier($c['sale_id'], true);
+        eq('certified', $res['etat'] ?? null, 'certification suivie par la caisse : ' . json_encode($res));
+        $cert = $E::forSale($c['sale_id']);
+        ok(str_starts_with((string) $cert['fiscal_number'], 'TEST-SECEF-') && $cert['device_id'] === 'TEST-NIM-0001', 'Code SECeF/DGI et NIM tels que renvoyés');
+        $st = $etat();
+        eq(2, count($st['soumissions']), 'préparation puis certification : deux soumissions de la même facture');
+        eq(true, $st['soumissions'][1]['certifier']);
+        $f = $st['soumissions'][1]['facture'];
+        ok($f['type'] === 'FV' && $f['mode'] === 'TTC' && $f['lignes'][0]['groupe'] === 'H' && (float) $f['lignes'][0]['quantite'] === 2.0 && str_contains((string) $f['commentaire'], $c['number']), 'facture transmise : type, groupe, quantité, référence POS');
+        ok(!str_contains((string) DB::value('SELECT GROUP_CONCAT(COALESCE(request_redacted, "")) FROM fiscal_invoice_logs WHERE certification_id = ?', [$cert['id']]), 'mot-de-passe-de-test'), 'journaux : aucun mot de passe');
+        $tk = $h->req('GET', "$B/sales/{$c['sale_id']}/ticket")['body'];
+        ok(str_contains($tk, 'Code SECeF/DGI') && str_contains($tk, $cert['fiscal_number']) && str_contains($tk, 'SECeF NIM') && str_contains($tk, 'sygmef.impots.gouv.ne/Verification'), 'ticket : éléments de sécurité e-SECeF et vérification');
+        ok(str_contains($h->req('GET', "$B/sales/{$c['sale_id']}/invoice")['body'], 'FACTURE CERTIFIÉE e-SECeF'), 'facture A4 certifiée');
+        $certifier($c['sale_id'], true);
+        eq(2, count($etat()['soumissions']), 'certifiée : jamais resoumise, même sur « Réessayer »');
+        actingAs('caissier');
         // 7. Réponse lente : file d'attente, puis état redemandé — jamais de second envoi
         $setPont(['scenario' => 'lent']);
         $l = $sell(true);
