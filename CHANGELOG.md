@@ -2,6 +2,18 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.13.4] — 2026-11-20
+
+### Corrigé (POS Marwa Bureau, signalé au quatrième essai sous Windows)
+- Une base recréée après un premier démarrage interrompu recevait un nouveau mot de passe, mais `app\.env` gardait l'ancien : l'application ne pouvait plus se connecter à sa base. À chaque démarrage, les réglages de la base d'`app\.env` sont réalignés sur `donnees\secret\bd.ini` (corrigé dans le journal).
+- OPcache sous Windows : repli sur un cache disque (`donnees\cache\opcache`) quand un serveur PHP ne peut pas partager la mémoire des autres.
+
+### Ajouté (dépannage)
+- Contrôle de démarrage : POS Marwa vérifie lui-même la base (avec le compte de l'application), les serveurs PHP, l'application par le chemin de la fenêtre (redirections comprises, toute redirection hors de 127.0.0.1 signalée) et les fichiers des pages. En cas de problème, un message dit exactement lequel.
+- Rapport `donnees\journaux\diagnostic.txt` à chaque démarrage, et page `http://127.0.0.1:8740/__bureau/diagnostic` (ce PC seulement, aucun mot de passe).
+- Journal : version réelle du programme, navigateur utilisé, 40 premières requêtes de chaque démarrage et toute erreur serveur ; plantage éventuel du lanceur inscrit dans `plantage.log` (auparavant perdu, faute de console).
+- Essai automatique : 18 vérifications (contrôle de démarrage, diagnostic sans mot de passe, `.env` réaligné).
+
 ## [3.13.3] — 2026-11-19
 
 ### Corrigé (POS Marwa Bureau, signalé au troisième essai sous Windows)

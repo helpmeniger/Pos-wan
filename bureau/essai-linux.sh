@@ -34,6 +34,9 @@ verif "app/.env écrit (port 3407, édition Bureau, menu en tuiles)" "grep -q '^
 verif "mots de passe tirés au hasard (32 caractères)" "grep -Eq '^DB_PASSWORD=\"[0-9a-f]{32}\"' '$T/app/.env'"
 verif "PHP lancé avec le php.ini livré et le chemin complet de ses extensions" "pgrep -af 'php.*-S 127.0.0.1:188' | grep -q -- '-d extension_dir=$T/php/ext'"
 verif "base écoutant seulement sur 127.0.0.1" "grep -q '^bind-address=127.0.0.1' '$T/donnees/mariadb.ini'"
+verif "contrôle de démarrage : tout OK (base, PHP, application, fichiers)" "for i in \$(seq 1 60); do grep -q 'Contrôle' '$T/donnees/journaux/diagnostic.txt' 2>/dev/null && break; sleep 1; done; grep -q '^Tout fonctionne' '$T/donnees/journaux/diagnostic.txt' && ! grep -q '^ÉCHEC' '$T/donnees/journaux/diagnostic.txt'"
+verif "page de diagnostic (ce PC), sans mot de passe" "d=\$(curl -s http://127.0.0.1:8740/__bureau/diagnostic); [[ \"\$d\" == *'Contrôle de démarrage'* ]] && ! grep -qF \"\$(grep '^app=' '$T/donnees/secret/bd.ini' | cut -d= -f2)\" <<< \"\$d\""
+verif "requêtes inscrites au journal" "grep -q 'Requête 127.0.0.1 GET / → 302' '$T/donnees/journaux/lanceur.log'"
 verif "accueil → assistant d'installation" "[[ \"\$(curl -s -o /dev/null -w '%{redirect_url}' http://127.0.0.1:8740/)\" == */install ]]"
 verif "assistant : base « préparée automatiquement »" "page=\$(curl -s http://127.0.0.1:8740/install); [[ \"\$page\" == *'préparée automatiquement'* ]]"
 verif "fichier PHP autre que l'application jamais exécuté" "[ \"\$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8740/../app/bootstrap.php)\" != 200 ] && [ \"\$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8740/index.php/../../.env)\" != 200 ]"
@@ -42,8 +45,9 @@ echo "  (8 pages de l'assistant demandées en même temps : $(( (fin-debut)/1000
 echo "== Arrêt puis second démarrage"
 verif "arrêt propre (serveurs et base arrêtés)" arreter
 verif "MariaDB arrêtée proprement" "for i in \$(seq 1 20); do grep -q 'Shutdown complete' '$T/donnees/journaux/mariadb.err' && break; sleep 0.5; done; grep -q 'Shutdown complete' '$T/donnees/journaux/mariadb.err'"
+sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD="ancien-mot-de-passe"/' "$T/app/.env"   # .env resté d'une base précédente
 verif "second démarrage (base existante, mots de passe réutilisés)" demarrer
-verif "même mot de passe d'application" "grep -q \"\$(grep '^app=' '$T/donnees/secret/bd.ini' | cut -d= -f2)\" '$T/app/.env'"
+verif "app/.env réaligné sur la base (mot de passe resté d'une base précédente corrigé)" "grep -q \"\$(grep '^app=' '$T/donnees/secret/bd.ini' | cut -d= -f2)\" '$T/app/.env'"
 verif "arrêt final" arreter
 
 # Fenêtre comme sous Windows (Edge confie la fenêtre à un autre de ses processus) : POS Marwa doit rester en marche tant

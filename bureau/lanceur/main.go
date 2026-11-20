@@ -38,6 +38,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -45,7 +46,8 @@ import (
 	"time"
 )
 
-const version = "1.0.0"
+// Version de POS Marwa, fixée à la construction (-ldflags "-X main.version=…")
+var version = "dev"
 
 // ---------------------------------------------------------------------------------------------------------------
 // Réglages
@@ -243,6 +245,11 @@ type launcher struct {
 	stopOnce sync.Once
 	done     chan struct{}
 	srv      *http.Server
+	browser  string
+	nReq     atomic.Int64
+	mu       sync.Mutex
+	recent   []string // dernières requêtes (diagnostic)
+	check    string   // résultat du contrôle de démarrage
 }
 
 func (l *launcher) startDB() error {
@@ -387,11 +394,27 @@ func (l *launcher) ensureEnv() error {
 			"# Édition Bureau : menu de gestion en tuiles (modifiable dans Configuration → Paramètres)\nMENU_STYLE=tuiles\nPOS_EDITION=bureau\n"
 		return os.WriteFile(path, []byte(content), 0o600)
 	}
-	lines := strings.Split(string(b), "\n")
+	// Réglages de la base toujours réalignés sur donnees\secret\bd.ini et pos-marwa.ini (une base recréée a un
+	// nouveau mot de passe : l'ancien app\.env empêcherait l'application de s'y connecter)
+	want := map[string]string{"DB_HOST": "127.0.0.1", "DB_PORT": strconv.Itoa(l.c.portBD), "DB_DATABASE": "poswan",
+		"DB_USERNAME": "poswan", "DB_PASSWORD": "\"" + l.sec.app + "\""}
+	lines := strings.Split(strings.ReplaceAll(string(b), "\r\n", "\n"), "\n")
 	changed := false
+	seen := map[string]bool{}
 	for i, ln := range lines {
-		if strings.HasPrefix(strings.TrimSpace(ln), "DB_PORT=") && strings.TrimSpace(ln) != "DB_PORT="+strconv.Itoa(l.c.portBD) {
-			lines[i], changed = "DB_PORT="+strconv.Itoa(l.c.portBD), true
+		k, v, ok := strings.Cut(strings.TrimSpace(ln), "=")
+		if w, known := want[k]; ok && known {
+			seen[k] = true
+			if v != w {
+				lines[i], changed = k+"="+w, true
+				log.Printf("app\\.env : %s réaligné sur la configuration de la base", k)
+			}
+		}
+	}
+	for _, k := range []string{"DB_HOST", "DB_PORT", "DB_DATABASE", "DB_USERNAME", "DB_PASSWORD"} {
+		if !seen[k] {
+			lines, changed = append(lines, k+"="+want[k]), true
+			log.Printf("app\\.env : %s ajouté", k)
 		}
 	}
 	if changed {
@@ -422,6 +445,13 @@ func (l *launcher) startWorker(w *worker) error {
 	cmd.Env = append(os.Environ(), "POS_BUREAU_JETON="+l.jeton, "POS_BUREAU=1", "PHP_CLI_SERVER_WORKERS=1")
 	if runtime.GOOS == "windows" {
 		cmd.Env = append(cmd.Env, "PHP_INI_SCAN_DIR=") // seul php\php.ini compte (pas celui d'un autre PHP installé sur le PC)
+		// OPcache sous Windows : plusieurs php.exe partagent sa mémoire ; s'il ne peut s'y rattacher, il se replie sur
+		// ce cache disque au lieu d'échouer
+		oc := filepath.Join(c.data, "cache", "opcache")
+		if os.MkdirAll(oc, 0o700) == nil {
+			args = append([]string{"-d", "opcache.file_cache=" + oc, "-d", "opcache.file_cache_fallback=1"}, args...)
+			cmd.Args = append([]string{c.php}, args...)
+		}
 	}
 	cmd.Stdout, cmd.Stderr = io.Discard, io.Discard // journal d'accès inutile ; les erreurs vont dans php.log
 	hide(cmd)
@@ -560,6 +590,16 @@ func (l *launcher) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		fmt.Fprintf(rw, "POS Marwa Bureau %s pret=%v inactif=%ds", version, l.ready.Load(), int((time.Since(l.t0)-time.Duration(l.lastBeat.Load()))/time.Second))
 		return
+	case "/__bureau/diagnostic":
+		host, _, _ := net.SplitHostPort(r.RemoteAddr)
+		if host != "127.0.0.1" && host != "::1" { // rapport réservé à ce PC
+			http.Error(rw, "refusé", http.StatusForbidden)
+			return
+		}
+		rw.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		rw.Header().Set("Cache-Control", "no-store")
+		io.WriteString(rw, l.report())
+		return
 	case "/__bureau/arret":
 		// Arrêt demandé par « POS Marwa.exe --arreter », seulement depuis ce PC et avec le jeton du fichier local
 		host, _, _ := net.SplitHostPort(r.RemoteAddr)
@@ -589,7 +629,55 @@ func (l *launcher) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	l.beat()
 	w.busy.Add(1)
 	defer w.busy.Add(-1)
-	w.proxy.ServeHTTP(rw, r)
+	sr := &statusRW{ResponseWriter: rw}
+	t := time.Now()
+	w.proxy.ServeHTTP(sr, r)
+	l.note(r, sr.code, w.port, time.Since(t))
+}
+
+// Code de réponse transmis (journal des requêtes) ; Flush conservé pour les réponses en continu
+type statusRW struct {
+	http.ResponseWriter
+	code int
+}
+
+func (s *statusRW) WriteHeader(c int) {
+	if s.code == 0 {
+		s.code = c
+	}
+	s.ResponseWriter.WriteHeader(c)
+}
+
+func (s *statusRW) Write(b []byte) (int, error) {
+	if s.code == 0 {
+		s.code = http.StatusOK
+	}
+	return s.ResponseWriter.Write(b)
+}
+
+func (s *statusRW) Flush() {
+	if f, ok := s.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+func (s *statusRW) Unwrap() http.ResponseWriter { return s.ResponseWriter }
+
+// Journal : les 40 premières requêtes de chaque démarrage et toute erreur serveur ; les 60 dernières en mémoire
+// (page de diagnostic). Le chemin seulement : jamais les paramètres (ils peuvent contenir des données personnelles).
+func (l *launcher) note(r *http.Request, code, port int, d time.Duration) {
+	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+	line := fmt.Sprintf("%s %s %s → %d (PHP %d, %d ms)", ip, r.Method, r.URL.Path, code, port, d.Milliseconds())
+	n := l.nReq.Add(1)
+	if n <= 40 || code >= 500 || code == 0 {
+		log.Printf("Requête %s", line)
+	}
+	l.mu.Lock()
+	l.recent = append(l.recent, time.Now().Format("15:04:05 ")+line)
+	if len(l.recent) > 60 {
+		l.recent = l.recent[len(l.recent)-60:]
+	}
+	l.mu.Unlock()
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -613,11 +701,19 @@ func (l *launcher) openWindow() (func(), error) {
 	if l.c.kiosquePrint {
 		args = append(args, "--kiosk-printing") // tickets imprimés directement sur l'imprimante par défaut
 	}
+	l.browser = browser
 	cmd := exec.Command(browser, append(args, extraBrowserArgs()...)...)
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
-	go cmd.Wait()
+	log.Printf("Fenêtre : %s %s", browser, l.appURL())
+	t := time.Now()
+	go func() {
+		err := cmd.Wait()
+		if d := time.Since(t); d < 15*time.Second { // normal pour Edge déjà ouvert (fenêtre confiée à un autre processus)
+			log.Printf("Fenêtre : processus du navigateur terminé après %d ms (%v)", d.Milliseconds(), err)
+		}
+	}()
 	// La fermeture n'est pas déduite du processus du navigateur (Edge peut se relancer ou confier la fenêtre à un
 	// autre de ses processus) : chaque page de POS Marwa envoie un signe de vie ; sans signe de vie, arrêt (watchdog).
 	return func() {}, nil
@@ -740,6 +836,11 @@ func main() {
 	}
 	log.SetOutput(io.MultiWriter(logf, os.Stderr))
 	log.SetFlags(log.LstdFlags)
+	// Un plantage du programme (sans fenêtre de console sous Windows) laisse sa trace dans plantage.log
+	if cf, err := os.OpenFile(filepath.Join(c.logs, "plantage.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err == nil {
+		_ = debug.SetCrashOutput(cf, debug.CrashOptions{})
+		cf.Close()
+	}
 
 	if *stopFlag {
 		tok, _ := os.ReadFile(filepath.Join(c.data, "secret", "arret.jeton"))
@@ -761,7 +862,7 @@ func main() {
 		}
 		return
 	}
-	log.Printf("=== POS Marwa Bureau %s — dossier %s", version, root)
+	log.Printf("=== POS Marwa Bureau %s — dossier %s (%s/%s, réseau=%v)", version, root, runtime.GOOS, runtime.GOARCH, c.reseau)
 	listenHost := "127.0.0.1"
 	if c.reseau {
 		listenHost = "0.0.0.0" // autres postes du réseau local (tablettes, caisses) ; la base reste locale
@@ -806,6 +907,7 @@ func main() {
 	l.ready.Store(true)
 	log.Printf("Prêt : %s (%d serveurs PHP, base sur le port %d, réseau=%v)", l.appURL(), len(l.workers), c.portBD, c.reseau)
 
+	go l.selfCheck()
 	go waitSignal(func() { l.stop("signal du système") })
 	if wait != nil {
 		idle := 3 * time.Minute

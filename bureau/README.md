@@ -28,6 +28,7 @@ POS Marwa.exe ──► MariaDB 10.11   (127.0.0.1:3407, donnees\mysql)
 | Fenêtre | Ouverte tout de suite sur une page « Démarrage… » qui se recharge seule. Chaque page envoie un signe de vie toutes les 15 s (`/__bureau/battement.js`, ajouté par le répartiteur). Sans signe de vie depuis 3 minutes (dernière fenêtre fermée, sur ce PC ou un autre poste), arrêt des serveurs PHP puis de la base (`mariadb-admin shutdown`). La mise en veille du PC n'est pas comptée. |
 | Double-clic alors que POS Marwa tourne | Une nouvelle fenêtre s'ouvre ; rien n'est redémarré. |
 | `POS Marwa.exe --arreter` | Arrête tout (raccourci « Arrêter POS Marwa ») ; jeton local `donnees\secret\arret.jeton`. |
+| Contrôle de démarrage | Base (compte de l'application), serveurs PHP, application par le chemin de la fenêtre, fichiers des pages ; message à l'écran en cas de problème ; rapport `donnees\journaux\diagnostic.txt` et page `/__bureau/diagnostic` (ce PC seulement, sans mot de passe). Plantage du lanceur : `plantage.log`. |
 | `POS Marwa.exe --sans-fenetre` | Serveurs seuls (poste serveur pour d'autres caisses, essais). |
 
 ## Sécurité
@@ -65,7 +66,7 @@ bureau/construire.sh <dossier des composants> <dossier de sortie>
 
 - `bureau/essai-linux.sh` : le lanceur sous Linux avec le PHP et le MariaDB du système (premier démarrage,
   `.env`, base locale seulement, assistant d'installation, routeur, requêtes simultanées, arrêt propre, second
-  démarrage) — 12 vérifications.
+  démarrage, contrôle de démarrage, `.env` réaligné, fenêtre) — 18 vérifications.
 - `tests/run.php` : test « Menu de gestion en tuiles ».
 - **Non exécuté sous Windows** (aucun PC Windows ni Wine fonctionnel dans l'environnement de construction) :
   installateur, `POS Marwa.exe`, PHP et MariaDB pour Windows, fenêtre Edge, raccourcis, désinstallation. Vérifié
@@ -76,7 +77,7 @@ bureau/construire.sh <dossier des composants> <dossier de sortie>
 
 | Fichier | Rôle |
 |---|---|
-| `lanceur/` | `POS Marwa.exe` (Go, sans dépendance) |
+| `lanceur/` | `POS Marwa.exe` (Go, sans dépendance) ; `diagnostic.go` : contrôle de démarrage et rapport |
 | `routeur.php` | routeur des serveurs PHP (copié en `app\routeur.php`) |
 | `php.ini` | configuration PHP de l'édition |
 | `pos-marwa.ini` | réglages modifiables (ports, réseau, impression directe, navigateur) |

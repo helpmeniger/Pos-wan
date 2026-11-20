@@ -115,7 +115,7 @@ cat > "$G/lanceur.manifest" <<'EOF'
 </assembly>
 EOF
 ( cd "$G" && x86_64-w64-mingw32-windres --preprocessor=cpp -O coff -i ressources.rc -o ressources_windows_amd64.syso \
-  && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H=windowsgui -s -w" -o "$R/POS Marwa.exe" . )
+  && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "-H=windowsgui -s -w -X main.version=$VERSION" -o "$R/POS Marwa.exe" . )
 
 # ---------- 5. Fichiers de l'installation
 cp "$SRC/bureau/pos-marwa.ini" "$R/pos-marwa.ini"

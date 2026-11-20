@@ -36,6 +36,13 @@ func fatal(msg string) {
 	os.Exit(1)
 }
 
+// Message d'avertissement sans arrêter POS Marwa (contrôle de démarrage)
+func alert(msg string) {
+	t, _ := syscall.UTF16PtrFromString("POS Marwa — contrôle")
+	m, _ := syscall.UTF16PtrFromString(msg)
+	messageBox.Call(0, uintptr(unsafe.Pointer(m)), uintptr(unsafe.Pointer(t)), 0x30|0x10000) // MB_ICONWARNING | MB_SETFOREGROUND
+}
+
 // Groupe de processus fermé avec le lanceur : si « POS Marwa.exe » est arrêté de force, les serveurs PHP s'arrêtent
 // aussi (MariaDB n'y est pas : elle s'arrête proprement, ou est réutilisée au démarrage suivant).
 func init() {

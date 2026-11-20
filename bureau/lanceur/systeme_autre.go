@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -22,6 +23,8 @@ func fatal(msg string) {
 	fmt.Fprintln(os.Stderr, "POS Marwa : "+msg)
 	os.Exit(1)
 }
+
+func alert(msg string) { log.Printf("AVERTISSEMENT : %s", msg) }
 
 func findBrowser(pref string) string {
 	if p := os.Getenv("POS_BUREAU_NAVIGATEUR"); p != "" {
