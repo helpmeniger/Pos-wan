@@ -147,6 +147,7 @@ for f in "POS Marwa.exe" php/php.exe php/php.ini php/php8.dll php/vcruntime140.d
          node/node.exe app/addons/fiscal/pont-secef/serveur.js app/addons/fiscal/pont-secef/node_modules/playwright-core/package.json; do
   [ -f "$R/$f" ] || { echo "Fichier indispensable absent du paquet : $f" >&2; exit 1; }
 done
+for d in php mariadb app node; do grep -q "File /r \"POS Marwa\\\\$d\\\\\*" "$SRC/bureau/installateur.nsi" || { echo "Dossier $d non copié par installateur.nsi" >&2; exit 1; }; done
 grep -q '^extension_dir = "ext"' "$R/php/php.ini" && grep -q 'extension_dir=' "$SRC/bureau/lanceur/main.go" || { echo "extension_dir : le lanceur doit fournir le chemin complet" >&2; exit 1; }
 
 # ---------- 6. Installateur

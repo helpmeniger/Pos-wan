@@ -143,6 +143,9 @@ Section "POS Marwa (obligatoire)" SecMain
   File /r "POS Marwa\php\*.*"
   SetOutPath "$INSTDIR\mariadb"
   File /r "POS Marwa\mariadb\*.*"
+  ; Node.js (pont MARWA SECEF CONNECT, démarré par POS Marwa.exe)
+  SetOutPath "$INSTDIR\node"
+  File /r "POS Marwa\node\*.*"
   ; Application : le code est remplacé ; .env, storage\ et public\uploads\ (données) ne sont pas dans le paquet
   SetOutPath "$INSTDIR\app"
   File /r "POS Marwa\app\*.*"
@@ -210,6 +213,7 @@ Section "Uninstall"
   ; Programme et code (les données restent)
   RMDir /r "$INSTDIR\php"
   RMDir /r "$INSTDIR\mariadb"
+  RMDir /r "$INSTDIR\node"
   Delete "$INSTDIR\POS Marwa.exe"
   Delete "$INSTDIR\LISEZ-MOI.txt"
   Delete "$INSTDIR\LICENCES-TIERS.txt"
