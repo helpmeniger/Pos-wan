@@ -302,11 +302,18 @@ class Portail {
 
   /** Quantité (et prix) d'une ligne du panier : menu « trois barres » de la ligne → fenêtre de modification. */
   async ajusterLigne(index, l) {
-    const menus = this.page.locator('ion-icon[name="bag-remove-outline"]');
-    const row = menus.nth(index).locator('xpath=ancestor::*[self::mat-row or self::tr or self::ion-item or self::ion-row][1]');
-    const m = row.locator('ion-icon[name="menu-outline"]');
-    if (!(await m.count())) throw new EtatPortail('formulaire', 'Modification de ligne du panier introuvable : le portail a peut-être changé.');
-    await m.first().click();
+    // L'icône de la ligne peut se trouver sous la barre fixe « Total » : défilement puis clic dans la page
+    const ok = await this.page.evaluate((i) => {
+      const vis = (e) => !!(e.offsetWidth || e.offsetHeight);
+      const ics = [...document.querySelectorAll('ion-icon[name="bag-remove-outline"]')].filter(vis);
+      const row = ics[i] && ics[i].closest('mat-row, tr, ion-item, ion-row');
+      const m = row && row.querySelector('ion-icon[name="menu-outline"]');
+      if (!m) return false;
+      m.scrollIntoView({ block: 'center' });
+      (m.closest('ion-button, button') || m).click();
+      return true;
+    }, index);
+    if (!ok) throw new EtatPortail('formulaire', 'Modification de ligne du panier introuvable : le portail a peut-être changé.');
     await this.page.waitForTimeout(1500);
     const champs = await this.page.evaluate(() => [...document.querySelectorAll('ion-modal ion-input')].map((e) => e.getAttribute('formcontrolname') || ''));
     const qte = champs.find((c) => /quant/i.test(c));
