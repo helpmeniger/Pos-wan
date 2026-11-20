@@ -6483,7 +6483,7 @@ test('MARWA SECEF CONNECT : choix en caisse, régimes et groupes, articles, pont
         // 9. Ce que le pont ne sait pas reproduire n'est jamais envoyé
         $setPont(['scenario' => 'certifie']);
         $mixte = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => (int) $p['id'], 'quantity' => 1]], 'fiscal_certify' => true,
-            'payments' => [['method' => 'cash', 'amount' => 1], ['method' => 'mobile_money', 'amount' => 10000000, 'provider' => 'orange_money', 'reference' => 'T1']]]);
+            'payments' => [['method' => 'mobile_money', 'amount' => 1, 'provider' => 'orange_money', 'reference' => 'T1'], ['method' => 'cash', 'amount' => 10000000]]]);
         $n = count($etat()['soumissions']);
         $E::attempt((int) $E::forSale($mixte['sale_id'])['id']);
         ok($E::forSale($mixte['sale_id'])['status'] === 'failed' && str_contains((string) $E::forSale($mixte['sale_id'])['last_error'], 'plusieurs modes'), 'paiement en plusieurs modes : refusé avant envoi');
