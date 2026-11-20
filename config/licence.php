@@ -10,7 +10,7 @@ return [
     'public_key' => (Env::get('APP_ENV') === 'testing' && Env::get('LICENCE_TEST_PUBLIC_KEY'))
         ? (string) Env::get('LICENCE_TEST_PUBLIC_KEY')
         : 'dngSoqpL/lpXPbhyegoWVWjOP7H7g7rOaBizE5e/MTo=',
-    'trial_days' => 30,
+    'trial_days' => 15,
     'author' => [
         'name' => 'Mahamadou Hamidou (Mohamed)',
         'title' => 'Ingénieur informaticien nigérien',

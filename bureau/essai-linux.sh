@@ -21,6 +21,8 @@ for d in storage/logs storage/backups storage/sessions storage/cache storage/tmp
 mkdir -p "$T/php/ext"; cp "$SRC/bureau/php.ini" "$T/php/php.ini"
 SYSEXT=$(php -n -r 'echo ini_get("extension_dir");')
 for e in curl exif fileinfo gd intl mbstring openssl pdo_mysql mysqli sodium zip opcache; do [ -f "$SYSEXT/$e.so" ] && ln -sf "$SYSEXT/$e.so" "$T/php/ext/$e.so"; done
+export POS_BUREAU_MACHINE=essai-machine-origine-0001 POS_BUREAU_MARQUEURS="$T/marqueurs" POS_BUREAU_SUPPORTS="$T/cle-usb"
+mkdir -p "$T/cle-usb"
 export POS_BUREAU_PHP=$(command -v php) POS_BUREAU_PHP_INI="$T/php/php.ini" POS_BUREAU_MARIADBD=$(command -v mariadbd || echo /usr/sbin/mariadbd) \
        POS_BUREAU_INSTALLDB=$(command -v mariadb-install-db) POS_BUREAU_CLIENT=$(command -v mariadb) POS_BUREAU_ADMIN=$(command -v mariadb-admin)
 ok=0; ko=0
@@ -30,12 +32,15 @@ arreter() { "$T/lanceur" --dossier="$T" --arreter; for i in $(seq 1 40); do curl
 
 echo "== Premier démarrage"
 verif "prêt (base créée, serveurs PHP démarrés)" demarrer
-verif "app/.env écrit (port 3407, édition Bureau, menu en tuiles)" "grep -q '^DB_PORT=3407' '$T/app/.env' && grep -q '^POS_EDITION=bureau' '$T/app/.env' && grep -q '^MENU_STYLE=tuiles' '$T/app/.env'"
-verif "mots de passe tirés au hasard (32 caractères)" "grep -Eq '^DB_PASSWORD=\"[0-9a-f]{32}\"' '$T/app/.env'"
+verif "app/.env écrit (édition Bureau, menu en tuiles) sans aucun secret (ni APP_KEY ni accès à la base)" "grep -q '^POS_EDITION=bureau' '$T/app/.env' && grep -q '^MENU_STYLE=tuiles' '$T/app/.env' && ! grep -Eq '^(APP_KEY|DB_[A-Z]+)=' '$T/app/.env'"
+verif "mots de passe chiffrés (bd.dat), aucun fichier de mots de passe en clair" "grep -q '^PMS1:' '$T/donnees/secret/bd.dat' && [ ! -e '$T/donnees/secret/bd.ini' ] && ! grep -Eq 'root=|app=' '$T/donnees/secret/bd.dat'"
+verif "mots de passe transmis aux serveurs PHP par leur environnement seulement" "p=\$(pgrep -f 'php.*-S 127.0.0.1:18800' | head -1); tr '\\0' '\\n' < /proc/\$p/environ | grep -Eq '^DB_PASSWORD=[0-9a-f]{32}\$' && tr '\\0' '\\n' < /proc/\$p/environ | grep -Eq '^APP_KEY=[0-9a-f]{64}\$' && tr '\\0' '\\n' < /proc/\$p/environ | grep -q '^POS_MACHINE=essai-machine-origine-0001\$'"
+verif "date du premier démarrage gardée hors du dossier (signée)" "grep -Eq '^[0-9]+\\.[0-9a-f]{24}\$' '$T/marqueurs/a' && cmp -s '$T/marqueurs/a' '$T/marqueurs/b'"
+verif "supports externes : liste refusée sans le jeton de l'application" "[ \"\$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8740/__bureau/supports)\" = 403 ]"
 verif "PHP lancé avec le php.ini livré et le chemin complet de ses extensions" "pgrep -af 'php.*-S 127.0.0.1:188' | grep -q -- '-d extension_dir=$T/php/ext'"
 verif "base écoutant seulement sur 127.0.0.1" "grep -q '^bind-address=127.0.0.1' '$T/donnees/mariadb.ini'"
 verif "contrôle de démarrage : tout OK (base, PHP, application, fichiers)" "for i in \$(seq 1 60); do grep -q 'Contrôle' '$T/donnees/journaux/diagnostic.txt' 2>/dev/null && break; sleep 1; done; grep -q '^Tout fonctionne' '$T/donnees/journaux/diagnostic.txt' && ! grep -q '^ÉCHEC' '$T/donnees/journaux/diagnostic.txt'"
-verif "page de diagnostic (ce PC), sans mot de passe" "d=\$(curl -s http://127.0.0.1:8740/__bureau/diagnostic); [[ \"\$d\" == *'Contrôle de démarrage'* ]] && ! grep -qF \"\$(grep '^app=' '$T/donnees/secret/bd.ini' | cut -d= -f2)\" <<< \"\$d\""
+verif "page de diagnostic (ce PC), sans mot de passe" "d=\$(curl -s http://127.0.0.1:8740/__bureau/diagnostic); [[ \"\$d\" == *'Contrôle de démarrage'* ]] && p=\$(pgrep -f 'php.*-S 127.0.0.1:18800' | head -1); pw=\$(tr '\\0' '\\n' < /proc/\$p/environ | grep '^DB_PASSWORD=' | cut -d= -f2); ak=\$(tr '\\0' '\\n' < /proc/\$p/environ | grep '^APP_KEY=' | cut -d= -f2); [ -n \"\$pw\" ] && ! grep -qF \"\$pw\" <<< \"\$d\" && ! grep -qF \"\$ak\" <<< \"\$d\""
 verif "requêtes inscrites au journal" "grep -q 'Requête 127.0.0.1 GET / → 302' '$T/donnees/journaux/lanceur.log'"
 verif "accueil → assistant d'installation" "[[ \"\$(curl -s -o /dev/null -w '%{redirect_url}' http://127.0.0.1:8740/)\" == */install ]]"
 verif "assistant : base « préparée automatiquement »" "page=\$(curl -s http://127.0.0.1:8740/install); [[ \"\$page\" == *'préparée automatiquement'* ]]"
@@ -45,10 +50,34 @@ echo "  (8 pages de l'assistant demandées en même temps : $(( (fin-debut)/1000
 echo "== Arrêt puis second démarrage"
 verif "arrêt propre (serveurs et base arrêtés)" arreter
 verif "MariaDB arrêtée proprement" "for i in \$(seq 1 20); do grep -q 'Shutdown complete' '$T/donnees/journaux/mariadb.err' && break; sleep 0.5; done; grep -q 'Shutdown complete' '$T/donnees/journaux/mariadb.err'"
-sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD="ancien-mot-de-passe"/' "$T/app/.env"   # .env resté d'une base précédente
+printf 'DB_PASSWORD="ancien-mot-de-passe"\nAPP_KEY=ancienne\n' >> "$T/app/.env"   # .env d'une version précédente
 verif "second démarrage (base existante, mots de passe réutilisés)" demarrer
-verif "app/.env réaligné sur la base (mot de passe resté d'une base précédente corrigé)" "grep -q \"\$(grep '^app=' '$T/donnees/secret/bd.ini' | cut -d= -f2)\" '$T/app/.env'"
+verif "secrets d'une version précédente retirés d'app/.env, application toujours connectée à sa base" "! grep -Eq '^(APP_KEY|DB_PASSWORD)=' '$T/app/.env' && for i in \$(seq 1 30); do grep -q '^Tout fonctionne' '$T/donnees/journaux/diagnostic.txt' && break; sleep 1; done; grep -q '^Tout fonctionne' '$T/donnees/journaux/diagnostic.txt'"
 verif "arrêt final" arreter
+# Dossier copié sur un autre ordinateur : mots de passe illisibles, POS Marwa refuse de démarrer, rien n'est effacé
+avant=$(find "$T/donnees/mysql" -type f | wc -l)
+verif "dossier copié sur un autre ordinateur : démarrage refusé" "! POS_BUREAU_MACHINE=autre-ordinateur-0002 timeout 60 '$T/lanceur' --dossier='$T' --sans-fenetre > '$T/copie.log' 2>&1 && grep -q \"provient d'un autre ordinateur\" '$T/copie.log'"
+verif "… sans rien modifier ni effacer (base, mots de passe)" "[ \"\$(find '$T/donnees/mysql' -type f | wc -l)\" = $avant ] && grep -q '^PMS1:' '$T/donnees/secret/bd.dat'"
+verif "date d'essai modifiée à la main : essai considéré comme terminé" "echo 1700000000.000000000000000000000000 > '$T/marqueurs/a'; echo 1700000000.000000000000000000000000 > '$T/marqueurs/b'; demarrer && p=\$(pgrep -f 'php.*-S 127.0.0.1:18800' | head -1) && tr '\\0' '\\n' < /proc/\$p/environ | grep -q '^POS_ESSAI_DEBUT=1\$'"
+verif "arrêt" arreter
+
+# Mise à jour d'une installation 3.13 (mots de passe en clair dans bd.ini et app/.env) : conversion sans perte
+echo "== Mise à jour depuis la 3.13.5"
+T2="$T-maj"; mkdir -p "$T2"; cp -a "$T/app" "$T2/app"; rm -f "$T2/app/.env"; cp -a "$T/php" "$T2/php"
+SRC313=$(mktemp -d); git -C "$SRC" archive 0af7110 bureau/lanceur | tar -x -C "$SRC313"
+( cd "$SRC313/bureau/lanceur" && go build -o "$T2/lanceur-3.13" . )
+pret() { for i in $(seq 1 90); do curl -s http://127.0.0.1:8740/__bureau/sante | grep -q "pret=true" && return 0; sleep 1; done; return 1; }
+fini() { for i in $(seq 1 40); do curl -s -m 1 http://127.0.0.1:8740/__bureau/sante >/dev/null || break; sleep 1; done; for i in $(seq 1 40); do (exec 3<>/dev/tcp/127.0.0.1/3407) 2>/dev/null || return 0; sleep 1; done; return 1; }
+( "$T2/lanceur-3.13" --dossier="$T2" --sans-fenetre >> "$T/essai.log" 2>&1 & ); pret
+CLE313=$(grep '^APP_KEY=' "$T2/app/.env" | cut -d= -f2)
+verif "installation 3.13 : mots de passe en clair (situation de départ)" "[ -f '$T2/donnees/secret/bd.ini' ] && grep -q '^DB_PASSWORD=' '$T2/app/.env' && [ -n '$CLE313' ]"
+"$T2/lanceur-3.13" --dossier="$T2" --arreter; fini
+( "$T/lanceur" --dossier="$T2" --sans-fenetre >> "$T/essai.log" 2>&1 & ); pret
+verif "3.14 : bd.ini en clair converti en bd.dat chiffré puis retiré" "[ ! -e '$T2/donnees/secret/bd.ini' ] && grep -q '^PMS1:' '$T2/donnees/secret/bd.dat'"
+verif "3.14 : secrets retirés d'app/.env, même clé APP_KEY transmise (données chiffrées toujours lisibles)" "! grep -Eq '^(APP_KEY|DB_PASSWORD)=' '$T2/app/.env' && p=\$(pgrep -f 'php.*-S 127.0.0.1:18800' | head -1) && tr '\\0' '\\n' < /proc/\$p/environ | grep -qx 'APP_KEY=$CLE313'"
+verif "3.14 : contrôle de démarrage tout OK après conversion" "for i in \$(seq 1 30); do grep -q 'Contrôle de démarrage' '$T2/donnees/journaux/diagnostic.txt' 2>/dev/null && grep -q '^\\(Tout\\|ÉCHEC\\)' '$T2/donnees/journaux/diagnostic.txt' && break; sleep 1; done; grep -q '^Tout fonctionne' '$T2/donnees/journaux/diagnostic.txt'"
+"$T/lanceur" --dossier="$T2" --arreter; fini
+rm -rf "$SRC313"
 
 # Fenêtre comme sous Windows (Edge confie la fenêtre à un autre de ses processus) : POS Marwa doit rester en marche tant
 # que la fenêtre envoie ses signes de vie, puis s'arrêter seul après sa fermeture. Nécessite Chromium et Xvfb.

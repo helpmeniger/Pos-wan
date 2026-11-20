@@ -235,6 +235,7 @@ $router->post('/devices/{id}', [C\MobileController::class, 'deviceStatus'], 'use
 $router->get('/about/contrat', [C\AboutController::class, 'contract']);
 $router->get('/licence', [C\AboutController::class, 'licence']);
 $router->post('/licence', [C\AboutController::class, 'activate'], 'licence.manage');
+$router->post('/licence/postes/liberer', [C\AboutController::class, 'freePoste'], 'licence.manage');
 $router->post('/addons', [C\AddonController::class, 'action'], 'addons.manage');
 $router->post('/settings/vat', [C\SettingsController::class, 'vat'], 'settings.manage');
 $router->post('/settings/currency', [C\SettingsController::class, 'currency'], 'settings.manage');
@@ -280,6 +281,8 @@ $router->get('/backups', [C\BackupController::class, 'index'], 'backup.manage');
 $router->post('/backups', [C\BackupController::class, 'create'], 'backup.manage');
 $router->post('/backups/download', [C\BackupController::class, 'download'], 'backup.manage');
 $router->post('/backups/restore', [C\BackupController::class, 'restore'], 'backup.manage');
+$router->post('/backups/support/copier', [C\BackupController::class, 'copyToSupport'], 'backup.manage');
+$router->post('/backups/support/reprendre', [C\BackupController::class, 'importFromSupport'], 'backup.manage');
 
 // --- Restaurant (module activé par le type d'activité « restaurant ») ---
 $router->get('/restaurant', [C\RestaurantController::class, 'floor'], 'restaurant.order');

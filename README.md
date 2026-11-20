@@ -153,7 +153,7 @@ php bin/migrate.php   # mise à jour du schéma (aussi faite automatiquement au 
 ## Licence et mises à jour
 
 - Activation : **Configuration → Licence et activation** (clé délivrée par l'auteur pour
-  l'identifiant de l'installation ; 30 jours d'essai, puis lecture seule sans clé).
+  l'identifiant de l'installation et à l'ordinateur ; 15 jours d'essai, puis lecture seule sans clé).
 - Mise à jour : **Configuration → Mise à jour du logiciel** (sélection du dossier de la
   nouvelle version ; sauvegardes et mise à jour de la base automatiques).
 - Auteur : `outils-auteur/generateur-licence.html` (créer une licence depuis l'identifiant, dans

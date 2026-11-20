@@ -22,7 +22,16 @@ final class AboutController extends Controller
 
     public function licence(): void
     {
-        view('about/licence', ['title' => 'Licence et activation', 'lic' => LicenceService::status(), 'author' => config('licence.author')]);
+        view('about/licence', ['title' => 'Licence et activation', 'lic' => LicenceService::status(), 'author' => config('licence.author'),
+            'postes' => \App\Services\LicencePostes::list(), 'remoteSeats' => \App\Services\LicencePostes::remoteSeats()]);
+    }
+
+    /** Libère la place d'un ordinateur du réseau (licence multiposte). */
+    public function freePoste(): void
+    {
+        $this->attempt(fn() => \App\Services\LicencePostes::free(Request::int('id')), '/licence');
+        flash('success', 'Place libérée : un autre ordinateur du réseau peut l\'utiliser.');
+        redirect('/licence');
     }
 
     public function activate(): void

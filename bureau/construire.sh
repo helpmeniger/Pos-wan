@@ -95,7 +95,7 @@ BEGIN
       VALUE "FileVersion", "$VERSION"
       VALUE "ProductName", "POS Marwa Bureau"
       VALUE "ProductVersion", "$VERSION"
-      VALUE "LegalCopyright", "Mahamadou Hamidou (Mohamed)"
+      VALUE "LegalCopyright", "Copyright 2019-$(date +%Y) Mahamadou Hamidou (Mohamed)"
       VALUE "OriginalFilename", "POS Marwa.exe"
     END
   END
@@ -137,7 +137,7 @@ echo "-- installateur"
 cp "$SRC/bureau/installateur.nsi" "$B/installateur.nsi"
 cp "$SRC/windows/pos-marwa.ico" "$B/pos-marwa.ico"
 printf '\xEF\xBB\xBF' > "$B/licence.txt"; cat "$R/app/LICENCE.md" >> "$B/licence.txt"   # page « Contrat de licence » (UTF-8 avec BOM)
-( cd "$B" && makensis -V2 -DVERSION="$VERSION" -DSORTIE="$OUT/POS-Marwa-Bureau-$VERSION-Setup.exe" installateur.nsi )
+( cd "$B" && makensis -V2 -DVERSION="$VERSION" -DANNEE="$(date +%Y)" -DSORTIE="$OUT/POS-Marwa-Bureau-$VERSION-Setup.exe" installateur.nsi )
 ls -la "$OUT/POS-Marwa-Bureau-$VERSION-Setup.exe"
 ( cd "$OUT" && sha256sum "POS-Marwa-Bureau-$VERSION-Setup.exe" )
 echo "   contenu installé : $(du -sh "$R" | cut -f1)"

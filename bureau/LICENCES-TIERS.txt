@@ -1,7 +1,7 @@
 POS Marwa Bureau — composants tiers livrés avec le logiciel
 ===========================================================
 
-POS Marwa (dossier app\) : © Mahamadou Hamidou (Mohamed). Contrat de licence : app\LICENCE.md.
+POS Marwa (dossier app\) : © 2019 à nos jours, Mahamadou Hamidou (Mohamed). Contrat de licence : app\LICENCE.md.
 
 PHP 8.3 (dossier php\) — The PHP Group, licence PHP 3.01 (php\license.txt).
   Source : https://www.php.net/downloads

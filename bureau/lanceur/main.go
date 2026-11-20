@@ -25,6 +25,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -136,35 +137,6 @@ func randomHex(n int) string {
 // ---------------------------------------------------------------------------------------------------------------
 // MariaDB
 
-type secrets struct{ root, app string }
-
-func (c *config) secretFile() string { return filepath.Join(c.data, "secret", "bd.ini") }
-
-func (c *config) loadSecrets() (secrets, bool) {
-	b, err := os.ReadFile(c.secretFile())
-	if err != nil {
-		return secrets{}, false
-	}
-	var s secrets
-	for _, l := range strings.Split(string(b), "\n") {
-		k, v, _ := strings.Cut(strings.TrimSpace(l), "=")
-		switch k {
-		case "root":
-			s.root = v
-		case "app":
-			s.app = v
-		}
-	}
-	return s, s.root != "" && s.app != ""
-}
-
-func (c *config) saveSecrets(s secrets) error {
-	if err := os.MkdirAll(filepath.Dir(c.secretFile()), 0o700); err != nil {
-		return err
-	}
-	return os.WriteFile(c.secretFile(), []byte("; Mots de passe de la base de données POS Marwa (générés au premier démarrage).\n; Ne pas modifier ni communiquer.\nroot="+s.root+"\napp="+s.app+"\n"), 0o600)
-}
-
 func slash(p string) string { return strings.ReplaceAll(p, `\`, "/") }
 
 func (c *config) myIni() string { return filepath.Join(c.data, "mariadb.ini") }
@@ -250,7 +222,11 @@ type launcher struct {
 	mu       sync.Mutex
 	recent   []string // dernières requêtes (diagnostic)
 	check    string   // résultat du contrôle de démarrage
+	essai    int64    // premier démarrage sur cet ordinateur (période d'essai)
 }
+
+// Empreinte de l'ordinateur (MachineGuid de Windows, /etc/machine-id sous Linux)
+var machineID string
 
 func (l *launcher) startDB() error {
 	c := l.c
@@ -273,14 +249,29 @@ func (l *launcher) startDB() error {
 			}
 		}
 	}
-	s, ok := c.loadSecrets()
+	s, ok, err := c.loadSecrets()
+	if errors.Is(err, errAutrePC) {
+		return errors.New("ce dossier de POS Marwa provient d'un autre ordinateur (ou Windows a été réinstallé) : ses mots de passe, protégés par Windows, ne sont lisibles que sur l'ordinateur d'origine.\n\n" +
+			"Pour changer d'ordinateur : installez POS Marwa sur le nouvel ordinateur, copiez-y une sauvegarde (Sauvegardes → Support externe), restaurez-la, puis demandez le transfert de la licence à l'auteur.\n\nAucune donnée n'a été modifiée ni effacée.")
+	} else if err != nil {
+		return err
+	}
 	if first {
-		s = secrets{root: randomHex(16), app: randomHex(16)}
+		s = secrets{root: randomHex(16), app: randomHex(16), key: envFileValue(filepath.Join(c.app, ".env"), "APP_KEY")}
+		if len(s.key) < 32 {
+			s.key = randomHex(32) // APP_KEY d'un app\.env existant reprise (données déjà chiffrées avec elle)
+		}
 		if err := c.saveSecrets(s); err != nil {
 			return fmt.Errorf("impossible d'écrire les secrets de la base : %w", err)
 		}
 	} else if !ok {
-		return errors.New("la base de données existe mais son fichier de mots de passe (donnees\\secret\\bd.ini) est absent : restaurez-le depuis votre sauvegarde ou contactez l'assistance")
+		return errors.New("la base de données existe mais son fichier de mots de passe (donnees\\secret\\bd.dat) est absent : restaurez-le depuis votre sauvegarde ou contactez l'assistance")
+	}
+	if s.key == "" { // APP_KEY absente (fichier converti sans .env) : créée une fois, puis conservée
+		s.key = randomHex(32)
+		if err := c.saveSecrets(s); err != nil {
+			return err
+		}
 	}
 	l.sec = s
 	if err := c.writeMyIni(); err != nil {
@@ -383,44 +374,50 @@ func (l *launcher) stopDB() {
 }
 
 // app\.env : créé au premier démarrage ; le port de la base est tenu à jour s'il change dans pos-marwa.ini
+// Réglages transmis à l'application par l'environnement de ses serveurs PHP, jamais écrits dans app\.env
+var envSecrets = []string{"APP_KEY", "DB_HOST", "DB_PORT", "DB_DATABASE", "DB_USERNAME", "DB_PASSWORD"}
+
+func (l *launcher) appEnv() []string {
+	return []string{"APP_KEY=" + l.sec.key, "DB_HOST=127.0.0.1", "DB_PORT=" + strconv.Itoa(l.c.portBD), "DB_DATABASE=poswan",
+		"DB_USERNAME=poswan", "DB_PASSWORD=" + l.sec.app}
+}
+
+// app\.env : réglages ordinaires seulement. La clé APP_KEY et les accès à la base n'y figurent pas (ils sont
+// dans donnees\secret\bd.dat, chiffrés) ; ceux qu'une version précédente y avait écrits sont retirés.
 func (l *launcher) ensureEnv() error {
 	path := filepath.Join(l.c.app, ".env")
 	b, err := os.ReadFile(path)
 	if err != nil {
-		content := "# POS Marwa Bureau — configuration générée au premier démarrage (ne pas communiquer).\n" +
-			"APP_ENV=production\nAPP_DEBUG=false\nAPP_KEY=" + randomHex(32) + "\nAPP_BASE_URL=\nAPP_TIMEZONE=Africa/Niamey\n\n" +
-			"DB_HOST=127.0.0.1\nDB_PORT=" + strconv.Itoa(l.c.portBD) + "\nDB_DATABASE=poswan\nDB_USERNAME=poswan\nDB_PASSWORD=\"" + l.sec.app + "\"\n\n" +
+		content := "# POS Marwa Bureau — configuration générée au premier démarrage.\n" +
+			"# Clé de chiffrement et accès à la base : chiffrés dans donnees\\secret\\bd.dat (jamais dans ce fichier).\n" +
+			"APP_ENV=production\nAPP_DEBUG=false\nAPP_BASE_URL=\nAPP_TIMEZONE=Africa/Niamey\n\n" +
 			"SESSION_IDLE_MINUTES=30\nSESSION_MAX_HOURS=12\nSESSION_SECURE=false\nSAAS_MODE=false\n\n" +
 			"# Édition Bureau : menu de gestion en tuiles (modifiable dans Configuration → Paramètres)\nMENU_STYLE=tuiles\nPOS_EDITION=bureau\n"
 		return os.WriteFile(path, []byte(content), 0o600)
 	}
-	// Réglages de la base toujours réalignés sur donnees\secret\bd.ini et pos-marwa.ini (une base recréée a un
-	// nouveau mot de passe : l'ancien app\.env empêcherait l'application de s'y connecter)
-	want := map[string]string{"DB_HOST": "127.0.0.1", "DB_PORT": strconv.Itoa(l.c.portBD), "DB_DATABASE": "poswan",
-		"DB_USERNAME": "poswan", "DB_PASSWORD": "\"" + l.sec.app + "\""}
 	lines := strings.Split(strings.ReplaceAll(string(b), "\r\n", "\n"), "\n")
-	changed := false
-	seen := map[string]bool{}
-	for i, ln := range lines {
-		k, v, ok := strings.Cut(strings.TrimSpace(ln), "=")
-		if w, known := want[k]; ok && known {
-			seen[k] = true
-			if v != w {
-				lines[i], changed = k+"="+w, true
-				log.Printf("app\\.env : %s réaligné sur la configuration de la base", k)
+	out := lines[:0:0]
+	removed := []string{}
+	for _, ln := range lines {
+		k, _, ok := strings.Cut(strings.TrimSpace(ln), "=")
+		k = strings.TrimSpace(k)
+		secret := false
+		for _, s := range envSecrets {
+			if ok && k == s {
+				secret = true
 			}
 		}
-	}
-	for _, k := range []string{"DB_HOST", "DB_PORT", "DB_DATABASE", "DB_USERNAME", "DB_PASSWORD"} {
-		if !seen[k] {
-			lines, changed = append(lines, k+"="+want[k]), true
-			log.Printf("app\\.env : %s ajouté", k)
+		if secret {
+			removed = append(removed, k)
+			continue
 		}
+		out = append(out, ln)
 	}
-	if changed {
-		return os.WriteFile(path, []byte(strings.Join(lines, "\n")), 0o600)
+	if len(removed) == 0 {
+		return nil
 	}
-	return nil
+	log.Printf("app\\.env : %s retirés (désormais chiffrés dans donnees\\secret\\bd.dat)", strings.Join(removed, ", "))
+	return os.WriteFile(path, []byte(strings.Join(out, "\n")), 0o600)
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -442,7 +439,9 @@ func (l *launcher) startWorker(w *worker) error {
 		"-S", fmt.Sprintf("127.0.0.1:%d", w.port), "-t", filepath.Join(c.app, "public"), filepath.Join(c.app, "routeur.php")}
 	cmd := exec.Command(c.php, args...)
 	cmd.Dir = c.app
-	cmd.Env = append(os.Environ(), "POS_BUREAU_JETON="+l.jeton, "POS_BUREAU=1", "PHP_CLI_SERVER_WORKERS=1")
+	cmd.Env = append(os.Environ(), "POS_BUREAU_JETON="+l.jeton, "POS_BUREAU=1", "PHP_CLI_SERVER_WORKERS=1",
+		"POS_BUREAU_PORT="+strconv.Itoa(c.portWeb), "POS_MACHINE="+machineID, "POS_ESSAI_DEBUT="+strconv.FormatInt(l.essai, 10))
+	cmd.Env = append(cmd.Env, l.appEnv()...)
 	if runtime.GOOS == "windows" {
 		cmd.Env = append(cmd.Env, "PHP_INI_SCAN_DIR=") // seul php\php.ini compte (pas celui d'un autre PHP installé sur le PC)
 		// OPcache sous Windows : plusieurs php.exe partagent sa mémoire ; s'il ne peut s'y rattacher, il se replie sur
@@ -599,6 +598,18 @@ func (l *launcher) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		rw.Header().Set("Cache-Control", "no-store")
 		io.WriteString(rw, l.report())
+		return
+	case "/__bureau/supports":
+		// Supports externes (clé USB, disque) pour copier les sauvegardes : demandé par l'application elle-même
+		// (serveur PHP de ce PC, avec le jeton secret de ce démarrage), jamais par un navigateur
+		host, _, _ := net.SplitHostPort(r.RemoteAddr)
+		if (host != "127.0.0.1" && host != "::1") || r.Header.Get("X-Bureau-Jeton") != l.jeton {
+			http.Error(rw, "refusé", http.StatusForbidden)
+			return
+		}
+		rw.Header().Set("Content-Type", "application/json")
+		rw.Header().Set("Cache-Control", "no-store")
+		json.NewEncoder(rw).Encode(listSupports(l.c.root))
 		return
 	case "/__bureau/arret":
 		// Arrêt demandé par « POS Marwa.exe --arreter », seulement depuis ce PC et avec le jeton du fichier local
@@ -863,6 +874,11 @@ func main() {
 		return
 	}
 	log.Printf("=== POS Marwa Bureau %s — dossier %s (%s/%s, réseau=%v)", version, root, runtime.GOOS, runtime.GOARCH, c.reseau)
+	machineID = machineSource()
+	if machineID == "" {
+		log.Printf("Identifiant de l'ordinateur illisible : licence liée à l'installation seulement")
+	}
+	l.essai = trialStart(machineID)
 	listenHost := "127.0.0.1"
 	if c.reseau {
 		listenHost = "0.0.0.0" // autres postes du réseau local (tablettes, caisses) ; la base reste locale

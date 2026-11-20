@@ -28,7 +28,7 @@ VIProductVersion "${VERSION}.0"
 VIAddVersionKey /LANG=${LANG_FRENCH} "ProductName" "POS Marwa"
 VIAddVersionKey /LANG=${LANG_FRENCH} "FileDescription" "Installateur POS Marwa (WampServer, Visual C++, Chrome, POS Marwa)"
 VIAddVersionKey /LANG=${LANG_FRENCH} "CompanyName" "Mahamadou Hamidou"
-VIAddVersionKey /LANG=${LANG_FRENCH} "LegalCopyright" "© Mahamadou Hamidou"
+VIAddVersionKey /LANG=${LANG_FRENCH} "LegalCopyright" "© 2019 à nos jours, Mahamadou Hamidou"
 VIAddVersionKey /LANG=${LANG_FRENCH} "FileVersion" "${VERSION}"
 VIAddVersionKey /LANG=${LANG_FRENCH} "ProductVersion" "${VERSION}"
 

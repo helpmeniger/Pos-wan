@@ -28,7 +28,7 @@
 <footer class="saas-foot">
   <div class="container d-flex flex-wrap justify-content-between gap-3 small">
     <div><b><?= e($operator['operator_name']) ?></b><?php if ($operator['operator_address']): ?> · <?= e($operator['operator_address']) ?><?php endif; ?><?php if ($operator['operator_phone']): ?> · <i class="bi bi-telephone"></i> <?= e($operator['operator_phone']) ?><?php endif; ?></div>
-    <div><a href="<?= e(url('/conditions')) ?>">Conditions et données personnelles</a> · Logiciel POS Marwa © <?= e(config('licence.author.name')) ?></div>
+    <div><a href="<?= e(url('/conditions')) ?>">Conditions et données personnelles</a> · Logiciel POS Marwa © <?= e(copyright_years()) ?> <?= e(config('licence.author.name')) ?></div>
   </div>
 </footer>
 <script src="<?= e(asset('vendor/bootstrap/bootstrap.bundle.min.js')) ?>"></script>

@@ -73,6 +73,13 @@ if (InstallService::isInstalled()) {
         App\Core\Logger::error('Clôture automatique des caisses impossible : ' . $e->getMessage());
     }
 }
+// Licence multiposte : autre ordinateur du réseau sans place dans la licence (téléphones et tablettes libres)
+if (!App\Services\LicencePostes::allowed()) {
+    if (Request::wantsJson()) {
+        json_response(['ok' => false, 'error' => 'Licence multiposte requise pour cet ordinateur.'], 403);
+    }
+    App\Services\LicencePostes::refuse();
+}
 // Licence : sans clé valide après la période d'essai, lecture seule (aucune donnée bloquée)
 if (App\Services\LicenceService::blocks(Request::method(), $path)) {
     $msg = 'Licence non activée : POS Marwa est en lecture seule. Activez la licence (Configuration → Licence et activation) ou contactez l\'auteur : ' . implode(' / ', (array) config('licence.author.phones')) . '.';

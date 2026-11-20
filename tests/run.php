@@ -1231,7 +1231,7 @@ test('Licence : clé signée liée à l\'installation, falsification refusée, e
     eq($id, S\LicenceService::installId(), 'identifiant stable');
     $st = S\LicenceService::status();
     eq('trial', $st['state']);
-    eq(30, $st['days_left']);
+    eq(15, $st['days_left'], 'essai de 15 jours');
     ok(!S\LicenceService::blocks('POST', '/pos/sale'), 'ventes autorisées pendant l\'essai');
     $key = S\LicenceService::sign(['n' => 'L-TEST', 'c' => 'Boutique Test', 'i' => $id, 'e' => null, 't' => date('Y-m-d')], $LIC_SK);
     eq('Boutique Test', S\LicenceService::verify($key)['c']);
@@ -1272,6 +1272,86 @@ test('Licence : clé signée liée à l\'installation, falsification refusée, e
     eq('licensed', S\LicenceService::status()['state']);
     $md = S\Contract::markdown();
     ok(str_contains($md, 'Mahamadou Hamidou') && str_contains($md, 'Article 10'), 'contrat');
+});
+test('Licence liée à l\'ordinateur : copie du dossier refusée, essai gardé hors du dossier, multiposte (téléphones libres)', function () use ($LIC_SK) {
+    actingAs('admin');
+    $id = S\LicenceService::installId();
+    $saved = DB::value("SELECT svalue FROM settings WHERE skey = 'licence_key'");
+    try {
+        S\Poste::$forceSource = 'machine-origine-0001';
+        $pc = S\Poste::code();
+        ok((bool) preg_match('/^PC(-[A-F0-9]{4}){3}$/', $pc), 'code du poste');
+        ok(str_contains(S\LicenceService::requestCode(), $id . ' / ' . $pc), 'code à communiquer : installation + ordinateur');
+        // Clé liée à l'ordinateur : valable ici, refusée sur un autre ordinateur (dossier et base copiés)
+        $key = S\LicenceService::sign(['n' => 'L-PC', 'c' => 'Boutique PC', 'i' => $id, 'm' => $pc, 'p' => 3, 'e' => null], $LIC_SK);
+        S\LicenceService::activate($key);
+        S\LicenceService::reset();
+        $st = S\LicenceService::status();
+        eq('licensed', $st['state']);
+        eq(3, $st['postes'], 'licence de 3 ordinateurs');
+        eq(2, S\LicencePostes::remoteSeats(), '2 places pour les autres ordinateurs du réseau');
+        S\Poste::$forceSource = 'autre-machine-0002';
+        S\LicenceService::reset();
+        eq('expired', S\LicenceService::status()['state'], 'dossier copié sur un autre ordinateur : lecture seule');
+        ok(str_contains((string) S\LicenceService::status()['error'], 'autre ordinateur'), 'cause affichée');
+        throws(fn() => S\LicenceService::activate($key), 'autre ordinateur');
+        // Clé ancienne (sans code de poste) : liée au premier ordinateur qui la vérifie
+        S\Poste::$forceSource = 'machine-origine-0001';
+        $old = S\LicenceService::sign(['n' => 'L-OLD', 'c' => 'Ancienne', 'i' => $id, 'e' => null], $LIC_SK);
+        S\LicenceService::activate($old);
+        S\LicenceService::reset();
+        eq('licensed', S\LicenceService::status()['state'], 'clé ancienne sur son ordinateur');
+        eq(1, S\LicenceService::status()['postes'], 'clé ancienne : monoposte');
+        S\Poste::$forceSource = 'autre-machine-0002';
+        S\LicenceService::reset();
+        eq('expired', S\LicenceService::status()['state'], 'clé ancienne : base copiée sur un autre ordinateur refusée');
+        ok(str_contains((string) S\LicenceService::status()['error'], 'copiée'), 'cause : installation copiée');
+        // Essai : date du premier démarrage sur l'ordinateur (gardée hors du dossier par POS Marwa.exe)
+        S\Poste::$forceSource = 'machine-origine-0001';
+        setting_set('licence_key', '');
+        DB::run("UPDATE audit_logs SET created_at = NOW() WHERE action = 'licence.trial_start'");
+        putenv('POS_ESSAI_DEBUT=' . (time() - 20 * 86400));
+        S\LicenceService::reset();
+        eq('expired', S\LicenceService::status()['state'], 'réinstallation (base neuve) : essai déjà commencé sur cet ordinateur');
+        putenv('POS_ESSAI_DEBUT=' . (time() - 2 * 86400));
+        S\LicenceService::reset();
+        eq('trial', S\LicenceService::status()['state']);
+        eq(13, S\LicenceService::status()['days_left'], 'essai compté depuis le premier démarrage sur cet ordinateur');
+        eq(2, S\LicenceService::status()['postes'], 'essai : un autre ordinateur du réseau');
+        putenv('POS_ESSAI_DEBUT');
+        // Multiposte : licence de 2 ordinateurs → 1 place réseau ; téléphones et tablettes libres
+        S\LicenceService::activate(S\LicenceService::sign(['n' => 'L-2', 'c' => 'Deux postes', 'i' => $id, 'm' => $pc, 'p' => 2], $LIC_SK));
+        S\LicenceService::reset();
+        DB::run('DELETE FROM licence_postes');
+        S\LicencePostes::$test = true;
+        $srv = $_SERVER;
+        $as = function (string $ip, string $ua, string $cookie) {
+            $_SERVER['REMOTE_ADDR'] = $ip; $_SERVER['HTTP_USER_AGENT'] = $ua; $_SERVER['SERVER_ADDR'] = '192.168.1.10'; $_COOKIE['pm_device'] = $cookie;
+            return S\LicencePostes::allowed();
+        };
+        $win = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
+        ok($as('127.0.0.1', $win, str_repeat('a', 40)), 'poste principal toujours autorisé');
+        ok($as('192.168.1.21', $win, str_repeat('b', 40)), '1er autre ordinateur : place attribuée');
+        ok($as('192.168.1.21', $win, str_repeat('b', 40)), 'même ordinateur reconnu');
+        ok(!$as('192.168.1.22', $win, str_repeat('c', 40)), '2e autre ordinateur : licence multiposte requise');
+        ok($as('192.168.1.30', 'Mozilla/5.0 (Linux; Android 14; SM-A155F) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36', str_repeat('d', 40)), 'téléphone libre');
+        ok($as('192.168.1.31', 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148', str_repeat('e', 40)), 'tablette libre');
+        eq(1, (int) DB::value("SELECT COUNT(*) FROM licence_postes WHERE status = 'actif'"), 'une seule place occupée');
+        S\LicencePostes::free((int) DB::value("SELECT id FROM licence_postes WHERE status = 'actif'"));
+        ok($as('192.168.1.22', $win, str_repeat('c', 40)), 'place libérée par l\'administrateur : autre ordinateur accepté');
+        ok(!$as('192.168.1.21', $win, str_repeat('b', 40)), 'ordinateur libéré : refusé tant qu\'aucune place n\'est libre');
+        $_SERVER = $srv;
+        unset($_COOKIE['pm_device']);
+    } finally {
+        S\LicencePostes::$test = false;
+        S\Poste::$forceSource = null;
+        putenv('POS_ESSAI_DEBUT');
+        DB::run("UPDATE audit_logs SET created_at = NOW() - INTERVAL 40 DAY WHERE action = 'licence.trial_start'"); // état laissé par le test précédent
+        DB::run('DELETE FROM licence_postes');
+        DB::run("DELETE FROM settings WHERE skey = 'licence_poste_lie'");
+        $saved !== null ? setting_set('licence_key', (string) $saved) : DB::run("DELETE FROM settings WHERE skey = 'licence_key'");
+        S\LicenceService::reset();
+    }
 });
 test('Mise à jour du logiciel : chemins contrôlés, version, intégrité, sauvegardes, copie', function () {
     actingAs('admin');
@@ -6818,6 +6898,46 @@ require __DIR__ . '/marwa_ai.php';
 // MARWA AI 3.0 : bibliothèque de scénarios, centre d'entraînement
 require __DIR__ . '/marwa_ai3.php';
 
+test('Sauvegarde sur support externe (clé USB) : copie contrôlée, support hors liste refusé, reprise d\'une sauvegarde', function () {
+    actingAs('admin');
+    $usb = sys_get_temp_dir() . '/pm_usb_' . bin2hex(random_bytes(4));
+    mkdir($usb);
+    $X = S\SupportExterne::class;
+    try {
+        $X::$forceList = [['racine' => $usb, 'type' => 'amovible', 'nom' => 'CLE', 'libre' => 10 ** 10, 'total' => 10 ** 10]];
+        throws(fn() => $X::copy('/etc', false, false), 'Support introuvable');
+        $r = $X::copy($usb, false, true);
+        ok($r['fichiers'] >= 1 && is_dir($r['dossier']) && str_contains($r['dossier'], S\SupportExterne::DOSSIER), 'sauvegarde copiée : ' . $r['fichiers'] . ' fichier(s)');
+        $copied = glob($r['dossier'] . '/poswan_*.sql.gz');
+        eq(1, count($copied), 'dernière sauvegarde sur le support');
+        eq(hash_file('sha256', S\BackupService::path(basename($copied[0]))), hash_file('sha256', $copied[0]), 'copie identique (SHA-256)');
+        $found = $X::found($usb);
+        eq(basename($copied[0]), $found[0]['name'], 'sauvegarde trouvée sur le support');
+        throws(fn() => $X::import($usb, $found[0]['rel']), 'déjà dans POS Marwa');
+        throws(fn() => $X::import($usb, '../../etc/passwd'), 'invalide');
+        // Reprise sur un « nouvel ordinateur » : la sauvegarde n'est pas encore dans la liste
+        $name = basename($copied[0]);
+        $local = S\BackupService::path($name);
+        rename($local, $local . '.mis-de-cote');
+        rename($local . '.sha256', $local . '.sha256.mis-de-cote');
+        try {
+            eq($name, $X::import($usb, $found[0]['rel']), 'sauvegarde reprise');
+            ok(S\BackupService::verify($name), 'sauvegarde reprise intacte');
+            // Copie abîmée sur le support : refusée, rien de laissé dans POS Marwa
+            @unlink($local); @unlink($local . '.sha256');
+            file_put_contents($copied[0], 'abîmé', FILE_APPEND);
+            throws(fn() => $X::import($usb, $found[0]['rel']), 'abîmée');
+            ok(!is_file($local), 'sauvegarde abîmée non reprise');
+        } finally {
+            @unlink($local); @unlink($local . '.sha256');
+            rename($local . '.mis-de-cote', $local);
+            rename($local . '.sha256.mis-de-cote', $local . '.sha256');
+        }
+    } finally {
+        $X::$forceList = null;
+        exec('rm -rf ' . escapeshellarg($usb));
+    }
+});
 test('Menu de gestion en tuiles (édition Bureau) : réglage, accueil sur le menu, plus de menu latéral, retour à la liste', function () use ($B) {
     $a = new Http();
     $a->login($B, 'admin', 'Essai-Niamey-2026');
@@ -6825,9 +6945,14 @@ test('Menu de gestion en tuiles (édition Bureau) : réglage, accueil sur le men
     try {
         $pg = $a->req('GET', "$B/settings")['body'];
         ok(str_contains($pg, 'name="menu_style"') && str_contains($pg, 'Tuiles'), 'réglage « Présentation du menu de gestion »');
+        $lp = $a->req('GET', "$B/licence");
+        ok($lp['code'] === 200 && str_contains($lp['body'], 'Ordinateurs du réseau') && preg_match('/PW(-[A-F0-9]{4}){4}( \/ PC(-[A-F0-9]{4}){3})?/', $lp['body']), 'page Licence : code installation / ordinateur, ordinateurs du réseau');
+        $bp = $a->req('GET', "$B/backups");
+        ok($bp['code'] === 200 && str_contains($bp['body'], 'Support externe') && str_contains($bp['body'], '2017-28'), 'page Sauvegardes : support externe');
+        ok(str_contains($a->req('GET', "$B/about")['body'], '© 2019–' . date('Y')), 'droits d\'auteur : 2019 à aujourd\'hui');
         setting_set('menu_style', 'tuiles');
         $home = $a->req('GET', "$B/");
-        ok($home['code'] === 302 && preg_match('/^Location:\s*\S*\/menu\s*$/mi', $home['headers']), 'accueil de la gestion : écran « Menu de gestion »');
+        ok($home['code'] === 302 && preg_match('/^Location:\s*\S*\/dashboard\s*$/mi', $home['headers']), 'administrateur : tableau de bord en premier');
         $menu = $a->req('GET', "$B/menu")['body'];
         ok(str_contains($menu, 'menu-tuiles') && str_contains($menu, 'hub-circle') && str_contains($menu, 'Tableau de bord'), 'tuiles affichées (tableau de bord compris), corps de page en mode tuiles');
         ok(str_contains((string) file_get_contents(PUBLIC_PATH . '/assets/css/app.css'), '.menu-tuiles .sidebar'), 'menu latéral masqué en mode tuiles');

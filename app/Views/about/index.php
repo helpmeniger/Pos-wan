@@ -19,7 +19,7 @@
         <dt class="col-sm-4">Licence</dt>
         <dd class="col-sm-8"><?php if ($lic['state'] === 'licensed'): ?><span class="badge bg-success">Activée</span> <?= e($lic['client']) ?><?= $lic['expires'] ? ' · jusqu\'au ' . e(fdate($lic['expires'], false)) : ' · sans limite de durée' ?><?php elseif ($lic['state'] === 'trial'): ?><span class="badge bg-warning text-dark">Essai</span> <?= (int) $lic['days_left'] ?> jour(s) restant(s)<?php else: ?><span class="badge bg-danger">Non activée — lecture seule</span><?php endif; ?></dd>
         <dt class="col-sm-4">Identifiant d'installation</dt><dd class="col-sm-8"><code><?= e($lic['install_id']) ?></code></dd>
-        <dt class="col-sm-4">Droits</dt><dd class="col-sm-8">© <?= date('Y') ?> <?= e($author['name']) ?>. Logiciel propriétaire, tous droits réservés. Toute copie, revente ou utilisation sans licence est interdite.</dd>
+        <dt class="col-sm-4">Droits</dt><dd class="col-sm-8">© <?= e(copyright_years()) ?> <?= e($author['name']) ?>. Logiciel propriétaire, tous droits réservés. Toute copie, revente ou utilisation sans licence est interdite.</dd>
       </dl>
       <div class="d-flex flex-wrap gap-2">
         <a class="btn btn-primary" href="<?= e(url('/about/contrat')) ?>"><i class="bi bi-file-earmark-text"></i> Contrat de licence</a>

@@ -121,8 +121,30 @@ dépend aussi de la configuration du poste, du réseau et des pratiques de l'éq
 - Clé d'activation **signée (Ed25519)** par l'auteur et liée à l'identifiant de l'installation :
   une clé copiée sur une autre installation, modifiée ou expirée est refusée ; la clé privée
   n'est jamais livrée avec le logiciel.
-- Essai de 30 jours (date inscrite au journal d'audit), puis **lecture seule** : consultation,
+- Essai de 15 jours (date inscrite au journal d'audit), puis **lecture seule** : consultation,
   sauvegardes, activation restent possibles ; aucune donnée n'est bloquée ni effacée.
+- **Liaison à l'ordinateur (v3.14)** : la clé porte le code de l'ordinateur (empreinte SHA-256 du
+  MachineGuid de Windows, ou de /etc/machine-id). Dossier et base copiés sur un autre ordinateur :
+  clé refusée, lecture seule. Clés plus anciennes (sans code d'ordinateur) : liées au premier
+  ordinateur qui les vérifie (empreinte signée avec APP_KEY).
+- **Licence multiposte (v3.14)** : chaque autre ordinateur du réseau occupe une place de la
+  licence (cookie de l'appareil, verrou contre deux attributions simultanées) ; sans place, page
+  « licence multiposte requise » avant toute page, connexion comprise. Téléphones, tablettes et
+  téléviseurs : libres. L'administrateur libère la place d'un ordinateur abandonné (journal d'audit).
+  Limite : le type d'appareil vient de ce qu'annonce le navigateur (User-Agent) ; un ordinateur
+  réglé pour imiter un téléphone n'est pas compté.
+- **Édition Bureau (v3.14)** :
+  - aucun secret dans `app\.env` : `APP_KEY` et les accès à la base sont chiffrés avec la
+    protection de Windows liée à l'ordinateur (DPAPI, portée « machine ») dans
+    `donnees\secret\bd.dat`, et transmis aux serveurs PHP par leur environnement ; le dossier
+    copié sur un autre ordinateur ne démarre pas (rien n'est effacé) ;
+  - date du premier démarrage gardée hors du dossier (registre `HKCU\Software\HighTechNiger\PM`
+    et fichier caché `%ProgramData%\HighTechNiger\pm.dat`), signée : réinstaller ne relance pas
+    l'essai ; une date modifiée à la main compte comme un essai terminé ;
+  - limite : un administrateur de l'ordinateur d'origine peut déchiffrer `bd.dat` (DPAPI) et
+    effacer ces marques ; Windows réinstallé = nouvel ordinateur (restaurer une sauvegarde).
+- Édition web (WampServer, hébergement) : `.env` reste en clair (hors du dossier public, droits
+  640) ; un secret chiffré devrait de toute façon avoir sa clé lisible par PHP sur le même serveur.
 - Mentions de l'auteur dans le menu, à la connexion et à l'installation ; contrat de licence
   accepté à l'installation.
 - **Limite honnête** : le code PHP est lisible ; ces mesures empêchent la copie simple et

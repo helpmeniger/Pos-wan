@@ -377,3 +377,9 @@ function amount_words(float $n): string
     }
     return implode(' ', $parts);
 }
+
+/** Période des droits d'auteur : depuis 2019 jusqu'à l'année en cours (ex. « 2019–2026 »). */
+function copyright_years(): string
+{
+    return '2019–' . date('Y');
+}

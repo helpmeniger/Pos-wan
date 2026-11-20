@@ -77,7 +77,7 @@ $notes = $u ? Notifications::get() : [];
     </nav>
     <a class="side-about" href="<?= e(url('/about')) ?>" title="À propos, contrat de licence, assistance">
       <i class="bi bi-info-circle"></i>
-      <span><b>À propos de POS Marwa</b><small>v<?= e(config('app.version')) ?> · © <?= e(config('licence.author.name')) ?><br>Ingénieur informaticien nigérien · <?= e(implode(' / ', (array) config('licence.author.phones'))) ?></small></span>
+      <span><b>À propos de POS Marwa</b><small>v<?= e(config('app.version')) ?> · © <?= e(copyright_years()) ?> <?= e(config('licence.author.name')) ?><br>Ingénieur informaticien nigérien · <?= e(implode(' / ', (array) config('licence.author.phones'))) ?></small></span>
     </a>
   </aside>
   <div class="main">

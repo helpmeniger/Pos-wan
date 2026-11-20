@@ -48,8 +48,9 @@ final class DashboardController extends Controller
             }
         }
         if (can('dashboard.view')) {
-            // Menu en tuiles : l'accueil de la gestion est l'écran « Menu de gestion » (le tableau de bord y est une tuile)
-            redirect(menu_style() === 'tuiles' ? '/menu' : '/dashboard');
+            // Administrateur : tableau de bord d'abord. Autres utilisateurs, menu en tuiles : écran « Menu de gestion »
+            $admin = (\App\Core\Auth::user()['role_code'] ?? '') === 'admin';
+            redirect($admin || menu_style() !== 'tuiles' ? '/dashboard' : '/menu');
         }
         if (feature('restaurant') && can('restaurant.order')) {
             redirect('/restaurant');

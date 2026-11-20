@@ -9,7 +9,10 @@
  *
  *   Délivrer une licence :
  *     php bin/licence.php generer --cle="D:\cles-poswan\poswan_licence_PRIVEE.key"
- *         --client="Pharmacie Espoir" --installation=PW-1A2B-3C4D-5E6F-7A8B [--fin=2027-12-31] [--numero=L2026-001]
+ *         --client="Pharmacie Espoir" --installation=PW-1A2B-3C4D-5E6F-7A8B
+ *         --poste=PC-1A2B-3C4D-5E6F [--postes=3] [--fin=2027-12-31] [--numero=L2026-001]
+ *     (--poste : code de l'ordinateur affiché par le client ; --postes : nombre d'ordinateurs autorisés,
+ *      poste principal compris, 1 par défaut ; téléphones et tablettes ne sont jamais comptés)
  *
  *   Vérifier une clé : php bin/licence.php verifier --installation=PW-... --licence=PWL1....
  */
@@ -49,18 +52,28 @@ try {
         $client = trim((string) ($o['client'] ?? ''));
         $inst = strtoupper(trim((string) ($o['installation'] ?? '')));
         $fin = (string) ($o['fin'] ?? '');
-        if ($sk === '' || $client === '' || !preg_match('/^PW(-[A-F0-9]{4}){4}$/', $inst) || ($fin !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fin))) {
-            throw new RuntimeException('Paramètres : --cle=fichier --client="Nom" --installation=PW-XXXX-XXXX-XXXX-XXXX [--fin=AAAA-MM-JJ] [--numero=...]');
+        $poste = strtoupper(trim((string) ($o['poste'] ?? '')));
+        $postes = (int) ($o['postes'] ?? 1);
+        if ($sk === '' || $client === '' || !preg_match('/^PW(-[A-F0-9]{4}){4}$/', $inst) || ($fin !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fin))
+            || ($poste !== '' && !preg_match('/^PC(-[A-F0-9]{4}){3}$/', $poste)) || $postes < 1 || $postes > 500) {
+            throw new RuntimeException('Paramètres : --cle=fichier --client="Nom" --installation=PW-XXXX-XXXX-XXXX-XXXX --poste=PC-XXXX-XXXX-XXXX [--postes=N] [--fin=AAAA-MM-JJ] [--numero=...]');
         }
-        $key = LicenceService::sign(['n' => (string) ($o['numero'] ?? ('L' . date('YmdHis'))), 'c' => $client, 'i' => $inst, 'e' => $fin ?: null, 't' => date('Y-m-d')], $sk);
+        if ($poste === '') {
+            fwrite(STDERR, "Attention : sans --poste, la clé n'est pas liée à un ordinateur (elle sera liée au premier qui la vérifie).\n");
+        }
+        $payload = ['n' => (string) ($o['numero'] ?? ('L' . date('YmdHis'))), 'c' => $client, 'i' => $inst, 'e' => $fin ?: null, 't' => date('Y-m-d'), 'p' => $postes];
+        if ($poste !== '') {
+            $payload['m'] = $poste;
+        }
+        $key = LicenceService::sign($payload, $sk);
         // Contrôle avec la clé publique correspondante
         $pub = base64_encode(LicenceService::sodium('crypto_sign_publickey_from_secretkey', base64_decode(trim($sk))));
         if ($pub !== config('licence.public_key')) {
             fwrite(STDERR, "Attention : cette clé privée ne correspond pas à la clé publique de config/licence.php.\n");
         }
-        echo "Licence pour « $client » ($inst)" . ($fin ? " jusqu'au $fin" : ' sans limite de durée') . " :\n\n$key\n";
+        echo "Licence pour « $client » ($inst" . ($poste ? ", ordinateur $poste" : '') . ", $postes ordinateur(s))" . ($fin ? " jusqu'au $fin" : ' sans limite de durée') . " :\n\n$key\n";
     } elseif ($cmd === 'verifier') {
-        $p = LicenceService::verify((string) ($o['licence'] ?? ''), strtoupper((string) ($o['installation'] ?? '')));
+        $p = LicenceService::verify((string) ($o['licence'] ?? ''), strtoupper((string) ($o['installation'] ?? '')), isset($o['poste']) ? strtoupper((string) $o['poste']) : null);
         echo "Licence valide : " . json_encode($p, JSON_UNESCAPED_UNICODE) . "\n";
     } else {
         echo "Usage : php bin/licence.php keygen|generer|verifier (voir l'en-tête du fichier)\n";

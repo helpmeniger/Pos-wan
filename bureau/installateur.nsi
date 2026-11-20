@@ -39,7 +39,7 @@ VIProductVersion "${VERSION}.0"
 VIAddVersionKey /LANG=1036 "ProductName" "POS Marwa Bureau"
 VIAddVersionKey /LANG=1036 "FileDescription" "Installation de POS Marwa (gestion commerciale, sans serveur à installer)"
 VIAddVersionKey /LANG=1036 "CompanyName" "Mahamadou Hamidou (Mohamed)"
-VIAddVersionKey /LANG=1036 "LegalCopyright" "© Mahamadou Hamidou (Mohamed)"
+VIAddVersionKey /LANG=1036 "LegalCopyright" "© 2019-${ANNEE} Mahamadou Hamidou (Mohamed)"
 VIAddVersionKey /LANG=1036 "FileVersion" "${VERSION}"
 VIAddVersionKey /LANG=1036 "ProductVersion" "${VERSION}"
 

@@ -11,7 +11,34 @@ final class BackupController extends Controller
 {
     public function index(): void
     {
-        view('backups/index', ['title' => 'Sauvegardes & restauration', 'backups' => BackupService::list(), 'dir' => BackupService::dir()]);
+        $supports = \App\Services\SupportExterne::list();
+        $found = [];
+        foreach ($supports as $s) {
+            try {
+                $found[$s['racine']] = \App\Services\SupportExterne::found($s['racine']);
+            } catch (\Throwable) {
+                $found[$s['racine']] = [];
+            }
+        }
+        view('backups/index', ['title' => 'Sauvegardes & restauration', 'backups' => BackupService::list(), 'dir' => BackupService::dir(),
+            'supports' => $supports, 'found' => $found]);
+    }
+
+    /** Copie de la dernière sauvegarde (ou de toutes) sur une clé USB ou un disque externe. */
+    public function copyToSupport(): void
+    {
+        @set_time_limit(900);
+        $r = $this->attempt(fn() => \App\Services\SupportExterne::copy(Request::str('support'), Request::str('quoi') === 'toutes', Request::str('nouvelle') === '1'), '/backups');
+        flash('success', $r['fichiers'] . ' fichier(s) copié(s) et contrôlé(s) (' . round($r['octets'] / 1048576, 1) . ' Mo) dans « ' . $r['dossier'] . ' ». Vous pouvez retirer le support en toute sécurité depuis Windows.');
+        redirect('/backups');
+    }
+
+    /** Reprise d'une sauvegarde du support dans la liste (sans la restaurer). */
+    public function importFromSupport(): void
+    {
+        $name = $this->attempt(fn() => \App\Services\SupportExterne::import(Request::str('support'), Request::str('fichier')), '/backups');
+        flash('success', 'Sauvegarde « ' . $name . ' » reprise depuis le support et contrôlée. Pour l\'utiliser, cliquez sur « Restaurer » dans la liste.');
+        redirect('/backups');
     }
 
     public function create(): void

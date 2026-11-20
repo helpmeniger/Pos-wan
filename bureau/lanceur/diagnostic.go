@@ -41,6 +41,19 @@ func (l *launcher) selfCheck() {
 		add(true, "base de données : MariaDB "+v+", compte de l'application accepté")
 	}
 
+	// 1 bis. Aucun secret en clair dans app\.env
+	leak := []string{}
+	for _, k := range envSecrets {
+		if envFileValue(filepath.Join(l.c.app, ".env"), k) != "" {
+			leak = append(leak, k)
+		}
+	}
+	if len(leak) == 0 {
+		add(true, "secrets : clé et accès à la base chiffrés dans donnees\\secret\\bd.dat (aucun dans app\\.env)")
+	} else {
+		add(false, "secrets : encore présents dans app\\.env ("+strings.Join(leak, ", ")+")")
+	}
+
 	// 2. Serveurs PHP
 	n := 0
 	for _, w := range l.workers {

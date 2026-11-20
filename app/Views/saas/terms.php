@@ -1,6 +1,6 @@
 <section class="container py-5 saas-terms" style="max-width:860px">
   <h1 class="h3">Conditions du service et données personnelles</h1>
-  <p class="text-muted">Service exploité par <b><?= e($operator['operator_name']) ?></b><?= $operator['operator_address'] ? ', ' . e($operator['operator_address']) : '' ?>. Logiciel POS Marwa © <?= e(config('licence.author.name')) ?>.</p>
+  <p class="text-muted">Service exploité par <b><?= e($operator['operator_name']) ?></b><?= $operator['operator_address'] ? ', ' . e($operator['operator_address']) : '' ?>. Logiciel POS Marwa © <?= e(copyright_years()) ?> <?= e(config('licence.author.name')) ?>.</p>
   <h2 class="h5">1. Le service</h2>
   <p>Le service donne accès, par un navigateur, au logiciel POS Marwa dans un espace réservé au client (son adresse, sa base de données). Il comprend l'hébergement, les sauvegardes et les mises à jour du logiciel.</p>
   <h2 class="h5">2. Essai, abonnement et paiement</h2>

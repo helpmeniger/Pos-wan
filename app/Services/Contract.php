@@ -10,7 +10,7 @@ namespace App\Services;
  */
 final class Contract
 {
-    public const VERSION = '1.0 — octobre 2026';
+    public const VERSION = '1.1 — novembre 2026';
 
     public static function clauses(): array
     {
@@ -26,16 +26,16 @@ final class Contract
                 'Le contrat ne transfère aucun droit de propriété au Client : il lui accorde seulement un droit d\'utilisation.',
             ]],
             ['Article 3 — Licence accordée', [
-                'L\'Auteur accorde au Client une licence non exclusive, non cessible et non transférable, pour une seule installation identifiée par son « identifiant d\'installation » et activée par une clé de licence délivrée par l\'Auteur.',
-                'La licence couvre le nombre de postes, boutiques et modules convenus lors de l\'achat. Toute installation supplémentaire nécessite une licence supplémentaire.',
-                'Une période d\'essai de ' . (int) config('licence.trial_days', 30) . ' jours est accordée à compter de la première utilisation. À son terme, sans clé valide, le logiciel passe en lecture seule : les données restent consultables et sauvegardables, aucune donnée n\'est effacée.',
+                'L\'Auteur accorde au Client une licence non exclusive, non cessible et non transférable, pour une seule installation sur un seul ordinateur, identifiés par le « code de l\'installation et de l\'ordinateur », et activée par une clé de licence délivrée par l\'Auteur.',
+                'La licence couvre le nombre d\'ordinateurs, boutiques et modules convenus lors de l\'achat. Tout autre ordinateur du réseau qui utilise le logiciel nécessite une licence multiposte ; les téléphones et tablettes du réseau peuvent l\'utiliser sans licence supplémentaire. Toute installation supplémentaire nécessite une licence supplémentaire.',
+                'Une période d\'essai de ' . (int) config('licence.trial_days', 15) . ' jours est accordée à compter de la première utilisation. À son terme, sans clé valide, le logiciel passe en lecture seule : les données restent consultables et sauvegardables, aucune donnée n\'est effacée.',
             ]],
             ['Article 4 — Interdictions', [
                 'Sauf accord écrit de l\'Auteur, il est interdit : de copier, installer ou utiliser le logiciel au-delà de la licence acquise ; de le revendre, louer, prêter, céder ou distribuer, même gratuitement ; de le modifier, traduire, adapter, décompiler ou d\'en extraire tout ou partie du code ; de supprimer ou modifier les mentions de l\'Auteur, de copyright ou de licence ; de contourner, désactiver ou falsifier la clé de licence ou tout dispositif de protection ; de générer ou diffuser de fausses clés.',
                 'Toute utilisation non autorisée constitue une contrefaçon pouvant donner lieu à des poursuites civiles et pénales, sans préjudice de dommages et intérêts.',
             ]],
             ['Article 5 — Activation et protections', [
-                'Le logiciel contient un dispositif d\'activation (clé signée liée à l\'installation), la mention de l\'Auteur et un journal d\'audit. Le Client s\'engage à ne pas les altérer.',
+                'Le logiciel contient un dispositif d\'activation (clé signée liée à l\'installation et à l\'ordinateur), la mention de l\'Auteur et un journal d\'audit. Le Client s\'engage à ne pas les altérer.',
                 'Le changement de serveur ou d\'ordinateur est accepté sur demande à l\'Auteur, qui délivre une nouvelle clé pour la nouvelle installation, l\'ancienne cessant d\'être utilisée.',
             ]],
             ['Article 6 — Mises à jour et assistance', [
@@ -66,7 +66,7 @@ final class Contract
     {
         $a = config('licence.author');
         $md = "# Contrat de licence d'utilisation — POS Marwa\n\nVersion du contrat : " . self::VERSION . "\n\n"
-            . "© " . date('Y') . ' ' . $a['name'] . ' — ' . $a['title'] . ' — ' . $a['country'] . ' — ' . implode(' / ', $a['phones']) . "\n\n"
+            . "© " . copyright_years() . ' ' . $a['name'] . ' — ' . $a['title'] . ' — ' . $a['country'] . ' — ' . implode(' / ', $a['phones']) . "\n\n"
             . "> Logiciel propriétaire. Toute copie, revente ou utilisation sans licence est interdite.\n\n";
         foreach (self::clauses() as [$title, $paras]) {
             $md .= '## ' . $title . "\n\n" . implode("\n\n", $paras) . "\n\n";

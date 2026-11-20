@@ -2,6 +2,25 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.14.0] — 2026-11-20
+
+### Sécurité et licence
+- **Licence liée à l'ordinateur** : la clé porte le code de l'ordinateur (« PW-… / PC-… » à communiquer à l'auteur). Auparavant, le dossier et sa base copiés sur un autre ordinateur gardaient une licence valable ; désormais la clé y est refusée (lecture seule). Les clés déjà délivrées restent valables et sont liées au premier ordinateur qui les vérifie.
+- **Licence multiposte** : chaque autre ordinateur du réseau occupe une place de la licence (nombre d'ordinateurs dans la clé, 1 par défaut) ; sans place libre, page « licence multiposte requise ». Téléphones, tablettes et téléviseurs : libres. L'administrateur peut libérer la place d'un ordinateur (Licence et activation → Ordinateurs du réseau). Essai : un autre ordinateur. Outils de l'auteur (`bin/licence.php`, générateur) : code de l'ordinateur et nombre d'ordinateurs.
+- **Essai ramené à 15 jours.** Édition Bureau : date du premier démarrage gardée hors du dossier (registre de Windows et fichier système caché), signée : réinstaller ne relance pas l'essai.
+- **Édition Bureau : plus aucun secret dans `app\.env`.** `APP_KEY` et les accès à la base sont chiffrés avec la protection de Windows liée à l'ordinateur (`donnees\secret\bd.dat`) et transmis aux serveurs PHP par leur environnement. Le dossier copié sur un autre ordinateur ne démarre pas (message clair, rien n'est effacé). Une installation 3.13 est convertie au premier démarrage (même `APP_KEY`, `bd.ini` en clair retiré après vérification).
+
+### Ajouté
+- **Sauvegarde sur support externe** (clé USB, carte mémoire, disque externe, lecteur réseau) : copie de la dernière sauvegarde ou de toutes, contrôlée par empreinte SHA-256, dans « POS Marwa - Sauvegardes » ; reprise d'une sauvegarde depuis le support (changement d'ordinateur, réinstallation), la restauration restant confirmée par le mot de passe administrateur.
+
+### Modifié
+- Administrateur : le **tableau de bord** s'affiche en premier (au lieu du Menu de gestion) ; les autres utilisateurs gardent le menu en tuiles.
+- Droits d'auteur : « © 2019–année en cours » (pages, contrat, programme et installateur Windows). Contrat de licence 1.1 (ordinateur, multiposte, essai de 15 jours).
+
+### Essais
+- `tests/run.php` : 197 tests (liaison à l'ordinateur, copie refusée, essai gardé hors du dossier, multiposte, support externe, pages).
+- `bureau/essai-linux.sh` : 29 vérifications (secrets chiffrés et absents de `.env`, dossier copié refusé sans rien effacer, date d'essai falsifiée, conversion d'une installation 3.13.5).
+
 ## [3.13.5] — 2026-11-20
 
 ### Corrigé (POS Marwa Bureau, cause trouvée par le rapport de diagnostic du PC Windows)

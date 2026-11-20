@@ -14,7 +14,15 @@ use App\Core\DB;
  * aucune donnée n'est bloquée ni effacée).
  *
  * Format de clé : PWL1.<données base64url>.<signature base64url>
- * Données : {"n": n° de licence, "c": client, "i": identifiant d'installation, "e": date de fin | null, "t": date d'émission}
+ * Données : {"n": n° de licence, "c": client, "i": identifiant d'installation, "m": code du poste (ordinateur),
+ *            "p": nombre d'ordinateurs autorisés (poste principal compris, 1 par défaut), "e": date de fin | null,
+ *            "t": date d'émission}
+ *
+ * Liaison à l'ordinateur : une clé portant « m » n'est valable que sur l'ordinateur dont l'empreinte est « m »
+ * (App\Services\Poste). Dossier et base copiés sur un autre ordinateur : clé refusée, lecture seule. Les clés
+ * plus anciennes (sans « m ») sont liées au premier ordinateur qui les vérifie.
+ * Téléphones et tablettes du réseau : libres. Autres ordinateurs du réseau : licence multiposte (« p »),
+ * voir App\Services\LicencePostes.
  *
  * Limite honnête : le code PHP est lisible ; cette protection empêche la copie simple d'une
  * installation et l'utilisation sans clé, mais un informaticien qui modifie le code peut la
@@ -86,8 +94,15 @@ final class LicenceService
         return 'PWL1.' . $data . '.' . self::b64u(self::sodium('crypto_sign_detached', 'PWL1.' . $data, $sk));
     }
 
-    /** Vérifie une clé pour CETTE installation. @return array données de la licence */
-    public static function verify(string $key, ?string $installId = null): array
+    /** Code à communiquer à l'auteur pour obtenir une clé : installation + poste (ordinateur). */
+    public static function requestCode(): string
+    {
+        $poste = Poste::code();
+        return self::installId() . ($poste ? ' / ' . $poste : '');
+    }
+
+    /** Vérifie une clé pour CETTE installation et CET ordinateur. @return array données de la licence */
+    public static function verify(string $key, ?string $installId = null, ?string $poste = null): array
     {
         $key = preg_replace('/\s+/', '', $key);
         $parts = explode('.', (string) $key);
@@ -113,6 +128,13 @@ final class LicenceService
         if ($p['i'] !== ($installId ?? self::installId())) {
             throw new BusinessException('Cette clé a été délivrée pour une autre installation (' . $p['i'] . ').');
         }
+        if (!empty($p['m'])) {
+            $here = $poste ?? Poste::code();
+            if ($here === null || !hash_equals((string) $p['m'], $here)) {
+                throw new BusinessException('Cette licence est liée à un autre ordinateur (' . $p['m'] . ') : ce dossier a été copié, ou l\'ordinateur a changé. '
+                    . 'Pour changer d\'ordinateur, demandez le transfert de la licence à l\'auteur.');
+            }
+        }
         if (!empty($p['e']) && $p['e'] < date('Y-m-d')) {
             throw new BusinessException('Licence expirée le ' . $p['e'] . '.');
         }
@@ -123,6 +145,7 @@ final class LicenceService
     {
         $p = self::verify($key);
         setting_set('licence_key', preg_replace('/\s+/', '', $key));
+        self::bindLegacy(true);
         self::$status = null;
         Audit::log('licence.activate', null, null, ['licence' => $p['n'] ?? null, 'client' => $p['c'], 'expires' => $p['e'] ?? null]);
         return $p;
@@ -136,12 +159,36 @@ final class LicenceService
      */
     public static function trialStart(): int
     {
+        // Édition Bureau : date du premier démarrage sur CET ordinateur, gardée par POS Marwa.exe hors du dossier
+        // du logiciel (registre de Windows et dossier système caché) : réinstaller ne relance pas l'essai.
+        $pc = getenv('POS_ESSAI_DEBUT');
+        $pc = is_string($pc) && ctype_digit($pc) && (int) $pc <= time() ? (int) $pc : null;
         $first = DB::value("SELECT MIN(created_at) FROM audit_logs WHERE action = 'licence.trial_start'");
         if ($first) {
-            return (int) strtotime((string) $first);
+            $t = (int) strtotime((string) $first);
+            return $pc !== null ? min($t, $pc) : $t;
         }
         Audit::log('licence.trial_start', null, null, ['install_id' => self::installId()]);
-        return time();
+        return $pc ?? time();
+    }
+
+    /**
+     * Clé sans code de poste (délivrée avant la 3.14) : liée au premier ordinateur qui la vérifie (empreinte
+     * signée avec APP_KEY). @return bool false si la base a été copiée sur un autre ordinateur
+     */
+    private static function bindLegacy(bool $rebind = false): bool
+    {
+        $code = Poste::code();
+        if ($code === null) {
+            return true; // empreinte illisible sur ce serveur : liaison à l'installation seulement
+        }
+        $sig = hash_hmac('sha256', 'poste|' . $code . '|' . self::installId(), (string) \App\Core\Env::get('APP_KEY', 'poswan'));
+        $saved = (string) setting('licence_poste_lie', '');
+        if ($saved === '' || $rebind) {
+            setting_set('licence_poste_lie', $sig);
+            return true;
+        }
+        return hash_equals($saved, $sig);
     }
 
     /** @return array{state:string, client:?string, expires:?string, days_left:?int, install_id:string, number:?string} */
@@ -153,19 +200,26 @@ final class LicenceService
         if (\App\Saas\Saas::isTenant()) {
             return self::$status = \App\Saas\Subscription::licenceStatus(); // abonnement en ligne
         }
-        $base = ['install_id' => self::installId(), 'client' => null, 'expires' => null, 'days_left' => null, 'number' => null, 'error' => null];
+        $base = ['install_id' => self::installId(), 'poste' => Poste::code(), 'request_code' => self::requestCode(), 'client' => null, 'expires' => null,
+            'days_left' => null, 'number' => null, 'error' => null, 'postes' => 1, 'bound' => false];
         $key = (string) setting('licence_key', '');
         if ($key !== '') {
             try {
                 $p = self::verify($key);
+                if (empty($p['m']) && !self::bindLegacy()) {
+                    throw new BusinessException('Cette installation a été copiée depuis un autre ordinateur : la licence n\'est valable que sur l\'ordinateur d\'origine. '
+                        . 'Pour changer d\'ordinateur, demandez le transfert de la licence à l\'auteur.');
+                }
                 return self::$status = ['state' => 'licensed', 'client' => $p['c'], 'expires' => $p['e'] ?? null, 'number' => $p['n'] ?? null,
+                    'postes' => max(1, (int) ($p['p'] ?? 1)), 'bound' => !empty($p['m']),
                     'days_left' => !empty($p['e']) ? (int) floor((strtotime($p['e'] . ' 23:59:59') - time()) / 86400) : null] + $base;
             } catch (BusinessException $e) {
                 $base['error'] = $e->getMessage(); // clé copiée d'une autre installation, expirée ou falsifiée
             }
         }
-        $left = (int) config('licence.trial_days', 30) - (int) floor((time() - self::trialStart()) / 86400);
-        return self::$status = ['state' => $left > 0 ? 'trial' : 'expired', 'days_left' => max(0, $left)] + $base;
+        $left = (int) config('licence.trial_days', 15) - (int) floor((time() - self::trialStart()) / 86400);
+        // Essai : poste principal + 1 ordinateur du réseau, pour essayer le multiposte
+        return self::$status = ['state' => $left > 0 ? 'trial' : 'expired', 'days_left' => max(0, $left), 'postes' => $left > 0 ? 2 : 1] + $base;
     }
 
     public static function reset(): void

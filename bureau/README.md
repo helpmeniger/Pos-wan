@@ -23,7 +23,7 @@ POS Marwa.exe ──► MariaDB 10.11   (127.0.0.1:3407, donnees\mysql)
 
 | Étape | Détail |
 |---|---|
-| Premier démarrage | `mariadb-install-db` crée la base ; mot de passe root et mot de passe de l'application tirés au hasard (`donnees\secret\bd.ini`) ; base `poswan` et compte `poswan` (droits sur cette base seulement) ; `app\.env` écrit (clé `APP_KEY` aléatoire, `MENU_STYLE=tuiles`, `POS_EDITION=bureau`). Un premier démarrage interrompu est refait : le dossier inachevé est mis de côté (`donnees\mysql-inacheve-…`), jamais supprimé. |
+| Premier démarrage | `mariadb-install-db` crée la base ; mot de passe root et mot de passe de l'application tirés au hasard, avec la clé `APP_KEY`, chiffrés par Windows pour cet ordinateur (`donnees\secret\bd.dat`, DPAPI) ; base `poswan` et compte `poswan` (droits sur cette base seulement) ; `app\.env` écrit **sans aucun secret** (`MENU_STYLE=tuiles`, `POS_EDITION=bureau`) : clé et accès à la base sont transmis aux serveurs PHP par leur environnement. Date du premier démarrage gardée hors du dossier (registre, `%ProgramData%\HighTechNiger\pm.dat`). Un premier démarrage interrompu est refait : le dossier inachevé est mis de côté (`donnees\mysql-inacheve-…`), jamais supprimé. |
 | Démarrage suivant | Base démarrée avec `donnees\mariadb.ini` (réécrit à chaque fois) ; une base restée démarrée (lanceur arrêté de force) est réutilisée. |
 | Fenêtre | Ouverte tout de suite sur une page « Démarrage… » qui se recharge seule. Chaque page envoie un signe de vie toutes les 15 s (`/__bureau/battement.js`, ajouté par le répartiteur). Sans signe de vie depuis 3 minutes (dernière fenêtre fermée, sur ce PC ou un autre poste), arrêt des serveurs PHP puis de la base (`mariadb-admin shutdown`). La mise en veille du PC n'est pas comptée. |
 | Double-clic alors que POS Marwa tourne | Une nouvelle fenêtre s'ouvre ; rien n'est redémarré. |
@@ -43,7 +43,7 @@ POS Marwa.exe ──► MariaDB 10.11   (127.0.0.1:3407, donnees\mysql)
   l'en-tête est ignoré (le blocage après échecs de connexion par adresse ne peut pas être contourné).
 - Si `POS Marwa.exe` est arrêté de force, Windows arrête aussi les serveurs PHP (groupe de processus).
 - Limites : le code PHP reste lisible dans `app\` (protection par licence signée, pas par chiffrement) ; tout
-  compte Windows autorisé sur le dossier peut lire `donnees\secret\bd.ini`. L'installateur n'est pas signé
+  administrateur de l'ordinateur peut déchiffrer `donnees\secret\bd.dat` (protection DPAPI « machine ») ; copié sur un autre ordinateur, ce fichier est illisible et POS Marwa ne démarre pas. Windows réinstallé compte comme un nouvel ordinateur : restaurer une sauvegarde (support externe). L'installateur n'est pas signé
   (avertissement SmartScreen) : un certificat de signature de code est nécessaire pour le supprimer.
 
 ## Construire l'installateur (sous Linux)
@@ -66,7 +66,7 @@ bureau/construire.sh <dossier des composants> <dossier de sortie>
 
 - `bureau/essai-linux.sh` : le lanceur sous Linux avec le PHP et le MariaDB du système (premier démarrage,
   `.env`, base locale seulement, assistant d'installation, routeur, requêtes simultanées, arrêt propre, second
-  démarrage, contrôle de démarrage, `.env` réaligné, fenêtre) — 18 vérifications.
+  démarrage, contrôle de démarrage, `.env` réaligné, fenêtre, secrets chiffrés, dossier copié refusé, conversion 3.13) — 29 vérifications.
 - `tests/run.php` : test « Menu de gestion en tuiles ».
 - **Non exécuté sous Windows** (aucun PC Windows ni Wine fonctionnel dans l'environnement de construction) :
   installateur, `POS Marwa.exe`, PHP et MariaDB pour Windows, fenêtre Edge, raccourcis, désinstallation. Vérifié
