@@ -1,0 +1,16 @@
+{
+  "name": "marwa-secef-pont",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pont local MARWA SECEF CONNECT : POS Marwa <-> application e-SFE de l'e-SECeF (DGI Niger), par Playwright.",
+  "main": "serveur.js",
+  "license": "UNLICENSED",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node serveur.js",
+    "test": "node --test test/pont.test.js"
+  },
+  "dependencies": {
+    "playwright-core": "1.49.1"
+  }
+}

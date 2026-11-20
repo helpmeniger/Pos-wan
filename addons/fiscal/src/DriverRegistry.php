@@ -15,6 +15,7 @@ final class DriverRegistry
         'generic_tcp' => Drivers\Generic\TcpDriver::class,
         'generic_serial' => Drivers\Generic\SerialDriver::class,
         'ne_secef' => Drivers\Niger\SecefDriver::class,
+        'ne_esfe_pont' => Drivers\Niger\EsfePontDriver::class,
         'bj_skeleton' => Drivers\Benin\BeninDriver::class,
         'tg_skeleton' => Drivers\Togo\TogoDriver::class,
     ];

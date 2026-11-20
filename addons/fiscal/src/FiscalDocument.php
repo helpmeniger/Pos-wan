@@ -26,6 +26,23 @@ final class FiscalDocument
         $nif = ($p['seller_nif'] ?? '') ?: (string) setting('company_nif', '');
         $lines = $nif !== '' ? [[$nifLabel . ' ' . t('vendeur'), $nif]] : [];
         $mentions = array_values(array_filter([trim((string) ($p['country_mentions'] ?? '')), trim((string) ($p['legal_mentions'] ?? ''))]));
+        $secef = $c['connector_id'] && DB::value('SELECT driver FROM fiscal_connectors WHERE id = ?', [$c['connector_id']]) === Secef\Secef::DRIVER;
+        if ($c['status'] === 'certified' && $secef) {
+            // e-SECeF (Niger) : libellés et valeurs exactement tels qu'affichés par le portail de la DGI
+            $proof = json_decode((string) $c['proof_json'], true)['data'] ?? [];
+            $lines[] = ['Code SECeF/DGI', (string) $c['fiscal_number']];
+            $lines[] = ['SECeF NIM', (string) $c['device_id']];
+            if ($c['counters']) {
+                $lines[] = ['SECeF Compteurs', (string) $c['counters']];
+            }
+            $lines[] = ['SECeF Heure', !empty($proof['secef_heure']) ? (string) $proof['secef_heure'] : fdate($c['certified_at'])];
+            if (!empty($proof['isf'])) {
+                $lines[] = ['ISF', (string) $proof['isf']];
+            }
+            $mentions[] = 'Vérification : sygmef.impots.gouv.ne/Verification (Code SECeF/DGI + NIM).';
+            return ['status' => 'certified', 'simulation' => false, 'title' => 'FACTURE CERTIFIÉE e-SECeF', 'banner' => null,
+                'lines' => $lines, 'mentions' => $mentions, 'note' => null, 'qr' => $c['qr_payload'] ?: null];
+        }
         if ($c['status'] === 'certified') {
             $sim = (int) $c['is_simulation'] === 1;
             $lines[] = [t('N° de certification'), (string) $c['fiscal_number']];

@@ -49,6 +49,37 @@ final class FiscalEngine
         return $c;
     }
 
+    // ------------------------------------------------------------------ choix du caissier
+
+    /**
+     * Certification de la vente : « toutes » (réglage fiscal_choix_caisse, comportement d'origine) ou « au choix »
+     * (case « Facture certifiée DGI » de la caisse). Le choix est conservé (fiscal_sale_requests).
+     * @param ?bool $requested choix transmis par la caisse (null : la caisse n'a pas proposé le choix)
+     * @return string « certifiee » ou « ordinaire »
+     */
+    public static function saleChoice(int $saleId, ?bool $requested): string
+    {
+        $auChoix = setting('fiscal_choix_caisse', 'toutes') === 'au_choix';
+        $mode = !$auChoix || $requested === true ? 'certifiee' : 'ordinaire';
+        if ($auChoix || $requested !== null) {
+            try {
+                DB::run('INSERT IGNORE INTO fiscal_sale_requests (sale_id, mode, user_id) VALUES (?, ?, ?)', [$saleId, $mode, Auth::id()]);
+            } catch (\Throwable) {
+                // table absente (migration du module en attente) : le choix s'applique quand même
+            }
+        }
+        return $mode;
+    }
+
+    /** Connecteur lent (pont e-SECeF) : la caisse n'attend pas, elle suit la certification à part. */
+    public static function isSlowConnector(int $saleId): bool
+    {
+        $sale = DB::one('SELECT store_id, register_id FROM sales WHERE id = ?', [$saleId]);
+        $profile = $sale ? self::profileFor((int) $sale['store_id']) : null;
+        $c = $profile ? self::connectorFor($profile, (int) $sale['store_id'], $sale['register_id'] !== null ? (int) $sale['register_id'] : null) : null;
+        return $c !== null && $c['driver'] === Secef\Secef::DRIVER;
+    }
+
     // ------------------------------------------------------------------ validation des réponses
 
     /** @return string[] erreurs (vide = réponse acceptable comme preuve de certification) */

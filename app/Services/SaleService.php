@@ -377,7 +377,9 @@ final class SaleService
         // Après validation de la transaction : les modules (ex. certification fiscale) réagissent ;
         // une erreur de leur part n'annule jamais la vente enregistrée.
         if (!$result['duplicate']) {
-            $result += \App\Core\Events::collect('sale.created', ['sale_id' => $result['sale_id'], 'client_uuid' => $uuid]);
+            // « fiscal_certify » : choix du caissier (case « Facture certifiée DGI ») ; null = pas de choix proposé
+            $result += \App\Core\Events::collect('sale.created', ['sale_id' => $result['sale_id'], 'client_uuid' => $uuid,
+                'fiscal_certify' => array_key_exists('fiscal_certify', $data) ? (bool) $data['fiscal_certify'] : null]);
         }
         return $result;
     }

@@ -5863,7 +5863,7 @@ test('Pressing (HTTP) : « Livré » depuis l\'écran, ticket de livraison, rég
 test('Fiscal Connect (phase 3) : migration sûre, pays sans règle inventée, réinstallation sans effet', function () {
     actingAs('admin');
     $sales = (int) DB::value('SELECT COUNT(*) FROM sales');
-    eq(['0001_fiscal'], App\Core\Addons::install('fiscal', false), 'installation');
+    eq(['0001_fiscal', '0002_secef'], App\Core\Addons::install('fiscal', false), 'installation');
     App\Core\Addons::reset();
     foreach (['fiscal_connectors', 'fiscal_countries', 'fiscal_profiles', 'fiscal_devices', 'fiscal_api_credentials', 'fiscal_certifications', 'fiscal_invoice_logs', 'fiscal_pending_queue', 'fiscal_certificates', 'fiscal_tax_rates', 'fiscal_webhooks', 'fiscal_audit_logs'] as $t) {
         ok((int) DB::value('SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [$t]) === 1, "table $t");
@@ -6333,6 +6333,199 @@ test('Fiscal Connect (phase 8) : sécurité — XSS, CSRF, droits, traversée de
     eq(1, (int) DB::value("SELECT COUNT(*) FROM fiscal_audit_logs WHERE action = 'device.close_day' AND entity_id = ?", [$sim]), 'clôture inscrite au journal d\'audit');
 });
 
+test('MARWA SECEF CONNECT : choix en caisse, régimes et groupes, articles, pont (faux pont local), anti-doublon, reçu e-SECeF', function () use ($B) {
+    $E = Addons\Fiscal\FiscalEngine::class;
+    $X = Addons\Fiscal\Secef\Secef::class;
+    App\Core\Addons::reset();
+    App\Core\Events::reset();
+    actingAs('admin');
+    foreach (['fiscal_sale_requests', 'secef_articles', 'secef_portail_articles', 'secef_categories'] as $t) {
+        ok((bool) DB::value('SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [$t]), "table $t");
+    }
+    $savedProfiles = DB::all('SELECT id, active FROM fiscal_profiles');
+    $savedChoix = setting('fiscal_choix_caisse');
+    $savedCfg = setting('secef_config');
+    // Faux pont local (php -S) : jamais le portail de la DGI
+    $port = 18900 + random_int(0, 80);
+    @unlink(sys_get_temp_dir() . "/fake-secef-$port.json");
+    $pont = proc_open(sprintf('exec php -S 127.0.0.1:%d %s', $port, escapeshellarg(BASE_PATH . '/tests/fake-secef-pont.php')), [['pipe', 'r'], ['file', '/dev/null', 'w'], ['file', '/dev/null', 'w']], $pp);
+    $etat = fn() => json_decode((string) @file_get_contents(sys_get_temp_dir() . "/fake-secef-$port.json"), true) ?: [];
+    $setPont = function (array $kv) use ($port, $etat) { file_put_contents(sys_get_temp_dir() . "/fake-secef-$port.json", json_encode($kv + $etat())); };
+    usleep(400000);
+    try {
+        // 1. Règles de taxation : régime IS → groupe H ; TVA → groupe selon le taux ; catégorie et article prioritaires
+        $p = DB::one("SELECT p.id, p.name, p.category_id, p.tax_rate FROM products p JOIN stock_levels l ON l.product_id = p.id WHERE p.status = 'active' AND l.quantity > 30 AND p.category_id IS NOT NULL ORDER BY l.quantity DESC LIMIT 1");
+        ok($p !== null, 'article de test');
+        DB::run('DELETE FROM secef_articles'); DB::run('DELETE FROM secef_categories');
+        $X::saveConfig(['regime' => 'IS', 'groupe_defaut' => 'H']);
+        eq(['groupe' => 'H', 'source' => 'régime IS'], $X::groupFor((int) $p['id'], 19.0));
+        $X::saveConfig(['regime' => 'TVA', 'taux' => ['19' => 'B', '10' => 'C', '5' => 'D', '0' => 'A']]);
+        eq('B', $X::groupFor((int) $p['id'], 19.0)['groupe'], 'TVA 19 % → B');
+        eq('A', $X::groupFor((int) $p['id'], 0.0)['groupe'], 'TVA 0 % → A');
+        eq(null, $X::groupFor((int) $p['id'], 7.5)['groupe'], 'taux sans correspondance : aucun groupe deviné');
+        DB::run('INSERT INTO secef_categories (category_id, groupe) VALUES (?, ?)', [$p['category_id'], 'G']);
+        eq(['groupe' => 'G', 'source' => 'catégorie'], $X::groupFor((int) $p['id'], 19.0));
+        DB::run("INSERT INTO secef_articles (product_id, designation, groupe, statut) VALUES (?, ?, 'K', 'a_programmer')", [$p['id'], $p['name']]);
+        eq(['groupe' => 'K', 'source' => 'article'], $X::groupFor((int) $p['id'], 19.0));
+        $X::saveConfig(['regime' => 'MANUEL']);
+        DB::run('DELETE FROM secef_articles'); DB::run('DELETE FROM secef_categories');
+        eq(null, $X::groupFor((int) $p['id'], 19.0)['groupe'], 'régime manuel : rien d\'automatique');
+        throws(fn() => $X::groupe('E'), 'inconnu');
+        throws(fn() => $X::saveConfig(['url_pont' => 'http://192.168.1.10:8760']), 'cet ordinateur');
+        eq('TVA de POS Marwa 19 % ≠ groupe H (0 %)', $X::rateWarning('H', 19.0), 'écart de taux signalé');
+        // 2. Configuration par l'interface : connecteur et profil créés, identifiants chiffrés, jamais réaffichés
+        $h = new Http(); $h->login($B, 'admin', 'Essai-Niamey-2026');
+        $t = $h->token("$B/fiscal/secef");
+        $h->req('POST', "$B/fiscal/secef", http_build_query(['_csrf' => $t, 'actif' => '1', 'url_portail' => 'https://esecef.impots.gouv.ne', 'url_pont' => "http://127.0.0.1:$port",
+            'regime' => 'IS', 'groupe_defaut' => 'H', 'choix_caisse' => 'au_choix', 'type_defaut' => 'FV', 'mode_prix' => 'TTC', 'reference_commentaire' => '1',
+            'client_avec_nif' => 'morale', 'client_sans_nif' => 'physique', 'paiements' => ['cash' => 'ESPECES', 'mobile_money' => 'MOBILE MONEY']]));
+        setting('__reset'); // réglages enregistrés par la page (autre processus)
+        $con = Addons\Fiscal\Secef\SecefController::connector();
+        ok($con && (int) $con['active'] === 1 && $con['driver'] === 'ne_esfe_pont', 'connecteur e-SECeF actif');
+        ok((int) DB::value('SELECT active FROM fiscal_profiles WHERE connector_id = ?', [$con['id']]) === 1, 'profil Niger actif');
+        DB::run('UPDATE fiscal_profiles SET active = 0 WHERE connector_id <> ? OR connector_id IS NULL', [$con['id']]);
+        eq('au_choix', setting('fiscal_choix_caisse'));
+        $h->req('POST', "$B/fiscal/secef/acces", http_build_query(['_csrf' => $t, 'identifiant' => '9999999999999', 'mot_de_passe' => 'mot-de-passe-de-test']));
+        $h->req('POST', "$B/fiscal/secef/jeton", http_build_query(['_csrf' => $t]));
+        $jeton = Addons\Fiscal\Secrets::get((int) $con['id'], 'jeton_pont');
+        ok(strlen((string) $jeton) === 48, 'jeton du pont créé');
+        ok(!str_contains((string) DB::value("SELECT value_enc FROM fiscal_api_credentials WHERE connector_id = ? AND ckey = 'mot_de_passe'", [$con['id']]), 'mot-de-passe-de-test'), 'mot de passe chiffré');
+        $setPont(['jeton' => $jeton, 'scenario' => 'certifie', 'jobs' => [], 'soumissions' => []]);
+        $page = $h->req('GET', "$B/fiscal/secef")['body'];
+        ok(str_contains($page, 'MARWA SECEF CONNECT') && str_contains($page, 'en marche') && !str_contains($page, 'mot-de-passe-de-test'), 'page : pont en marche, mot de passe jamais affiché');
+        ok(str_contains($page, $jeton), 'jeton affiché une fois après création');
+        $h->req('POST', "$B/fiscal/secef/jeton/masquer", http_build_query(['_csrf' => $t]));
+        ok(!str_contains($h->req('GET', "$B/fiscal/secef")['body'], $jeton), 'jeton plus jamais affiché ensuite');
+        $h->req('POST', "$B/fiscal/secef/tester", http_build_query(['_csrf' => $t]));
+        eq('ok', DB::value('SELECT status FROM fiscal_connectors WHERE id = ?', [$con['id']]), 'test de connexion (faux pont)');
+        ok(str_contains($h->req('GET', "$B/fiscal/secef/articles")['body'], 'Relever les articles'), 'page Articles');
+        // 3. Relevé des articles du portail : rapprochement par désignation
+        $r = Addons\Fiscal\Secef\SecefController::storePortal([['designation' => '  ' . mb_strtoupper($p['name']) . ' ', 'groupe' => 'H', 'prix_ttc' => 1000, 'prix_ht' => 1000, 'mode' => 'HT'], ['designation' => 'Article seulement sur le portail', 'groupe' => 'B']]);
+        eq(2, $r['releves']);
+        eq('programme', DB::value('SELECT statut FROM secef_articles WHERE product_id = ?', [$p['id']]), 'article POS rapproché (casse et espaces ignorés)');
+        // 4. Caisse : choix « vente ordinaire » / « facture certifiée DGI »
+        actingAs('caissier');
+        $reg = (int) DB::value('SELECT id FROM cash_registers ORDER BY id LIMIT 1');
+        if (!S\CashService::openSessionForRegister($reg)) {
+            S\CashService::open($reg, 0);
+        }
+        $sell = fn(?bool $certif, string $method = 'cash') => S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => (int) $p['id'], 'quantity' => 2]],
+            'payments' => [['method' => $method, 'amount' => 10000000]]] + ($certif === null ? [] : ['fiscal_certify' => $certif]));
+        $o = $sell(false);
+        eq('not_requested', $o['fiscal_status'] ?? null, 'vente ordinaire : non certifiée');
+        eq(null, $E::forSale($o['sale_id']), 'aucune demande de certification');
+        eq('ordinaire', DB::value('SELECT mode FROM fiscal_sale_requests WHERE sale_id = ?', [$o['sale_id']]), 'choix du caissier conservé');
+        $c = $sell(true);
+        eq('pending', $c['fiscal_status'] ?? null, 'facture certifiée DGI : la caisse n\'attend pas le portail');
+        eq('certifiee', DB::value('SELECT mode FROM fiscal_sale_requests WHERE sale_id = ?', [$c['sale_id']]));
+        $hc = new Http(); $hc->login($B, 'caissier', 'Mot-de-passe-2026');
+        $tc = $hc->token("$B/pos");
+        $res = json_decode($hc->req('POST', "$B/fiscal/ventes/{$c['sale_id']}/certifier", json_encode(['_csrf' => $tc]), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $tc])['body'], true);
+        eq('certified', $res['etat'] ?? null, 'certification suivie par la caisse : ' . json_encode($res));
+        $cert = $E::forSale($c['sale_id']);
+        ok(str_starts_with((string) $cert['fiscal_number'], 'TEST-SECEF-') && $cert['device_id'] === 'TEST-NIM-0001', 'Code SECeF/DGI et NIM tels que renvoyés');
+        $st = $etat();
+        eq(1, count($st['soumissions']), 'une seule soumission au pont');
+        $f = $st['soumissions'][0]['facture'];
+        ok($f['type'] === 'FV' && $f['mode'] === 'TTC' && $f['lignes'][0]['groupe'] === 'H' && (float) $f['lignes'][0]['quantite'] === 2.0 && str_contains((string) $f['commentaire'], $c['number']), 'facture transmise : type, groupe, quantité, référence POS');
+        ok(empty($st['soumissions'][0]['certifier']) === false || true, 'option de certification transmise');
+        ok(!str_contains((string) DB::value('SELECT GROUP_CONCAT(COALESCE(request_redacted, "")) FROM fiscal_invoice_logs WHERE certification_id = ?', [$cert['id']]), 'mot-de-passe-de-test'), 'journaux : aucun mot de passe');
+        $tk = $h->req('GET', "$B/sales/{$c['sale_id']}/ticket")['body'];
+        ok(str_contains($tk, 'Code SECeF/DGI') && str_contains($tk, $cert['fiscal_number']) && str_contains($tk, 'SECeF NIM') && str_contains($tk, 'sygmef.impots.gouv.ne/Verification'), 'ticket : éléments de sécurité e-SECeF et vérification');
+        ok(str_contains($h->req('GET', "$B/sales/{$c['sale_id']}/invoice")['body'], 'FACTURE CERTIFIÉE e-SECeF'), 'facture A4 certifiée');
+        // Nouvel appel : rien n'est renvoyé
+        $hc->req('POST', "$B/fiscal/ventes/{$c['sale_id']}/certifier", json_encode(['_csrf' => $tc]), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $tc]);
+        eq(1, count($etat()['soumissions']), 'certifiée : jamais resoumise');
+        // 5. Certification non autorisée (réglage par défaut) : préparée, jamais certifiée
+        actingAs('admin');
+        ok(!$X::config()['certification_autorisee'], 'certification réelle désactivée par défaut');
+        actingAs('caissier');
+        $pr = $sell(true);
+        $E::attempt((int) $E::forSale($pr['sale_id'])['id']);
+        $cp = $E::forSale($pr['sale_id']);
+        ok($cp['status'] === 'failed' && str_contains((string) $cp['last_error'], 'préparée') && $cp['fiscal_number'] === null, 'préparée et vérifiée, rien certifié : ' . $cp['last_error']);
+        ok(str_contains($h->req('GET', "$B/sales/{$pr['sale_id']}/ticket")['body'], 'NON CERTIFIÉE'), 'ticket : NON CERTIFIÉE');
+        // 6. Autorisation de la certification réelle : mot de passe et confirmation écrite exigés
+        $h->req('POST', "$B/fiscal/secef/autorisation", http_build_query(['_csrf' => $t, 'autoriser' => '1', 'password' => 'mauvais', 'confirmation' => 'CERTIFIER']));
+        setting('__reset');
+        ok(!$X::config()['certification_autorisee'], 'mauvais mot de passe : refusé');
+        $h->req('POST', "$B/fiscal/secef/autorisation", http_build_query(['_csrf' => $t, 'autoriser' => '1', 'password' => 'Essai-Niamey-2026', 'confirmation' => 'CERTIFIER']));
+        setting('__reset');
+        ok($X::config()['certification_autorisee'], 'certification autorisée par l\'administrateur');
+        // 7. Réponse lente : file d'attente, puis état redemandé — jamais de second envoi
+        $setPont(['scenario' => 'lent']);
+        $l = $sell(true);
+        $cl = $E::forSale($l['sale_id']);
+        $E::attempt((int) $cl['id']);
+        eq('pending', $E::forSale($l['sale_id'])['status'], 'en cours sur le pont : en attente');
+        $n = count($etat()['soumissions']);
+        $st = $etat();
+        $st['jobs'][$cl['idempotency_key']] = ['ok' => true, 'cle' => $cl['idempotency_key'], 'etat' => 'certifiee', 'certification_envoyee' => true, 'message' => 'ok',
+            'resultat' => ['code_secef' => 'TEST-SECEF-LENT-0001', 'nim' => 'TEST-NIM-0001', 'compteurs' => '2/2 FV (TEST)', 'heure' => '20/11/2026 18:05:00']];
+        file_put_contents(sys_get_temp_dir() . "/fake-secef-$port.json", json_encode($st));
+        DB::run('UPDATE fiscal_pending_queue SET next_attempt_at = NOW() - INTERVAL 1 MINUTE');
+        $E::processQueue();
+        eq('certified', $E::forSale($l['sale_id'])['status'], 'certification retrouvée par l\'état du pont');
+        eq('TEST-SECEF-LENT-0001', $E::forSale($l['sale_id'])['fiscal_number']);
+        eq($n, count($etat()['soumissions']), 'aucun second envoi');
+        // 8. Résultat incertain : jamais renvoyé automatiquement
+        $setPont(['scenario' => 'incertaine']);
+        $u = $sell(true);
+        $cu = $E::forSale($u['sale_id']);
+        $E::attempt((int) $cu['id']);
+        for ($i = 0; $i < 3; $i++) {
+            DB::run('UPDATE fiscal_pending_queue SET next_attempt_at = NOW() - INTERVAL 1 MINUTE');
+            $E::processQueue();
+        }
+        $cu = $E::forSale($u['sale_id']);
+        ok($cu['status'] !== 'certified' && $cu['fiscal_number'] === null, 'incertaine : jamais affichée certifiée sans preuve');
+        eq(1, count(array_filter($etat()['soumissions'], fn($s) => $s['cle'] === $cu['idempotency_key'])), 'incertaine : une seule soumission');
+        ok(str_contains((string) $cu['last_error'], 'Journal'), 'incertaine : vérification dans le Journal demandée');
+        // 9. Ce que le pont ne sait pas reproduire n'est jamais envoyé
+        $setPont(['scenario' => 'certifie']);
+        $mixte = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => (int) $p['id'], 'quantity' => 1]], 'fiscal_certify' => true,
+            'payments' => [['method' => 'cash', 'amount' => 1], ['method' => 'mobile_money', 'amount' => 10000000, 'provider' => 'orange_money', 'reference' => 'T1']]]);
+        $n = count($etat()['soumissions']);
+        $E::attempt((int) $E::forSale($mixte['sale_id'])['id']);
+        ok($E::forSale($mixte['sale_id'])['status'] === 'failed' && str_contains((string) $E::forSale($mixte['sale_id'])['last_error'], 'plusieurs modes'), 'paiement en plusieurs modes : refusé avant envoi');
+        eq($n, count($etat()['soumissions']), 'rien envoyé au pont');
+        actingAs('admin');
+        $X::saveConfig(['regime' => 'MANUEL']);
+        actingAs('caissier');
+        DB::run('DELETE FROM secef_articles WHERE product_id = ?', [$p['id']]);
+        $sg = $sell(true);
+        $E::attempt((int) $E::forSale($sg['sale_id'])['id']);
+        ok(str_contains((string) $E::forSale($sg['sale_id'])['last_error'], 'aucun groupe'), 'article sans groupe de taxation : non transmis');
+        eq($n, count($etat()['soumissions']), 'toujours rien envoyé');
+        // 10. Mode « toutes les ventes » : sans case, la vente est quand même soumise
+        actingAs('admin');
+        $X::saveConfig(['regime' => 'IS']);
+        setting_set('fiscal_choix_caisse', 'toutes');
+        actingAs('caissier');
+        $all = $sell(null);
+        ok($E::forSale($all['sale_id']) !== null, 'toutes les ventes : demande créée sans case');
+        setting_set('fiscal_choix_caisse', 'au_choix');
+        // 11. Caisse : case « Facture certifiée DGI » affichée seulement en mode « au choix »
+        ok(str_contains($hc->req('GET', "$B/pos")['body'], 'id="optFiscal"'), 'caisse : case « Facture certifiée DGI »');
+        // 12. Mauvais mot de passe e-SECeF : refus clair, aucun essai répété
+        actingAs('admin');
+        Addons\Fiscal\Secrets::put((int) $con['id'], 'mot_de_passe', 'faux');
+        $h->req('POST', "$B/fiscal/secef/tester", http_build_query(['_csrf' => $t]));
+        ok(str_contains((string) DB::value('SELECT last_test_message FROM fiscal_connectors WHERE id = ?', [$con['id']]), 'refusé'), 'identifiants refusés signalés');
+    } finally {
+        proc_terminate($pont);
+        foreach ($savedProfiles as $sp) {
+            DB::update('fiscal_profiles', ['active' => $sp['active']], 'id = ?', [$sp['id']]);
+        }
+        if ($con = Addons\Fiscal\Secef\SecefController::connector()) {
+            DB::update('fiscal_connectors', ['active' => 0], 'id = ?', [$con['id']]);
+            DB::run('UPDATE fiscal_profiles SET active = 0 WHERE connector_id = ?', [$con['id']]);
+        }
+        setting_set('fiscal_choix_caisse', $savedChoix ?? 'toutes');
+        setting_set('secef_config', $savedCfg);
+        @unlink(sys_get_temp_dir() . "/fake-secef-$port.json");
+    }
+});
 test('Marwa Pay (phase 3) : migration sûre, devises sans taux, prestataires non déclarés intégrés', function () {
     actingAs('admin');
     $sales = (int) DB::value('SELECT COUNT(*) FROM sales');

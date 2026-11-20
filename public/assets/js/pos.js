@@ -569,7 +569,10 @@
       supervisor,
       prescription: cart.lines.some((l) => l.rx) ? { prescriber: $('#rxPrescriber').value, patient_name: $('#rxPatient').value, prescription_ref: $('#rxRef').value, prescription_date: $('#rxDate').value } : null,
     };
-    body.print_ticket = $('#optTicket').checked && CFG.autoPrint && CFG.serverPrinter;
+    // MARWA SECEF CONNECT : choix « Facture certifiée DGI » (le ticket attend alors la certification)
+    const optFiscal = document.getElementById('optFiscal');
+    if (optFiscal) body.fiscal_certify = optFiscal.checked;
+    body.print_ticket = $('#optTicket').checked && CFG.autoPrint && CFG.serverPrinter && !body.fiscal_certify;
     busy = true;
     $('#payConfirm').disabled = true;
     $$('.btn-validate').forEach((b) => { b.disabled = true; });
@@ -600,6 +603,7 @@
       return;
     }
     if (!quickMode) modal('payModal').hide();
+    if (body.fiscal_certify && !d.duplicate && ['pending', 'sending'].includes(d.fiscal_status)) { certifyFlow(d); return; }
     finishSale(d);
     setTimeout(refreshStock, 300); // quantités affichées mises à jour après la vente
   }
@@ -611,6 +615,45 @@
     submitSale();
   });
   $('#authSecret').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#authOk').click(); });
+
+  // ---- Certification DGI : la vente est enregistrée ; le pont e-SECeF certifie (ou non) ; le ticket suit le résultat
+  function certifyFlow(d) {
+    const box = $('#fiscalDone');
+    const show = (wait) => { $('#fiscalWait').classList.toggle('d-none', !wait); box.classList.toggle('d-none', wait); $('#fiscalActions').classList.toggle('d-none', wait); };
+    const end = (printed) => {
+      modal('fiscalModal').hide();
+      const opt = document.getElementById('optFiscal');
+      if (opt) opt.checked = opt.dataset.default === '1';
+      finishSale(Object.assign({}, d, { fiscal_status: 'handled', skip_print: printed }));
+    };
+    const run = async (relancer) => {
+      show(true);
+      const r = await api('/fiscal/ventes/' + d.sale_id + '/certifier', { method: 'POST', body: { _csrf: CFG.csrf, relancer: relancer === true }, timeout: 180000 });
+      show(false);
+      if (r.ok && r.etat === 'certified') {
+        box.innerHTML = '<div class="alert alert-success mb-2"><i class="bi bi-patch-check-fill"></i> <b>' + __('Facture certifiée') + '</b></div>'
+          + '<div class="small">Code SECeF/DGI : <b class="user-select-all"></b><br>NIM : <b></b></div>';
+        const bs = box.querySelectorAll('b'); bs[1].textContent = r.fiscal_number || ''; bs[2].textContent = r.nim || '';
+        $('#fiscalRetry').classList.add('d-none'); $('#fiscalPrintPlain').classList.add('d-none');
+        emit('pos.fiscal.certified', {});
+        if ($('#optTicket').checked && CFG.autoPrint) printInFrame(d.ticket_url);
+        if ($('#optA4').checked) window.open(d.invoice_url, '_blank', 'noopener');
+        $('#fiscalClose').onclick = () => end(true);
+        return;
+      }
+      const msg = (r.message || r.error || __('Certification non obtenue.'));
+      box.innerHTML = '<div class="alert alert-warning mb-2"><i class="bi bi-exclamation-triangle"></i> <b>' + __('Facture NON CERTIFIÉE') + '</b></div><div class="small"></div>';
+      box.querySelector('.small').textContent = msg + (r.etat === 'pending' ? ' ' + __('Elle reste en file d\'attente et sera certifiée dès que possible (aucun doublon).') : '');
+      $('#fiscalRetry').classList.toggle('d-none', !['pending', 'failed'].includes(r.etat));
+      $('#fiscalPrintPlain').classList.remove('d-none');
+      emit('pos.fiscal.failed', { error: msg });
+      $('#fiscalClose').onclick = () => end(true);
+    };
+    $('#fiscalRetry').onclick = () => run(true);
+    $('#fiscalPrintPlain').onclick = () => { printInFrame(d.ticket_url); };
+    modal('fiscalModal').show();
+    run();
+  }
 
   function finishSale(d) {
     beep(true);
@@ -624,14 +667,14 @@
     $('#doneInvoice').href = d.offline ? '#' : d.invoice_url;
     $('#doneInvoice').classList.toggle('d-none', !!d.offline); // facture A4 : après synchronisation
     if ($('#optTicket').checked && CFG.autoPrint && d.offline) printProvisional(d.entry);
-    else if ($('#optTicket').checked && CFG.autoPrint && !d.duplicate && !(d.printed_server > 0)) printInFrame(d.ticket_url);
+    else if ($('#optTicket').checked && CFG.autoPrint && !d.duplicate && !(d.printed_server > 0) && !d.skip_print) printInFrame(d.ticket_url);
     if (d.print_errors && d.print_errors.length) toast(__('Imprimante de caisse') + ' : ' + d.print_errors.join(' '), 'warning');
-    if (d.fiscal_status && d.fiscal_status !== 'certified') toast(__('Facture NON CERTIFIÉE') + ' : ' + (d.fiscal_message || d.fiscal_status), 'warning');
+    if (d.fiscal_status && !['certified', 'handled', 'not_requested'].includes(d.fiscal_status)) toast(__('Facture NON CERTIFIÉE') + ' : ' + (d.fiscal_message || d.fiscal_status), 'warning');
     emit(d.offline ? 'pos.sale.offline' : 'pos.sale.saved', { total: d.total, change: d.change, duplicate: !!d.duplicate });
     if (d.print_errors && d.print_errors.length) emit('pos.print.failed', { errors: d.print_errors });
     else if (d.printed_server > 0) emit('pos.print.sent', {});
     if ($('#optA4').checked && d.offline) toast(__('Facture A4 disponible après synchronisation de la vente.'), 'warning');
-    else if ($('#optA4').checked) window.open(d.invoice_url, '_blank', 'noopener');
+    else if ($('#optA4').checked && !d.skip_print) window.open(d.invoice_url, '_blank', 'noopener');
     cart = newCart();
     selected = -1;
     $('#tenderedInput').value = '';

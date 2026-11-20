@@ -1,10 +1,10 @@
 {
     "code": "fiscal",
     "name": "Marwa Fiscal Connect",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "requires": "3.7.0",
     "author": "POS Marwa",
-    "description": "Connexion des factures aux dispositifs fiscaux (MCF) et aux plateformes de facturation normalisée : connecteurs, pilotes, profils pays à configurer d'après les textes officiels, file d'attente, preuves de certification, journaux. Aucun pilote n'est déclaré compatible sans vérification du protocole officiel.",
+    "description": "Connexion des factures aux dispositifs fiscaux (MCF) et aux plateformes de facturation normalisée : connecteurs, pilotes, profils pays à configurer d'après les textes officiels, file d'attente, preuves de certification, journaux. Aucun pilote n'est déclaré compatible sans vérification du protocole officiel. Inclut MARWA SECEF CONNECT (Niger, e-SECeF) : choix « facture certifiée DGI » en caisse, régimes et groupes de taxation, correspondance des articles, pont local Node.js/Playwright.",
     "icon": "bi-shield-check",
     "color": "#0f766e",
     "permissions": {
@@ -40,6 +40,14 @@
         ]
     },
     "menu": [
+        {
+            "group": "Configuration",
+            "label": "Certification fiscale (MARWA SECEF CONNECT)",
+            "icon": "bi-patch-check",
+            "url": "/fiscal/secef",
+            "permission": "fiscal.configure",
+            "color": "#0f766e"
+        },
         {
             "group": "FISCAL CONNECT",
             "label": "Tableau de bord fiscal",

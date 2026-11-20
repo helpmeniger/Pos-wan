@@ -120,6 +120,11 @@
       <?php if (feature('wholesale') && can('pos.wholesale')): ?><label><input type="checkbox" id="optWholesale"> Vente en gros</label><?php endif; ?>
       <label><input type="checkbox" id="optTicket" checked> TICKET</label>
       <label><input type="checkbox" id="optA4"> Facture A4</label>
+      <?php // MARWA SECEF CONNECT : le caissier choisit, vente par vente, une facture certifiée DGI ou une vente ordinaire
+      $fiscalChoice = App\Core\Addons::isActive('fiscal') && setting('fiscal_choix_caisse', 'toutes') === 'au_choix' && class_exists(Addons\Fiscal\Secef\Secef::class) && Addons\Fiscal\Secef\Secef::config()['actif'];
+      if ($fiscalChoice): $fiscalDefault = (bool) Addons\Fiscal\Secef\Secef::config()['case_cochee']; ?>
+      <label class="text-success fw-semibold" title="Facture certifiée par l'e-SECeF de la DGI (sinon : vente ordinaire)"><input type="checkbox" id="optFiscal" data-default="<?= $fiscalDefault ? '1' : '0' ?>" <?= $fiscalDefault ? 'checked' : '' ?>> Facture certifiée DGI</label>
+      <?php endif; ?>
     </div>
   </aside>
 </div>
@@ -148,6 +153,22 @@
   </div>
 </div>
 <?php endif; ?>
+
+<!-- ============ CERTIFICATION DGI (MARWA SECEF CONNECT) ============ -->
+<div class="modal fade" id="fiscalModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title"><i class="bi bi-patch-check"></i> Facture certifiée DGI</h5></div>
+    <div class="modal-body">
+      <div id="fiscalWait" class="text-center py-3"><div class="spinner-border text-success mb-2" role="status"></div><div class="fw-semibold">Certification sur l'e-SECeF en cours…</div><div class="small text-secondary">La vente est enregistrée. Ne fermez pas cette fenêtre (jusqu'à 2 minutes).</div></div>
+      <div id="fiscalDone" class="d-none"></div>
+    </div>
+    <div class="modal-footer d-none" id="fiscalActions">
+      <button class="btn btn-outline-secondary" id="fiscalRetry"><i class="bi bi-arrow-repeat"></i> Réessayer</button>
+      <button class="btn btn-outline-warning" id="fiscalPrintPlain"><i class="bi bi-printer"></i> Reçu NON CERTIFIÉ</button>
+      <button class="btn btn-success" id="fiscalClose">Fermer</button>
+    </div>
+  </div></div>
+</div>
 
 <!-- ============ MODALE PAIEMENT ============ -->
 <div class="modal fade" id="payModal" tabindex="-1" aria-hidden="true">

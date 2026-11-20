@@ -1,5 +1,5 @@
 <?php
-$tabs = [['dashboard', '/fiscal', 'bi-speedometer2', 'Tableau de bord', 'fiscal.view'], ['mcf', '/fiscal/connecteurs?type=mcf', 'bi-cpu', 'MCF', 'fiscal.view'],
+$tabs = [['dashboard', '/fiscal', 'bi-speedometer2', 'Tableau de bord', 'fiscal.view'], ['secef', '/fiscal/secef', 'bi-patch-check', 'MARWA SECEF CONNECT', 'fiscal.configure'], ['mcf', '/fiscal/connecteurs?type=mcf', 'bi-cpu', 'MCF', 'fiscal.view'],
     ['api', '/fiscal/connecteurs?type=api', 'bi-plug', 'API', 'fiscal.view'], ['countries', '/fiscal/pays', 'bi-globe2', 'Pays', 'fiscal.view'],
     ['profiles', '/fiscal/parametres', 'bi-sliders', 'Paramètres', 'fiscal.configure'], ['certs', '/fiscal/certificats', 'bi-file-earmark-lock', 'Certificats', 'fiscal.configure'],
     ['history', '/fiscal/historique', 'bi-clock-history', 'Historique', 'fiscal.view'], ['pending', '/fiscal/attente', 'bi-hourglass-split', 'En attente', 'fiscal.view'],

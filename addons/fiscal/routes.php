@@ -40,3 +40,23 @@ $router->get('/fiscal/journaux/{id}', [F::class, 'logDetail'], 'fiscal.logs');
 $router->get('/fiscal/documentation', [F::class, 'docs'], 'fiscal.view');
 // Notifications d'un service fiscal : authentifiées par jeton + signature HMAC dans le contrôleur
 $router->webhook('/fiscal/webhook/{id}', [Addons\Fiscal\WebhookController::class, 'receive']);
+
+// MARWA SECEF CONNECT (Niger, e-SECeF) : Paramètres → Certification fiscale
+use Addons\Fiscal\Secef\SecefController as S;
+
+$router->get('/fiscal/secef', [S::class, 'index'], 'fiscal.configure');
+$router->post('/fiscal/secef', [S::class, 'save'], 'fiscal.configure');
+$router->post('/fiscal/secef/autorisation', [S::class, 'authorize'], 'fiscal.secrets');
+$router->post('/fiscal/secef/acces', [S::class, 'saveAccess'], 'fiscal.secrets');
+$router->post('/fiscal/secef/jeton', [S::class, 'token'], 'fiscal.secrets');
+$router->post('/fiscal/secef/jeton/masquer', [S::class, 'hideToken'], 'fiscal.secrets');
+$router->post('/fiscal/secef/tester', [S::class, 'test'], 'fiscal.configure');
+$router->post('/fiscal/secef/deconnecter', [S::class, 'logout'], 'fiscal.configure');
+$router->get('/fiscal/secef/articles', [S::class, 'articles'], 'fiscal.configure');
+$router->post('/fiscal/secef/articles', [S::class, 'saveArticle'], 'fiscal.configure');
+$router->post('/fiscal/secef/articles/releve', [S::class, 'syncPortal'], 'fiscal.configure');
+$router->post('/fiscal/secef/articles/{id}/programmer', [S::class, 'programArticle'], 'fiscal.configure');
+$router->post('/fiscal/secef/categories', [S::class, 'saveCategories'], 'fiscal.configure');
+// Caisse : suivi de la certification d'une vente (droit de vendre)
+$router->post('/fiscal/ventes/{id}/certifier', [S::class, 'certifySale'], 'pos.sell');
+$router->get('/fiscal/ventes/{id}/etat', [S::class, 'saleStatus'], 'pos.sell');
