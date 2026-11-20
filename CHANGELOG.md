@@ -2,6 +2,19 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.15.0] — 2026-11-20
+
+### Ajouté — MARWA SECEF CONNECT (Niger, e-SECeF de la DGI)
+- **Caisse** : case « Facture certifiée DGI » (mode « au choix du caissier », ou toutes les ventes) ; la vente est enregistrée tout de suite, une fenêtre suit la certification ; le ticket est imprimé après le résultat (« Réessayer », « Reçu NON CERTIFIÉ »).
+- **Paramètres → Certification fiscale (MARWA SECEF CONNECT)** : activation, adresses du portail et du pont, compte e-SECeF (chiffré, jamais réaffiché), jeton du pont, test de connexion (première authentification), déconnexion, régime (IS, TVA, manuel) et règles de taxation, correspondance des modes de paiement, type et mode de prix, type de client, autorisation de la certification réelle (mot de passe + « CERTIFIER »), désactivée par défaut.
+- **Articles et taxes** : les 11 groupes de taxation de l'e-SFE (A–L), groupe par article ou par catégorie, relevé des articles programmés sur l'e-SFE et rapprochement par désignation, programmation sur l'e-SFE d'un article vendu en caisse qui n'y existe pas (à la demande, ou automatique en option). Stock toujours géré par POS Marwa.
+- **Pont local** `addons/fiscal/pont-secef` (Node.js + Playwright, Edge sous Windows) : 127.0.0.1 et jeton, une opération à la fois, registre anti-doublon (une facture dont CERTIFIER a pu partir n'est jamais renvoyée), écritures vers le portail bloquées sauf « programmer un article » et « CERTIFIER ».
+- **Reçu e-SECeF** (ticket 80 mm et A4) : Code SECeF/DGI, SECeF NIM, compteurs, heure, ISF, mention de vérification ; QR code seulement s'il vient du portail. Aucune référence inventée.
+- Documentation `documentation/marwa-secef/` (10 documents) ; module « fiscal » 1.1.0 (migration 0002, sans modification des tables existantes).
+
+### Non encore vérifié sur le portail
+- Certification réelle, PDF et QR officiels, modification de quantité dans le panier (voir `documentation/marwa-secef/RAPPORT_TESTS.md`).
+
 ## [3.14.0] — 2026-11-20
 
 ### Sécurité et licence
