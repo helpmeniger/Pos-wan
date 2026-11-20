@@ -46,3 +46,5 @@ storage/pay/
 storage/pay-sweep.lock
 addons/pay/bridge/bridge.json
 addons/pay/bridge/*.log
+# copie temporaire créée par les tests (tests/run.php)
+storage/installed.lock.bak
