@@ -106,25 +106,46 @@ pour un temps après plusieurs mots de passe erronés (message « Tentatives res
 
 Le compte exploré possède **un e-SECeF de type e-SFE, actif** (NIM au format `ES0101xxxx-1`), et aucun e-MCF.
 
-### Application e-SFE (`/esfe`) — non ouverte
+### Application e-SFE (`/esfe`) ✅ observée le 20/11/2026 (lecture seule)
 
-- Clic sur « e-SFE » → `POST /Manage/OpenEsfe` → `GET /esfe` → `/esfe/init?url=/pos` ; l'application
-  (Angular/Ionic) attend un jeton de session fourni par la page (`VAR_TOKEN`, durée annoncée 3 600 s).
-  Dans le navigateur d'exploration, **ce jeton est arrivé vide** : l'application reste sur l'écran de
-  démarrage (« No window token found »). Cause non déterminée (comportement du portail, session déjà ouverte
-  ailleurs, ou contrôle du navigateur) : **à vérifier par l'utilisateur dans son propre navigateur**.
-- L'application communique avec un service interne `/api/esfeapi/…` (init, items, invoices, postInvoice,
-  finalizeInvoice, reports, createReport…) **non documenté publiquement** : conformément aux règles de la
-  mission, il n'a pas été appelé ni reproduit.
-- Les écrans de facturation sont donc décrits d'après le **manuel officiel** (captures d'écran de la DGI),
-  pas d'après une observation directe.
+Ouverture : bouton vert « e-SFE » → `POST /Manage/OpenEsfe` → `/esfe` → `/esfe/init?url=/pos` → `/esfe/pos`.
+Le jeton de la page (`VAR_TOKEN`) est vide : c'est normal, l'application obtient sa session auprès du serveur
+au démarrage (`init`). Depuis l'environnement d'exploration, le chargement complet prend **2 à 3 minutes**
+(réseau lent) ; chez l'utilisateur, quelques secondes. Application Angular/Ionic, version **V.0.95**.
+
+Garde-fou de l'exploration : **toute requête d'écriture (autre que GET) vers `/api/` était bloquée par le
+navigateur d'exploration**. Lectures effectivement faites par l'application : `init`, `items`, `invoices`,
+`initReports`, `reports`. Aucun article créé, aucune facture enregistrée ni certifiée, aucun rapport créé.
+
+Menu supérieur : **ACCUEIL · FACTURES · ARTICLES · JOURNAL · RAPPORTS · CONFIGURATION · À PROPOS**, icône
+de sortie à droite.
+
+| Écran (URL) | Contenu observé | Actions | Utilité pour POS Marwa |
+|---|---|---|---|
+| **Accueil** (`/esfe/pos`) | « Bienvenue sur la plateforme de facturation en ligne e-SFE » ; **e-SECeF ID** (= NIM) ; cartes Factures, Articles, Journal, Rapports, Configuration | ÉMETTRE UNE FACTURE, GESTION DES ARTICLES, JOURNAL, RAPPORTS, CONFIGURATION | Contrôle que la session e-SFE est ouverte (texte d'accueil + NIM) |
+| **Factures** (`/esfe/pos/invoice`) | « Opérateur actuel : … » ; « Enregistrement d'une nouvelle facture » ; 6 types **FV, FT, FA, EV, ET, EA**, chacun avec **PRIX TTC** / **PRIX HT** | CHANGER D'OPÉRATEUR ; PRIX TTC / PRIX HT (ouvre le formulaire) | Point d'entrée d'une facture |
+| **Formulaire de facture** (même URL) | Bandeau « Type: FV, Mode: TTC » ; **1. Informations générales** (vendeur : nom, NIF, NIM, opérateur, adresse, contact) ; « Informations sur le client » (MODIFIER) ; **PRECOMPTE ISB** (liste « ISB sélectionné ») ; Commentaires (MODIFIER) ; **2. Articles** (recherche, liste des articles programmés « Désignation / Prix [groupe] / Actions », PROGRAMMER UN ARTICLE, pagination 10 par page) ; **Panier** (Désignation, Prix, Quantité, Montant [TTC], Actions) ; **Paiement** (liste) ; Total ; **3. Répartition** (« Répartition des impôts » : Groupe, Montant, HT, TVA) ; « Erreurs de facturation » ; « Facture non certifiée » | icône **sac +** (ajoute l'article au panier, quantité 1) ; icône **sac −** (retire) ; menu « trois barres » (modifier la ligne) ; **APERÇU** ; **CERTIFIER** ; **ANNULER** ; FERMER (facture vide) | Cœur de l'automatisation |
+| Fenêtre **client** | « Veuillez sélectionner le type de client » : **Personne physique / Personne morale** (obligatoire avant les champs), puis **NIF** (`tin`), **Nom** (`name`), **Adresse** (`address`), **Contact** (`contact`) | MODIFIER, fermer | Client POS → client de la facture |
+| Liste **ISB** | N/A · ISB 2% · ISB 5% | — | Précompte (client alors obligatoire) |
+| Liste **Paiement** | ESPECES · MOBILE MONEY · VIREMENT · CARTE BANCAIRE · CHEQUES · AUTRE 1 · AUTRE 2 | — | Correspondance des modes de paiement POS |
+| **Articles** (`/esfe/pos/items`) | « Gérer les articles programmés dans le e-SFE » ; tableau **Désignation · Groupe de taxation · Prix [TTC] · Prix [HT] · Mode · Taxe spécifique (T.S.) · Actions** ; pagination | CHERCHER ; PROGRAMMER UN ARTICLE ; supprimer (−) ; modifier (trois barres) | Correspondance article POS ↔ article programmé |
+| Fenêtre **Programmer l'article** | **Désignation** (`name`), **Code** (`code`), **Groupe de taxation** (`taxGroup`), **MODE TTC / MODE HT**, **Prix [TTC]** (`priceInc`) ou **Prix [HT]** (`priceExc`, grisé en mode TTC), **Taxe spécifique applicable** (`isTsApplicable`) | AJOUTER, fermer | Création d'un article manquant (action à confirmer par l'utilisateur) |
+| Liste **Groupe de taxation** | **[A] EXONERE · [B] TAXABLE 19% · [C] TAXABLE 10% · [D] TAXABLE 5% · [F] EXPORTATION · [G] TVA REGIME DEROGATOIRE · [H] REGIME IS · [I] CONSIGNATION D'EMBALLAGE · [J] DEPOTS · [K] DEBOURS · [L] TIMBRE** | Abandonner | Table de correspondance des taxes |
+| **Journal** (`/esfe/pos/journal-invoices`) | « Journal des factures — en commençant par les plus récentes » ; **Date de / Date à** (calendrier, aujourd'hui par défaut) ; champ Chercher ; « Affichage de n sur n résultats » | CHERCHER ; ouverture d'une facture | Retrouver une facture déjà certifiée (anti-doublon) |
+| **Rapports** (`/esfe/pos/reports`) | Rapports X/Z, Rapports périodiques, Rapports A ; « Historique des rapports » (dates, recherche) | CHERCHER (création non explorée) | Aucune action automatique (Z et A remettent à zéro) |
+| **Configuration** (`/esfe/pos/configuration`) | Information : Nom, NIF, RCCM, Point de vente, **ISF** (identifiant du système de facturation, du type `DGI-…`), **NIM**, Message commercial, Adresse, Contact ; « Mode des prix des articles par défaut » PRIX TTC / PRIX HT ; « Types de facture disponibles » : interrupteurs FV, FT, FA, EV, ET, EA | (sauvegarde non explorée) | Lecture des informations du vendeur pour le reçu |
+| **À propos** (`/esfe/pos/about`) | « Système de facturation e-SFE de la DGI Niger », version V.0.95 | — | Contrôle de version (détecter un changement du portail) |
+
+Essai local (bloqué côté serveur) : un article du groupe H ajouté au panier donne quantité 1, total = prix,
+répartition « **H - 0%** : Montant = HT, TVA 0 », bandeau « Facture non certifiée », boutons APERÇU,
+CERTIFIER, ANNULER. Facture vide : erreur « Le montant de la facture ne peut pas être 0… ».
 
 ## 6. Inconnus à lever en phase 2 (connecté)
 
-1. Liste réelle et taux des **groupes de taxation** (lettres, TVA, exonérations).
-2. Champs obligatoires réels de chaque écran et messages d'erreur.
-3. Comportement du bouton CERTIFIER (confirmation ? délai ? message ?), contenu exact du PDF et du QR code.
-4. Présence d'un OTP, durée de session (« Durée de la session »), déconnexion automatique.
+1. ~~Groupes de taxation~~ ✅ relevés (§ 7).
+2. Champs obligatoires : relevés pour les formulaires d'article, de client et de facture (`CHAMPS_OBLIGATOIRES.md`) ; messages d'erreur de certification : non observables sans certifier.
+3. Comportement du bouton CERTIFIER, contenu exact du PDF et du QR code : **non observés** (aucune certification faite) ; à relever sur le PDF d'une facture déjà certifiée fourni par l'utilisateur.
+4. ~~OTP~~ : aucun. Durée de la session e-SFE : 3 600 s annoncées par la page.
 5. Le menu « Test » produit-il des factures **non fiscales** ? (à confirmer avant tout essai de certification).
 7. **Documentation technique e-MCF** : le manuel (p. 41) indique qu'un éditeur de SFE la trouve dans la rubrique
    Documentation ; sur ce compte (e-SFE seulement), seule la notice utilisateur y figure.
