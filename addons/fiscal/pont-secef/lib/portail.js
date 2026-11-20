@@ -129,11 +129,17 @@ class Portail {
     }
     const ouvrir = p.locator('form[action="/Manage/OpenEsfe"] button, form[action="/Manage/OpenEsfe"] input[type=submit]');
     if (!(await ouvrir.count())) throw new EtatPortail('formulaire', 'Bouton « e-SFE » introuvable dans « Gérer les e-SECeF » (aucun e-SFE actif, ou portail modifié).');
-    await ouvrir.first().click();
-    try {
-      await this.attendreTexte(/Bienvenue sur la plateforme de facturation/, this.cfg.delaiChargement);
-    } catch (e) {
-      throw new EtatPortail('reseau', 'L\'application e-SFE ne s\'est pas chargée à temps.', true);
+    // Ouverture de l'e-SFE : une seconde tentative si l'application reste blanche (fichiers non reçus, réseau lent)
+    for (let essai = 1; ; essai++) {
+      await ouvrir.first().click();
+      try {
+        await this.attendreTexte(/Bienvenue sur la plateforme de facturation/, Math.round(this.cfg.delaiChargement / 2));
+        break;
+      } catch (e) {
+        if (essai >= 2) throw new EtatPortail('reseau', 'L\'application e-SFE ne s\'est pas chargée à temps.', true);
+        this.log('e-SFE non chargée : nouvelle tentative');
+        await p.goto(base + '/Manage', { waitUntil: 'domcontentloaded', timeout: 90000 }).catch(() => {});
+      }
     }
     this.log('application e-SFE ouverte');
     return { deja: false };
