@@ -12,7 +12,7 @@
 .m-ticket table.m-lignes .q { width: 2.6em; font-weight: 700; }
 .m-ticket .m-sub { font-size: .82em; color: #222; }
 .m-ticket .m-row { display: flex; justify-content: space-between; gap: 6px; }
-.m-ticket .m-net { display: flex; justify-content: space-between; align-items: baseline; font-size: 1.45em; font-weight: 800; margin: 4px 0; }
+.m-ticket .m-net { display: flex; flex-wrap: wrap; gap: 0 8px; justify-content: space-between; align-items: baseline; font-size: 1.45em; font-weight: 800; margin: 4px 0; }
 .m-ticket .m-solde { display: flex; justify-content: space-between; font-weight: 800; font-size: 1.15em; margin: 4px 0; }
 .m-ticket .m-credit { font-weight: 800; text-transform: uppercase; }
 .m-ticket .m-words { font-size: .85em; font-style: italic; margin: 2px 0 4px; }

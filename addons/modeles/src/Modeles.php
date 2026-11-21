@@ -129,11 +129,11 @@ final class Modeles
         foreach ($out as $k => $def) {
             [, $kind] = self::OPTIONS[$k];
             $v = $in[$k] ?? null;
+            if ($v === null) {
+                continue; // option absente (modèle prêt à l'emploi, fichier importé) : valeur par défaut
+            }
             if ($kind === 'bool') {
                 $out[$k] = ($v === '1' || $v === 1 || $v === true || $v === 'on') ? '1' : '0';
-                continue;
-            }
-            if ($v === null) {
                 continue;
             }
             $v = is_scalar($v) ? (string) $v : '';
@@ -448,10 +448,14 @@ final class Modeles
         if ($type === 'ticket') {
             $doc = \App\Services\Documents::saleTicket($s, $items, $payments, false);
         } else {
-            $doc = \App\Services\Documents::saleA4($s, $items, $payments, $kind === 'delivery' ? 'delivery' : 'invoice', true);
+            $doc = \App\Services\Documents::saleA4($s, $items, $payments, $kind === 'delivery' ? 'delivery' : 'invoice', $kind !== 'delivery');
             if ($kind === 'quote') {
+                // Devis fictif : pas de paiement, mentions du devis
                 $doc['title'] = t('DEVIS');
-                $doc['kind'] = 'quote';
+                $cut = array_search(true, array_map(fn($r) => !empty($r[2]), $doc['totals']), true);
+                $doc['totals'] = $cut === false ? $doc['totals'] : array_slice($doc['totals'], 0, $cut + 1);
+                $doc['words'] = t('Arrêté le présent devis à la somme de :') . ' ' . ucfirst(amount_words((float) $s['total'])) . ' ' . currency()['name'] . '.';
+                $doc['signatures'] = [t('Bon pour accord (client)'), t('Pour') . ' ' . setting('company_name')];
             }
         }
         $doc['customer_balance'] = 25000.0;

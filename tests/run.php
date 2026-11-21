@@ -5257,7 +5257,7 @@ test('Module Modèles de documents : mises en page, personnalisation, choix par 
     eq([], $M::assignments(), 'aucun modèle affecté à l\'installation : documents inchangés');
     // Options : listes fermées, couleur contrôlée, textes bornés
     $n = $M::normalize('ticket', 'encadre', ['police' => 'x;}body{', 'taille' => '999', 'slogan' => str_repeat('a', 200), 'qr' => 'on', 'logo' => null]);
-    eq(['serif', '100', 80, '1', '0'], [$n['police'], $n['taille'], mb_strlen($n['slogan']), $n['qr'], $n['logo']], 'valeurs invalides remplacées, texte coupé');
+    eq(['serif', '100', 80, '1', '1', '0'], [$n['police'], $n['taille'], mb_strlen($n['slogan']), $n['qr'], $n['logo'], $M::normalize('ticket', 'encadre', ['logo' => '0'])['logo']], 'valeurs invalides remplacées, texte coupé, option absente = valeur par défaut');
     eq('#14213d', $M::normalize('a4', 'encadre', ['couleur' => 'red;}*{display:none'])['couleur'], 'couleur invalide refusée');
     ok(!array_key_exists('couleur', $M::defaults('ticket', 'encadre')) && !array_key_exists('separateur', $M::defaults('a4', 'lateral')), 'options propres au ticket ou à l\'A4');
     throws(fn() => $M::save(null, '', 'ticket', 'encadre', []), 'nom');
@@ -5306,7 +5306,7 @@ test('Module Modèles de documents : mises en page, personnalisation, choix par 
     eq($paidTotal, money(DB::value('SELECT total FROM sales WHERE id = ?', [$paid['sale_id']])), 'montant de la vente inchangé');
     // A4 : facture encadrée avec filigrane, devis à bandeau, bon de livraison A5
     $fid = $id('Facture encadrée');
-    $a->req('POST', "$B/modeles/$fid", http_build_query(['_csrf' => $csrf, 'nom' => 'Facture encadrée', 'base' => 'encadre', 'o' => ['filigrane' => 'PAYÉ', 'couleur' => '#7c3aed', 'signature' => '1']]));
+    $a->req('POST', "$B/modeles/$fid", http_build_query(['_csrf' => $csrf, 'nom' => 'Facture encadrée', 'base' => 'encadre', 'o' => ['filigrane' => 'PAYÉ', 'couleur' => '#7c3aed', 'signature' => '1', 'montant_lettres' => '1', 'logo' => '1', 'adresse' => '1', 'nif' => '1', 'qr' => '1', 'solde_client' => '1']]));
     $f = $get("/sales/{$paid['sale_id']}/invoice")['body'];
     ok(str_contains($f, 'm-a4-encadre') && str_contains($f, 'data-filigrane="PAYÉ"') && str_contains($f, '#7c3aed') && str_contains($f, 'Arrêtée la présente facture'), 'facture encadrée : filigrane, couleur, montant en lettres');
     ok(str_contains($get("/sales/{$paid['sale_id']}/delivery")['body'], '@page{size:A5'), 'bon de livraison en A5');

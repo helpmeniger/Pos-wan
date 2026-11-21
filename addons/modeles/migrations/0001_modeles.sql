@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS doc_modeles (
 -- Modèles prêts à l'emploi (aucun n'est affecté : les documents ne changent qu'après votre choix).
 INSERT IGNORE INTO doc_modeles (nom, type, base, options) VALUES
 ('Ticket encadré à colonnes', 'ticket', 'encadre', '{}'),
-('Ticket de vente à crédit (solde créance)', 'ticket', 'encadre', '{"titre":"Ticket","libelle_total":"NET À PAYER","solde_client":"1","signature":"1","conditions":"Je reconnais devoir la somme ci-dessus."}'),
+('Ticket de vente à crédit (solde créance)', 'ticket', 'encadre', '{"solde_client":"1","signature":"1","conditions":"Je reconnais devoir la somme ci-dessus."}'),
 ('Ticket tableau à colonnes', 'ticket', 'colonnes', '{}'),
 ('Ticket économique', 'ticket', 'economique', '{}'),
 ('Ticket grands caractères', 'ticket', 'grand', '{}'),
