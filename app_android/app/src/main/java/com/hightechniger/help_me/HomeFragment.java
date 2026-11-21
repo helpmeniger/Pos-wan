@@ -279,10 +279,10 @@ public class HomeFragment extends Fragment implements SensorEventListener {
     private View quickActions() {
         LinearLayout row = Ui.row(context);
         row.setPadding(Ui.dp(context, 12), 0, Ui.dp(context, 12), 0);
-        row.addView(quick("Scanner", "un code du manuel", R.drawable.ic_m_scan, Ui.BRAND, MainActivity8.class));
+        row.addView(quick("Scanner", "un code", R.drawable.ic_m_scan, Ui.BRAND, MainActivity8.class));
         row.addView(quick("Assistant", "hors ligne", R.drawable.ic_m_chat, Color.parseColor("#6A4FC2"), AIChatActivity.class));
         row.addView(quick("Quiz", "testez-vous", R.drawable.ic_m_quiz, Color.parseColor("#0F8A5F"), QuizActivity.class));
-        row.addView(quick("Manuel", "version PDF", R.drawable.ic_m_ressources, Color.parseColor("#C43E1C"), MainActivity6.class));
+        row.addView(quick("Manuel", "en PDF", R.drawable.ic_m_ressources, Color.parseColor("#C43E1C"), MainActivity6.class));
         return row;
     }
 

@@ -12,7 +12,7 @@ import com.google.zxing.integration.android.IntentResult;
 
 /**
  * Scanner des codes-barres du manuel.
- * Tous les codes (28 d'origine + 35 nouveaux) ouvrent la fiche de leçon (LessonActivity),
+ * Chaque code du manuel ouvre la leçon complète (LessonReaderActivity) ; un code inconnu ouvre LessonActivity,
  * qui lit assets/lessons.json et joue la vidéo correspondante si elle existe.
  */
 public class MainActivity8 extends AppCompatActivity {
@@ -50,9 +50,15 @@ public class MainActivity8 extends AppCompatActivity {
         }
         // Code 39 : certains lecteurs renvoient les astérisques de début et de fin
         String code = result.getContents().replace("*", "").trim();
-        Intent i = new Intent(this, LessonActivity.class);
-        i.putExtra(LessonActivity.EXTRA_CODE, code);
-        startActivity(i);
+        // le code ouvre directement la leçon complète du manuel ; sinon la fiche du code
+        com.hightechniger.help_me.ui.Course.Lesson lesson = com.hightechniger.help_me.ui.Course.get(this).byCode(code);
+        if (lesson != null) {
+            LessonReaderActivity.open(this, lesson.id);
+        } else {
+            Intent i = new Intent(this, LessonActivity.class);
+            i.putExtra(LessonActivity.EXTRA_CODE, code);
+            startActivity(i);
+        }
         finish();
     }
 

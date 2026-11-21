@@ -40,7 +40,14 @@ public class LeaderboardActivity extends AppCompatActivity {
         // ---------------------------------------------------
         // Récupérer mes informations personnelles
         // ---------------------------------------------------
-        myUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        com.google.firebase.auth.FirebaseUser me = FirebaseAuth.getInstance().getCurrentUser();
+        if (me == null) {   // session expirée : retour à la connexion au lieu d'un plantage
+            android.widget.Toast.makeText(this, "Connectez-vous pour voir le classement.", android.widget.Toast.LENGTH_SHORT).show();
+            startActivity(new android.content.Intent(this, Login.class));
+            finish();
+            return;
+        }
+        myUid = me.getUid();
 
         DatabaseReference meRef = FirebaseDatabase.getInstance()
                 .getReference("users")

@@ -16,6 +16,7 @@ if (secretsFile.exists()) secretsFile.withInputStream { secrets.load(it) }
 def secret = { String k -> '"' + (secrets.getProperty(k, '')) + '"' }
 
 android {
+    testOptions { unitTests { includeAndroidResources = true; all { maxHeapSize = '3g' } } }
     namespace 'com.hightechniger.help_me'
     compileSdk 35
 
@@ -85,6 +86,8 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.11.0'
 
     testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.14.1'   // captures d'écran des écrans (ScreensTest)
+    testImplementation 'androidx.test:core:1.6.1'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 }

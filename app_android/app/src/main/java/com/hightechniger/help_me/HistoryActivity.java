@@ -148,7 +148,9 @@ public class HistoryActivity extends AppCompatActivity {
         card.setLayoutParams(cardLp);
         card.setUseCompatPadding(true);
         card.setRadius(dp(14));
-        card.setCardElevation(dp(6));
+        card.setCardElevation(dp(1));
+        card.setStrokeColor(0xFFE2E7EF);
+        card.setStrokeWidth(dp(1));
 
         LinearLayout wrap = new LinearLayout(this);
         wrap.setOrientation(LinearLayout.VERTICAL);
@@ -157,8 +159,9 @@ public class HistoryActivity extends AppCompatActivity {
 
         // Titre ligne
         TextView title = new TextView(this);
-        title.setText("Catégorie : " + category);
-        title.setTextSize(18);
+        title.setText(category);
+        title.setTextSize(17);
+        title.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
         title.setTextColor(getColor(android.R.color.black));
         wrap.addView(title);
 
@@ -170,19 +173,19 @@ public class HistoryActivity extends AppCompatActivity {
         wrap.addView(line);
 
         TextView tAns = new TextView(this);
-        tAns.setText("Répondu: " + answered);
+        tAns.setText("Répondues : " + answered);
         tAns.setTextColor(getColor(android.R.color.black));
         tAns.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         line.addView(tAns);
 
         TextView tCor = new TextView(this);
-        tCor.setText("Bonnes: " + correct);
+        tCor.setText("Bonnes : " + correct);
         tCor.setTextColor(getColor(android.R.color.holo_blue_dark));
         tCor.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         line.addView(tCor);
 
         TextView tTot = new TextView(this);
-        tTot.setText("Total: " + total);
+        tTot.setText("Total : " + total);
         tTot.setTextColor(getColor(android.R.color.darker_gray));
         tTot.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         line.addView(tTot);
@@ -192,12 +195,13 @@ public class HistoryActivity extends AppCompatActivity {
         int max = Math.max(1, total); // base: total questions de la catégorie
         rowPb.setMax(max);
         rowPb.setProgress(Math.min(correct, max));
+        rowPb.setProgressTintList(android.content.res.ColorStateList.valueOf(0xFF1E9E62));
         wrap.addView(rowPb);
 
         // Label %
         TextView ratio = new TextView(this);
         float pct = (total == 0) ? 0f : (correct * 100f / total);
-        ratio.setText(String.format(Locale.getDefault(), "Progression: %.0f%%", pct));
+        ratio.setText(String.format(Locale.getDefault(), "Progression : %.0f %%", pct));
         ratio.setTextColor(getColor(android.R.color.black));
         ratio.setPadding(0, dp(6), 0, 0);
         wrap.addView(ratio);

@@ -30,7 +30,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="REMPLISEZ LE FORMULAIRE POUR OBTENIR VOTRE ATTESTATION"
+                    android:text="Remplissez le formulaire pour obtenir votre attestation"
                     android:textAlignment="center"
                     android:textSize="20sp"
                     android:textStyle="bold"
@@ -203,11 +203,20 @@
 
 
             <!-- Description longue -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:lineSpacingMultiplier="1.25"
+                android:textColor="@color/premium_ink"
+                android:textSize="15sp"
+                android:text="Répondez à ces trois questions :\n1. Avez-vous parcouru et compris les leçons ?\n2. Pensez-vous avoir acquis des compétences pratiques ?\n3. Êtes-vous prêt pour un examen de validation ?" />
+
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:hint="Répondez aux questions :"
+                android:hint="Vos réponses"
                 app:startIconTint="@color/premium_gold"
                 app:boxBackgroundMode="outline"
                 app:boxStrokeColor="@color/premium_gold"
@@ -228,8 +237,7 @@
                     android:scrollbars="vertical"
                     android:paddingVertical="14dp"
                     android:textColor="@color/premium_ink"
-                    android:textCursorDrawable="@null"
-                    android:hint="1️⃣ Avez-vous parcouru et compris les leçons ?\n\n2️⃣ Pensez-vous avoir acquis des compétences pratiques ?\n\n3️⃣ Êtes-vous prêt pour un examen de validation ?" />
+                    android:textCursorDrawable="@null" />
             </com.google.android.material.textfield.TextInputLayout>
 
 

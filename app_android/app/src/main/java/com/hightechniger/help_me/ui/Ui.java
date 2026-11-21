@@ -138,6 +138,7 @@ public final class Ui {
         TextView t = text(c, s, 12, fg, true);
         t.setBackground(rounded(c, bg, 20));
         t.setPadding(dp(c, 10), dp(c, 3), dp(c, 10), dp(c, 3));
+        t.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         return t;
     }
 

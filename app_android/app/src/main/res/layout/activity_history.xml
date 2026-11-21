@@ -1,174 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Historique et progression des quiz -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@color/black">
+    android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F4F6FA">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingBottom="24dp">
 
-    <LinearLayout
-        android:orientation="vertical"
-        android:padding="20dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:background="@drawable/hm_header" android:orientation="vertical"
+            android:paddingHorizontal="20dp" android:paddingTop="28dp" android:paddingBottom="40dp">
+            <TextView style="@style/HM.HeaderTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Ma progression aux quiz" />
+            <TextView android:id="@+id/tvGlobalRatio" style="@style/HM.HeaderSub" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Réussite globale : 0 %" />
+        </LinearLayout>
 
-        <TextView
-            android:text="📊 Historique et Progression"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="@color/on_primary"
-            android:layout_marginBottom="12dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp" android:layout_marginTop="-24dp" android:background="@drawable/hm_card"
+            android:elevation="3dp" android:orientation="vertical" android:padding="18dp">
+            <TextView style="@style/HM.Muted" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Bonnes réponses" />
+            <ProgressBar android:id="@+id/pbCorrect" style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginTop="6dp"
+                android:progressTint="#1E9E62" android:progressBackgroundTint="#D8EFE3" />
+            <TextView style="@style/HM.Muted" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="14dp" android:text="Mauvaises réponses" />
+            <ProgressBar android:id="@+id/pbWrong" style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginTop="6dp"
+                android:progressTint="#D64545" android:progressBackgroundTint="#F6DADA" />
+            <TextView android:id="@+id/tvEval" style="@style/HM.Body" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="14dp"
+                android:text="Commencez un quiz pour voir votre évaluation." />
+        </LinearLayout>
 
-        <!-- Résumé global -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:padding="16dp"
-            android:background="@color/white"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="8dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp" android:layout_marginTop="12dp" android:background="@drawable/hm_card"
+            android:orientation="vertical" android:padding="18dp">
+            <TextView android:id="@+id/tvAnswered" style="@style/HM.Title" android:textSize="17sp"
+                android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Questions répondues : 0" />
+            <TextView android:id="@+id/tvScoreHist" style="@style/HM.Body" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:layout_marginTop="6dp" android:textColor="#1E9E62" android:text="Bonnes réponses : 0" />
+            <TextView android:id="@+id/tvWrong" style="@style/HM.Body" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:textColor="#D64545" android:text="Mauvaises réponses : 0" />
+            <TextView android:id="@+id/tvLeft" style="@style/HM.Muted" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="Questions restantes : 0" />
+        </LinearLayout>
 
-            <LinearLayout
-                android:background="@color/lavender"
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:id="@+id/tvGlobalRatio"
-                    android:text="Réussite globale: 0%"
-                    android:textStyle="bold"
-                    android:textColor="@color/white"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="8dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-
-                <LinearLayout
-                    android:orientation="horizontal"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <LinearLayout
-                        android:orientation="vertical"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:paddingRight="8dp">
-
-                        <TextView
-                            android:text="Bonnes réponses"
-                            android:textColor="@color/black"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"/>
-
-                        <ProgressBar
-                            android:id="@+id/pbCorrect"
-                            style="?android:attr/progressBarStyleHorizontal"
-                            android:layout_width="match_parent"
-                            android:layout_height="10dp"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:orientation="vertical"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:paddingLeft="8dp">
-
-                        <TextView
-                            android:text="Mauvaises réponses"
-                            android:textColor="@color/black"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"/>
-
-                        <ProgressBar
-                            android:id="@+id/pbWrong"
-                            style="?android:attr/progressBarStyleHorizontal"
-                            android:layout_width="match_parent"
-                            android:layout_height="10dp"/>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tvEval"
-                    android:text="Ton évaluation apparaîtra ici."
-                    android:textColor="@color/light_gray"
-                    android:layout_marginTop="10dp"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Tableau résumé chiffres -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:padding="16dp"
-            android:background="@color/white"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="8dp">
-
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:background="@color/accent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:id="@+id/tvAnswered"
-                    android:text="Questions répondues : 0"
-                    android:textColor="@color/light_gray"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-
-                <TextView
-                    android:id="@+id/tvScoreHist"
-                    android:text="Bonnes réponses : 0"
-                    android:textColor="@color/black"
-                    android:textSize="16sp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-
-                <TextView
-                    android:id="@+id/tvWrong"
-                    android:text="Mauvaises réponses : 0"
-                    android:textColor="@color/black"
-                    android:textSize="16sp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-
-                <TextView
-                    android:id="@+id/tvLeft"
-                    android:text="Questions restantes : 0"
-                    android:textColor="@color/black"
-                    android:textSize="16sp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Tableau des catégories (rempli dynamiquement) -->
-        <TextView
-            android:text="Progression par catégorie"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:textColor="@color/white"
-            android:layout_marginBottom="8dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <LinearLayout
-            android:id="@+id/categoryContainer"
-            android:orientation="vertical"
-            android:background="@color/chip_bg"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
+        <TextView style="@style/HM.Title" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginStart="20dp" android:layout_marginTop="22dp" android:text="Par catégorie" />
+        <LinearLayout android:id="@+id/categoryContainer" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginTop="6dp"
+            android:orientation="vertical" />
     </LinearLayout>
 </ScrollView>

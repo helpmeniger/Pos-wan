@@ -37,3 +37,17 @@ Prérequis : JDK 17 ou 21, SDK Android (plateforme 35). Puis, à la racine de ce
 
 Régénérer les données du manuel et de l'assistant (à la racine du dépôt) :
 `python3 app_update/tools/export_manuel.py && python3 app_update/tools/build_brain.py`.
+
+## Refonte des écrans (novembre 2026)
+
+- **Cours** : `assets/course.json` (9 modules, 128 leçons) produit par `app_update/tools/export_cours.py` à partir du manuel :
+  chaque leçon reprend le texte, les étapes, les tableaux, les encadrés, les exercices et les **63 figures du manuel**
+  (`res/drawable-nodpi/fig_*.webp`, flèches et annotations conservées).
+- **Nouveaux écrans** : accueil (progression, reprendre, recherche, accès rapides, modules), `ModuleActivity`,
+  `LessonReaderActivity` (lecture à voix haute, favoris, « J’ai compris », leçon suivante), `TipsActivity`
+  (astuce du jour à faire glisser, fiches par thème), `ShortcutChallengeActivity` (défi chronométré de 78 raccourcis).
+- **Scan** : chaque code-barres ouvre directement la leçon complète du manuel.
+- **Système de design** : `ui/Ui.java` (couleurs, formes, animations), `res/values/styles_hm.xml`, icônes `ic_m_*`.
+- Écrans harmonisés : inscription, carnet de notes, nom, score, historique, certificat, mises à jour, menu.
+- Captures d’écran : dossier `captures/` (générées par `ScreensTest` avec Robolectric :
+  `./gradlew testDebugUnitTest --tests '*ScreensTest*'`).

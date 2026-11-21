@@ -1,27 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/hm_header" android:gravity="center" android:orientation="vertical" android:padding="24dp">
 
-    <TextView
-        android:id="@+id/tvResult"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Résultat"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:paddingBottom="24dp"/>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnRestart"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Rejouer"
-        app:cornerRadius="16dp"
-        android:textAllCaps="false"/>
-
+    <ImageView android:layout_width="96dp" android:layout_height="96dp"
+        android:background="@drawable/chat_avatar_bg" android:padding="24dp"
+        android:src="@drawable/ic_m_star" android:contentDescription="Résultat" />
+    <TextView style="@style/HM.HeaderTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="20dp" android:text="Quiz terminé" />
+    <TextView android:id="@+id/tvResult" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="10dp" android:gravity="center" android:textColor="#FFFFFF"
+        android:textSize="22sp" android:fontFamily="sans-serif-medium" android:text="Résultat" />
+    <TextView style="@style/HM.HeaderSub" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="6dp" android:gravity="center"
+        android:text="Chaque essai vous fait progresser. Revoyez les leçons puis rejouez." />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnRestart" style="@style/HM.Button"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="32dp"
+        android:backgroundTint="#FFFFFF" android:textColor="#1F4F96" android:text="Rejouer" />
 </LinearLayout>

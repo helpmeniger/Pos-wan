@@ -34,6 +34,7 @@ public final class Course {
 
     public static final class Lesson {
         public String id, title, summary, code, kind;
+        public final List<String> codes = new ArrayList<>();
         public int minutes, exercises, index;
         public Module module;
         public Section section;
@@ -97,6 +98,9 @@ public final class Course {
                     l.title = lo.getString("title");
                     l.summary = lo.optString("summary");
                     l.code = lo.has("code") ? lo.getString("code") : null;
+                    JSONArray cs = lo.optJSONArray("codes");
+                    if (cs != null) for (int q = 0; q < cs.length(); q++) l.codes.add(cs.getString(q));
+                    else if (l.code != null) l.codes.add(l.code);
                     l.kind = lo.optString("kind", "lecon");
                     l.minutes = lo.optInt("minutes", 2);
                     l.exercises = lo.optInt("exercises", 0);
@@ -143,7 +147,7 @@ public final class Course {
 
     /** Leçon associée à un code-barres du manuel (pour la recherche et le scan). */
     public Lesson byCode(String code) {
-        for (Module m : modules) for (Lesson l : m.lessons) if (code.equals(l.code)) return l;
+        for (Module m : modules) for (Lesson l : m.lessons) if (l.codes.contains(code)) return l;
         return null;
     }
 

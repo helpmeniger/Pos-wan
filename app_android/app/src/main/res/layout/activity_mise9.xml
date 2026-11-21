@@ -1,42 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="16dp">
-
-    <!-- Barre de progression pour le chargement -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="visible"
-        android:indeterminate="true"
-        style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
-        android:backgroundTint="@color/lavender"/>
-
-    <!-- Texte pour afficher le titre -->
-    <TextView
-        android:id="@+id/tvTitle09"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Recherche de nouvelle mise à jour de Help-me"
-        android:textSize="18sp"
-        android:gravity="center"
-        android:padding="16dp"
-        android:visibility="gone" />
-
-    <!-- Bouton de téléchargement -->
-    <Button
-        android:id="@+id/btnUpdate"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Télécharger la mise à jour"
-        android:textColor="@color/white"
-        android:layout_marginTop="16dp"
-        android:background="@color/lavender"
-        />
-
+<!-- Mises à jour de l'application -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="#F4F6FA" android:gravity="center" android:orientation="vertical" android:padding="24dp">
+    <ImageView android:layout_width="88dp" android:layout_height="88dp" android:background="@drawable/chat_avatar_bg"
+        android:padding="22dp" android:src="@drawable/ic_chat_refresh" android:contentDescription="Mise à jour" />
+    <TextView android:id="@+id/tvTitle09" style="@style/HM.Title" android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:layout_marginTop="20dp" android:gravity="center"
+        android:text="Recherche d’une nouvelle version de HELP-ME…" />
+    <TextView style="@style/HM.Muted" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="6dp" android:gravity="center"
+        android:text="Les mises à jour apportent de nouvelles leçons et des corrections." />
+    <ProgressBar android:id="@+id/progressBar" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="24dp" android:indeterminateTint="#326FBF" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnUpdate" style="@style/HM.Button"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24dp"
+        android:text="Télécharger la mise à jour" android:visibility="gone" />
 </LinearLayout>

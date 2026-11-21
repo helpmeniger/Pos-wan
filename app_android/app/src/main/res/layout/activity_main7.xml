@@ -1,68 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Carnet de notes de l'apprenant -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    tools:context=".MainActivity7">
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="#F4F6FA" android:orientation="vertical">
 
-    <EditText
-        android:id="@+id/titleEditText"
-        android:layout_width="match_parent"
-        android:background="@drawable/edittext_bg"
-        android:layout_height="46dp"
-        android:paddingLeft="10dp"
-        android:textColor="@color/lavender"
-        android:hint="Titre"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="@drawable/hm_header" android:orientation="vertical"
+        android:paddingHorizontal="20dp" android:paddingTop="28dp" android:paddingBottom="22dp">
+        <TextView style="@style/HM.HeaderTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Mon carnet de notes" />
+        <TextView style="@style/HM.HeaderSub" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="2dp" android:text="Notez ce que vous apprenez : vos notes restent sur ce téléphone." />
+    </LinearLayout>
 
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Déscription"
-        android:layout_marginTop="16dp"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        android:background="@drawable/edittext_bg"
-        android:textColor="@color/lavender"
-        android:inputType="textMultiLine"
-        android:minLines="5"
-        android:id="@+id/contentEditText"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp" android:layout_marginTop="14dp" android:background="@drawable/hm_card"
+        android:elevation="2dp" android:orientation="vertical" android:padding="14dp">
+        <com.google.android.material.textfield.TextInputLayout style="@style/HM.Field"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Titre">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/titleEditText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="textCapSentences" android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout style="@style/HM.Field"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:hint="Ma note">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/contentEditText"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="top" android:inputType="textMultiLine|textCapSentences" android:minLines="3" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.button.MaterialButton android:id="@+id/saveButton" style="@style/HM.Button"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp"
+            android:text="Enregistrer la note" />
+    </LinearLayout>
 
-    <Button
-        android:id="@+id/saveButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-
-        android:background="@drawable/corner_btn"
-        android:backgroundTint="@color/lavender"
-        android:text="Valider"
-
-        android:textColor="@color/white" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="18dp"
-        android:text="Notes:"
-        android:textColor="@color/primaryTextColor"
-        android:layout_marginTop="16dp"
-        android:textStyle="bold"
-        android:id="@+id/notesTextView"/>
-
-    <ScrollView
-        android:id="@+id/notesScrollView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <LinearLayout
-            android:id="@+id/notesContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-
+    <TextView android:id="@+id/notesTextView" style="@style/HM.Title" android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:layout_marginStart="20dp" android:layout_marginTop="20dp"
+        android:text="Mes notes" />
+    <ScrollView android:id="@+id/notesScrollView" android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:clipToPadding="false" android:paddingBottom="16dp">
+        <LinearLayout android:id="@+id/notesContainer" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="16dp" />
     </ScrollView>
-
 </LinearLayout>

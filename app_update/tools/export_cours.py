@@ -320,7 +320,7 @@ def main():
     figs = Figures()
     codes = {}
     for l in json.loads(LESSONS.read_text(encoding="utf-8")):
-        codes.setdefault(norm(l["titre"]), l["code"])
+        codes.setdefault(norm(l["titre"]), []).append(l["code"])
 
     modules = {m[0]: {"id": m[0], "title": m[1], "subtitle": m[2], "color": m[3], "icon": m[4], "sections": []}
                for m in MODULES}
@@ -335,9 +335,10 @@ def main():
             if el.name == "h2" and "lesson" in (el.get("class") or []):
                 title = clean_text(re.sub(r"^\s*\d+\.\s*", "", el.get_text(" ")))
                 cur = {"id": f"{mid}-{len(lessons) + 1:02d}", "title": title, "blocks": []}
-                code = codes.get(norm(title))
-                if code:
-                    cur["code"] = code
+                cl = codes.get(norm(title))
+                if cl:
+                    cur["code"] = cl[0]          # code affiché
+                    cur["codes"] = cl            # tous les codes-barres du chapitre (scan)
                 lessons.append(cur)
             elif cur is not None:
                 cur["blocks"] += blocks_of(el, figs)

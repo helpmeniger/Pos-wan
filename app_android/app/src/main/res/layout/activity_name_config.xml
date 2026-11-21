@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="32dp"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="#F4F6FA" android:orientation="vertical">
 
-    <TextView
-        android:text="Entrez votre nom"
-        android:textSize="24sp"
-        android:textColor="@color/lavender"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="@drawable/hm_header" android:orientation="vertical"
+        android:paddingHorizontal="24dp" android:paddingTop="40dp" android:paddingBottom="36dp">
+        <TextView style="@style/HM.HeaderTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Comment vous appelez-vous ?" />
+        <TextView style="@style/HM.HeaderSub" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" android:text="Votre nom apparaîtra dans le classement des quiz." />
+    </LinearLayout>
 
-    <EditText
-        android:id="@+id/etName"
-        android:hint="Votre nom"
-        android:layout_marginTop="16dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-    <Button
-        android:id="@+id/btnSave"
-        android:text="Enregistrer"
-        android:layout_marginTop="24dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_margin="20dp" android:background="@drawable/hm_card" android:elevation="2dp"
+        android:orientation="vertical" android:padding="20dp">
+        <com.google.android.material.textfield.TextInputLayout style="@style/HM.Field"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Votre nom" app:startIconDrawable="@drawable/ic_person_24">
+            <com.google.android.material.textfield.TextInputEditText android:id="@+id/etName"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="textPersonName|textCapWords" android:maxLength="30" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnSave" style="@style/HM.Button"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="18dp" android:text="Enregistrer et commencer" />
+    </LinearLayout>
 </LinearLayout>

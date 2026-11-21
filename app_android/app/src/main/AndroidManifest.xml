@@ -117,7 +117,7 @@
         <activity
             android:name=".MiseActivity9"
             android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
+            android:theme="@style/Theme.HelpMe.Chat" />
         <activity
             android:name=".WordActivity9"
             android:exported="false"
@@ -144,7 +144,7 @@
         <activity
             android:name=".MainActivity7"
             android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
+            android:theme="@style/Theme.HelpMe.Chat" />
         <activity
             android:name=".MainActivity5"
             android:exported="false"
@@ -165,7 +165,7 @@
             android:name=".Register"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
+            android:theme="@style/Theme.HelpMe" />
         <activity
             android:name=".Login"
             android:exported="true"
