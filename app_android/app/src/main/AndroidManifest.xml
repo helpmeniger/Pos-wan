@@ -85,6 +85,11 @@
             android:name=".QuizActivity"
             android:exported="false"
             android:theme="@style/Theme.HelpMe" />
+        <activity android:name=".ModuleActivity" android:exported="false" android:theme="@style/Theme.HelpMe.Chat" />
+        <activity android:name=".LessonReaderActivity" android:exported="false" android:theme="@style/Theme.HelpMe.Chat" />
+        <activity android:name=".TipsActivity" android:exported="false" android:theme="@style/Theme.HelpMe.Chat" />
+        <activity android:name=".ShortcutChallengeActivity" android:exported="false" android:theme="@style/Theme.HelpMe.Chat"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".AIChatActivity"
             android:exported="false"
@@ -114,24 +119,9 @@
             android:exported="false"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
         <activity
-            android:name=".AstuceActivity9"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
-        <activity
-            android:name=".PointActivity9"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
-        <activity
-            android:name=".ExcelActivity9"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
-        <activity
             android:name=".WordActivity9"
             android:exported="false"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
-        <activity
-            android:name=".DetailActivity"
-            android:exported="false" />
         <activity
             android:name=".WebViewActivity"
             android:exported="false" />
@@ -160,10 +150,6 @@
             android:exported="false"
             android:screenOrientation="landscape"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
-        <activity
-            android:name=".MainActivity4"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -191,10 +177,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".MainActivity3"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
         <activity
             android:name=".MainActivity2"
             android:exported="false"
