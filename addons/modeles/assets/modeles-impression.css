@@ -1,0 +1,85 @@
+/* Modèles de documents — mises en page du module (incluses dans la page d'impression). */
+.m-ticket .m-sep { margin: 4px 0; }
+.m-ticket .m-head { text-align: center; }
+.m-ticket .m-head .t-company { font-size: 1.35em; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
+.m-ticket .m-head .m-slogan { font-style: italic; }
+.m-ticket .m-numero { text-align: center; font-weight: 800; margin: 6px 0; letter-spacing: .04em; }
+.m-ticket .m-numero.m-cadre { border: 1.5px solid #000; padding: 4px 2px; }
+.m-ticket table.m-info td { padding: 1px 0; }
+.m-ticket table.m-info td:first-child { font-weight: 700; padding-right: 4px; }
+.m-ticket table.m-lignes th { font-size: .9em; text-align: left; padding: 2px 0; }
+.m-ticket table.m-lignes td { padding: 2px 0; vertical-align: top; }
+.m-ticket table.m-lignes .q { width: 2.6em; font-weight: 700; }
+.m-ticket .m-sub { font-size: .82em; color: #222; }
+.m-ticket .m-row { display: flex; justify-content: space-between; gap: 6px; }
+.m-ticket .m-net { display: flex; justify-content: space-between; align-items: baseline; font-size: 1.45em; font-weight: 800; margin: 4px 0; }
+.m-ticket .m-solde { display: flex; justify-content: space-between; font-weight: 800; font-size: 1.15em; margin: 4px 0; }
+.m-ticket .m-credit { font-weight: 800; text-transform: uppercase; }
+.m-ticket .m-words { font-size: .85em; font-style: italic; margin: 2px 0 4px; }
+.m-ticket .m-sign { display: flex; gap: 8px; margin: 8px 0 4px; }
+.m-ticket .m-sign div { flex: 1; border-top: 1px solid #000; padding-top: 16px; text-align: center; font-size: .8em; }
+.m-ticket .m-sign div span { display: block; margin-top: -14px; }
+.m-ticket .m-cond { font-size: .82em; text-align: center; margin: 4px 0; }
+.m-ticket .m-merci { text-align: center; font-weight: 700; font-style: italic; margin: 6px 0 2px; }
+.m-ticket .m-contact { text-align: center; font-size: .85em; }
+.m-ticket .m-count { text-align: center; font-size: .8em; }
+/* Encadré à colonnes */
+.m-encadre table.m-lignes thead th { border-bottom: 1px solid #000; }
+.m-encadre .m-net { border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 3px 0; }
+/* Tableau à colonnes */
+.m-colonnes table.m-lignes thead th { border-top: 2px solid #000; border-bottom: 2px solid #000; text-transform: uppercase; }
+.m-colonnes table.m-lignes tbody td { border-bottom: 1px dotted #888; }
+.m-colonnes .m-net { background: #000; color: #fff; padding: 4px 6px; border-radius: 3px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+/* Économique */
+.m-economique { line-height: 1.15; }
+.m-economique .m-head .t-company { font-size: 1.15em; }
+.m-economique .m-net { font-size: 1.2em; }
+/* Grands caractères */
+.m-grand { line-height: 1.35; }
+.m-grand .m-item { font-weight: 800; }
+.m-grand .m-net { font-size: 1.6em; border: 2px solid #000; padding: 4px 6px; }
+
+/* ---------- A4 ---------- */
+.mdl { position: relative; }
+.mdl[data-filigrane]::after { content: attr(data-filigrane); position: absolute; top: 40%; left: 0; right: 0; text-align: center; font: 800 110px Arial, sans-serif; color: rgba(0,0,0,.07); transform: rotate(-24deg); pointer-events: none; letter-spacing: .1em; }
+.m-sheet { --mdl: #14213d; }
+.m-sheet .m-company { font-size: 20px; font-weight: 800; color: var(--mdl); text-transform: uppercase; }
+.m-sheet .m-slogan { font-style: italic; color: #444; }
+.m-sheet table.m-lignes { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.m-sheet table.m-lignes th { background: var(--mdl); color: #fff; padding: 6px; text-align: left; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.m-sheet table.m-lignes td { padding: 6px; }
+.m-sheet .num { text-align: right; white-space: nowrap; }
+.m-sheet .m-totaux { border-collapse: collapse; margin-left: auto; min-width: 45%; }
+.m-sheet .m-totaux td { padding: 4px 8px; }
+.m-sheet .m-totaux tr.grand td { font-size: 15px; font-weight: 800; background: var(--mdl); color: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.m-sheet .m-words { margin-top: 10px; padding: 6px 8px; border: 1px solid #999; font-style: italic; }
+.m-sheet .m-solde { margin-top: 8px; font-weight: 700; }
+.m-sheet .m-cond { margin-top: 10px; font-size: 10px; color: #333; }
+.m-sheet .m-sign { display: flex; justify-content: space-between; gap: 30px; margin-top: 30px; }
+.m-sheet .m-sign div { flex: 1; text-align: center; border-top: 1px solid #000; padding-top: 4px; }
+.m-sheet .m-foot { margin-top: 24px; font-size: 10px; color: #444; border-top: 1px solid #ccc; padding-top: 6px; text-align: center; }
+.m-sheet .m-box { border: 1px solid #000; padding: 8px 10px; }
+/* Facture encadrée */
+.m-a4-encadre .m-top { display: flex; justify-content: space-between; gap: 20px; align-items: stretch; }
+.m-a4-encadre .m-cartouche { border: 2px solid var(--mdl); min-width: 70mm; text-align: center; padding: 8px; }
+.m-a4-encadre .m-cartouche .m-doc { font-size: 22px; font-weight: 800; color: var(--mdl); letter-spacing: .06em; }
+.m-a4-encadre table.m-lignes th, .m-a4-encadre table.m-lignes td { border: 1px solid #000; }
+.m-a4-encadre .m-totaux td { border: 1px solid #000; }
+/* Bandeau latéral */
+.m-a4-lateral { display: flex; padding: 0 !important; }
+.m-a4-lateral .m-side { width: 58mm; background: var(--mdl); color: #fff; padding: 14mm 8mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.m-a4-lateral .m-side .m-company { color: #fff; }
+.m-a4-lateral .m-side .logo { max-width: 100%; max-height: 30mm; background: #fff; padding: 3px; border-radius: 4px; }
+.m-a4-lateral .m-side .m-label { margin-top: 14px; font-size: 10px; text-transform: uppercase; opacity: .8; letter-spacing: .08em; }
+.m-a4-lateral .m-main { flex: 1; padding: 14mm 12mm; }
+.m-a4-lateral .m-doc { font-size: 26px; font-weight: 800; color: var(--mdl); letter-spacing: .05em; }
+.m-a4-lateral table.m-lignes td { border-bottom: 1px solid #ddd; }
+/* Demi-page A5 */
+.sheet.m-a4-a5 { width: 148mm; min-height: 210mm; padding: 8mm; font-size: 10.5px; }
+.m-a4-a5 .m-top { display: flex; justify-content: space-between; gap: 10px; border-bottom: 2px solid var(--mdl); padding-bottom: 6px; }
+.m-a4-a5 .m-company { font-size: 15px; }
+.m-a4-a5 .m-doc { font-size: 16px; font-weight: 800; color: var(--mdl); text-align: right; }
+.m-a4-a5 table.m-lignes td { border-bottom: 1px solid #ddd; padding: 3px 4px; }
+.m-a4-a5 table.m-lignes th { padding: 4px; }
+.m-a4-a5 .logo { max-height: 14mm; }
+@media print { .sheet.m-a4-lateral { padding: 0 !important; } .sheet.m-a4-a5 { width: auto; min-height: auto; } }

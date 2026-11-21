@@ -5247,6 +5247,113 @@ test('Module Archives : dépôt contrôlé, versions, intégrité, confidentiel,
     array_map('unlink', [$pdf, $pdf2, $php, $fake]);
 });
 
+test('Module Modèles de documents : mises en page, personnalisation, choix par document, sans toucher aux montants', function () use ($B, $riz) {
+    actingAs('admin');
+    eq(['0001_modeles'], App\Core\Addons::install('modeles', false), 'installation');
+    App\Core\Addons::reset();
+    App\Core\Events::reset();
+    $M = Addons\Modeles\Modeles::class;
+    eq(8, (int) DB::value('SELECT COUNT(*) FROM doc_modeles'), '8 modèles prêts à l\'emploi');
+    eq([], $M::assignments(), 'aucun modèle affecté à l\'installation : documents inchangés');
+    // Options : listes fermées, couleur contrôlée, textes bornés
+    $n = $M::normalize('ticket', 'encadre', ['police' => 'x;}body{', 'taille' => '999', 'slogan' => str_repeat('a', 200), 'qr' => 'on', 'logo' => null]);
+    eq(['serif', '100', 80, '1', '0'], [$n['police'], $n['taille'], mb_strlen($n['slogan']), $n['qr'], $n['logo']], 'valeurs invalides remplacées, texte coupé');
+    eq('#14213d', $M::normalize('a4', 'encadre', ['couleur' => 'red;}*{display:none'])['couleur'], 'couleur invalide refusée');
+    ok(!array_key_exists('couleur', $M::defaults('ticket', 'encadre')) && !array_key_exists('separateur', $M::defaults('a4', 'lateral')), 'options propres au ticket ou à l\'A4');
+    throws(fn() => $M::save(null, '', 'ticket', 'encadre', []), 'nom');
+    throws(fn() => $M::save(null, 'Essai', 'ticket', 'inconnue', []), 'inconnue');
+    throws(fn() => $M::save(null, 'Ticket économique', 'ticket', 'economique', []), 'déjà ce nom');
+    // Ventes de référence
+    S\StockService::adjust($riz, 1, 10, 'adjustment', 'Essai modèles', null, 'L-MDL', date('Y-m-d', strtotime('+1 year')));
+    $req = setting('require_cash_session', '1');
+    setting_set('require_cash_session', '0');
+    $cid = DB::insert('customers', ['name' => 'Grossiste Modèle', 'credit_limit' => 500000]);
+    try {
+        $paid = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $riz, 'quantity' => 2]], 'payments' => [['method' => 'cash', 'amount' => 30000]]]);
+        $cred = S\SaleService::create(['client_uuid' => uuid(), 'customer_id' => $cid, 'items' => [['product_id' => $riz, 'quantity' => 1]], 'payments' => []]);
+    } finally {
+        setting_set('require_cash_session', $req);
+    }
+    $paidNo = (string) DB::value('SELECT number FROM sales WHERE id = ?', [$paid['sale_id']]);
+    $paidTotal = money(DB::value('SELECT total FROM sales WHERE id = ?', [$paid['sale_id']]));
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    $get = fn(string $u) => $a->req('GET', $B . $u);
+    $clean = fn(array $x) => $x['code'] === 200 && !preg_match('/Fatal error|Warning:|Notice:|Deprecated:|Une erreur interne/', $x['body']);
+    $before = $get("/sales/{$paid['sale_id']}/ticket");
+    ok($clean($before) && !str_contains($before['body'], 'm-ticket'), 'sans affectation : modèle des Paramètres');
+    // Affectations (formulaire)
+    $id = fn(string $nom) => (int) DB::value('SELECT id FROM doc_modeles WHERE nom = ?', [$nom]);
+    $csrf = $a->token("$B/modeles");
+    $r = $a->req('POST', "$B/modeles/affectations", http_build_query(['_csrf' => $csrf, 'doc' => ['sale' => $id('Ticket encadré à colonnes'), 'credit' => $id('Ticket de vente à crédit (solde créance)'), 'invoice' => $id('Facture encadrée'), 'quote' => $id('Facture à bandeau latéral'), 'delivery' => $id('Facture demi-page A5')], 'autre' => ['/returns' => $id('Ticket grands caractères')]]));
+    eq(302, $r['code'], 'choix enregistrés');
+    setting('__reset');
+    throws(fn() => $M::saveAssignments(['invoice' => $id('Ticket économique')], []), 'demande un modèle A4');
+    $t = $get("/sales/{$paid['sale_id']}/ticket")['body'];
+    ok(str_contains($t, 'm-encadre') && str_contains($t, 'NET À PAYER') && str_contains($t, e($paidNo)) && str_contains($t, e(money(DB::value('SELECT total FROM sales WHERE id = ?', [$paid['sale_id']]), false))), 'ticket encadré : numéro et total de la vente');
+    ok(!str_contains($t, 'SOLDE CRÉANCE'), 'vente sans client : pas de solde de créance');
+    $c = $get("/sales/{$cred['sale_id']}/ticket")['body'];
+    $bal = money(DB::value('SELECT balance FROM customers WHERE id = ?', [$cid]));
+    ok(str_contains($c, 'Vente à crédit') && str_contains($c, 'SOLDE CRÉANCE') && str_contains($c, e($bal)) && str_contains($c, 'Signature du client') && str_contains($c, 'Je reconnais devoir'), 'ticket de vente à crédit : reste, solde du client, signature, conditions');
+    ok(!str_contains($c, 'Monnaie rendue'), 'crédit : lignes « monnaie rendue 0 » retirées');
+    // Personnalisation : titre, slogan (échappé), police, séparateur, QR masqué, caissier masqué
+    $mid = $id('Ticket encadré à colonnes');
+    $r = $a->req('POST', "$B/modeles/$mid", http_build_query(['_csrf' => $csrf, 'nom' => 'Ticket encadré à colonnes', 'base' => 'encadre', 'o' => ['titre' => 'Reçu', 'slogan' => '<script>alert(1)</script> Grossiste', 'police' => 'sans', 'separateur' => 'double', 'qr' => '0', 'caissier' => '0', 'pied2' => 'WhatsApp +227 90 00 00 00']]));
+    eq(302, $r['code']);
+    $t = $get("/sales/{$paid['sale_id']}/ticket")['body'];
+    ok(str_contains($t, 'REÇU N° ' . e($paidNo)) && str_contains($t, '&lt;script&gt;alert(1)&lt;/script&gt; Grossiste') && !str_contains($t, '<script>alert(1)') && str_contains($t, 'WhatsApp +227'), 'titre, slogan échappé, ligne de contact');
+    ok(str_contains($t, 'Arial,Helvetica') && str_contains($t, '3px double') && !str_contains($t, 'data-qr=') && !str_contains($t, '>' . e(t('Caissier')) . ' :<'), 'police, séparateur, QR et caissier masqués');
+    eq($paidTotal, money(DB::value('SELECT total FROM sales WHERE id = ?', [$paid['sale_id']])), 'montant de la vente inchangé');
+    // A4 : facture encadrée avec filigrane, devis à bandeau, bon de livraison A5
+    $fid = $id('Facture encadrée');
+    $a->req('POST', "$B/modeles/$fid", http_build_query(['_csrf' => $csrf, 'nom' => 'Facture encadrée', 'base' => 'encadre', 'o' => ['filigrane' => 'PAYÉ', 'couleur' => '#7c3aed', 'signature' => '1']]));
+    $f = $get("/sales/{$paid['sale_id']}/invoice")['body'];
+    ok(str_contains($f, 'm-a4-encadre') && str_contains($f, 'data-filigrane="PAYÉ"') && str_contains($f, '#7c3aed') && str_contains($f, 'Arrêtée la présente facture'), 'facture encadrée : filigrane, couleur, montant en lettres');
+    ok(str_contains($get("/sales/{$paid['sale_id']}/delivery")['body'], '@page{size:A5'), 'bon de livraison en A5');
+    $qid = (int) DB::value('SELECT MAX(id) FROM quotes');
+    if ($qid) {
+        ok(str_contains($get("/quotes/$qid/print")['body'], 'm-a4-lateral'), 'devis à bandeau latéral');
+    }
+    // Autres pages : style appliqué au reçu de retour
+    $ret = (int) DB::value('SELECT MAX(id) FROM sale_returns');
+    if ($ret) {
+        $rr = $get("/returns/$ret")['body'];
+        ok(str_contains($rr, 'id="module-look"') && str_contains($rr, '15.6px'), 'reçu de retour : présentation du modèle choisi');
+    }
+    ok(!str_contains($get("/sales/{$paid['sale_id']}")['body'], 'module-look'), 'pages de gestion non concernées');
+    // Pages du module, aperçu, création, duplication, export / import
+    foreach (['/modeles', '/modeles/nouveau?type=a4&base=lateral', '/modeles/nouveau?type=ticket&base=core3', "/modeles/$mid", "/modeles/apercu/$mid?kind=credit", "/modeles/apercu/$fid?kind=quote"] as $u) {
+        ok($clean($get($u)), $u);
+    }
+    $p = $a->req('POST', "$B/modeles/apercu", http_build_query(['_csrf' => $csrf, 'type' => 'ticket', 'base' => 'grand', 'kind' => 'credit', 'o' => ['slogan' => 'Aperçu en direct', 'taille' => '130']]));
+    ok($clean($p) && str_contains($p['body'], 'Aperçu en direct') && str_contains($p['body'], 'm-grand') && str_contains($p['body'], 'Vente à crédit'), 'aperçu immédiat d\'un modèle non enregistré');
+    eq(0, (int) DB::value("SELECT COUNT(*) FROM doc_modeles WHERE nom = 'Aperçu'"), 'l\'aperçu n\'enregistre rien');
+    $r = $a->req('POST', "$B/modeles", http_build_query(['_csrf' => $csrf, 'type' => 'ticket', 'nom' => 'Ticket grossiste', 'base' => 'colonnes', 'o' => ['majuscules' => '1']]));
+    $new = $id('Ticket grossiste');
+    ok($r['code'] === 302 && $new > 0, 'création d\'un modèle');
+    $copy = $M::duplicate($new);
+    eq('Ticket grossiste (2)', $M::get($copy)['nom'], 'duplication');
+    $x = $get("/modeles/$new/exporter");
+    ok($x['code'] === 200 && str_contains(strtolower($x['headers']), 'attachment') && !str_contains($x['body'], 'Essai-Niamey'), 'export en fichier');
+    $imp = $M::import($x['body']);
+    ok(str_starts_with($M::get($imp)['nom'], 'Ticket grossiste (') && $M::get($imp)['options']['majuscules'] === '1', 'import : options conservées, nom sans doublon');
+    throws(fn() => $M::import('{"format":"autre"}'), 'n\'est pas un modèle');
+    throws(fn() => $M::import('{"format":"pos-marwa-modele","type":"ticket","base":"../../x","options":{}}'), 'inconnue');
+    // Suppression d'un modèle affecté : le document reprend le modèle des Paramètres
+    $freed = $M::delete($mid);
+    ok(in_array('Ticket de caisse', $freed, true), 'affectation libérée');
+    setting('__reset');
+    ok(!str_contains($get("/sales/{$paid['sale_id']}/ticket")['body'], 'm-encadre'), 'ticket de caisse revenu au modèle des Paramètres');
+    ok(str_contains($get("/sales/{$cred['sale_id']}/ticket")['body'], 'SOLDE CRÉANCE'), 'ticket de crédit : modèle propre conservé');
+    // Droits
+    $cs = new Http();
+    $cs->login($B, 'caissier', 'Mot-de-passe-2026');
+    eq(403, $cs->req('GET', "$B/modeles")['code'], 'caissier : pas d\'accès aux modèles');
+    ok(DB::value("SELECT COUNT(*) FROM audit_logs WHERE action LIKE 'modeles.%'") >= 4, 'modifications inscrites au journal');
+    setting_set('modeles_affectations', '{}');
+    setting_set('modeles_autres', '{}');
+});
+
 test('Hébergement en ligne / en local et synchronisation vers une base MySQL en ligne (copie exacte, sens unique)', function () use ($B, $env) {
     actingAs('admin');
     $Y = S\SyncService::class;

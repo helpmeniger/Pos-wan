@@ -110,7 +110,7 @@ final class SaleController extends Controller
         $width = setting('ticket_width', '80') === '58' ? 't58' : 't80';
         view('sales/ticket', [
             'title' => 'Ticket ' . $s['number'], 's' => $s, 'dup' => $dup, 'bodyClass' => $width,
-            'items' => DB::all('SELECT * FROM sale_items WHERE sale_id = ?', [$id]),
+            'items' => DB::all('SELECT si.*, p.reference, un.short_name AS unit FROM sale_items si LEFT JOIN products p ON p.id = si.product_id LEFT JOIN units un ON un.id = p.unit_id WHERE si.sale_id = ? ORDER BY si.id', [$id]),
             'payments' => DB::all('SELECT * FROM sale_payments WHERE sale_id = ?', [$id]),
             'autoPrint' => Request::query('auto') === '1', 'backUrl' => self::safeNext(), 'returnAfterPrint' => Request::query('next') !== null,
         ], 'layouts/print');

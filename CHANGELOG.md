@@ -2,6 +2,17 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.16.0] — 2026-11-21
+
+### Ajouté — module « Modèles de documents » (tickets, factures, devis, bons de livraison)
+- **Mises en page** de tickets : encadré à colonnes (Qté / Produit / PU / Total, « NET À PAYER », vente à crédit, solde de créance du client, signature), tableau à colonnes, économique, grands caractères ; A4 : facture encadrée, bandeau latéral, demi-page A5 ; plus les modèles d'origine.
+- **Modèles nommés et personnalisables** avec aperçu immédiat : titre, slogan, logo, coordonnées, police, taille, couleur, séparateurs, informations affichées, libellé du total, montant en lettres, solde client, signature, QR, conditions de vente, pied, ligne de contact, filigrane. Duplication, export et import en fichier.
+- **Choix du modèle pour chaque document** : ticket de caisse, ticket de vente à crédit, facture, devis, bon de livraison ; présentation des reçus des autres pages et modules (règlements, retours, restaurant, pressing, clinique, école, hôtel).
+- Huit modèles prêts à l'emploi ; aucun appliqué sans votre choix. Les montants ne sont jamais modifiés.
+
+### Cœur
+- Points d'accroche `document.template` et `document.css` ; le ticket reçoit aussi la référence et l'unité des articles, le reste à crédit et le solde du client (sans effet sur les modèles 1 à 3).
+
 ## [3.15.1] — 2026-11-20
 
 ### Édition Bureau : Node.js inclus, pont MARWA SECEF automatique

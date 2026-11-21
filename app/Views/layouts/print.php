@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="<?= e(asset('vendor/bootstrap-icons/bootstrap-icons.min.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/print.css')) ?>">
 <style id="ticket-look"><?= App\Services\Documents::ticketCss() ?></style>
+<?php $moduleCss = (string) (App\Core\Events::collect('document.css', ['path' => App\Core\Request::path()])['css'] ?? ''); if ($moduleCss !== ''): ?><style id="module-look"><?= $moduleCss ?></style><?php endif; ?>
 <?php if (App\Core\Lang::dir() === 'rtl'): ?><style>body { direction: rtl; } .ticket .num, .sheet .num { text-align: left; } .sheet .totals { margin-left: 0; margin-right: auto; }</style><?php endif; ?>
 </head>
 <body class="<?= e($bodyClass ?? 'a4') ?>">

@@ -52,16 +52,39 @@ final class Documents
         return $css;
     }
 
-    public static function ticketTemplate(?string $n = null): string
+    /**
+     * Vue du ticket. Sans numéro imposé, un module (ex. Modèles de documents) peut fournir la mise en page
+     * du type de document ($kind : sale, credit) ; sinon, le modèle choisi dans les paramètres.
+     */
+    public static function ticketTemplate(?string $n = null, string $kind = 'sale'): string
     {
+        if ($n === null && ($v = self::moduleView('ticket', $kind))) {
+            return $v;
+        }
         $n ??= (string) setting('ticket_template', '1');
         return 'documents/ticket_' . (isset(self::TICKET_TEMPLATES[$n]) ? $n : '1');
     }
 
-    public static function a4Template(?string $n = null): string
+    /** Vue A4 ($kind : invoice, quote, delivery), avec la même priorité au module de modèles. */
+    public static function a4Template(?string $n = null, string $kind = 'invoice'): string
     {
+        if ($n === null && ($v = self::moduleView('a4', $kind))) {
+            return $v;
+        }
         $n ??= (string) setting('invoice_template', '1');
         return 'documents/a4_' . (isset(self::A4_TEMPLATES[$n]) ? $n : '1');
+    }
+
+    private static function moduleView(string $type, string $kind): ?string
+    {
+        $v = \App\Core\Events::collect('document.template', ['type' => $type, 'kind' => $kind])['view'] ?? null;
+        return is_string($v) && $v !== '' ? $v : null;
+    }
+
+    /** Solde dû par le client de la vente (créance), pour les modèles qui l'affichent. */
+    private static function customerBalance(array $s): ?float
+    {
+        return !empty($s['customer_id']) ? (float) DB::value('SELECT balance FROM customers WHERE id = ?', [(int) $s['customer_id']]) : null;
     }
 
     /** Vente fictive pour l'aperçu des modèles dans les paramètres (rien n'est enregistré). */
@@ -157,9 +180,14 @@ final class Documents
         $doc = [
             'title' => t('Ticket'), 'number' => $s['number'], 'date' => fdate($s['created_at']), 'store' => $s['store_name'] ?? '', 'meta' => $meta, 'dup' => $dup,
             'banner' => $s['status'] === 'cancelled' ? t('VENTE ANNULÉE') : null,
-            'items' => array_map(fn($i) => ['name' => $i['product_name'], 'qty' => (float) $i['quantity'], 'price' => (float) $i['unit_price'], 'discount' => (float) $i['discount'], 'total' => (float) $i['line_total']], $items),
+            'items' => array_map(fn($i) => ['name' => $i['product_name'], 'qty' => (float) $i['quantity'], 'price' => (float) $i['unit_price'], 'discount' => (float) $i['discount'], 'total' => (float) $i['line_total'],
+                'ref' => $i['reference'] ?? '', 'unit' => $i['unit'] ?? ''], $items),
             'totals' => $totals, 'payments' => $pay, 'footer' => (string) setting('ticket_footer', 'Merci de votre visite !'), 'qr' => self::qr(DocumentRef::saleQr($s)),
             'count' => array_sum(array_column($items, 'quantity')),
+            // Données complémentaires pour les modèles personnalisés (sans effet sur les modèles 1 à 3)
+            'kind' => (float) $s['credit_amount'] > 0 ? 'credit' : 'sale', 'credit' => (float) $s['credit_amount'], 'total_value' => (float) $s['total'],
+            'customer' => $s['customer_name'] ?? null, 'customer_balance' => self::customerBalance($s),
+            'cashier' => $s['cashier'] ?? '', 'register' => $s['register_name'] ?? '', 'created_at' => $s['created_at'],
         ];
         return self::withFiscal($doc, $s);
     }
@@ -204,6 +232,7 @@ final class Documents
             'notes' => $s['note'] ?? null,
             'signatures' => $isInvoice ? [t('Le client'), t('Pour') . ' ' . setting('company_name')] : [t('Livré par'), t('Reçu par (nom, date, signature)')],
             'footer' => (string) setting('invoice_footer', setting('ticket_footer', '')), 'qr' => self::qr(DocumentRef::saleQr($s)),
+            'kind' => $isInvoice ? 'invoice' : 'delivery', 'total_value' => (float) $s['total'], 'credit' => (float) ($s['credit_amount'] ?? 0), 'customer_balance' => self::customerBalance($s),
         ];
         return $isInvoice ? self::withFiscal($doc, $s) : $doc + ['fiscal' => null];
     }
@@ -237,6 +266,7 @@ final class Documents
             'notes' => $q['note'] ?: t('Prix valables jusqu\'à la date indiquée, sous réserve de disponibilité du stock.'),
             'signatures' => [t('Bon pour accord (client)'), t('Pour') . ' ' . setting('company_name')],
             'footer' => (string) setting('invoice_footer', ''), 'qr' => self::qr(DocumentRef::quoteQr($q)),
+            'kind' => 'quote', 'total_value' => (float) $q['total'], 'credit' => 0.0, 'customer_balance' => null,
         ];
     }
 }

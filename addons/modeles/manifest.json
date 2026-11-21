@@ -1,0 +1,25 @@
+{
+    "code": "modeles",
+    "name": "Modèles de documents",
+    "version": "1.0.0",
+    "requires": "3.15.0",
+    "author": "POS Marwa",
+    "description": "Plusieurs mises en page de tickets (encadré à colonnes, tableau, économique, grands caractères) et de documents A4 (facture encadrée, bandeau latéral, demi-page A5), modèles nommés personnalisables (titre, slogan, logo, police, taille, séparateurs, informations affichées, total « NET À PAYER », solde de créance du client, signature, conditions de vente, pied, filigrane, couleur), aperçu immédiat, choix du modèle pour chaque document (ticket, vente à crédit, facture, devis, bon de livraison) et présentation des reçus des autres modules. Partage d'un modèle par fichier.",
+    "icon": "bi-layout-text-window",
+    "color": "#7c3aed",
+    "permissions": {
+        "modeles.manage": "Modèles de documents : créer, personnaliser et choisir les modèles des tickets et factures"
+    },
+    "roles": {
+        "owner": ["modeles.manage"],
+        "store_manager": ["modeles.manage"]
+    },
+    "menu": [
+        { "group": "Configuration", "label": "Modèles de tickets et factures", "icon": "bi-layout-text-window", "url": "/modeles", "permission": "modeles.manage", "color": "#7c3aed" }
+    ],
+    "settings": {
+        "modeles_affectations": "{}",
+        "modeles_autres": "{}"
+    },
+    "assets": { "js": ["modeles.js"] }
+}
