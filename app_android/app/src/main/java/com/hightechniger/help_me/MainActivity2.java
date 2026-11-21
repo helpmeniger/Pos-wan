@@ -69,7 +69,7 @@ public class MainActivity2 extends AppCompatActivity implements SensorEventListe
         prefs.edit().putInt(KEY_USAGE_COUNT, usageCount).apply();
 
         textNombre = findViewById(R.id.textnombre);
-        textNombre.setText("N°: " + usageCount);
+        textNombre.setText("Ouvertures de l’application : " + usageCount);
 
         textUser = findViewById(R.id.userdetails);
         textUser.setText(user.getEmail() != null ? user.getEmail() : user.getUid());
@@ -112,6 +112,8 @@ public class MainActivity2 extends AppCompatActivity implements SensorEventListe
         containerUserInfo.setVisibility(wasVisible ? View.VISIBLE : View.GONE);
         rotateIcon(wasVisible);
         btnExpand.setOnClickListener(v -> toggleUserInfo());
+        findViewById(R.id.cardToggleInfo).setOnClickListener(v -> toggleUserInfo());
+        getWindow().setStatusBarColor(android.graphics.Color.parseColor("#2A5FA6"));
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);

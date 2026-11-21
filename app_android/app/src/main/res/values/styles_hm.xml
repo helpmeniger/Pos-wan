@@ -55,4 +55,16 @@
         <item name="android:textSize">13sp</item>
         <item name="android:lineSpacingMultiplier">1.15</item>
     </style>
+    <!-- Ligne d'atout (icône + texte) -->
+    <style name="HM.Feature" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">22dp</item>
+        <item name="android:layout_marginEnd">22dp</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:drawablePadding">12dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textColor">#1B2330</item>
+        <item name="android:textSize">15sp</item>
+    </style>
 </resources>

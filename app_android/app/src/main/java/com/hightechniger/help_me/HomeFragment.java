@@ -142,7 +142,7 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         heroPct = Ui.text(context, "", 14, Color.WHITE, true);
         row.addView(heroPct, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         heroStreak = Ui.pill(context, "", Color.WHITE, Color.parseColor("#33FFFFFF"));
-        heroStreak.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_m_flame, 0, 0, 0);
+        heroStreak.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_m_calendar, 0, 0, 0);
         heroStreak.setCompoundDrawablePadding(Ui.dp(context, 4));
         row.addView(heroStreak);
         h.addView(row);
@@ -364,7 +364,7 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         challenge.setOrientation(LinearLayout.HORIZONTAL);
         challenge.setGravity(Gravity.CENTER_VERTICAL);
         challenge.setBackground(Ui.ripple(Ui.gradient(context, Color.parseColor("#2B2F3A"), Color.parseColor("#3D4456"), 18), Color.parseColor("#33FFFFFF")));
-        challenge.addView(Ui.badge(context, R.drawable.ic_m_flame, Color.parseColor("#D9822B"), 46, false));
+        challenge.addView(Ui.badge(context, R.drawable.ic_m_keyboard, Color.parseColor("#D9822B"), 46, false));
         LinearLayout t = Ui.column(context);
         t.setPadding(Ui.dp(context, 14), 0, 0, 0);
         t.addView(Ui.text(context, "Défi des raccourcis", 16.5f, Color.WHITE, true));

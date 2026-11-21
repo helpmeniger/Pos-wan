@@ -53,12 +53,11 @@ public class MessageBubbleAdapter extends RecyclerView.Adapter<MessageBubbleAdap
         // anciens messages enregistrés avec un préfixe « Question 3: » / « Réponse 4: »
         String text = msg.message == null ? "" : msg.message.replaceFirst("^(Question|Réponse) \\d+ ?: ?", "");
         h.messageText.setText(text);
-        h.messageInfo.setText(msg.date);
+        h.messageInfo.setText(when(msg));
         String name = displayName(msg.userEmail);
         h.name.setText(mine ? "Vous" : name);
         h.tag.setVisibility(msg.isQuestion ? View.VISIBLE : View.GONE);
 
-        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) h.container.getLayoutParams();
         if (mine) {
             h.container.setGravity(android.view.Gravity.END);
             h.container.setPadding(dp(52), dp(5), 0, dp(5));
@@ -81,7 +80,20 @@ public class MessageBubbleAdapter extends RecyclerView.Adapter<MessageBubbleAdap
             h.messageInfo.setTextColor(0xFF7A8596);
             h.name.setTextColor(0xFF326FBF);
         }
-        h.container.setLayoutParams(lp);
+    }
+
+    /** « 14:05 » aujourd'hui, « Hier 09:12 », sinon « 12 nov. 09:12 ». */
+    static String when(MessageModel m) {
+        if (m.timestamp <= 0) return m.date == null ? "" : m.date;
+        java.util.Calendar c = java.util.Calendar.getInstance(), t = java.util.Calendar.getInstance();
+        t.setTimeInMillis(m.timestamp);
+        String hm = new java.text.SimpleDateFormat("HH:mm", Locale.FRANCE).format(t.getTime());
+        if (c.get(java.util.Calendar.YEAR) == t.get(java.util.Calendar.YEAR)) {
+            int d = c.get(java.util.Calendar.DAY_OF_YEAR) - t.get(java.util.Calendar.DAY_OF_YEAR);
+            if (d == 0) return hm;
+            if (d == 1) return "Hier " + hm;
+        }
+        return new java.text.SimpleDateFormat("d MMM", Locale.FRANCE).format(t.getTime()) + " " + hm;
     }
 
     private int dp(int v) { return Math.round(v * context.getResources().getDisplayMetrics().density); }

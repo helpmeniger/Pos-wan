@@ -102,7 +102,7 @@ public class ShortcutChallengeActivity extends AppCompatActivity {
     private void intro() {
         page.removeAllViews();
         timer.setProgress(0);
-        page.addView(Ui.badge(this, R.drawable.ic_m_flame, COLOR, 72, true));
+        page.addView(Ui.badge(this, R.drawable.ic_m_keyboard, COLOR, 72, true));
         TextView t = Ui.title(this, "Êtes-vous rapide au clavier ?", 24);
         t.setPadding(0, Ui.dp(this, 16), 0, 0);
         page.addView(t);

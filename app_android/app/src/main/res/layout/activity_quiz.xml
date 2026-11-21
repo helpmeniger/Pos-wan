@@ -251,7 +251,7 @@
                         android:background="@drawable/hm_orange_circle"
                         android:contentDescription="Défi"
                         android:padding="11dp"
-                        android:src="@drawable/ic_m_flame" />
+                        android:src="@drawable/ic_m_people" />
 
                     <LinearLayout
                         android:layout_width="0dp"

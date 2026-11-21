@@ -133,7 +133,14 @@ public class MatchActivity extends AppCompatActivity {
         chatScroll = findViewById(R.id.chatScroll);
         chatBadge = findViewById(R.id.chatBadge);
 
-        myUid   = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        com.google.firebase.auth.FirebaseUser me = FirebaseAuth.getInstance().getCurrentUser();
+        if (me == null) {   // session expirée : retour à la connexion au lieu d'un plantage
+            android.widget.Toast.makeText(this, "Votre session a expiré : reconnectez-vous.", android.widget.Toast.LENGTH_SHORT).show();
+            startActivity(new android.content.Intent(this, Login.class));
+            finish();
+            return;
+        }
+        myUid = me.getUid();
         matchId = getIntent().getStringExtra("matchId");
 
         root       = FirebaseDatabase.getInstance().getReference();

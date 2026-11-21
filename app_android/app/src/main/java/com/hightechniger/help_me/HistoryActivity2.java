@@ -51,7 +51,14 @@ public class HistoryActivity2 extends AppCompatActivity {
         adapter = new HistoryAdapter(data);
         rvHistory.setAdapter(adapter);
 
-        myUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        com.google.firebase.auth.FirebaseUser me = FirebaseAuth.getInstance().getCurrentUser();
+        if (me == null) {   // session expirée : retour à la connexion au lieu d'un plantage
+            android.widget.Toast.makeText(this, "Votre session a expiré : reconnectez-vous.", android.widget.Toast.LENGTH_SHORT).show();
+            startActivity(new android.content.Intent(this, Login.class));
+            finish();
+            return;
+        }
+        myUid = me.getUid();
         historyRef = FirebaseDatabase.getInstance().getReference()
                 .child("history").child(myUid);
 

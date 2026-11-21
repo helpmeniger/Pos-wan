@@ -81,6 +81,8 @@ public class ForumActivity extends AppCompatActivity {
     private ValueEventListener messagesListener;
 
     private int messageCount = 0;
+    private static final int MAX_LENGTH = 1000;
+    private Boolean lastOnline = null;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -110,7 +112,9 @@ public class ForumActivity extends AppCompatActivity {
 
         messageList = new ArrayList<>();
         messageAdapter = new MessageBubbleAdapter(this, messageList, userEmail);
-        messageRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager lm = new LinearLayoutManager(this);
+        lm.setStackFromEnd(true);                 // les derniers messages en bas, comme une messagerie
+        messageRecyclerView.setLayoutManager(lm);
         messageRecyclerView.setAdapter(messageAdapter);
 
         checkConnectionStatus();
@@ -120,18 +124,24 @@ public class ForumActivity extends AppCompatActivity {
 
         sendButton.setOnClickListener(v -> {
             if (!isConnected()) {
-                Toast.makeText(this, "Pas de connexion Internet", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Pas de connexion Internet : réessayez quand vous serez connecté.", Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            String message = messageInput.getText().toString().trim();
-            if (!message.isEmpty()) {
-                sendMessage(message);
-                messageInput.setText("");
+            String message = messageInput.getText().toString().trim().replaceAll("\\n{3,}", "\n\n");
+            if (message.isEmpty()) return;
+            if (message.length() > MAX_LENGTH) {
+                Toast.makeText(this, "Message trop long (" + MAX_LENGTH + " caractères au plus).", Toast.LENGTH_SHORT).show();
+                return;
             }
+            sendMessage(message);
         });
 
-        swipeRefreshLayout.setOnRefreshListener(this::fetchMessages);
+        // les messages arrivent déjà en direct : tirer vers le bas ne crée pas une seconde écoute
+        swipeRefreshLayout.setColorSchemeColors(Color.parseColor("#326FBF"));
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            checkConnectionStatus();
+            swipeRefreshLayout.postDelayed(() -> swipeRefreshLayout.setRefreshing(false), 600);
+        });
 
         networkReceiver = new BroadcastReceiver() {
             @Override
@@ -178,6 +188,7 @@ public class ForumActivity extends AppCompatActivity {
 
     private boolean isConnected() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm == null) return false;
         NetworkInfo active = cm.getActiveNetworkInfo();
         return active != null && active.isConnectedOrConnecting();
     }
@@ -190,11 +201,15 @@ public class ForumActivity extends AppCompatActivity {
         if (dot != null) dot.setBackgroundResource(online ? R.drawable.chat_status_dot : R.drawable.hm_dot_off);
         updateEmptyState();
 
-        if (!online) Toast.makeText(this, "Vous êtes hors ligne", Toast.LENGTH_SHORT).show();
+        if (!online && Boolean.TRUE.equals(lastOnline))
+            Toast.makeText(this, "Connexion perdue", Toast.LENGTH_SHORT).show();
+        lastOnline = online;
     }
 
     private void sendMessage(String message) {
         progressBar.setVisibility(View.VISIBLE);
+        sendButton.setEnabled(false);           // évite les envois en double
+        sendButton.setAlpha(0.5f);
         long timestamp = System.currentTimeMillis();
         String dateSent = DATE_FORMAT.format(new Date(timestamp));
 
@@ -220,12 +235,17 @@ public class ForumActivity extends AppCompatActivity {
                         );
                     }
 
-                    Toast.makeText(this, "Message envoyé", Toast.LENGTH_SHORT).show();
+                    messageInput.setText("");
                     progressBar.setVisibility(View.GONE);
+                    sendButton.setEnabled(true);
+                    sendButton.setAlpha(1f);
+                    messageRecyclerView.scrollToPosition(Math.max(0, messageList.size() - 1));
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Erreur d'envoi", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Le message n’a pas pu être envoyé. Vérifiez votre connexion.", Toast.LENGTH_SHORT).show();
                     progressBar.setVisibility(View.GONE);
+                    sendButton.setEnabled(true);
+                    sendButton.setAlpha(1f);
                 });
     }
 
@@ -240,7 +260,8 @@ public class ForumActivity extends AppCompatActivity {
                 messageCount = 0;
 
                 SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-                long lastRead = prefs.getLong(KEY_LAST_READ, 0);
+                if (isForumVisible) prefs.edit().putLong(KEY_LAST_READ, System.currentTimeMillis()).apply();
+                long lastRead = isForumVisible ? Long.MAX_VALUE : prefs.getLong(KEY_LAST_READ, 0);
 
                 unreadCount = 0;
 
@@ -288,7 +309,9 @@ public class ForumActivity extends AppCompatActivity {
             public void onCancelled(DatabaseError error) {
                 progressBar.setVisibility(View.GONE);
                 swipeRefreshLayout.setRefreshing(false);
-                Toast.makeText(ForumActivity.this, "Erreur : " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                connectionStatus.setText("Forum indisponible pour le moment");
+                Toast.makeText(ForumActivity.this, "Le forum ne répond pas. Les derniers messages enregistrés restent affichés.", Toast.LENGTH_LONG).show();
+                updateEmptyState();
             }
         };
 

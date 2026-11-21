@@ -185,7 +185,7 @@
             android:name=".MainActivity2"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
+            android:theme="@style/Theme.HelpMe.Chat" />
         <activity
             android:name=".MainActivity"
             android:exported="false"

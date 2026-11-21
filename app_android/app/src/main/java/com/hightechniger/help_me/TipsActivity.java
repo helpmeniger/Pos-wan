@@ -91,7 +91,7 @@ public class TipsActivity extends AppCompatActivity {
         c.setOrientation(LinearLayout.HORIZONTAL);
         c.setGravity(Gravity.CENTER_VERTICAL);
         c.setBackground(Ui.ripple(Ui.gradient(this, Color.parseColor("#2B2F3A"), Color.parseColor("#3D4456"), 20), Color.parseColor("#33FFFFFF")));
-        c.addView(Ui.badge(this, R.drawable.ic_m_flame, COLOR, 52, false));
+        c.addView(Ui.badge(this, R.drawable.ic_m_keyboard, COLOR, 52, false));
         LinearLayout t = Ui.column(this);
         t.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 8), 0);
         TextView a = Ui.text(this, "Défi des raccourcis", 18, Color.WHITE, true);

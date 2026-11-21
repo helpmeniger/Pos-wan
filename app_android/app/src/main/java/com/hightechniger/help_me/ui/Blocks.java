@@ -199,7 +199,7 @@ public final class Blocks {
     private View box(JSONObject b) {
         String k = b.optString("k");
         int color = "warn".equals(k) ? Ui.WARN : "retenir".equals(k) ? Ui.SUCCESS : accent;
-        int iconRes = "warn".equals(k) ? R.drawable.ic_m_flame : "retenir".equals(k) ? R.drawable.ic_m_star : R.drawable.ic_m_astuces;
+        int iconRes = "warn".equals(k) ? R.drawable.ic_m_warning : "retenir".equals(k) ? R.drawable.ic_m_star : R.drawable.ic_m_astuces;
         LinearLayout box = Ui.column(c);
         box.setBackground(Ui.rounded(c, Ui.tint(color, 0.9f), 14));
         box.setPadding(dp(14), dp(12), dp(14), dp(14));
