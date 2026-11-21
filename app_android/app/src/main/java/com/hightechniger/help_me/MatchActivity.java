@@ -375,7 +375,8 @@ public class MatchActivity extends AppCompatActivity {
             Question q = m.questions.get(i);
             View item = getLayoutInflater().inflate(R.layout.item_option_choice, null);
             TextView txt = item.findViewById(R.id.tvOptionText);
-            txt.setText("• " + q.question);
+            txt.setText(q.question);
+            ((TextView) item.findViewById(R.id.tvLetter)).setText(String.valueOf(i + 1));
 
             int idx = i;
             item.setOnClickListener(v -> {
@@ -397,8 +398,10 @@ public class MatchActivity extends AppCompatActivity {
     private void showAnswerOptions(Question q) {
         optionsLayout.removeAllViews();
 
+        int letter = 0;
         for (String opt : q.options) {
             View item = getLayoutInflater().inflate(R.layout.item_option_choice, null);
+            ((TextView) item.findViewById(R.id.tvLetter)).setText(String.valueOf((char) ('A' + letter++)));
             MaterialCardView card = item.findViewById(R.id.cardOption);
             TextView txt = item.findViewById(R.id.tvOptionText);
             txt.setText(opt);

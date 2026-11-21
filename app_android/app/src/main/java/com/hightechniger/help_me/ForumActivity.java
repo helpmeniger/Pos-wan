@@ -170,6 +170,12 @@ public class ForumActivity extends AppCompatActivity {
         if (messagesListener != null) mDatabase.removeEventListener(messagesListener);
     }
 
+    /** Fil vide : message d'accueil qui explique à quoi sert le forum. */
+    private void updateEmptyState() {
+        View empty = findViewById(R.id.forumEmpty);
+        if (empty != null && messageList != null) empty.setVisibility(messageList.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+
     private boolean isConnected() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo active = cm.getActiveNetworkInfo();
@@ -178,8 +184,11 @@ public class ForumActivity extends AppCompatActivity {
 
     private void checkConnectionStatus() {
         boolean online = isConnected();
-        connectionStatus.setText(online ? "En ligne..." : "Hors ligne");
-        connectionStatus.setTextColor(Color.WHITE);
+        connectionStatus.setText(online ? "Connecté · les messages s’affichent en direct" : "Hors connexion · messages enregistrés affichés");
+        connectionStatus.setTextColor(Color.parseColor("#DCE7F7"));
+        View dot = findViewById(R.id.statusDot);
+        if (dot != null) dot.setBackgroundResource(online ? R.drawable.chat_status_dot : R.drawable.hm_dot_off);
+        updateEmptyState();
 
         if (!online) Toast.makeText(this, "Vous êtes hors ligne", Toast.LENGTH_SHORT).show();
     }
@@ -247,21 +256,8 @@ public class ForumActivity extends AppCompatActivity {
                         messageCount++;
 
                         boolean isQuestion = msg.trim().endsWith("?");
-                        String prefix = isQuestion ? "Question" : "Réponse";
-
-                        SpannableString styledText =
-                                new SpannableString(prefix + " " + messageCount + ": " + msg);
-
-                        styledText.setSpan(new StyleSpan(android.graphics.Typeface.BOLD),
-                                0, prefix.length(), SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-                        if (isQuestion) {
-                            styledText.setSpan(new BackgroundColorSpan(Color.YELLOW),
-                                    0, styledText.length(), SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        }
-
                         MessageModel model = new MessageModel();
-                        model.message = styledText.toString();
+                        model.message = msg.trim();
                         model.userEmail = email;
                         model.date = date;
                         model.timestamp = ts != null ? ts : System.currentTimeMillis();
@@ -279,6 +275,7 @@ public class ForumActivity extends AppCompatActivity {
                 saveMessagesLocally();
                 messageAdapter.notifyDataSetChanged();
                 messageRecyclerView.scrollToPosition(messageList.size() - 1);
+                updateEmptyState();
 
                 // 🔥 Informer MainActivity que le badge doit changer
                 sendBroadcast(new Intent("UPDATE_FORUM_BADGE"));

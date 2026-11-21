@@ -1,98 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<!-- Forum d'entraide entre apprenants -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/swipeRefreshLayout"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ForumActivity">
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="#F4F6FA" android:orientation="vertical" tools:context=".ForumActivity">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="10dp"
-        android:background="@color/primary_light">
-
-        <!-- Barre de connexion -->
-        <LinearLayout
-            android:id="@+id/mess"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/button_background"
-            android:elevation="6dp"
-            android:orientation="horizontal"
-            android:padding="10dp"
-            android:layout_marginBottom="8dp"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:id="@+id/connectionStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="En ligne..."
-                android:textStyle="bold"
-                android:textColor="@color/white"
-                android:textSize="20sp"/>
+    <LinearLayout android:id="@+id/mess" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="@drawable/hm_header" android:elevation="4dp" android:gravity="center_vertical"
+        android:orientation="horizontal" android:paddingHorizontal="16dp" android:paddingVertical="14dp">
+        <ImageView android:layout_width="44dp" android:layout_height="44dp" android:background="@drawable/hm_glass_circle"
+            android:padding="11dp" android:src="@drawable/ic_m_chat" android:contentDescription="Forum" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="sans-serif-medium"
+                android:text="Forum d’entraide" android:textColor="#FFFFFF" android:textSize="19sp" android:textStyle="bold" />
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <View android:id="@+id/statusDot" android:layout_width="8dp" android:layout_height="8dp"
+                    android:layout_marginEnd="6dp" android:background="@drawable/chat_status_dot" />
+                <TextView android:id="@+id/connectionStatus" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Connexion…" android:textColor="#DCE7F7" android:textSize="13sp" />
+            </LinearLayout>
         </LinearLayout>
-
-        <!-- Liste des messages -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/messageRecyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:overScrollMode="never"
-            android:scrollbars="vertical"
-            android:paddingVertical="6dp"
-            android:clipToPadding="false"
-            tools:listitem="@layout/item_message_bubble"/>
-
-        <!-- Barre d’envoi -->
-        <LinearLayout
-            android:id="@+id/messageInputContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="10dp"
-            android:elevation="8dp"
-            android:gravity="center_vertical"
-            android:background="@color/white">
-
-            <EditText
-                android:id="@+id/messageInput"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Posez ou répondez..."
-                android:background="@drawable/input_background"
-                android:padding="12dp"
-                android:layout_marginEnd="8dp"
-                android:minHeight="48dp"
-                android:textSize="16sp"
-                android:gravity="top|start"
-                android:inputType="textMultiLine"
-                android:scrollbars="vertical"/>
-
-            <ImageButton
-                android:id="@+id/sendButton"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:background="@drawable/circular_button_background"
-                android:padding="12dp"
-                android:elevation="4dp"
-                android:src="@drawable/ic_arrow_right"
-                android:contentDescription="Envoyer"
-                app:tint="@color/white" />
-        </LinearLayout>
-
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:visibility="gone"
-            style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"/>
     </LinearLayout>
-</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout android:id="@+id/swipeRefreshLayout"
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+        <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/messageRecyclerView"
+                android:layout_width="match_parent" android:layout_height="match_parent" android:clipToPadding="false"
+                android:overScrollMode="never" android:paddingHorizontal="12dp" android:paddingVertical="10dp"
+                tools:listitem="@layout/item_message_bubble" />
+
+            <LinearLayout android:id="@+id/forumEmpty" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_gravity="center" android:gravity="center_horizontal" android:orientation="vertical"
+                android:padding="32dp" android:visibility="gone">
+                <ImageView android:layout_width="84dp" android:layout_height="84dp" android:background="@drawable/chat_avatar_bg"
+                    android:padding="22dp" android:src="@drawable/ic_m_chat" android:contentDescription="Forum vide" />
+                <TextView style="@style/HM.Title" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp" android:gravity="center" android:text="Aucun message pour le moment" />
+                <TextView style="@style/HM.Muted" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp" android:gravity="center" android:lineSpacingMultiplier="1.2"
+                    android:text="Posez votre question à la communauté HELP-ME : terminez-la par « ? » pour qu’elle soit mise en avant. Les autres apprenants et les formateurs vous répondent ici." />
+            </LinearLayout>
+
+            <ProgressBar android:id="@+id/progressBar" android:layout_width="36dp" android:layout_height="36dp"
+                android:layout_gravity="top|center_horizontal" android:layout_marginTop="16dp"
+                android:indeterminateTint="#326FBF" android:visibility="gone" />
+        </FrameLayout>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <LinearLayout android:id="@+id/messageInputContainer" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="#FFFFFF" android:elevation="8dp" android:gravity="center_vertical" android:orientation="horizontal"
+        android:padding="10dp">
+        <EditText android:id="@+id/messageInput" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:background="@drawable/chat_input_bg" android:hint="Écrivez votre question ou votre réponse…"
+            android:importantForAutofill="no" android:inputType="textCapSentences|textMultiLine" android:maxLines="4"
+            android:minHeight="48dp" android:paddingHorizontal="18dp" android:paddingVertical="12dp"
+            android:textColor="#1C2430" android:textColorHint="#8A96A8" android:textSize="16sp" />
+        <ImageButton android:id="@+id/sendButton" android:layout_width="48dp" android:layout_height="48dp"
+            android:layout_marginStart="8dp" android:background="@drawable/chat_round_button" android:contentDescription="Envoyer"
+            android:padding="13dp" android:scaleType="fitCenter" android:src="@drawable/ic_chat_send" />
+    </LinearLayout>
+</LinearLayout>

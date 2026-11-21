@@ -43,6 +43,9 @@ public class QuizActivity extends AppCompatActivity {
     private Spinner spinnerCategory;
     private TextView tvQuestion, tvQuestionNumber, tvScore, tvTimer, tvExplanation, btnHistory;
     private LinearLayout optionsLayout;
+    private android.widget.ProgressBar pbTimer;
+    private com.google.android.material.button.MaterialButton btnNext;
+    private Runnable afterAnswer;
 
     private JSONArray allQuestions;
     private final List<JSONObject> questionList = new ArrayList<>();
@@ -155,7 +158,7 @@ public class QuizActivity extends AppCompatActivity {
 
         btnMatchOnline.setOnClickListener(v -> {
             onlineMatchCard.setVisibility(View.VISIBLE);
-            tvOnlineMessage.setText("🔥 Des joueurs sont en ligne, prêts à te défier !");
+            tvOnlineMessage.setText("Des joueurs sont en ligne, prêts à vous défier !");
         });
 
         btnStartMatch.setOnClickListener(v -> {
@@ -181,6 +184,38 @@ public class QuizActivity extends AppCompatActivity {
         tvExplanation = findViewById(R.id.tvExplanation);
         optionsLayout = findViewById(R.id.optionsLayout);
         btnHistory = findViewById(R.id.btnHistory);
+        pbTimer = findViewById(R.id.pbTimer);
+        btnNext = findViewById(R.id.btnNext);
+        btnNext.setOnClickListener(v -> {
+            btnNext.setVisibility(View.GONE);
+            Runnable r = afterAnswer;
+            afterAnswer = null;
+            if (r != null) r.run();
+        });
+        getWindow().setStatusBarColor(Color.parseColor("#2A5FA6"));
+    }
+
+    /** Après une réponse : l'apprenant lit l'explication puis passe à la suite quand il est prêt. */
+    private void waitForNext(String label, Runnable next) {
+        afterAnswer = next;
+        btnNext.setText(label);
+        btnNext.setVisibility(View.VISIBLE);
+        btnNext.setAlpha(0f);
+        btnNext.animate().alpha(1f).setDuration(220).start();
+        View scroll = findViewById(R.id.quizScroll);
+        if (scroll instanceof android.widget.ScrollView)
+            scroll.post(() -> ((android.widget.ScrollView) scroll).smoothScrollTo(0, btnNext.getBottom()));
+    }
+
+    /** Met en vert la bonne réponse (utile quand on s'est trompé ou que le temps est écoulé). */
+    private void revealCorrect() {
+        for (int i = 0; i < optionTexts.size(); i++) {
+            if (optionTexts.get(i).getText().toString().trim().equalsIgnoreCase(currentAnswer.trim())) {
+                optionCards.get(i).setCardBackgroundColor(Color.parseColor("#DDF5E8"));
+                optionCards.get(i).setStrokeColor(Color.parseColor("#1E9E62"));
+                optionCards.get(i).setStrokeWidth(4);
+            }
+        }
     }
 
     // ───────────────────────────────────────────────────────────────
@@ -189,8 +224,8 @@ public class QuizActivity extends AppCompatActivity {
 
     private void showIntroOnce() {
         new MaterialAlertDialogBuilder(this)
-                .setTitle("Bienvenue 👋")
-                .setMessage("\"Vous avez 60 secondes pour chaque question.\n\nEn cas de 3 mauvaises réponses consécutives, vous serez suspendu pendant 10 minutes.\n\nBonne chance ! 🚀")
+                .setTitle("Bienvenue dans le quiz")
+                .setMessage("Vous avez 60 secondes par question. Après chaque réponse, lisez l’explication puis passez à la suivante.\n\nAttention : après 3 mauvaises réponses d’affilée, le quiz fait une pause de 10 minutes. Profitez-en pour relire la leçon.\n\nBonne chance !")
                 .setPositiveButton("Commencer", (d, w) -> {
                     prefs.edit().putBoolean(KEY_INTRO_SHOWN, true).apply();
                     d.dismiss();
@@ -207,8 +242,9 @@ public class QuizActivity extends AppCompatActivity {
         categoryList.clear();
         categoryList.addAll(categories);
 
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, categoryList);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        java.util.Collections.sort(categoryList);
+        adapter = new ArrayAdapter<>(this, R.layout.spinner_item_white, categoryList);
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_hm);
         spinnerCategory.setAdapter(adapter);
 
         String lastCat = prefs.getString(KEY_LAST_CATEGORY, null);
@@ -264,7 +300,7 @@ public class QuizActivity extends AppCompatActivity {
 
     private void askNextCategory() {
         new MaterialAlertDialogBuilder(this)
-                .setTitle("Catégorie terminée ✅")
+                .setTitle("Thème terminé")
                 .setMessage("Voulez-vous passer à la catégorie suivante ?")
                 .setPositiveButton("Oui", (d, w) -> {
                     int idx = categoryList.indexOf(currentCategory);
@@ -287,6 +323,7 @@ public class QuizActivity extends AppCompatActivity {
 
         tvExplanation.setText("");
         tvExplanation.setVisibility(View.GONE);
+        btnNext.setVisibility(View.GONE);
 
         if (currentIndex >= questionList.size()) {
             askNextCategory();
@@ -331,6 +368,10 @@ public class QuizActivity extends AppCompatActivity {
             MaterialCardView card = item.findViewById(R.id.cardOption);
             TextView tvOpt = item.findViewById(R.id.tvOptionText);
             tvOpt.setText(itemData.text);
+            ((TextView) item.findViewById(R.id.tvLetter)).setText(String.valueOf((char) ('A' + i)));
+            item.setAlpha(0f);
+            item.setTranslationY(24f);
+            item.animate().alpha(1f).translationY(0f).setStartDelay(60L * i).setDuration(320).start();
 
             item.setEnabled(true); // réactiver au début d'une nouvelle question
             optionCards.add(card);
@@ -356,8 +397,10 @@ public class QuizActivity extends AppCompatActivity {
 
         for (MaterialCardView c : optionCards) {
             c.setEnabled(false);
+            c.setClickable(false);
             c.setCardBackgroundColor(Color.WHITE);
-            c.setStrokeColor(Color.parseColor("#CBD5E1"));
+            c.setStrokeColor(Color.parseColor("#DCE3EE"));
+            c.setAlpha(0.75f);
         }
 
         MaterialCardView selected = optionCards.get(index);
@@ -384,54 +427,71 @@ public class QuizActivity extends AppCompatActivity {
                 .putString(KEY_LAST_CATEGORY, currentCategory)
                 .apply();
 
+        selected.setAlpha(1f);
         if (isCorrect) {
             score++;
             wrongStreak = 0;
-            selected.setCardBackgroundColor(Color.parseColor("#D1FADF"));
-            selected.setStrokeColor(Color.parseColor("#22C55E"));
-            tvExplanation.setText("Bonne réponse : " + currentExplanation);
+            selected.setCardBackgroundColor(Color.parseColor("#DDF5E8"));
+            selected.setStrokeColor(Color.parseColor("#1E9E62"));
+            selected.setStrokeWidth(4);
+            selected.animate().scaleX(1.03f).scaleY(1.03f).setDuration(140)
+                    .withEndAction(() -> selected.animate().scaleX(1f).scaleY(1f).setDuration(160).start()).start();
+            tvExplanation.setText(android.text.Html.fromHtml("<b>Bonne réponse !</b> " + android.text.TextUtils.htmlEncode(currentExplanation), android.text.Html.FROM_HTML_MODE_COMPACT));
         } else {
             wrongStreak++;
-            selected.setCardBackgroundColor(Color.parseColor("#FECACA"));
-            selected.setStrokeColor(Color.parseColor("#EF4444"));
-            tvExplanation.setText("Mauvaise réponse : " + currentExplanation);
-            if (wrongStreak >= 3) { blockUser(); return; }
+            selected.setCardBackgroundColor(Color.parseColor("#FBE3E3"));
+            selected.setStrokeColor(Color.parseColor("#D64545"));
+            selected.setStrokeWidth(4);
+            android.animation.ObjectAnimator.ofFloat(selected, View.TRANSLATION_X, 0, -16, 16, -8, 8, 0).setDuration(360).start();
+            revealCorrect();
+            tvExplanation.setText(android.text.Html.fromHtml("<b>La bonne réponse : " + android.text.TextUtils.htmlEncode(currentAnswer) + ".</b> "
+                    + android.text.TextUtils.htmlEncode(currentExplanation), android.text.Html.FROM_HTML_MODE_COMPACT));
         }
-
         answeredSet.add(currentQuestionText);
         prefs.edit().putStringSet(KEY_ANSWERED_SET, answeredSet).apply();
-
         tvScore.setText("Score : " + score);
-
-        handler.postDelayed(() -> {
+        if (!isCorrect && wrongStreak >= 3) {
+            waitForNext("Continuer", this::blockUser);
+            return;
+        }
+        waitForNext(currentIndex + 1 < questionList.size() ? "Question suivante" : "Terminer", () -> {
             currentIndex++;
             showNextQuestion();
-        }, 1200);
+        });
     }
 
     // ───────────────────────────────────────────────────────────────
 
     private void startTimer() {
         cancelQuestionTimer();
-        tvTimer.setText("60");
-
-        questionTimer = new CountDownTimer(60000, 1000) {
+        tvTimer.setText("60 s");
+        tvTimer.setTextColor(Color.parseColor("#1F4F96"));
+        pbTimer.setProgress(600);
+        pbTimer.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#326FBF")));
+        questionTimer = new CountDownTimer(60000, 100) {
             @Override public void onTick(long ms) {
-                tvTimer.setText(String.valueOf(ms / 1000));
+                tvTimer.setText((ms / 1000 + 1) + " s");
+                pbTimer.setProgress((int) (ms / 100));
+                if (ms < 10000) {
+                    tvTimer.setTextColor(Color.parseColor("#D64545"));
+                    pbTimer.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#D64545")));
+                }
             }
             @Override public void onFinish() {
                 soundPool.play(soundTimeout, 1, 1, 1, 0, 1);
-
+                pbTimer.setProgress(0);
+                tvTimer.setText("0 s");
                 wrongStreak++;
+                for (MaterialCardView c : optionCards) { c.setEnabled(false); c.setClickable(false); }
+                revealCorrect();
                 tvExplanation.setVisibility(View.VISIBLE);
-                tvExplanation.setText("⏰ Temps écoulé");
-
-                if (wrongStreak >= 3) { blockUser(); return; }
-
-                handler.postDelayed(() -> {
+                tvExplanation.setText(android.text.Html.fromHtml("<b>Temps écoulé.</b> La bonne réponse était : "
+                        + android.text.TextUtils.htmlEncode(currentAnswer) + ".", android.text.Html.FROM_HTML_MODE_COMPACT));
+                if (wrongStreak >= 3) { waitForNext("Continuer", QuizActivity.this::blockUser); return; }
+                waitForNext("Question suivante", () -> {
                     currentIndex++;
                     showNextQuestion();
-                }, 1200);
+                });
             }
         }.start();
     }
@@ -453,13 +513,15 @@ public class QuizActivity extends AppCompatActivity {
         cancelTimers();
         setContentView(R.layout.block_screen);
         TextView tvBlock = findViewById(R.id.tvBlock);
+        View revoir = findViewById(R.id.btnBlockLessons);
+        if (revoir != null) revoir.setOnClickListener(v -> finish());   // retour à l'accueil et aux modules
 
         long remaining = blockEndTime - System.currentTimeMillis();
         blockTimer = new CountDownTimer(remaining, 1000) {
             @Override public void onTick(long ms) {
                 long min = ms / 60000, sec = (ms % 60000) / 1000;
                 tvBlock.setText(String.format(Locale.getDefault(),
-                        "⛔ Vous êtes bloqué temporairement.\nRevenez dans : %02d:%02d", min, sec));
+                        "Petite pause !\n\nTrois erreurs d’affilée : prenez le temps de relire la leçon.\nLe quiz reprend dans %02d:%02d", min, sec));
             }
             @Override public void onFinish() { recreate(); }
         }.start();

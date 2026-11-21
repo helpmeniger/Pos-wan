@@ -229,7 +229,7 @@ public class MainActivity9 extends AppCompatActivity {
 
     private void setSubmitting(boolean submitting) {
         submitButton.setEnabled(!submitting);
-        submitButton.setText(submitting ? "Patientez..." : "Envoyer");
+        submitButton.setText(submitting ? "Envoi en cours…" : "Envoyer ma réponse");
         show(sendingProgressBar, submitting);
     }
 

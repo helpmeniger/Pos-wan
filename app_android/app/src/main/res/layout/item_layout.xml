@@ -1,30 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Carte d'un site utile : initiale colorée, nom, domaine, description -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="8dp">
-
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textStyle="bold"
-        android:textColor="#000000"
-        android:textSize="18sp"
-        android:paddingBottom="4dp" />
-
-    <TextView
-        android:id="@+id/tvDescription"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:paddingBottom="4dp" />
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:background="@color/lavender"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp" />
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
+    android:background="@drawable/hm_card" android:clickable="true" android:elevation="1dp" android:focusable="true"
+    android:foreground="?attr/selectableItemBackground" android:gravity="top" android:orientation="horizontal" android:padding="16dp">
+    <TextView android:id="@+id/tvInitial" android:layout_width="44dp" android:layout_height="44dp" android:gravity="center"
+        android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold" />
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="14dp"
+        android:layout_weight="1" android:orientation="vertical">
+        <TextView android:id="@+id/tvTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium" android:textColor="#1B2330" android:textSize="16.5sp" android:textStyle="bold" />
+        <TextView android:id="@+id/tvDomain" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#0F8A5F" android:textSize="12.5sp" />
+        <TextView android:id="@+id/tvDescription" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="6dp" android:ellipsize="end" android:lineSpacingMultiplier="1.15" android:maxLines="3"
+            android:textColor="#4A5568" android:textSize="14.5sp" />
+    </LinearLayout>
+    <ImageView android:layout_width="22dp" android:layout_height="22dp" android:layout_marginStart="8dp"
+        android:layout_gravity="center_vertical" android:src="@drawable/ic_m_chevron" android:tint="#9AA6B8"
+        android:contentDescription="Ouvrir" />
 </LinearLayout>

@@ -1,276 +1,290 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Concours « Champions numériques » : présentation, question du mois, participation -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/primary_light"
+    android:background="#F4F6FA"
     tools:context=".MainActivity9">
-
-    <!-- Header premium : Lottie en arrière-plan + images -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/headerCard"
-        android:layout_width="0dp"
-        android:layout_height="300dp"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="20dp"
-        app:cardUseCompatPadding="true"
-        app:cardElevation="6dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <!-- Lottie background doux -->
-            <com.airbnb.lottie.LottieAnimationView
-                app:cardBackgroundColor="@android:color/white"
-                android:id="@+id/headerLottie"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:contentDescription="@string/app_name"
-                app:lottie_rawRes="@raw/edu_tech_lottie"
-                app:lottie_autoPlay="true"
-                app:lottie_loop="true"
-                app:lottie_speed="0.7" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:layout_gravity="bottom"
-                android:paddingBottom="10dp">
-
-                <!-- Titres par-dessus (discrets, pros) -->
-                <TextView
-                    android:id="@+id/heroTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="DEVENEZ LE PROCHAIN CHAMPION NUMÉRIQUE !"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/black"
-                    android:gravity="center"
-                    android:shadowColor="#33000000"
-                    android:shadowDx="0"
-                    android:shadowDy="1"
-                    android:shadowRadius="2" />
-                <TextView
-                    android:id="@+id/heroSubtitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Un ordinateur à gagner chaque mois pour booster vos études, votre travail et vos projets."
-                    android:textSize="13.5sp"
-                    android:textColor="#03A9F4"
-                    android:gravity="center"
-                    android:paddingTop="2dp" />
-            </LinearLayout>   <!-- Images secondaires en arrière-plan (subtiles) -->
-
-
-
-            <ImageView
-                android:id="@+id/pcLeft"
-                android:layout_width="84dp"
-                android:layout_height="84dp"
-                android:layout_gravity="start|center_vertical"
-                android:layout_marginStart="16dp"
-                android:alpha="0.18"
-                android:src="@drawable/sacpc3"
-                android:scaleType="centerInside" />
-
-            <ImageView
-                android:id="@+id/pcRight"
-                android:layout_width="84dp"
-                android:layout_height="84dp"
-                android:layout_gravity="end|center_vertical"
-                android:layout_marginEnd="16dp"
-                android:alpha="0.18"
-                android:src="@drawable/pc2"
-                android:scaleType="centerInside" />
-
-            <!-- Image principale centrée (sacs1) -->
-            <ImageView
-                android:id="@+id/sacsMain"
-                android:layout_width="180dp"
-                android:layout_height="180dp"
-                android:layout_gravity="center_horizontal|center_vertical"
-                android:contentDescription="@string/app_name"
-                android:elevation="6dp"
-                android:src="@drawable/portable"
-                android:scaleType="centerInside" />
-
-
-
-
-        </FrameLayout>
-    </androidx.cardview.widget.CardView>
 
     <ScrollView
         android:id="@+id/scroll"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:fillViewport="true"
-        app:layout_constraintTop_toBottomOf="@id/headerCard"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingStart="20dp"
-            android:paddingEnd="20dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="24dp">
+            android:paddingBottom="28dp">
 
-            <!-- Question -->
-            <TextView
-                android:id="@+id/questionText"
+            <!-- Bandeau -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Chargement de la question..."
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#000000"
-                android:gravity="center"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="12dp"/>
+                android:background="@drawable/hm_champion_header"
+                android:orientation="vertical"
+                android:paddingHorizontal="20dp"
+                android:paddingTop="22dp"
+                android:paddingBottom="56dp">
 
-            <!-- Loader question -->
-            <ProgressBar
-                android:id="@+id/loadingProgressBar"
-                style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Large"
-                android:indeterminateTint="@color/lavender"
-                android:indeterminate="true"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginBottom="8dp"
-                android:visibility="gone" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/hm_glass_pill"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="4dp"
+                    android:text="Concours mensuel HELP-ME"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12.5sp"
+                    android:textStyle="bold" />
 
-            <!-- Compteur -->
-            <TextView
-                android:id="@+id/counterText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Candidats : 0"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="6dp"/>
-
-            <!-- 🔹 Champ Nom & Prénom -->
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Nom et Prénom"
-                app:startIconDrawable="@drawable/ic_person_24"
-                app:startIconTint="@color/premium_gold"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeColor="@color/premium_gold"
-                app:boxCornerRadiusTopStart="14dp"
-                app:boxCornerRadiusTopEnd="14dp"
-                app:boxCornerRadiusBottomStart="14dp"
-                app:boxCornerRadiusBottomEnd="14dp"
-                android:layout_marginTop="10dp">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/nameEditText"
+                <TextView
+                    android:id="@+id/heroTitle"
+                    style="@style/HM.HeaderTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPersonName"
-                    android:textColor="@color/premium_ink"
-                    android:paddingVertical="12dp"/>
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_marginTop="12dp"
+                    android:text="Devenez le prochain Champion numérique"
+                    android:textSize="26sp" />
 
-            <!-- 🔹 Champ Téléphone ou Email -->
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Numéro de téléphone ou Email"
-                app:startIconDrawable="@drawable/ic_phone_24"
-                app:startIconTint="@color/premium_gold"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeColor="@color/premium_gold"
-                app:boxCornerRadiusTopStart="14dp"
-                app:boxCornerRadiusTopEnd="14dp"
-                app:boxCornerRadiusBottomStart="14dp"
-                app:boxCornerRadiusBottomEnd="14dp"
-                android:layout_marginTop="10dp">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/phoneEditText"
+                <TextView
+                    android:id="@+id/heroSubtitle"
+                    style="@style/HM.HeaderSub"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textEmailAddress|text"
-                    android:textColor="@color/premium_ink"
-                    android:paddingVertical="12dp"/>
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_marginTop="6dp"
+                    android:text="Un ordinateur à gagner chaque mois pour booster vos études, votre travail et vos projets." />
+            </LinearLayout>
 
-            <!-- 🔹 Champ Réponse -->
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            <!-- Visuel du lot -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/headerCard"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Votre réponse"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeColor="@color/premium_gold"
-                app:boxCornerRadiusTopStart="14dp"
-                app:boxCornerRadiusTopEnd="14dp"
-                app:boxCornerRadiusBottomStart="14dp"
-                app:boxCornerRadiusBottomEnd="14dp"
-                android:layout_marginTop="10dp">
+                android:layout_height="210dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="-40dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="6dp">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/answerEditText"
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="120dp"
-                    android:gravity="top|start"
-                    android:inputType="textMultiLine"
-                    android:overScrollMode="ifContentScrolls"
-                    android:textColor="@color/premium_ink"
-                    android:paddingVertical="12dp"/>
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_height="match_parent">
 
-            <!-- Loader envoi -->
-            <ProgressBar
-                android:id="@+id/sendingProgressBar"
+                    <com.airbnb.lottie.LottieAnimationView
+                        android:id="@+id/headerLottie"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:alpha="0.35"
+                        android:contentDescription="@string/app_name"
+                        app:lottie_autoPlay="true"
+                        app:lottie_loop="true"
+                        app:lottie_rawRes="@raw/edu_tech_lottie"
+                        app:lottie_speed="0.7" />
+
+                    <ImageView
+                        android:id="@+id/pcLeft"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:layout_gravity="start|center_vertical"
+                        android:layout_marginStart="14dp"
+                        android:alpha="0.2"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/sacpc3" />
+
+                    <ImageView
+                        android:id="@+id/pcRight"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:layout_gravity="end|center_vertical"
+                        android:layout_marginEnd="14dp"
+                        android:alpha="0.2"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/pc2" />
+
+                    <ImageView
+                        android:id="@+id/sacsMain"
+                        android:layout_width="200dp"
+                        android:layout_height="170dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="Ordinateur à gagner"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/portable" />
+
+                    <TextView
+                        android:id="@+id/counterText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|end"
+                        android:layout_margin="12dp"
+                        android:background="@drawable/hm_score_pill"
+                        android:drawableStart="@drawable/ic_person_24"
+                        android:drawablePadding="4dp"
+                        android:drawableTint="#9A6200"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="4dp"
+                        android:text="Candidats : 0"
+                        android:textColor="#7A5400"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Comment participer -->
+            <TextView
+                style="@style/HM.Title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginTop="16dp"
-                android:visibility="gone" />
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="22dp"
+                android:text="Comment participer" />
 
-            <!-- 🔹 Bouton Envoyer -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/submitButton"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Envoyer ma réponse"
-                android:textAllCaps="false"
-                android:layout_marginTop="16dp"
-                android:padding="12dp"
-                android:textColor="@android:color/white"
-                android:textSize="17sp"
-                app:cornerRadius="22dp"
-                app:iconPadding="8dp"
-                app:iconTint="@android:color/white"
-                app:iconGravity="textStart"
-                app:rippleColor="@android:color/white"
-                app:backgroundTint="@color/lavender"
-                style="@style/Widget.MaterialComponents.Button" />
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
 
+                <TextView style="@style/HM.Step" android:text="1\nLisez la question du mois" />
+                <TextView style="@style/HM.Step" android:layout_marginHorizontal="8dp" android:text="2\nÉcrivez votre réponse" />
+                <TextView style="@style/HM.Step" android:text="3\nEnvoyez avec vos coordonnées" />
+            </LinearLayout>
+
+            <!-- Question du mois -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/hm_card"
+                android:elevation="2dp"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Question du mois"
+                    android:textColor="#C47A16"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <ProgressBar
+                    android:id="@+id/loadingProgressBar"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginTop="10dp"
+                    android:indeterminateTint="#D9822B"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/questionText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingMultiplier="1.25"
+                    android:text="Chargement de la question…"
+                    android:textColor="#1B2330"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <!-- Formulaire -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/hm_card"
+                android:elevation="2dp"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <TextView
+                    style="@style/HM.Title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ma participation"
+                    android:textSize="17sp" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/HM.Field"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="Nom et prénom"
+                    app:startIconDrawable="@drawable/ic_person_24">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/nameEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName|textCapWords" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/HM.Field"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:hint="Téléphone ou e-mail"
+                    app:startIconDrawable="@drawable/ic_phone_24">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/phoneEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textEmailAddress" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/HM.Field"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:hint="Votre réponse">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/answerEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="top"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:minLines="4" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <ProgressBar
+                    android:id="@+id/sendingProgressBar"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="12dp"
+                    android:indeterminateTint="#326FBF"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/submitButton"
+                    style="@style/HM.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="Envoyer ma réponse"
+                    app:backgroundTint="#D9822B" />
+
+                <TextView
+                    style="@style/HM.Muted"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center"
+                    android:text="Une seule participation par jour. Vos coordonnées servent uniquement à vous contacter si vous gagnez."
+                    android:textSize="12.5sp" />
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

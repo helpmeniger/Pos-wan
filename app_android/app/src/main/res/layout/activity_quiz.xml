@@ -1,245 +1,300 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Quiz HELP-ME : catégorie, question chronométrée, réponses A-D, explication, défi en ligne -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/quizScroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F4F7FB"
+    android:background="#F4F6FA"
     android:fillViewport="true">
 
     <LinearLayout
         android:id="@+id/mainLayout"
-        android:orientation="vertical"
-        android:padding="16dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="28dp">
 
-        <!-- HEADER -->
-        <com.google.android.material.card.MaterialCardView
+        <!-- En-tête -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#2C7BE5">
+            android:background="@drawable/hm_header"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="22dp"
+            android:paddingBottom="46dp">
 
             <LinearLayout
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
                 android:layout_width="match_parent"
-                android:layout_height="64dp">
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <ImageView
                     android:id="@+id/ivBot"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:src="@drawable/ic_quiz" />
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/hm_glass_circle"
+                    android:contentDescription="Quiz"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_m_quiz" />
 
-                <TextView
-                    android:id="@+id/tvTitle"
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
                     android:layout_weight="1"
-                    android:paddingStart="12dp"
-                    android:text="Quiz Formation"
-                    android:textColor="@android:color/white"
-                    android:textSize="21sp"
-                    android:textStyle="bold"/>
+                    android:orientation="vertical">
 
-                <!-- IMPORTANT : btnHistory doit être TEXTVIEW comme ton Java -->
+                    <TextView
+                        android:id="@+id/tvTitle"
+                        style="@style/HM.HeaderTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Quiz" />
+
+                    <TextView
+                        style="@style/HM.HeaderSub"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Testez vos connaissances, à votre rythme" />
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/btnHistory"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="📊"
-                    android:textSize="22sp"
-                    android:textColor="@android:color/white"
-                    android:padding="8dp"/>
+                    android:background="@drawable/hm_glass_pill"
+                    android:drawableStart="@drawable/ic_m_time"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:text="Historique"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
-        <!-- CARD QUIZ -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="3dp"
-            app:cardBackgroundColor="@android:color/white">
-
+            <!-- Choix de la catégorie -->
             <LinearLayout
-                android:padding="16dp"
-                android:orientation="vertical"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/hm_glass_pill"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="6dp">
 
                 <TextView
                     android:id="@+id/tvCategoryLabel"
-                    android:text="Catégorie"
-                    android:textColor="#64748B"
-                    android:textSize="14sp"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_marginTop="8dp"
-                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:cardCornerRadius="12dp"
-                    app:strokeColor="#DBE4F1"
-                    app:strokeWidth="1dp"
-                    app:cardBackgroundColor="#E6F0FF">
+                    android:text="Thème"
+                    android:textColor="#DCE7F7"
+                    android:textSize="14sp" />
 
-                    <Spinner
-                        android:id="@+id/spinnerCategory"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp"/>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Header question -->
-                <LinearLayout
-                    android:layout_marginTop="16dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <TextView
-                        android:id="@+id/tvQuestionNumber"
-                        android:text="Question 1 / 10"
-                        android:textSize="16sp"
-                        android:textColor="#0F172A"
-                        android:textStyle="bold"
-                        android:layout_weight="1"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                       android:text="Temps restant:"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/red"
-                        android:layout_marginEnd="6dp"/>
-
-                    <TextView
-                        android:id="@+id/tvTimer"
-                        android:text="60"
-                        android:textSize="25sp"
-                        android:textStyle="bold"
-                        android:textColor="#F44336"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-                </LinearLayout>
-
-                <!-- Question -->
-                <LinearLayout
-                    android:layout_marginTop="16dp"
-                    android:orientation="horizontal"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:src="@drawable/ic_help" />
-
-                    <TextView
-                        android:id="@+id/tvQuestion"
-                        android:layout_marginStart="12dp"
-                        android:text="Question"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:textColor="#F44336"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"/>
-                </LinearLayout>
-
-                <!-- Options container -->
-                <LinearLayout
-                    android:id="@+id/optionsLayout"
-                    android:layout_marginTop="14dp"
-                    android:orientation="vertical"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
-
-                <TextView
-                    android:id="@+id/tvExplanation"
-                    android:layout_marginTop="12dp"
-                    android:textColor="#0F172A"
-                    android:textSize="15sp"
-                    android:visibility="gone"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
-
-                <TextView
-                    android:id="@+id/tvScore"
-                    android:layout_marginTop="14dp"
-                    android:text="Score : 0"
-                    android:textColor="#0F172A"
-                    android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-
+                <Spinner
+                    android:id="@+id/spinnerCategory"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:backgroundTint="#FFFFFF"
+                    android:popupBackground="#FFFFFF" />
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
 
-        <!-- Défi button -->
-        <Button
-            android:id="@+id/btnStartMatch"
-            android:layout_marginTop="16dp"
+        <!-- Carte de la question -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="Défi en ligne"
-            android:textAllCaps="false"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:backgroundTint="@color/lavender"
-            android:textColor="@android:color/white"
-            android:background="@drawable/corner_btn"/>
-
-        <!-- Online card -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/onlineMatchCard"
-            android:layout_marginTop="16dp"
-            android:visibility="gone"
-            app:cardCornerRadius="16dp"
-            app:cardBackgroundColor="#0F766E"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="-28dp"
+            android:background="@drawable/hm_card"
+            android:elevation="4dp"
+            android:orientation="vertical"
+            android:padding="18dp">
 
             <LinearLayout
-                android:padding="16dp"
-                android:orientation="vertical"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/tvOnlineMessage"
-                    android:text="🔥 Joueurs prêts !"
-                    android:textColor="@android:color/white"
-                    android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:gravity="center"
+                    android:id="@+id/tvQuestionNumber"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Question 1 / 20"
+                    android:textColor="#667386"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvTimer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/hm_timer_pill"
+                    android:drawableStart="@drawable/ic_m_time"
+                    android:drawablePadding="5dp"
+                    android:drawableTint="#326FBF"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="5dp"
+                    android:text="60"
+                    android:textColor="#1F4F96"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/pbTimer"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_marginTop="12dp"
+                android:max="600"
+                android:progress="600"
+                android:progressBackgroundTint="#E3EAF5"
+                android:progressTint="#326FBF" />
+
+            <TextView
+                android:id="@+id/tvQuestion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="sans-serif-medium"
+                android:lineSpacingMultiplier="1.15"
+                android:text="Chargement des questions…"
+                android:textColor="#1B2330"
+                android:textSize="21sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/optionsLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/tvExplanation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/hm_explain_box"
+                android:lineSpacingMultiplier="1.2"
+                android:padding="14dp"
+                android:textColor="#1B2330"
+                android:textSize="15sp"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNext"
+                style="@style/HM.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="Question suivante"
+                android:visibility="gone"
+                app:icon="@drawable/ic_m_next"
+                app:iconGravity="end"
+                app:iconTint="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/tvScore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/hm_score_pill"
+                android:drawableStart="@drawable/ic_m_star"
+                android:drawablePadding="6dp"
+                android:drawableTint="#C98A00"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                android:text="Score : 0"
+                android:textColor="#7A5400"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Défi en ligne -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/onlineMatchCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#2B2F3A"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"/>
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
+                    <ImageView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:background="@drawable/hm_orange_circle"
+                        android:contentDescription="Défi"
+                        android:padding="11dp"
+                        android:src="@drawable/ic_m_flame" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Défi en ligne"
+                            android:textColor="#FFFFFF"
+                            android:textSize="17sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvOnlineMessage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Affrontez d’autres apprenants en direct."
+                            android:textColor="#C9D2E3"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnStartMatch"
+                    style="@style/HM.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="Trouver un adversaire"
+                    app:backgroundTint="#D9822B" />
+
+                <!-- conservé pour la compatibilité du code (non affiché) -->
                 <Button
                     android:id="@+id/btnMatchOnline"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:text="Commencer le défi"
-                    android:textAllCaps="false"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:background="@drawable/bg_primary_button"/>
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
     </LinearLayout>
 </ScrollView>

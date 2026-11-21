@@ -109,7 +109,8 @@
         <activity
             android:name=".MainActivity9"
             android:exported="false"
-            android:theme="@style/Theme.HelpMe" />
+            android:theme="@style/Theme.HelpMe.Chat"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
         <activity
             android:name=".MainActivity6"
             android:exported="false"
@@ -128,10 +129,13 @@
         <activity
             android:name=".ForumActivity"
             android:exported="false"
-            android:theme="@style/Theme.HelpMe" />
+            android:theme="@style/Theme.HelpMe.Chat"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
         <activity
             android:name=".MainActivity17"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.HelpMe.Chat"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
         <activity
             android:name=".MainActivity16"
             android:exported="false"

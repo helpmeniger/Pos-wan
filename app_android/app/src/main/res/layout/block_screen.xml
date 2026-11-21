@@ -1,18 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Pause du quiz après trois erreurs d'affilée -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:background="@color/lavender"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="24dp">
-
-    <TextView
-        android:id="@+id/tvBlock"
-        android:text="⛔ Vous êtes temporairement bloqué"
-        android:textColor="@android:color/white"
-        android:textSize="22sp"
-        android:gravity="center"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/hm_header" android:gravity="center" android:orientation="vertical" android:padding="28dp">
+    <ImageView android:layout_width="96dp" android:layout_height="96dp" android:background="@drawable/hm_glass_circle"
+        android:padding="26dp" android:src="@drawable/ic_m_time" android:contentDescription="Pause" />
+    <TextView android:id="@+id/tvBlock" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="22dp" android:gravity="center" android:lineSpacingMultiplier="1.25"
+        android:text="Petite pause !" android:textColor="#FFFFFF" android:textSize="19sp" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnBlockLessons" style="@style/HM.Button"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="32dp"
+        android:backgroundTint="#FFFFFF" android:textColor="#1F4F96" android:text="Revoir les leçons" />
 </LinearLayout>
