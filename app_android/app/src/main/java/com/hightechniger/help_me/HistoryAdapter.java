@@ -40,8 +40,8 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.Holder> 
         String opp = (it.opponentName != null) ? it.opponentName : "Adversaire inconnu";
         String score = (it.score != null) ? it.score : "--";
 
-        h.tvOpponent.setText("Vs " + opp);
-        h.tvScore.setText("Score : " + score);
+        h.tvOpponent.setText("Contre " + opp);
+        h.tvScore.setText(score);
 
         // 🔥 Détection victoire / défaite / égalité
         boolean win = false, loss = false, draw = false;
@@ -62,32 +62,39 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.Holder> 
 
         if (win) {
             resultText = "Gagné";
-            color = 0xFF22C55E; // vert
+            color = 0xFF1E9E62; // vert
         }
         else if (loss) {
             resultText = "Perdu";
-            color = 0xFFEF4444; // rouge
+            color = 0xFFD64545; // rouge
         }
         else {
             resultText = "Égalité";
-            color = 0xFFFACC15; // jaune
+            color = 0xFFC98A00; // ambre
         }
 
         h.tvResult.setText(resultText);
         h.tvResult.setTextColor(color);
+        android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();
+        pill.setCornerRadius(40f);
+        pill.setColor((color & 0x00FFFFFF) | 0x22000000);   // même teinte, très claire
+        h.tvResult.setBackground(pill);
+        View stripe = h.itemView.findViewById(R.id.resultStripe);
+        if (stripe != null) stripe.setBackgroundColor(color);
 
         // 🔥 Date + durée
         long dur = (it.durationMs == null ? 0L : it.durationMs);
 
         if (it.timestamp != null) {
             String d = sdf.format(new Date(it.timestamp));
-            h.tvDate.setText(d + " — Durée " + formatDuration(dur));
+            h.tvDate.setText(d + " · durée " + formatDuration(dur));
         } else {
-            h.tvDate.setText("Date inconnue — Durée " + formatDuration(dur));
+            h.tvDate.setText("Date inconnue · durée " + formatDuration(dur));
         }
     }
 
     private String formatDuration(long ms) {
+        if (ms <= 0 || ms > 2L * 3600_000L) return "inconnue";   // match abandonné ou non clôturé
         long s = ms / 1000;
         long min = s / 60;
         long sec = s % 60;

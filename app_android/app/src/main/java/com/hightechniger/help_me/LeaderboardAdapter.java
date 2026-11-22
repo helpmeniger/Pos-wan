@@ -43,28 +43,35 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
 
         User u = data.get(pos);
 
-        h.tvRank.setText("#" + (pos + 1));
+        h.tvRank.setText(String.valueOf(pos + 1));
+        // podium : or, argent, bronze
+        int[] podium = {0xFFF4C542, 0xFFC7CED8, 0xFFD69A62};
+        android.graphics.drawable.GradientDrawable rc = new android.graphics.drawable.GradientDrawable();
+        rc.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        rc.setColor(pos < 3 ? podium[pos] : 0xFFE6EEFA);
+        h.tvRank.setBackground(rc);
+        h.tvRank.setTextColor(pos < 3 ? 0xFF3A2A00 : 0xFF1F4F96);
         h.tvName.setText(u.name != null ? u.name : "Joueur");
 
         long wins = (u.wins == null ? 0 : u.wins);
         long unique = (u.uniqueOpponents == null ? 0 : u.uniqueOpponents);
 
-        h.tvWins.setText("Victoires: " + wins);
-        h.tvUnique.setText("Adversaires uniques: " + unique);
+        h.tvWins.setText(wins + (wins > 1 ? " victoires" : " victoire"));
+        h.tvUnique.setText(unique + (unique > 1 ? " adversaires différents" : " adversaire différent"));
 
         long played = (u.gamesPlayed == null ? 0 : u.gamesPlayed);
         long lost = played - wins;
 
-        h.tvPlayed.setText("Matchs joués: " + played);
-        h.tvWon.setText("Matchs gagnés: " + wins);
-        h.tvLost.setText("Matchs perdus: " + lost);
+        h.tvPlayed.setText(played + " joués");
+        h.tvWon.setText(wins + " gagnés");
+        h.tvLost.setText(Math.max(0, lost) + " perdus");
 
         // 🔥 Affichage du status ("busy", "available", "offline")
         String status = u.status == null ? "offline" : u.status;
         switch (status) {
-            case "available": h.tvStatus.setText("🟢 Disponible"); break;
-            case "busy":      h.tvStatus.setText("🔴 En match"); break;
-            default:          h.tvStatus.setText("⚪ Hors ligne"); break;
+            case "available": status(h.tvStatus, "Disponible", 0xFF1E9E62); break;
+            case "busy":      status(h.tvStatus, "En match", 0xFFD64545); break;
+            default:          status(h.tvStatus, "Hors ligne", 0xFF9AA6B8); break;
         }
 
         // 🔥 NE PAS SE DEFIER SOI-MÊME
@@ -92,6 +99,17 @@ public class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.
                     .setNegativeButton("Non", null)
                     .show();
         });
+    }
+
+    /** Pastille de statut : point coloré + texte. */
+    private static void status(TextView t, String label, int color) {
+        android.graphics.drawable.GradientDrawable dot = new android.graphics.drawable.GradientDrawable();
+        dot.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        dot.setColor(color);
+        int s = Math.round(8 * t.getResources().getDisplayMetrics().density);
+        dot.setSize(s, s);
+        t.setCompoundDrawablesRelativeWithIntrinsicBounds(dot, null, null, null);
+        t.setText(label);
     }
 
     @Override

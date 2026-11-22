@@ -1,105 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Joueur du classement : rang, nom, statut, statistiques -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_marginBottom="12dp"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:backgroundTint="@color/surface"
-    android:padding="16dp">
-
-    <LinearLayout
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <!-- 🔥 Rang -->
-        <TextView
-            android:id="@+id/tvRank"
-            android:text="#1"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="@color/on_surface"
-            android:layout_marginEnd="16dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <!-- 🔥 Colonne info joueur -->
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
-
-            <!-- Nom -->
-            <TextView
-                android:id="@+id/tvName"
-                android:text="Nom du joueur"
-                android:textColor="@color/on_surface"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-
-
-            <!-- Victoires -->
-            <TextView
-                android:id="@+id/tvWins"
-                android:text="Victoires: 5"
-                android:textColor="@color/on_surface_variant"
-                android:textSize="14sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <!-- Adversaires uniques -->
-            <TextView
-                android:id="@+id/tvUnique"
-                android:text="Adversaires uniques: 3"
-                android:textColor="@color/on_surface_variant"
-                android:textSize="14sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <!-- Matchs joués -->
-            <TextView
-                android:id="@+id/tvPlayed"
-                android:text="Matchs joués: 0"
-                android:textColor="@color/on_surface_variant"
-                android:textSize="14sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <!-- Matchs gagnés -->
-            <TextView
-                android:id="@+id/tvWon"
-                android:text="Matchs gagnés: 0"
-                android:textColor="@color/on_surface_variant"
-                android:textSize="14sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <!-- Matchs perdus -->
-            <TextView
-                android:id="@+id/tvLost"
-                android:text="Matchs perdus: 0"
-                android:textColor="@color/on_surface_variant"
-                android:textSize="14sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
+    android:id="@+id/card"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp" android:layout_marginTop="10dp"
+    app:cardBackgroundColor="#FFFFFF" app:cardCornerRadius="18dp" app:cardElevation="1dp"
+    app:strokeColor="#E2E7EF" app:strokeWidth="1dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center_vertical" android:orientation="horizontal" android:padding="14dp">
+        <TextView android:id="@+id/tvRank" android:layout_width="46dp" android:layout_height="46dp"
+            android:background="@drawable/hm_rank_circle" android:gravity="center" android:textColor="#1F4F96"
+            android:textSize="16sp" android:textStyle="bold" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="14dp"
+            android:layout_weight="1" android:orientation="vertical">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center_vertical" android:orientation="horizontal">
+                <TextView android:id="@+id/tvName" android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:ellipsize="end" android:fontFamily="sans-serif-medium"
+                    android:singleLine="true" android:textColor="#1B2330" android:textSize="17sp" android:textStyle="bold" />
+                <TextView android:id="@+id/tvStatus" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:background="@drawable/hm_timer_pill" android:drawablePadding="6dp" android:paddingHorizontal="10dp"
+                    android:paddingVertical="3dp" android:textColor="#4A5568" android:textSize="12sp" android:textStyle="bold" />
+            </LinearLayout>
+            <TextView android:id="@+id/tvWins" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="2dp" android:textColor="#1E9E62" android:textSize="14sp" android:textStyle="bold" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:orientation="horizontal">
+                <TextView android:id="@+id/tvPlayed" style="@style/HM.StatChip" />
+                <TextView android:id="@+id/tvWon" style="@style/HM.StatChip" />
+                <TextView android:id="@+id/tvLost" style="@style/HM.StatChip" />
+            </LinearLayout>
+            <TextView android:id="@+id/tvUnique" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:textColor="#667386" android:textSize="12.5sp" />
         </LinearLayout>
-        <!-- 🔥 Status en ligne (aligné à gauche) -->
-        <TextView
-            android:id="@+id/tvStatus"
-            android:text="🟢 Disponible"
-            android:textSize="10sp"
-            android:textColor="@color/on_surface_variant"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp" />
-
-
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

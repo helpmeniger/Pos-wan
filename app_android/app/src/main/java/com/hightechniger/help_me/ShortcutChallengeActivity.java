@@ -51,6 +51,9 @@ public class ShortcutChallengeActivity extends AppCompatActivity {
     private ProgressBar timer;
     private ObjectAnimator timerAnim;
     private TextView counter, scoreView;
+    // sons identiques à ceux du quiz : bonne réponse, mauvaise réponse ou temps écoulé
+    private android.media.SoundPool sounds;
+    private int soundOk, soundBad;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +89,11 @@ public class ShortcutChallengeActivity extends AppCompatActivity {
         sv.addView(page);
         root.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         setContentView(root);
+        sounds = new android.media.SoundPool.Builder().setMaxStreams(2).setAudioAttributes(
+                new android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_GAME)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build()).build();
+        soundOk = sounds.load(this, R.raw.success1, 1);
+        soundBad = sounds.load(this, R.raw.buzzer1, 1);
         intro();
     }
 
@@ -93,6 +101,7 @@ public class ShortcutChallengeActivity extends AppCompatActivity {
     protected void onDestroy() {
         ui.removeCallbacksAndMessages(null);
         if (timerAnim != null) timerAnim.cancel();
+        if (sounds != null) sounds.release();
         super.onDestroy();
     }
 
@@ -202,6 +211,7 @@ public class ShortcutChallengeActivity extends AppCompatActivity {
         ui.removeCallbacksAndMessages(null);
         if (timerAnim != null) timerAnim.cancel();
         boolean ok = chosen == q;
+        if (sounds != null) sounds.play(ok ? soundOk : soundBad, 1, 1, 1, 0, 1);
         page.performHapticFeedback(ok ? HapticFeedbackConstants.VIRTUAL_KEY : HapticFeedbackConstants.LONG_PRESS);
         for (int i = 0; i < buttons.size(); i++) {
             TextView b = buttons.get(i);

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="#F4F7FB"
+    android:background="#F4F6FA"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -24,7 +24,7 @@
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="18dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="#2C7BE5">
+                app:cardBackgroundColor="#326FBF">
 
                 <LinearLayout
                     android:padding="16dp"
@@ -41,7 +41,7 @@
 
                         <TextView
                             android:id="@+id/tvTitle"
-                            android:text="Match de Quiz"
+                            android:text="Match en ligne"
                             android:textColor="@android:color/white"
                             android:textSize="22sp"
                             android:textStyle="bold"
@@ -91,7 +91,7 @@
                     android:id="@+id/tvScore"
                     android:text="Score"
                     android:textStyle="bold"
-                    android:textColor="#0F172A"
+                    android:textColor="#1B2330"
                     android:textSize="18sp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"/>
@@ -102,7 +102,7 @@
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:layout_marginTop="4dp"
-                    android:textColor="#F83426"
+                    android:textColor="#D64545"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"/>
             </LinearLayout>
@@ -112,7 +112,7 @@
         <TextView
             android:id="@+id/tvInfo"
             android:text="En attente…"
-            android:textColor="#0F172A"
+            android:textColor="#1B2330"
             android:layout_marginTop="16dp"
             android:textSize="16sp"
             android:layout_width="match_parent"
@@ -135,17 +135,20 @@
             android:layout_height="wrap_content"/>
 
         <!-- END button -->
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEnd"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:minHeight="54dp"
             android:text="Quitter le match"
             android:textAllCaps="false"
-            android:textStyle="bold"
-            android:background="@drawable/corner_btn"
-            android:backgroundTint="@color/lavender"
-            android:textColor="@android:color/white"
-            android:layout_marginTop="18dp"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"/>
+            android:textColor="#D64545"
+            android:textSize="16sp"
+            app:cornerRadius="27dp"
+            app:strokeColor="#D64545"
+            app:strokeWidth="2dp" />
         </LinearLayout>
     </ScrollView>
 
@@ -157,7 +160,7 @@
         android:layout_margin="20dp"
         app:srcCompat="@drawable/ic_chat"
         app:tint="@android:color/white"
-        app:backgroundTint="#2C7BE5" />
+        app:backgroundTint="#326FBF" />
     <TextView
         android:id="@+id/chatBadge"
         android:visibility="gone"

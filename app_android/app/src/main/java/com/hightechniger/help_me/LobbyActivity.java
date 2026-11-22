@@ -119,7 +119,7 @@ public class LobbyActivity extends AppCompatActivity {
             @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
 
                 long count = snapshot.getChildrenCount();
-                tvAvailableCount.setText("Disponibles: " + count);
+                tvAvailableCount.setText("Disponibles : " + count);
 
                 boolean iAmAvailable = snapshot.hasChild(myUid);
 
@@ -257,13 +257,13 @@ public class LobbyActivity extends AppCompatActivity {
 
                         // 🔥 Couleur selon résultat
                         int color;
-                        if (res[0])      color = 0xFF22C55E; // vert
-                        else if (res[1]) color = 0xFFEF4444; // rouge
-                        else             color = 0xFFFACC15; // jaune
+                        if (res[0])      color = 0xFF1E9E62; // vert
+                        else if (res[1]) color = 0xFFD64545; // rouge
+                        else             color = 0xFFC98A00; // ambre (lisible sur fond clair)
 
-                        tvLastMatch.setText("Dernier match vs " + opp +
-                                " • " + score + " • " + result +
-                                " • " + t);
+                        tvLastMatch.setText("Dernier match contre " + opp +
+                                " · " + score + " · " + result +
+                                " · " + t);
 
                         tvLastMatch.setTextColor(color);
                     }
@@ -376,33 +376,49 @@ public class LobbyActivity extends AppCompatActivity {
 
         card.setLayoutParams(lp);
         card.setCardBackgroundColor(getColor(R.color.surface));
-        card.setRadius(18f);
-        card.setCardElevation(6f);
+        float dens = getResources().getDisplayMetrics().density;
+        card.setRadius(16 * dens);
+        card.setCardElevation(1 * dens);
+        card.setStrokeColor(0xFFE2E7EF);
+        card.setStrokeWidth(Math.round(dens));
         card.setUseCompatPadding(true);
         card.setClickable(true);
 
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setPadding(20,20,20,20);
+        int pd = Math.round(14 * dens);
+        row.setPadding(pd, pd, pd, pd);
         row.setGravity(Gravity.CENTER_VERTICAL);
         card.addView(row);
 
+        // initiales dans un rond, point de statut
+        String initials = u.name == null || u.name.trim().isEmpty() ? "J" : u.name.trim();
         TextView badge = new TextView(this);
-        badge.setText("●");
-        badge.setTextSize(14f);
-        badge.setPadding(0,0,16,0);
-        badge.setTextColor("available".equals(status) ? 0xFF00FF88 : 0xFFFF5555);
-        row.addView(badge);
+        badge.setText(initials.substring(0, Math.min(2, initials.length())).toUpperCase(java.util.Locale.FRANCE));
+        badge.setTextColor(0xFFFFFFFF);
+        badge.setTextSize(15f);
+        badge.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        badge.setGravity(Gravity.CENTER);
+        int[] palette = {0xFF326FBF, 0xFF0F8A5F, 0xFF6A4FC2, 0xFFC43E1C, 0xFFD9822B, 0xFF37474F};
+        android.graphics.drawable.GradientDrawable av = new android.graphics.drawable.GradientDrawable();
+        av.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        av.setColor(palette[Math.abs(initials.hashCode()) % palette.length]);
+        badge.setBackground(av);
+        int as = Math.round(44 * dens);
+        LinearLayout.LayoutParams bl = new LinearLayout.LayoutParams(as, as);
+        bl.setMarginEnd(Math.round(12 * dens));
+        row.addView(badge, bl);
 
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
 
-        String nm = (champion ? "⭐ " : "") + (u.name == null ? "Joueur" : u.name);
+        String nm = (u.name == null ? "Joueur" : u.name) + (champion ? "  · champion" : "");
 
         TextView tvName = new TextView(this);
         tvName.setText(nm);
         tvName.setTextColor(getColor(R.color.on_surface));
-        tvName.setTextSize(18f);
+        tvName.setTextSize(17f);
+        tvName.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
 
         //------------------------------------------------------
         // 🔥 MISE À JOUR DU DERNIER SCORE (Gagné / Perdu / Égalité)
@@ -412,7 +428,7 @@ public class LobbyActivity extends AppCompatActivity {
         String last = (u.lastScore == null) ? "" : u.lastScore.trim();
 
         if (last.isEmpty()) {
-            tvScore.setText("Dernier score : N/A");
+            tvScore.setText(("available".equals(status) ? "Disponible" : "Occupé") + " · aucun match récent");
         } else {
 
             String displayScore = last;   // format "5-2"
@@ -435,7 +451,7 @@ public class LobbyActivity extends AppCompatActivity {
                 result = "";
             }
 
-            tvScore.setText("Dernier score : " + displayScore + result);
+            tvScore.setText(("available".equals(status) ? "Disponible" : "Occupé") + " · dernier score " + displayScore + result);
         }
 
         tvScore.setTextColor(getColor(R.color.on_surface_variant));
@@ -445,7 +461,21 @@ public class LobbyActivity extends AppCompatActivity {
 
         col.addView(tvName);
         col.addView(tvScore);
-        row.addView(col);
+        row.addView(col, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+        // bouton « Défier » (ou « Occupé »)
+        TextView action = new TextView(this);
+        boolean free = "available".equals(status);
+        action.setText(free ? "Défier" : "Occupé");
+        action.setTextColor(free ? 0xFFFFFFFF : 0xFF667386);
+        action.setTextSize(14f);
+        action.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        android.graphics.drawable.GradientDrawable ab = new android.graphics.drawable.GradientDrawable();
+        ab.setCornerRadius(20 * dens);
+        ab.setColor(free ? 0xFFD9822B : 0xFFEEF1F6);
+        action.setBackground(ab);
+        action.setPadding(Math.round(16 * dens), Math.round(8 * dens), Math.round(16 * dens), Math.round(8 * dens));
+        row.addView(action);
 
         if ("available".equals(status)) {
             card.setOnClickListener(v -> sendChallenge(u));

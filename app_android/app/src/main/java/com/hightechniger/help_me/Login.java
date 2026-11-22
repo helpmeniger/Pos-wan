@@ -42,7 +42,7 @@ public class Login extends AppCompatActivity {
 
         if (currentUser != null && !isCheckingStatus) {
             isCheckingStatus = true;
-            showLoading("Patientez...");
+            showLoading("Ouverture de votre espace…");
 
             // 🔵 ESSAI SERVEUR → Si pas internet → fallback CACHE → PAS de déconnexion
             checkUserStatus(currentUser.getUid());
@@ -83,7 +83,7 @@ public class Login extends AppCompatActivity {
                 return;
             }
 
-            showLoading("Connexion en cours...");
+            showLoading("Vérification de votre accès…");
 
             mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {

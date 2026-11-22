@@ -1,48 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Match de l'historique : bande de couleur selon le résultat -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_marginBottom="12dp"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:backgroundTint="@color/surface"
-    android:padding="16dp">
-
-    <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <TextView
-            android:id="@+id/tvOpponent"
-            android:text="Adversaire : X"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="@color/on_surface"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/tvScore"
-            android:text="Score : 5-3"
-            android:textSize="14sp"
-            android:textColor="@color/on_surface_variant"
-            android:layout_marginTop="4dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <TextView
-            android:id="@+id/tvResult"
-            android:text="Gagné"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:textColor="#22C55E"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <TextView
-            android:id="@+id/tvDate"
-            android:text="24 Oct 2025 — 15:23  |  Durée 02:14"
-            android:textSize="14sp"
-            android:textColor="@color/on_surface_variant"
-            android:layout_marginTop="4dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp" android:layout_marginTop="10dp"
+    app:cardBackgroundColor="#FFFFFF" app:cardCornerRadius="16dp" app:cardElevation="1dp"
+    app:strokeColor="#E2E7EF" app:strokeWidth="1dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <View android:id="@+id/resultStripe" android:layout_width="6dp" android:layout_height="match_parent"
+            android:background="#326FBF" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical" android:paddingHorizontal="16dp" android:paddingVertical="14dp">
+            <TextView android:id="@+id/tvOpponent" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium" android:textColor="#1B2330" android:textSize="16.5sp" android:textStyle="bold" />
+            <TextView android:id="@+id/tvDate" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="3dp" android:textColor="#667386" android:textSize="13sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_vertical"
+            android:gravity="end" android:orientation="vertical" android:paddingEnd="16dp">
+            <TextView android:id="@+id/tvScore" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium" android:textColor="#1B2330" android:textSize="20sp" android:textStyle="bold" />
+            <TextView android:id="@+id/tvResult" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" android:paddingHorizontal="10dp" android:paddingVertical="2dp"
+                android:textSize="12.5sp" android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
