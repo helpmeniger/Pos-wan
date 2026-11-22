@@ -1,0 +1,16 @@
+{
+ "source": "vid4.mp4",
+ "title": "La barre des tâches",
+ "sentences": [
+  "Masquer automatiquement et afficher la barre des tâches sur votre ordinateur Windows.",
+  "Faites un clic droit sur un espace vide de la barre des tâches.",
+  "Sélectionnez « Paramètres de la barre des tâches » ou « Paramètres ».",
+  "Sous « Comportement de la barre des tâches », trouvez l'option « Masquer automatiquement la barre des tâches en mode bureau » et activez-la.",
+  "Vous pouvez aussi activer cette option pour le mode tablette si vous utilisez un appareil tactile.",
+  "Configurer la zone de notification sur votre ordinateur Windows.",
+  "Cliquez sur le bouton « Démarrer », puis sur l'icône « Paramètres »."
+ ],
+ "steps": [],
+ "events": [],
+ "retenir": []
+}

@@ -1,0 +1,22 @@
+{
+ "source": "vid3.mp4",
+ "title": "Manipuler une fenêtre",
+ "sentences": [
+  "Manipuler une fenêtre sur votre ordinateur Windows.",
+  "Déplacez la fenêtre.",
+  "Cliquez et maintenez le bouton gauche de la souris sur la barre de titre de la fenêtre, puis faites glisser la fenêtre vers l'emplacement souhaité.",
+  "Redimensionnez la fenêtre.",
+  "Placez le curseur sur un coin ou un bord de la fenêtre jusqu'à ce qu'il se transforme en une flèche double.",
+  "Cliquez et faites glisser pour ajuster la taille.",
+  "Minimiser, restaurer et fermer.",
+  "Utilisez les boutons dans le coin supérieur droit de la fenêtre.",
+  "Le bouton Minimise réduit la fenêtre à la barre des tâches.",
+  "Le bouton Restaurer ramène la fenêtre à sa taille précédente et le bouton Fermer ferme la fenêtre.",
+  "Ajustez la disposition.",
+  "Faites un clic droit sur la barre des tâches.",
+  "Choisissez Afficher les fenêtres côte à côte ou Afficher les fenêtres empilées pour réorganiser les fenêtres ouvertes."
+ ],
+ "steps": [],
+ "events": [],
+ "retenir": []
+}

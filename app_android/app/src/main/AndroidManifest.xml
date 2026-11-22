@@ -87,8 +87,9 @@
             android:theme="@style/Theme.HelpMe.Chat" />
         <activity android:name=".ModuleActivity" android:exported="false" android:theme="@style/Theme.HelpMe.Chat" />
         <activity android:name=".LessonReaderActivity" android:exported="false" android:theme="@style/Theme.HelpMe.Chat" />
-        <activity android:name=".VideoPlayerActivity" android:exported="false"
+        <activity android:name=".AnimLessonActivity" android:exported="false"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:screenOrientation="sensorLandscape"
             android:theme="@style/Theme.HelpMe.Chat" />
         <activity android:name=".TipsActivity" android:exported="false" android:theme="@style/Theme.HelpMe.Chat" />
         <activity android:name=".ShortcutChallengeActivity" android:exported="false" android:theme="@style/Theme.HelpMe.Chat"

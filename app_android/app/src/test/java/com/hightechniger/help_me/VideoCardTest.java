@@ -16,7 +16,8 @@ public class VideoCardTest {
     @Test public void card() throws Exception {
         Activity a = Robolectric.buildActivity(LessonReaderActivity.class, new Intent().putExtra("lesson", "ordinateur-05")).setup().get();
         ScreensTest.shot(a, "v_lecon_video", 0);
-        Activity b = Robolectric.buildActivity(VideoPlayerActivity.class, new Intent()
-            .putExtra("res", VideoPlayerActivity.videoFor(a, "2019")).putExtra("title", "Allumer l’ordinateur")).setup().get();
+        for (String code : new String[]{"2019", "2018", "2001", "2002"})
+            org.junit.Assert.assertTrue(code, AnimLessonActivity.exists(a, code));
+        Robolectric.buildActivity(AnimLessonActivity.class, new Intent().putExtra(AnimLessonActivity.EXTRA_CODE, "2019")).setup().pause().destroy();
     }
 }

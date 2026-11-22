@@ -161,41 +161,32 @@ public class LessonReaderActivity extends AppCompatActivity {
         return t;
     }
 
-    // ---------------------------------------------------------------- vidéo d'explication du code-barres
+    // ---------------------------------------------------------------- leçon animée du code-barres
     private View videoCard(int color) {
-        int res = 0;
         String code = null;
-        for (String c : lesson.codes) {
-            res = VideoPlayerActivity.videoFor(this, c);
-            if (res != 0) { code = c; break; }
-        }
-        if (res == 0) return null;
-        final int videoRes = res;
-        FrameLayout f = new FrameLayout(this);
-        f.setLayoutParams(Ui.lpMargins(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 18, 0, 0));
-        ImageView thumb = new ImageView(this);
-        int t = getResources().getIdentifier("vthumb_" + code, "drawable", getPackageName());
-        if (t != 0) thumb.setImageResource(t); else thumb.setBackgroundColor(Color.BLACK);
-        thumb.setAdjustViewBounds(true);
-        thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        thumb.setBackground(Ui.rounded(this, Color.BLACK, 16));
-        thumb.setClipToOutline(true);
-        f.addView(thumb, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 190)));
-        View shade = new View(this);
-        shade.setBackground(Ui.rounded(this, Color.parseColor("#40000000"), 16));
-        f.addView(shade, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 190)));
-        FrameLayout play = Ui.badge(this, R.drawable.ic_m_play, color, 68, false);
-        play.setElevation(Ui.dp(this, 6));
-        f.addView(play, new FrameLayout.LayoutParams(Ui.dp(this, 68), Ui.dp(this, 68), Gravity.CENTER));
-        TextView label = Ui.pill(this, "Regarder la vidéo d’explication", Color.WHITE, Color.parseColor("#B3000000"));
-        FrameLayout.LayoutParams ll = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.START);
-        ll.setMargins(Ui.dp(this, 12), 0, 0, Ui.dp(this, 12));
-        f.addView(label, ll);
-        f.setOnClickListener(v -> VideoPlayerActivity.open(this, videoRes, lesson.title));
-        f.setContentDescription("Regarder la vidéo d’explication");
-        Ui.pressable(f);
-        return f;
+        for (String c : lesson.codes) if (AnimLessonActivity.exists(this, c)) { code = c; break; }
+        if (code == null) return null;
+        final String animCode = code;
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.HORIZONTAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setLayoutParams(Ui.lpMargins(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 18, 0, 0));
+        int p = Ui.dp(this, 16);
+        card.setPadding(p, p, p, p);
+        card.setBackground(Ui.rounded(this, Ui.tint(color, 0.9f), 18));
+        FrameLayout play = Ui.badge(this, R.drawable.ic_m_play, color, 56, false);
+        card.addView(play, new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 56)));
+        LinearLayout txt = new LinearLayout(this);
+        txt.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        tl.setMarginStart(Ui.dp(this, 14));
+        txt.addView(Ui.text(this, "Voir l’explication animée", 16, Ui.darker(color, 0.75f), true));
+        txt.addView(Ui.text(this, "Animation commentée, étape par étape", 13, Color.parseColor("#667386"), false));
+        card.addView(txt, tl);
+        card.setOnClickListener(v -> AnimLessonActivity.open(this, animCode));
+        card.setContentDescription("Voir l’explication animée");
+        Ui.pressable(card);
+        return card;
     }
 
     // ---------------------------------------------------------------- action (démonstration, galerie...)
