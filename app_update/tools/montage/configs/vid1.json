@@ -1,0 +1,109 @@
+{
+ "source": "vid1.mp4",
+ "title": "Allumer l’ordinateur",
+ "subtitle": "Manuel HELP-ME · Le traitement automatique de l’information",
+ "sentences": [
+  "Allumez votre ordinateur.",
+  "Assurez-vous que le câble d'alimentation est bien connecté à l'ordinateur.",
+  "Identifiez le bouton d'alimentation.",
+  "Ce bouton est représenté par un symbole universel : un cercle ouvert avec une ligne verticale dedans, ressemblant à zéro et un combiné.",
+  "Ce symbole est issu du binaire, langage des ordinateurs, où un signifie actif et zéro inactif.",
+  "Une simple pression sur le bouton d'alimentation suffit pour démarrer l'ordinateur.",
+  "Attendez le démarrage.",
+  "L'ordinateur mettra quelques secondes à quelques minutes pour démarrer, affichant des logos ou des écrans de chargement."
+ ],
+ "steps": [
+  {
+   "from": 0,
+   "label": "Allumer l’ordinateur"
+  },
+  {
+   "from": 1,
+   "label": "Vérifier le câble"
+  },
+  {
+   "from": 2,
+   "label": "Repérer le bouton d’alimentation"
+  },
+  {
+   "from": 4,
+   "label": "Comprendre le symbole"
+  },
+  {
+   "from": 5,
+   "label": "Appuyer une fois"
+  },
+  {
+   "from": 6,
+   "label": "Attendre le démarrage"
+  }
+ ],
+ "events": [
+  {
+   "type": "zoom",
+   "sentence": 0,
+   "cx": 960,
+   "cy": 420,
+   "zoom": 1.18,
+   "extra": 0.2
+  },
+  {
+   "type": "magnifier",
+   "sentence": 1,
+   "delay": 0.1,
+   "cx": 270,
+   "cy": 860,
+   "zoom": 2.0,
+   "radius": 190,
+   "px": 640,
+   "py": 470,
+   "label": "Câble d’alimentation"
+  },
+  {
+   "type": "magnifier",
+   "sentence": 2,
+   "cx": 212,
+   "cy": 792,
+   "zoom": 2.6,
+   "radius": 200,
+   "px": 640,
+   "py": 450,
+   "label": "Bouton d’alimentation",
+   "extra": 4.6
+  },
+  {
+   "type": "card",
+   "kind": "power",
+   "sentence": 4,
+   "x": 1340,
+   "y": 150
+  },
+  {
+   "type": "card",
+   "kind": "press",
+   "sentence": 5,
+   "x": 1400,
+   "y": 150
+  },
+  {
+   "type": "zoom",
+   "sentence": 6,
+   "cx": 960,
+   "cy": 560,
+   "zoom": 1.22,
+   "extra": 4.0
+  },
+  {
+   "type": "card",
+   "kind": "wait",
+   "sentence": 7,
+   "x": 1380,
+   "y": 150
+  }
+ ],
+ "retenir": [
+  "Vérifiez que le câble d’alimentation est bien branché.",
+  "Le bouton d’alimentation porte un cercle ouvert traversé d’une ligne : 1 = actif, 0 = inactif.",
+  "Une simple pression suffit, puis patientez pendant le démarrage."
+ ]
+}

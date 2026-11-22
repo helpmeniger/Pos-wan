@@ -1,0 +1,160 @@
+{
+ "source": "vid2.mp4",
+ "title": "Utiliser la souris et le pavé tactile",
+ "subtitle": "Manuel HELP-ME · Le système d’exploitation : les bases de Windows 11",
+ "sentences": [
+  "Utilisez la souris de votre ordinateur.",
+  "Déplacer : bougez la souris pour déplacer le curseur sur l'écran.",
+  "Cliquer : appuyez sur le bouton gauche pour sélectionner ou ouvrir des éléments.",
+  "Double-cliquer : appuyez deux fois rapidement sur le bouton gauche pour ouvrir un fichier ou un programme.",
+  "Clic droit : appuyez sur le bouton droit pour afficher un menu contextuel.",
+  "Molette : faites défiler la molette pour naviguer dans les pages.",
+  "Utilisez le pavé tactile de votre ordinateur.",
+  "Déplacer : glissez un doigt pour déplacer le curseur.",
+  "Cliquer : tapotez une fois pour cliquer.",
+  "Clic droit : tapotez avec deux doigts pour le menu contextuel.",
+  "Défilement : faites glisser deux doigts vers le haut ou le bas pour faire défiler la page."
+ ],
+ "steps": [
+  {
+   "from": 0,
+   "label": "La souris"
+  },
+  {
+   "from": 1,
+   "label": "Déplacer"
+  },
+  {
+   "from": 2,
+   "label": "Cliquer"
+  },
+  {
+   "from": 3,
+   "label": "Double-cliquer"
+  },
+  {
+   "from": 4,
+   "label": "Clic droit"
+  },
+  {
+   "from": 5,
+   "label": "La molette"
+  },
+  {
+   "from": 6,
+   "label": "Le pavé tactile"
+  },
+  {
+   "from": 7,
+   "label": "Déplacer"
+  },
+  {
+   "from": 8,
+   "label": "Cliquer"
+  },
+  {
+   "from": 9,
+   "label": "Clic droit"
+  },
+  {
+   "from": 10,
+   "label": "Faire défiler"
+  }
+ ],
+ "events": [
+  {
+   "type": "zoom",
+   "sentence": 0,
+   "cx": 960,
+   "cy": 430,
+   "zoom": 1.15,
+   "extra": 0.2
+  },
+  {
+   "type": "card",
+   "kind": "mouse",
+   "part": "body",
+   "sentence": 1,
+   "x": 30,
+   "y": 130,
+   "extra": 0.1
+  },
+  {
+   "type": "card",
+   "kind": "mouse",
+   "part": "left",
+   "sentence": 2,
+   "x": 30,
+   "y": 130,
+   "extra": 0.1
+  },
+  {
+   "type": "card",
+   "kind": "mouse",
+   "part": "left2",
+   "sentence": 3,
+   "x": 30,
+   "y": 130,
+   "extra": 0.1
+  },
+  {
+   "type": "card",
+   "kind": "mouse",
+   "part": "right",
+   "sentence": 4,
+   "x": 30,
+   "y": 130,
+   "extra": 0.1
+  },
+  {
+   "type": "card",
+   "kind": "mouse",
+   "part": "wheel",
+   "sentence": 5,
+   "x": 30,
+   "y": 130,
+   "extra": 0.1
+  },
+  {
+   "type": "card",
+   "kind": "touchpad",
+   "gesture": "move",
+   "sentence": 7,
+   "x": 30,
+   "y": 130,
+   "extra": 0.1
+  },
+  {
+   "type": "card",
+   "kind": "touchpad",
+   "gesture": "tap",
+   "sentence": 8,
+   "x": 30,
+   "y": 130,
+   "extra": 0.1
+  },
+  {
+   "type": "card",
+   "kind": "touchpad",
+   "gesture": "two_tap",
+   "sentence": 9,
+   "x": 30,
+   "y": 130,
+   "extra": 0.1
+  },
+  {
+   "type": "card",
+   "kind": "touchpad",
+   "gesture": "scroll",
+   "sentence": 10,
+   "x": 30,
+   "y": 130,
+   "extra": 0.1
+  }
+ ],
+ "retenir": [
+  "Souris : clic gauche pour sélectionner, double-clic pour ouvrir, clic droit pour le menu contextuel.",
+  "La molette fait défiler les pages.",
+  "Pavé tactile : un doigt pour déplacer et cliquer, deux doigts pour le clic droit et le défilement."
+ ]
+}

@@ -102,6 +102,8 @@ public class LessonReaderActivity extends AppCompatActivity {
         if (lesson.exercises > 0) meta.addView(pill(lesson.exercises + (lesson.exercises > 1 ? " exercices" : " exercice"), color));
         if (lesson.isManual()) meta.addView(pill("Manuel HELP-ME", color));
         page.addView(meta);
+        View videoCard = videoCard(color);
+        if (videoCard != null) page.addView(videoCard);
 
         LinearLayout content = Ui.column(this);
         Blocks blocks = new Blocks(this, color);
@@ -157,6 +159,43 @@ public class LessonReaderActivity extends AppCompatActivity {
         lp.setMarginEnd(Ui.dp(this, 6));
         t.setLayoutParams(lp);
         return t;
+    }
+
+    // ---------------------------------------------------------------- vidéo d'explication du code-barres
+    private View videoCard(int color) {
+        int res = 0;
+        String code = null;
+        for (String c : lesson.codes) {
+            res = VideoPlayerActivity.videoFor(this, c);
+            if (res != 0) { code = c; break; }
+        }
+        if (res == 0) return null;
+        final int videoRes = res;
+        FrameLayout f = new FrameLayout(this);
+        f.setLayoutParams(Ui.lpMargins(this, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0, 18, 0, 0));
+        ImageView thumb = new ImageView(this);
+        int t = getResources().getIdentifier("vthumb_" + code, "drawable", getPackageName());
+        if (t != 0) thumb.setImageResource(t); else thumb.setBackgroundColor(Color.BLACK);
+        thumb.setAdjustViewBounds(true);
+        thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        thumb.setBackground(Ui.rounded(this, Color.BLACK, 16));
+        thumb.setClipToOutline(true);
+        f.addView(thumb, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 190)));
+        View shade = new View(this);
+        shade.setBackground(Ui.rounded(this, Color.parseColor("#40000000"), 16));
+        f.addView(shade, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 190)));
+        FrameLayout play = Ui.badge(this, R.drawable.ic_m_play, color, 68, false);
+        play.setElevation(Ui.dp(this, 6));
+        f.addView(play, new FrameLayout.LayoutParams(Ui.dp(this, 68), Ui.dp(this, 68), Gravity.CENTER));
+        TextView label = Ui.pill(this, "Regarder la vidéo d’explication", Color.WHITE, Color.parseColor("#B3000000"));
+        FrameLayout.LayoutParams ll = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.START);
+        ll.setMargins(Ui.dp(this, 12), 0, 0, Ui.dp(this, 12));
+        f.addView(label, ll);
+        f.setOnClickListener(v -> VideoPlayerActivity.open(this, videoRes, lesson.title));
+        f.setContentDescription("Regarder la vidéo d’explication");
+        Ui.pressable(f);
+        return f;
     }
 
     // ---------------------------------------------------------------- action (démonstration, galerie...)

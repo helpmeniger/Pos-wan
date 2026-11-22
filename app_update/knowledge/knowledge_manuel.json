@@ -453,19 +453,19 @@
   ],
   "tags": [
    "ordinateur",
-   "allumer",
    "portable",
-   "ecran",
-   "appuyez",
+   "allumer",
    "bouton",
-   "marche",
-   "arret",
    "unite",
    "centrale",
-   "trouve",
-   "generalement"
+   "dessus",
+   "clavier",
+   "gauche",
+   "droite",
+   "ecran",
+   "appuyez"
   ],
-  "answer": "Appuyez sur le bouton Marche/Arrêt de l’unité centrale ou du portable. Sur un portable, il se trouve généralement au-dessus du clavier, à gauche ou à droite, ou sur le côté.\nL’écran est indépendant : l’ordinateur démarre même si l’écran est éteint. Pour voir quelque chose, allumez les deux.",
+  "answer": "Appuyez sur le bouton Marche/Arrêt de l’unité centrale ou du portable. Sur un portable, il se trouve généralement au-dessus du clavier, à gauche ou à droite, ou sur le côté.\nUnité centrale : le bouton est en façade. Portable : au-dessus du clavier, à gauche ou à droite.\nL’écran est indépendant : l’ordinateur démarre même si l’écran est éteint. Pour voir quelque chose, allumez les deux.",
   "code": "2019",
   "image": null
  },
