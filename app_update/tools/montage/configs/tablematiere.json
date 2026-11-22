@@ -1,0 +1,23 @@
+{
+ "source": "tablematiere.mp3",
+ "title": "Créer et mettre à jour une table des matières dans Word.",
+ "sentences": [
+  "Créer et mettre à jour une table des matières dans Word.",
+  "Préparer le document.",
+  "Utiliser les styles de titre.",
+  "Assurez-vous que les titres de votre document utilisent les styles intégrés de Word, Titre 1, Titre 2, etc., dans l'onglet Accueil.",
+  "Ces styles seront utilisés pour générer la table des matières.",
+  "Insérer une table des matières.",
+  "Placez votre curseur à l'endroit où vous souhaitez insérer la table des matières, généralement au début du document.",
+  "Allez dans l'onglet Références.",
+  "Cliquez sur Table des matières dans le groupe Table des matières.",
+  "Sélectionnez un style de table des matières dans la liste proposée.",
+  "Mettre à jour la table des matières.",
+  "Lorsque vous apportez des modifications à votre document, ajout, suppression de contenu ou changement de titre, la table des matières ne se met pas à jour automatiquement.",
+  "Cliquez sur la table des matières pour la sélectionner.",
+  "Cliquez sur Mettre à jour la table.",
+  "Une option apparaîtra en haut de la table ou dans l'onglet Références.",
+  "Sélectionnez soit Mettre à jour les numéros de page uniquement, si vous n'avez pas modifié les titres.",
+  "Mettre à jour toute la table, si vous avez modifié ou ajouté des titres."
+ ]
+}

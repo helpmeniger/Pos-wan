@@ -1,0 +1,32 @@
+{
+ "source": "vid7.mp3",
+ "title": "Saisir du texte dans Word.",
+ "sentences": [
+  "Saisir du texte dans Word.",
+  "Ouvrir Word.",
+  "Lancez le programme en cliquant sur l'icône de Microsoft Word sur votre bureau ou dans votre menu de démarrage.",
+  "Cliquez n'importe où dans le document vierge ou un document existant pour placer votre curseur.",
+  "Il devient une petite barre verticale clignotante.",
+  "Tapez simplement sur votre clavier pour insérer du texte là où le curseur est situé.",
+  "Vous pouvez utiliser les touches de direction pour déplacer le curseur et revenir sur une partie du texte si nécessaire.",
+  "Sélectionner du texte.",
+  "La sélection du texte vous permet de le copier, de le couper, de le formater ou de l'effacer.",
+  "Avec la souris, cliquez au début du texte que vous voulez sélectionner.",
+  "Maintenez le bouton gauche de la souris enfoncé et déplacez la souris jusqu'à la fin du texte à sélectionner.",
+  "Relâchez le bouton de la souris.",
+  "Avec le clavier, placez le curseur au début du texte à sélectionner.",
+  "Maintenez la touche Shift enfoncée, puis utilisez les touches fléchées pour étendre la sélection vers la droite, la gauche, vers le haut ou vers le bas.",
+  "Sélectionnez tout le texte.",
+  "Appuyez sur Contrôle plus A pour sélectionner tout le contenu du document.",
+  "Annuler une action.",
+  "Si vous avez fait une erreur ou que vous voulez revenir à l'étape précédente, vous pouvez annuler une action.",
+  "Avec la souris, cliquez sur l'icône Annuler dans la barre d'outils, représentée par une flèche courbée vers la gauche, en haut de votre fenêtre Word.",
+  "Avec le clavier, appuyez sur les touches Contrôle plus Z.",
+  "Cela annulera la dernière action que vous avez effectuée, que ce soit de la saisie de texte, un formatage ou une autre modification.",
+  "Rétablir une action.",
+  "Si vous avez annulé une action par erreur, vous pouvez la restaurer.",
+  "Avec la souris, cliquez sur l'icône Rétablir dans la barre d'outils, représentée par une flèche courbée vers la droite.",
+  "Avec le clavier, appuyez sur Contrôle plus Y pour rétablir l'action annulée.",
+  "Cela réappliquera la dernière action que vous avez annulée."
+ ]
+}

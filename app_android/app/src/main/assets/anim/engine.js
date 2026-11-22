@@ -133,6 +133,8 @@
       set(cls) { const s = $("div", "set " + (cls || ""), E.world); return s; },
       /** Visible entre a et b (fondu). */
       show(el, a, b, fade) { el.style.opacity = 0; tracks.push(t => { const v = window01(t, a, b, fade); el.style.opacity = v; el.style.visibility = v > 0 ? "visible" : "hidden"; }); },
+      /** Présent dans la mise en page uniquement entre a et b (display). */
+      only(el, a, b) { tracks.push(t => { const v = t >= a && t < b ? "" : "none"; if (el.style.display !== v) el.style.display = v; }); },
       /** Classe CSS active entre a et b. */
       cls(el, c, a, b) { tracks.push(t => el.classList.toggle(c, t >= a && t <= b)); },
       /** Caméra : [[t, cx, cy, zoom, durée]] — centre l'image sur (cx, cy) avec le zoom donné. */

@@ -112,5 +112,174 @@ window.SC = (function () {
     });
   }
 
-  return { deskSet, laptopSet, mouseCard, touchCard, mouseSVG };
+
+  // ------------------------------------------------------------------ outils de placement et caméra
+  /** Centre de l'élément el, en coordonnées de root (1600 x 900 pour un écran Windows). */
+  function pos(el, root, dx, dy) {
+    let x = el.offsetWidth / 2, y = el.offsetHeight / 2;
+    for (let e = el; e && e !== root; e = e.offsetParent) { x += e.offsetLeft; y += e.offsetTop; }
+    return [x + (dx || 0), y + (dy || 0)];
+  }
+  /** Coin haut-gauche de l'élément el en coordonnées de root. */
+  function corner(el, root) {
+    let x = 0, y = 0;
+    for (let e = el; e && e !== root; e = e.offsetParent) { x += e.offsetLeft; y += e.offsetTop; }
+    return [x, y];
+  }
+  /**
+   * Caméra exprimée en coordonnées de l'écran du moniteur (1600 x 900) : [[t, x, y, zoom, durée]],
+   * zoom 1 = l'écran remplit l'image ; [t, "room", durée] = vue d'ensemble de la pièce.
+   */
+  function screenCam(E, list) {
+    const k = 1076 / 1600, Z = 1920 / 1076;
+    const clampTo = (v, z, size) => { const half = size / z / 2; return Math.min(Math.max(v, half), size - half); };   // reste dans l'écran
+    E.camera(list.map(e => e[1] === "room" ? [e[0], 960, 540, 1, e[2]]
+      : [e[0], 422 + clampTo(e[1], e[3], 1600) * k, 62 + clampTo(e[2], e[3], 900) * k, Z * e[3], e[4]]));
+  }
+
+  const IBEAM = `<svg viewBox="0 0 38 54" width="38" height="54"><path d="M11 6 h6 l2 2 l2 -2 h6 M19 8 v38 M11 48 h6 l2 -2 l2 2 h6" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+    <path d="M11 6 h6 l2 2 l2 -2 h6 M19 8 v38 M11 48 h6 l2 -2 l2 2 h6" fill="none" stroke="#111" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+
+  /** Bascule le dessin du curseur selon le temps : [[t, "arrow" | "ibeam"]]. */
+  function cursorModes(E, cur, list) {
+    E.track(t => {
+      let m = "arrow";
+      for (const [a, v] of list) if (t >= a) m = v;
+      if (cur.dataset.m !== m) { cur.dataset.m = m; cur.innerHTML = m === "ibeam" ? IBEAM : E.ARROW; cur.style.margin = m === "ibeam" ? "-27px 0 0 -19px" : "0"; }
+    });
+  }
+
+  /** Texte tapé progressivement dans el entre a et b (avec point d'insertion clignotant). */
+  function typeText(E, el, text, a, b, before) {
+    before = before || "";
+    const esc = x => x.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    E.track(t => {
+      const n = t <= a ? 0 : t >= b ? text.length : Math.round(text.length * (t - a) / (b - a));
+      const typing = text.length > 0 && t > a && t < b;
+      const caret = t > a - 0.6 && t < b + 1.4 && (typing || Math.floor(t * 2.2) % 2 === 0);
+      const html = esc(before) + esc(text.slice(0, n)) + (caret ? '<span class="caret"></span>' : "");
+      if (el._h !== html) { el.innerHTML = html; el._h = html; }
+    });
+  }
+
+  /** Carte avec des touches du clavier (enfoncées à tour de rôle). keys : ["Ctrl", "A"]. */
+  function keysCard(E, title, keys, a, b, pos, note) {
+    const c = E.card(`${title}<div style="margin-top:20px;text-align:center">${keys.map((k, i) => (i ? '<span style="font-size:30px;color:#667386"> + </span>' : "") + `<span class="kbd">${k}</span>`).join("")}</div>${note ? `<small>${note}</small>` : ""}`, a, b, pos);
+    const ks = [...c.querySelectorAll(".kbd")];
+    E.track(t => { const on = t > a + 0.6 && ((t - a) % 2.2) > 0.6 && ((t - a) % 2.2) < 1.6; ks.forEach(k => k.classList.toggle("dn", on)); });
+    return c;
+  }
+
+  /** Remplit el avec un <span> par mot (pour les sélections) ; renvoie la liste des mots. */
+  function words(E, el, text) {
+    return text.split(/(?<= )/).map(w => { const s = E.$("span", "", el); s.textContent = w; return s; });
+  }
+  /** Sélection progressive : les mots list[i0..i1] passent en surbrillance de a à b, restent jusqu'à c. */
+  function selectRange(E, list, i0, i1, a, b, c) {
+    list.forEach((w, i) => {
+      if (i < i0 || i > i1) return;
+      if (!w._sr) { w._sr = []; E.track(t => w.classList.toggle("sel", w._sr.some(f => f(t)))); }
+      w._sr.push(t => {
+        const k = t < a ? -1 : t >= b ? i1 : i0 + Math.floor((i1 - i0 + 1) * (t - a) / Math.max(b - a, 1e-3));
+        return t >= a && t <= c && i <= k;
+      });
+    });
+  }
+
+  /**
+   * Parcours du curseur : [[t, cible, durée, clics]] ; la cible est un élément de root ou [x, y].
+   * Le curseur arrive sur la cible à l'instant t (déplacement de « durée » secondes) ; clics = 0, 1 ou 2.
+   */
+  function tour(E, root, over, cur, list) {
+    const keys = [];
+    list.forEach(([t, target, dur, n]) => {
+      const [x, y] = Array.isArray(target) ? target : pos(target, root);
+      if (keys.length) keys.push([Math.max(t - (dur == null ? 0.6 : dur), keys[keys.length - 1][0] + 0.01), keys[keys.length - 1][1], keys[keys.length - 1][2]]);
+      keys.push([t, x, y, dur == null ? 0.6 : dur]);
+      if (n) E.click(over, t + 0.05, x, y, n);
+    });
+    E.move(cur, keys);
+  }
+
+  // ------------------------------------------------------------------ Microsoft Word
+  /**
+   * Fenêtre Word plein écran (1600 x 900) posée dans host (écran du moniteur).
+   * Renvoie les éléments utiles : onglets, rubans, boutons, page, calques et curseur.
+   */
+  function word(E, host, w, h, docTitle) {
+    const $ = E.$;
+    const root = $("div", "win word");
+    const W = { root, el: {} };
+    const t = $("div", "wt", root);
+    t.innerHTML = `<span class="logo">W</span><span style="color:#555">Enregistrement automatique</span><span class="q sv">&#128190;</span>
+      <span class="q undo">&#8630;</span><span class="q redo">&#8631;</span><span style="margin-left:60px">${docTitle || "Document1"} - Word</span><span class="search">&#128269;&nbsp; Rechercher</span>`;
+    W.el.undo = t.querySelector(".undo"); W.el.redo = t.querySelector(".redo");
+    const tabs = $("div", "tabs", root);
+    W.tabs = {};
+    ["Fichier", "Accueil", "Insertion", "Dessin", "Conception", "Mise en page", "Références", "Publipostage", "Révision", "Affichage", "Aide"]
+      .forEach(n => { W.tabs[n] = $("span", "", tabs); W.tabs[n].textContent = n; });
+    const ribbon = $("div", "ribbon", root);
+    W.rb = {};
+    const grp = (rb, label, html, launch) => {
+      const g = $("div", "grp", rb); const c = $("div", "gc", g); c.innerHTML = html; $("div", "gl", g).textContent = label;
+      if (launch) g.launch = $("i", "launch", g);
+      return g;
+    };
+    // Accueil
+    let rb = W.rb.Accueil = $("div", "rb", ribbon);
+    grp(rb, "Presse-papiers", `<span class="b big"><i style="background:#c9a227">&#128203;</i>Coller</span><div style="display:flex;flex-direction:column;gap:2px"><span class="b">&#9986;</span><span class="b">&#10697;</span></div>`);
+    const gp = grp(rb, "Police", `<div style="display:flex;gap:4px;width:250px"><span class="combo font" style="width:170px">Calibri (Corps)</span><span class="combo size" style="width:56px">11</span><span class="b" style="font-size:15px">A<sup>+</sup></span></div>
+      <div style="display:flex;gap:1px;width:300px"><span class="b bold" style="font-weight:800">G</span><span class="b italic" style="font-style:italic;font-family:serif">I</span><span class="b under" style="text-decoration:underline">S</span>
+      <span class="b strike" style="text-decoration:line-through">ab</span><span class="b">x<sub>2</sub></span><span class="b">x<sup>2</sup></span>
+      <span class="b high" style="flex-direction:column;line-height:14px">&#9998;<i style="display:block;width:20px;height:5px;background:#ffeb00"></i></span>
+      <span class="b color" style="flex-direction:column;line-height:16px;font-weight:700">A<i style="display:block;width:20px;height:5px;background:#e00000"></i></span></div>`, true);
+    const gpa = grp(rb, "Paragraphe", `<div style="display:flex;gap:1px;width:250px"><span class="b bul">&#8226;&#8801;</span><span class="b num">1&#8801;</span><span class="b indl">&#8676;</span><span class="b indr">&#8677;</span><span class="b">&#182;</span></div>
+      <div style="display:flex;gap:1px"><span class="b al">&#8676;&#8801;</span><span class="b ac">&#8801;</span><span class="b ar">&#8801;&#8677;</span><span class="b aj">&#9776;</span><span class="b sp">&#8693;&#8801;</span></div>`, true);
+    const gs = grp(rb, "Styles", `<div class="sty"><div><span style="font-size:15px">AaBbCc</span><br>Normal</div><div><span style="font-size:15px">AaBbCc</span><br>Sans interligne</div><div class="t1"><b>AaBbCc</b>Titre 1</div><div class="t2"><b style="font-size:15px">AaBbCcD</b>Titre 2</div><div><b style="font-size:21px">AaB</b>Titre</div></div>`);
+    grp(rb, "Édition", `<span class="b big"><i style="background:#5a6b80">&#128269;</i>Rechercher</span>`);
+    Object.assign(W.el, {
+      font: gp.querySelector(".font"), size: gp.querySelector(".size"), bold: gp.querySelector(".bold"), italic: gp.querySelector(".italic"), under: gp.querySelector(".under"),
+      strike: gp.querySelector(".strike"), high: gp.querySelector(".high"), color: gp.querySelector(".color"), launchFont: gp.launch, launchPara: gpa.launch,
+      bul: gpa.querySelector(".bul"), indl: gpa.querySelector(".indl"), indr: gpa.querySelector(".indr"),
+      al: gpa.querySelector(".al"), ac: gpa.querySelector(".ac"), ar: gpa.querySelector(".ar"), aj: gpa.querySelector(".aj"), sp: gpa.querySelector(".sp"),
+      t1: gs.querySelector(".t1"), t2: gs.querySelector(".t2"), grpFont: gp, grpPara: gpa, grpStyles: gs
+    });
+    // Insertion (décor)
+    rb = W.rb.Insertion = $("div", "rb", ribbon);
+    grp(rb, "Pages", `<span class="b big"><i style="background:#326fbf">&#128196;</i>Page de garde</span><span class="b big"><i style="background:#5a6b80">&#9645;</i>Page vierge</span>`);
+    grp(rb, "Tableaux", `<span class="b big"><i style="background:#1d6f42">&#9638;</i>Tableau</span>`);
+    grp(rb, "Illustrations", `<span class="b big"><i style="background:#c43e1c">&#128444;</i>Images</span><span class="b big"><i style="background:#7a5cd6">&#9650;</i>Formes</span>`);
+    // Références
+    rb = W.rb["Références"] = $("div", "rb", ribbon);
+    const gt = grp(rb, "Table des matières", `<span class="b big toc"><i style="background:#326fbf">&#9776;</i>Table des<br>matières</span><div style="display:flex;flex-direction:column;gap:2px"><span class="b" style="font-size:14px">+ Ajouter le texte</span><span class="b tocupd" style="font-size:14px">&#10227; Mettre à jour la table</span></div>`);
+    grp(rb, "Notes de bas de page", `<span class="b big"><i style="background:#5a6b80">ab<sup>1</sup></i>Insérer une note</span>`);
+    grp(rb, "Citations et bibliographie", `<span class="b big"><i style="background:#5a6b80">&#10077;</i>Insérer une citation</span>`);
+    grp(rb, "Légendes", `<span class="b big"><i style="background:#5a6b80">&#9635;</i>Insérer une légende</span>`);
+    W.el.toc = gt.querySelector(".toc"); W.el.tocUpd = gt.querySelector(".tocupd");
+    // Affichage
+    rb = W.rb.Affichage = $("div", "rb", ribbon);
+    grp(rb, "Affichages", `<span class="b big"><i style="background:#5a6b80">&#128214;</i>Mode Lecture</span><span class="b big on"><i style="background:#326fbf">&#128196;</i>Page</span><span class="b big"><i style="background:#5a6b80">&#127760;</i>Web</span>`);
+    const ga = grp(rb, "Afficher", `<div style="display:flex;flex-direction:column;gap:6px;padding-top:4px"><span class="chk rule"><i></i>Règle</span><span class="chk"><i></i>Quadrillage</span><span class="chk"><i></i>Volet de navigation</span></div>`);
+    grp(rb, "Zoom", `<span class="b big"><i style="background:#5a6b80">&#128269;</i>Zoom</span><span class="b big"><i style="background:#5a6b80">100</i>100 %</span>`);
+    W.el.rule = ga.querySelector(".rule");
+    // règle, document, barre d'état
+    W.ruler = $("div", "ruler", root); $("i", "", W.ruler);
+    W.docarea = $("div", "docarea", root);
+    W.page = $("div", "page", W.docarea);
+    $("div", "status", root).innerHTML = "<span>Page 1 sur 1</span><span class=\"words\">0 mot</span><span>Français (France)</span><span style=\"margin-left:auto\">Focus &nbsp; &#9636; &#9637; &nbsp; ─────●──── 100 %</span>";
+    W.layer = $("div", "abs", root, { inset: "0" });
+    W.over = $("div", "abs", root, { inset: "0" });
+    W.cursor = $("div", "cursor", W.over); W.cursor.innerHTML = E.ARROW;
+    root.style.transform = `scale(${w / 1600}, ${h / 900})`;
+    host.appendChild(root);
+    /** Onglet actif selon le temps : [[t, "Accueil"], ...]. */
+    W.tabAt = list => E.track(tt => {
+      let n = "Accueil"; for (const [a, v] of list) if (tt >= a) n = v;
+      if (W._tab !== n) { W._tab = n; for (const k in W.tabs) W.tabs[k].classList.toggle("on", k === n); for (const k in W.rb) W.rb[k].classList.toggle("on", k === n); }
+    });
+    W.pos = (el, dx, dy) => pos(el, root, dx, dy);
+    return W;
+  }
+
+  return { deskSet, laptopSet, mouseCard, touchCard, mouseSVG, pos, corner, screenCam, IBEAM, cursorModes, typeText, keysCard, word, words, selectRange, tour };
 })();

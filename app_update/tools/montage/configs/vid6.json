@@ -1,0 +1,24 @@
+{
+ "source": "vid6.mp3",
+ "title": "Connectez votre point d'accès Wi-Fi sur Windows.",
+ "sentences": [
+  "Connectez votre point d'accès Wi-Fi sur Windows.",
+  "Assurez-vous que votre point d'accès mobile ou votre box Wi-Fi est allumé et fonctionne.",
+  "Vérifiez également que le Wi-Fi de votre ordinateur est activé.",
+  "Ouvrir les paramètres Wi-Fi sur Windows.",
+  "Cliquez sur l'icône Wi-Fi située dans la barre des tâches, en bas à droite de l'écran, près de l'horloge.",
+  "Une liste des réseaux Wi-Fi disponibles s'affichera.",
+  "Sélectionnez votre réseau.",
+  "Recherchez et sélectionnez le nom de votre point d'accès mobile dans la liste des réseaux Wi-Fi disponibles.",
+  "Saisir le mot de passe.",
+  "Si votre réseau est protégé par un mot de passe, une fenêtre vous demandera de saisir le mot de passe du Wi-Fi.",
+  "Entrez le mot de passe et cliquez sur « Connecter ».",
+  "Vérifiez la connexion.",
+  "Si la connexion est réussie, vous verrez l'icône Wi-Fi devenir active dans la barre des tâches.",
+  "Vous pourrez également tester votre connexion en ouvrant un navigateur web.",
+  "Dépannage.",
+  "Si vous ne parvenez pas à vous connecter, assurez-vous que votre point d'accès ou box Wi-Fi n'est pas trop loin de votre ordinateur.",
+  "Vous pouvez également essayer de redémarrer votre point d'accès mobile ou votre box et réessayer de vous connecter.",
+  "Si le problème persiste, vous pouvez cliquer sur « Dépanner » dans le menu Wi-Fi pour lancer l'utilitaire de résolution des problèmes sur Windows."
+ ]
+}
