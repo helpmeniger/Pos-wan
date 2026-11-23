@@ -702,7 +702,20 @@ window.T = {
    "Cliquez sur Mettre à jour la table.",
    "Une option apparaîtra en haut de la table ou dans l'onglet Références.",
    "Sélectionnez soit Mettre à jour les numéros de page uniquement, si vous n'avez pas modifié les titres.",
-   "Mettre à jour toute la table, si vous avez modifié ou ajouté des titres."
+   "Mettre à jour toute la table, si vous avez modifié ou ajouté des titres.",
+   "Protéger un document Word par mot de passe ou en restreindre l'accès.",
+   "Ouvrez le document Word que vous souhaitez protéger.",
+   "Cliquez sur Fichier, Information, Protéger le document.",
+   "Sélectionnez Chiffrer avec un mot de passe.",
+   "Entrez un mot de passe dans la boîte de dialogue et cliquez sur OK.",
+   "Confirmez le mot de passe et cliquez sur OK à nouveau.",
+   "Enregistrez le document pour que la protection prenne effet.",
+   "Restreindre les modifications dans un document.",
+   "Allez dans Révision, Restreindre la modification.",
+   "Dans le volet qui apparaît à droite, cochez les options pour limiter les types de modifications autorisées, comme les commentaires ou remplissage de formulaires, ou cochez Aucune modification, Lecture seule, si vous ne voulez pas que le document soit modifié.",
+   "Cliquez sur Appliquer la protection.",
+   "Configurez un mot de passe ou une autre méthode de déverrouillage, facultatif.",
+   "Enregistrez le document pour activer la restriction."
   ],
   "sentences": [
    [
@@ -727,19 +740,19 @@ window.T = {
    ],
    [
     18.72,
-    20.45
+    20.44
    ],
    [
     21.04,
     24.81
    ],
    [
-    25.2,
+    25.19,
     26.77
    ],
    [
     27.68,
-    32.9
+    32.92
    ],
    [
     33.49,
@@ -755,7 +768,7 @@ window.T = {
    ],
    [
     48.6,
-    51.34
+    51.35
    ],
    [
     51.87,
@@ -771,10 +784,697 @@ window.T = {
    ],
    [
     64.31,
-    70.2
+    69.24
+   ],
+   [
+    70.05,
+    74.52
+   ],
+   [
+    75.01,
+    77.58
+   ],
+   [
+    78.11,
+    81.29
+   ],
+   [
+    81.61,
+    84.03
+   ],
+   [
+    84.45,
+    87.65
+   ],
+   [
+    88.15,
+    90.79
+   ],
+   [
+    91.32,
+    94.29
+   ],
+   [
+    94.81,
+    97.38
+   ],
+   [
+    97.91,
+    100.91
+   ],
+   [
+    101.27,
+    113.97
+   ],
+   [
+    114.42,
+    116.5
+   ],
+   [
+    117.02,
+    123.83
+   ],
+   [
+    124.44,
+    127.24
    ]
   ],
-  "duration": 71.4,
+  "duration": 129.1,
   "audio": "audio/1011.m4a"
+ },
+ "1006": {
+  "texts": [
+   "Effectuez une recherche et remplacez dans Word et enregistrez un document.",
+   "Recherchez et remplacez dans Word.",
+   "Ouvrez votre document Word.",
+   "Accédez à l'onglet « Accueil ».",
+   "Cliquez sur « Remplacer » dans le groupe « Édition » ou utilisez le raccourci clavier Contrôle plus H.",
+   "Dans la boîte de dialogue qui s'ouvre, dans le champ « Rechercher », tapez le texte que vous souhaitez trouver.",
+   "Dans le champ « Remplacer par », tapez le texte par lequel vous voulez remplacer celui trouvé.",
+   "Cliquez sur « Remplacer » pour remplacer un seul élément ou cliquez sur « Remplacer tout » pour remplacer toutes les occurrences du texte dans le document.",
+   "Cliquez sur « Fermer » une fois que vous avez terminé.",
+   "Enregistrez le document.",
+   "Pour enregistrer un document pour la première fois ou sous un nouveau nom, cliquez sur l'onglet « Fichier » en haut à gauche.",
+   "Sélectionnez « Enregistrer sous ».",
+   "Choisissez l'emplacement où vous voulez enregistrer le fichier.",
+   "Exemple : sur le bureau de votre ordinateur, et cetera.",
+   "Donnez un nom au fichier et sélectionnez le format souhaité, par exemple en doc ou en PDF.",
+   "Cliquez sur « Enregistrer ».",
+   "Pour enregistrer les modifications dans un fichier déjà existant, vous pouvez simplement cliquer sur l'icône de disquette en haut à gauche ou utiliser le raccourci Contrôle plus S."
+  ],
+  "sentences": [
+   [
+    0.0,
+    4.0
+   ],
+   [
+    4.49,
+    6.62
+   ],
+   [
+    7.13,
+    8.77
+   ],
+   [
+    9.31,
+    10.98
+   ],
+   [
+    11.42,
+    17.13
+   ],
+   [
+    17.99,
+    23.96
+   ],
+   [
+    24.5,
+    29.51
+   ],
+   [
+    30.02,
+    37.67
+   ],
+   [
+    38.04,
+    41.02
+   ],
+   [
+    41.33,
+    42.71
+   ],
+   [
+    43.21,
+    49.63
+   ],
+   [
+    50.13,
+    51.91
+   ],
+   [
+    53.09,
+    57.04
+   ],
+   [
+    57.51,
+    59.91
+   ],
+   [
+    61.01,
+    66.15
+   ],
+   [
+    67.05,
+    68.75
+   ],
+   [
+    69.79,
+    79.27
+   ]
+  ],
+  "duration": 80.2,
+  "audio": "audio/1006.m4a"
+ },
+ "1010": {
+  "texts": [
+   "Créer des sections et appliquer une numérotation différente sur chaque section.",
+   "Insérer des sauts de section.",
+   "Placez le curseur à la fin de la page où vous voulez qu'une nouvelle section commence.",
+   "Allez dans « Mise en page », « Saut de page », « Section suivante ».",
+   "Cela crée une nouvelle section sur la page suivante.",
+   "Répétez pour chaque endroit où vous voulez une nouvelle section.",
+   "Modifiez les en-têtes et pieds de page pour chaque section.",
+   "Double-cliquez sur le pied de page ou l'en-tête de la nouvelle section.",
+   "Dans le menu qui s'affiche, désactivez « Lier au précédent » pour rompre le lien entre les sections.",
+   "Cela permet de personnaliser les numérotations indépendamment.",
+   "Appliquez des numérotations différentes.",
+   "Pour chaque section, allez dans « Insertion », « Numéro de page », « Format des numéros de page ».",
+   "Choisissez « Commencer à 1 » pour recommencer la numérotation ou sélectionnez un autre format de numérotation, chiffres romains, lettres, etc.",
+   "Cliquez sur « OK » pour appliquer.",
+   "Exemple concret.",
+   "Section 1 : page numérotée en chiffres romains.",
+   "Section 2 : page numérotée en chiffres arabes.",
+   "Section 3 : pas de numérotation."
+  ],
+  "sentences": [
+   [
+    0.0,
+    4.17
+   ],
+   [
+    4.68,
+    6.23
+   ],
+   [
+    6.75,
+    10.74
+   ],
+   [
+    11.27,
+    14.45
+   ],
+   [
+    14.99,
+    17.78
+   ],
+   [
+    18.32,
+    21.27
+   ],
+   [
+    21.79,
+    24.68
+   ],
+   [
+    25.19,
+    28.64
+   ],
+   [
+    29.14,
+    34.16
+   ],
+   [
+    34.66,
+    39.31
+   ],
+   [
+    39.31,
+    42.5
+   ],
+   [
+    42.93,
+    47.74
+   ],
+   [
+    48.15,
+    57.01
+   ],
+   [
+    57.64,
+    59.27
+   ],
+   [
+    59.83,
+    60.91
+   ],
+   [
+    61.44,
+    64.66
+   ],
+   [
+    65.15,
+    68.21
+   ],
+   [
+    68.72,
+    71.25
+   ]
+  ],
+  "duration": 72.2,
+  "audio": "audio/1010.m4a"
+ },
+ "1013": {
+  "texts": [
+   "Saisir des données sur une feuille Excel.",
+   "Une feuille Excel a généralement des colonnes allant de A à Z et des lignes de 1 à plusieurs milliers.",
+   "Adresse des cellules.",
+   "Chaque cellule a une adresse unique formée de la lettre de sa colonne suivie du numéro de sa ligne.",
+   "Par exemple, A1, cellule située dans la colonne A et la ligne 1.",
+   "D5, cellule dans la colonne D et la ligne 5.",
+   "Lorsque vous cliquez sur une cellule, son adresse s'affiche dans la zone « Nom », en haut à gauche de l'écran, juste à côté de la barre de formule.",
+   "Saisir des données dans une cellule.",
+   "Cliquez sur la cellule souhaitée.",
+   "Tapez le texte, le nombre ou la formule.",
+   "Appuyez sur Entrée.",
+   "Exemple pratique.",
+   "Cliquez sur A1, entrez « Nom ».",
+   "Cliquez sur B1, entrez « Âge ».",
+   "Cliquez sur A2, entrez « Ali ».",
+   "Cliquez sur B2, entrez « 25 ».",
+   "Plage de cellules.",
+   "Une plage de cellules correspond à un groupe de cellules sélectionnées.",
+   "Elle est définie par l'adresse de la première cellule et celle de la dernière, séparées par.",
+   "Exemple : A1, D5 représente toutes les cellules comprises entre A1 et D5 en rectangle.",
+   "Pour sélectionner toutes les cellules de la plage A1 à B3, cliquez et glissez de A1 jusqu'à B3.",
+   "Les plages peuvent être utilisées dans des formules comme égale somme A1 à 10."
+  ],
+  "sentences": [
+   [
+    0.0,
+    2.15
+   ],
+   [
+    2.15,
+    8.27
+   ],
+   [
+    8.83,
+    9.92
+   ],
+   [
+    10.39,
+    17.97
+   ],
+   [
+    18.49,
+    22.04
+   ],
+   [
+    22.53,
+    25.05
+   ],
+   [
+    25.43,
+    32.28
+   ],
+   [
+    33.17,
+    37.16
+   ],
+   [
+    37.71,
+    40.08
+   ],
+   [
+    40.62,
+    41.77
+   ],
+   [
+    42.32,
+    43.49
+   ],
+   [
+    44.07,
+    46.28
+   ],
+   [
+    47.15,
+    49.19
+   ],
+   [
+    50.24,
+    52.26
+   ],
+   [
+    53.39,
+    54.52
+   ],
+   [
+    54.92,
+    56.73
+   ],
+   [
+    57.11,
+    58.08
+   ],
+   [
+    58.59,
+    61.97
+   ],
+   [
+    62.52,
+    67.11
+   ],
+   [
+    68.13,
+    74.14
+   ],
+   [
+    74.58,
+    80.36
+   ],
+   [
+    80.87,
+    85.88
+   ]
+  ],
+  "duration": 88.2,
+  "audio": "audio/1013.m4a"
+ },
+ "2003": {
+  "texts": [
+   "Télécharger et installer un logiciel sur votre ordinateur Windows.",
+   "Ouvrez votre navigateur web comme Chrome, Firefox ou Edge.",
+   "Rendez-vous sur le site officiel du logiciel que vous souhaitez installer.",
+   "Cherchez un bouton ou un lien avec la mention « Télécharger » ou « Download ».",
+   "Cliquez sur ce lien pour lancer le téléchargement du fichier d'installation.",
+   "Ce fichier est généralement au format .exe.",
+   "Une fois le téléchargement terminé, localisez le fichier d'installation dans le dossier « Téléchargements » ou à l'endroit où vous l'avez sauvegardé.",
+   "Double-cliquez sur le fichier .exe pour lancer le programme d'installation.",
+   "Suivez les instructions à l'écran.",
+   "Vous devrez peut-être accepter les conditions d'utilisation, choisir un emplacement d'installation et cliquer sur « Suivant » ou « Installer ».",
+   "Attendez que l'installation se termine.",
+   "Cela peut prendre quelques minutes selon la taille du logiciel.",
+   "Une fois l'installation terminée, vous pouvez soit lancer le logiciel directement depuis l'assistant d'installation, soit le trouver dans le menu « Démarrer » de Windows.",
+   "Effectuer des recherches efficaces sur des sites web.",
+   "Utilisez des mots clés spécifiques.",
+   "Évitez les phrases longues.",
+   "Concentrez-vous sur les termes essentiels.",
+   "Exemple pour un site éducatif : « Exercice mathématique pour lycéens gratuits ».",
+   "Exemple pour un site de gestion : « Meilleur logiciel de gestion des employés ».",
+   "Identifier des sites pertinents.",
+   "Sites éducatifs : Khan Academy : plateforme gratuite proposant des cours en mathématiques, sciences, programmation, etc.",
+   "Coursera : site de cours en ligne délivrés par des universités et institutions reconnues.",
+   "Mots clés : formation certifiée en ligne, apprendre Python, cours en gestion d'entreprise.",
+   "Open Classroom : formation en ligne en plusieurs domaines.",
+   "Sites de gestion : Trello : outil de gestion de projets basé sur des tableaux et des cartes pour organiser les tâches.",
+   "QuickBooks : logiciel de comptabilité pour gérer les finances d'une entreprise.",
+   "Mots clés : logiciel de facturation, comptabilité pour TPE, gestion des finances professionnelles.",
+   "Exemple de recherche sur la plateforme Niger Emploi.",
+   "Ouvrir un navigateur.",
+   "Cliquez sur l'icône du navigateur Chrome, Firefox, etc.",
+   "Accédez à Niger Emploi.",
+   "Dans la barre d'adresse, tapez Niger Emploi et appuyez sur Entrée.",
+   "Recherchez des offres.",
+   "Utilisez la barre de recherche sur le site.",
+   "Par exemple, tapez « Ingénieur informatique ».",
+   "Cliquez sur « Rechercher » ou appuyez sur Entrée.",
+   "Explorez une offre.",
+   "Cliquez sur l'intitulé d'une offre pour voir les détails.",
+   "Utilisez les boutons ou liens pour postuler si une offre vous intéresse.",
+   "Télécharger une vidéo sur YouTube.",
+   "Ouvrir la vidéo.",
+   "Accédez à YouTube et ouvrez une vidéo que vous souhaitez télécharger.",
+   "Modifier l'URL.",
+   "Dans la barre d'adresse, ajoutez « ss » juste après « www. » et avant « YouTube ».",
+   "Lancez la recherche.",
+   "Télécharger.",
+   "Vous serez redirigé vers un site de téléchargement.",
+   "Choisissez la qualité et cliquez sur « Télécharger »."
+  ],
+  "sentences": [
+   [
+    0.0,
+    3.98
+   ],
+   [
+    4.49,
+    9.05
+   ],
+   [
+    9.52,
+    12.95
+   ],
+   [
+    13.47,
+    17.36
+   ],
+   [
+    18.26,
+    21.96
+   ],
+   [
+    22.47,
+    25.15
+   ],
+   [
+    25.67,
+    32.76
+   ],
+   [
+    33.22,
+    37.3
+   ],
+   [
+    37.8,
+    39.5
+   ],
+   [
+    40.02,
+    46.95
+   ],
+   [
+    47.85,
+    49.96
+   ],
+   [
+    50.48,
+    53.61
+   ],
+   [
+    54.12,
+    62.33
+   ],
+   [
+    62.75,
+    65.42
+   ],
+   [
+    65.93,
+    67.7
+   ],
+   [
+    68.45,
+    69.77
+   ],
+   [
+    70.13,
+    72.14
+   ],
+   [
+    72.67,
+    77.8
+   ],
+   [
+    78.14,
+    83.08
+   ],
+   [
+    83.63,
+    85.37
+   ],
+   [
+    85.89,
+    94.66
+   ],
+   [
+    95.15,
+    100.44
+   ],
+   [
+    100.94,
+    106.23
+   ],
+   [
+    107.09,
+    110.5
+   ],
+   [
+    110.97,
+    117.82
+   ],
+   [
+    118.31,
+    123.04
+   ],
+   [
+    123.53,
+    129.65
+   ],
+   [
+    130.5,
+    133.68
+   ],
+   [
+    134.19,
+    135.38
+   ],
+   [
+    135.78,
+    140.07
+   ],
+   [
+    140.93,
+    142.48
+   ],
+   [
+    143.0,
+    146.79
+   ],
+   [
+    147.31,
+    148.46
+   ],
+   [
+    149.07,
+    151.45
+   ],
+   [
+    151.99,
+    154.74
+   ],
+   [
+    155.67,
+    158.28
+   ],
+   [
+    158.81,
+    159.92
+   ],
+   [
+    160.5,
+    163.34
+   ],
+   [
+    163.87,
+    167.49
+   ],
+   [
+    167.99,
+    170.12
+   ],
+   [
+    170.63,
+    171.68
+   ],
+   [
+    172.23,
+    175.72
+   ],
+   [
+    176.25,
+    177.39
+   ],
+   [
+    177.91,
+    182.56
+   ],
+   [
+    182.56,
+    183.81
+   ],
+   [
+    184.29,
+    185.04
+   ],
+   [
+    185.58,
+    188.37
+   ],
+   [
+    188.87,
+    191.72
+   ]
+  ],
+  "duration": 192.7,
+  "audio": "audio/2003.m4a"
+ },
+ "2014": {
+  "texts": [
+   "Créer un tableau Excel.",
+   "Ouvrez Excel et entrez vos données.",
+   "Exemple : une liste de ventes avec des colonnes comme « Produits », « Entrée de stock », « Sortie de stock », « Prix unitaire ».",
+   "Sélectionnez les données.",
+   "Cliquez et faites glisser votre curseur pour sélectionner toutes les données, y compris les en-têtes.",
+   "Allez dans l'onglet « Insertion ».",
+   "Cliquez sur « Tableau » dans la section « Tableau ».",
+   "Une boîte de dialogue apparaît.",
+   "Assurez-vous que la case « Mon tableau comporte des en-têtes » est cochée.",
+   "Cliquez sur « OK ».",
+   "Une fois le tableau créé, Excel applique automatiquement un style.",
+   "Vous pouvez changer le style dans l'onglet « Création de tableau » en choisissant une autre couleur ou disposition.",
+   "Utilisez les fonctionnalités.",
+   "Filtre : cliquez sur les flèches des en-têtes pour trier ou filtrer les données."
+  ],
+  "sentences": [
+   [
+    0.0,
+    1.84
+   ],
+   [
+    2.4,
+    4.2
+   ],
+   [
+    4.8,
+    11.2
+   ],
+   [
+    11.83,
+    13.08
+   ],
+   [
+    13.67,
+    18.85
+   ],
+   [
+    19.41,
+    21.04
+   ],
+   [
+    21.6,
+    24.51
+   ],
+   [
+    25.06,
+    26.8
+   ],
+   [
+    27.26,
+    30.8
+   ],
+   [
+    31.37,
+    32.35
+   ],
+   [
+    32.92,
+    36.84
+   ],
+   [
+    37.34,
+    43.49
+   ],
+   [
+    43.49,
+    45.22
+   ],
+   [
+    45.58,
+    49.82
+   ]
+  ],
+  "duration": 53.5,
+  "audio": "audio/2014.m4a"
  }
 };

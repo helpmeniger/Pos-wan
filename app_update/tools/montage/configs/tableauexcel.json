@@ -1,0 +1,20 @@
+{
+ "source": "tableauexcel.mp3",
+ "title": "Créer un tableau Excel.",
+ "sentences": [
+  "Créer un tableau Excel.",
+  "Ouvrez Excel et entrez vos données.",
+  "Exemple : une liste de ventes avec des colonnes comme « Produits », « Entrée de stock », « Sortie de stock », « Prix unitaire ».",
+  "Sélectionnez les données.",
+  "Cliquez et faites glisser votre curseur pour sélectionner toutes les données, y compris les en-têtes.",
+  "Allez dans l'onglet « Insertion ».",
+  "Cliquez sur « Tableau » dans la section « Tableau ».",
+  "Une boîte de dialogue apparaît.",
+  "Assurez-vous que la case « Mon tableau comporte des en-têtes » est cochée.",
+  "Cliquez sur « OK ».",
+  "Une fois le tableau créé, Excel applique automatiquement un style.",
+  "Vous pouvez changer le style dans l'onglet « Création de tableau » en choisissant une autre couleur ou disposition.",
+  "Utilisez les fonctionnalités.",
+  "Filtre : cliquez sur les flèches des en-têtes pour trier ou filtrer les données."
+ ]
+}

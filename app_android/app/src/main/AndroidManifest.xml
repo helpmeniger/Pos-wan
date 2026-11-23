@@ -87,6 +87,10 @@
             android:theme="@style/Theme.HelpMe.Chat" />
         <activity android:name=".ModuleActivity" android:exported="false" android:theme="@style/Theme.HelpMe.Chat" />
         <activity android:name=".LessonReaderActivity" android:exported="false" android:theme="@style/Theme.HelpMe.Chat" />
+        <activity android:name=".SimulatorActivity" android:exported="false"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|keyboard"
+            android:screenOrientation="sensorLandscape" android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.HelpMe.Chat" />
         <activity android:name=".AnimLessonActivity" android:exported="false"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:screenOrientation="sensorLandscape"

@@ -1,0 +1,28 @@
+{
+ "source": "saisirdonnee.mp3",
+ "title": "Saisir des données sur une feuille Excel.",
+ "sentences": [
+  "Saisir des données sur une feuille Excel.",
+  "Une feuille Excel a généralement des colonnes allant de A à Z et des lignes de 1 à plusieurs milliers.",
+  "Adresse des cellules.",
+  "Chaque cellule a une adresse unique formée de la lettre de sa colonne suivie du numéro de sa ligne.",
+  "Par exemple, A1, cellule située dans la colonne A et la ligne 1.",
+  "D5, cellule dans la colonne D et la ligne 5.",
+  "Lorsque vous cliquez sur une cellule, son adresse s'affiche dans la zone « Nom », en haut à gauche de l'écran, juste à côté de la barre de formule.",
+  "Saisir des données dans une cellule.",
+  "Cliquez sur la cellule souhaitée.",
+  "Tapez le texte, le nombre ou la formule.",
+  "Appuyez sur Entrée.",
+  "Exemple pratique.",
+  "Cliquez sur A1, entrez « Nom ».",
+  "Cliquez sur B1, entrez « Âge ».",
+  "Cliquez sur A2, entrez « Ali ».",
+  "Cliquez sur B2, entrez « 25 ».",
+  "Plage de cellules.",
+  "Une plage de cellules correspond à un groupe de cellules sélectionnées.",
+  "Elle est définie par l'adresse de la première cellule et celle de la dernière, séparées par.",
+  "Exemple : A1, D5 représente toutes les cellules comprises entre A1 et D5 en rectangle.",
+  "Pour sélectionner toutes les cellules de la plage A1 à B3, cliquez et glissez de A1 jusqu'à B3.",
+  "Les plages peuvent être utilisées dans des formules comme égale somme A1 à 10."
+ ]
+}

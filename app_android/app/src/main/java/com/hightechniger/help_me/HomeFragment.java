@@ -114,10 +114,10 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         dynamic.removeAllViews();
         View resume = resumeCard();
         if (resume != null) dynamic.addView(resume);
-        dynamic.addView(sectionTitle("Accès rapide"));
-        dynamic.addView(quickActions());
         dynamic.addView(sectionTitle("Vos modules"));
         dynamic.addView(moduleGrid());
+        dynamic.addView(sectionTitle("Accès rapide"));
+        dynamic.addView(quickActions());
         dynamic.addView(sectionTitle("Pour s’entraîner"));
         dynamic.addView(practiceCards());
         updateHero();
@@ -312,14 +312,21 @@ public class HomeFragment extends Fragment implements SensorEventListener {
         grid.setPadding(Ui.dp(context, 12), 0, Ui.dp(context, 12), 0);
         LinearLayout row = null;
         int i = 0;
-        for (Course.Module m : course.modules) {
+        java.util.List<View> cards = new java.util.ArrayList<>();
+        for (Course.Module m : course.modules) cards.add(moduleCard(m));
+        cards.add(extraCard("Quiz", "Testez vos connaissances", R.drawable.ic_m_quiz, Color.parseColor("#0F8A5F"),
+                v -> startActivity(new Intent(context, QuizActivity.class))));
+        cards.add(extraCard("Simulateur Windows", "S’exercer comme sur un vrai PC", R.drawable.ic_m_windows, Color.parseColor("#0067C0"),
+                v -> startActivity(new Intent(context, SimulatorActivity.class))));
+        for (View card : cards) {
             if (i % 2 == 0) {
                 row = Ui.row(context);
                 row.setGravity(Gravity.TOP);
                 grid.addView(row);
             }
-            View card = moduleCard(m);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1);
+            // seule sur sa ligne (dernière tuile d'un nombre impair) : hauteur du contenu, sinon elle serait écrasée
+            boolean alone = i % 2 == 0 && i == cards.size() - 1;
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, alone ? ViewGroup.LayoutParams.WRAP_CONTENT : ViewGroup.LayoutParams.MATCH_PARENT, 1);
             lp.setMargins(Ui.dp(context, 4), Ui.dp(context, 4), Ui.dp(context, 4), Ui.dp(context, 4));
             card.setLayoutParams(lp);
             row.addView(card);
@@ -332,6 +339,24 @@ public class HomeFragment extends Fragment implements SensorEventListener {
             row.addView(filler);
         }
         return grid;
+    }
+
+    /** Tuile de la grille des modules qui ouvre un outil (quiz, simulateur). */
+    private View extraCard(String title, String sub, int icon, int color, View.OnClickListener open) {
+        LinearLayout c = Ui.card(context, open);
+        c.setPadding(Ui.dp(context, 14), Ui.dp(context, 14), Ui.dp(context, 14), Ui.dp(context, 14));
+        c.addView(Ui.badge(context, icon, color, 44, false));
+        TextView t = Ui.title(context, title, 16);
+        t.setPadding(0, Ui.dp(context, 10), 0, 0);
+        t.setMaxLines(2);
+        c.addView(t);
+        TextView s = Ui.text(context, sub, 12.5f, Ui.MUTED, false);
+        s.setPadding(0, Ui.dp(context, 2), 0, Ui.dp(context, 8));
+        c.addView(s);
+        View bar = new View(context);
+        bar.setBackground(Ui.rounded(context, Ui.tint(color, 0.6f), 3));
+        c.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(context, 5)));
+        return c;
     }
 
     private View moduleCard(Course.Module m) {

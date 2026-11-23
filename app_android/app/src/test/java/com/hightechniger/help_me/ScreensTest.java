@@ -88,6 +88,12 @@ public class ScreensTest {
         Thread.sleep(1500);
         shot(a, "0_accueil", 0);
         shot(a, "0b_accueil_bas", 1300);
+        View sim = findText(a.getWindow().getDecorView(), "Simulateur Windows");
+        org.junit.Assert.assertNotNull("tuile Simulateur", sim);
+        View sv = find(a.getWindow().getDecorView());
+        int[] p = new int[2]; sim.getLocationInWindow(p);
+        org.junit.Assert.assertTrue("tuile Simulateur visible", ((View) sim.getParent()).getHeight() > 0);
+        shot(a, "0c_accueil_fin", 2000);
     }
 
     static View findText(View v, String s) {

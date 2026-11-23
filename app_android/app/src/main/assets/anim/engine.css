@@ -253,3 +253,65 @@ html, body { width: 100%; height: 100%; background: #0b0f17; overflow: hidden; f
 .word .sw i { width: 26px; height: 26px; border: 1px solid rgba(0,0,0,.15); }
 .word .sw i.hl { box-shadow: 0 0 0 3px #326fbf; }
 .word .fld { display: inline-block; min-width: 150px; height: 26px; border: 1px solid #b9b9b9; background: #fff; padding: 2px 8px; margin: 2px 14px 8px 0; }
+
+/* --- Microsoft Excel (leçons 1013, 2014) --- */
+.xl { background: #f3f3f3; color: #1b1b1b; font-size: 15px; }
+.xl .wt .logo { background: #107c41; }
+.xl .tabs span.on { color: #107c41; border-color: #107c41; }
+.xl .tabs span.ctx { color: #107c41; font-weight: 600; }
+.xl .b.hl, .xl .b.on { background: #d3eadd; box-shadow: 0 0 0 1.5px #7cc49b inset; }
+.xl .fbar { position: absolute; left: 0; right: 0; top: 196px; height: 34px; background: #fff; border-bottom: 1px solid #d4d4d4; display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+.xl .nbox { width: 120px; height: 26px; border: 1px solid #c8c8c8; padding: 0 8px; line-height: 24px; font-size: 15px; }
+.xl .nbox.hl { box-shadow: 0 0 0 3px #d9822b; }
+.xl .fx { flex: 1; height: 26px; border-left: 1px solid #d4d4d4; padding-left: 10px; line-height: 26px; font-size: 15px; }
+.xl .grid { position: absolute; left: 0; right: 0; top: 230px; bottom: 54px; background: #fff; overflow: hidden; }
+.xl table { border-collapse: collapse; table-layout: fixed; font-family: Calibri, Carlito, Arial, sans-serif; font-size: 16px; }
+.xl th { background: #f3f3f3; color: #555; font-weight: 400; border: 1px solid #d4d4d4; height: 26px; }
+.xl th.c { width: 120px; } .xl th.r { width: 44px; }
+.xl th.hl { background: #d3eadd; color: #107c41; border-bottom: 2px solid #107c41; }
+.xl td { border: 1px solid #e2e2e2; height: 26px; padding: 0 5px; white-space: nowrap; overflow: hidden; }
+.xl td.num { text-align: right; }
+.xl td.rng { background: #e3f1e8; }
+.xl td.hd { font-weight: 700; }
+.xl .curs { position: absolute; border: 3px solid #107c41; pointer-events: none; box-sizing: border-box; }
+.xl .curs:after { content: ""; position: absolute; right: -5px; bottom: -5px; width: 7px; height: 7px; background: #107c41; border: 1px solid #fff; }
+.xl .rngbox { position: absolute; border: 2px solid #107c41; background: rgba(16,124,65,.08); pointer-events: none; }
+.xl .sheets { position: absolute; left: 0; right: 0; bottom: 26px; height: 28px; background: #f3f3f3; border-top: 1px solid #d4d4d4; display: flex; gap: 4px; padding-left: 40px; font-size: 14px; }
+.xl .sheets span { padding: 4px 16px; } .xl .sheets span.on { background: #fff; color: #107c41; font-weight: 600; border-bottom: 2px solid #107c41; }
+.xl .status { position: absolute; left: 0; right: 0; bottom: 0; height: 26px; background: #f3f3f3; font-size: 13px; color: #444; padding: 4px 14px; display: flex; gap: 26px; }
+.xl .tblhead { background: #107c41 !important; color: #fff; font-weight: 700; }
+.xl .tblband { background: #e2efda; }
+.xl .flt { float: right; width: 18px; height: 18px; margin-top: 3px; background: #fff; border: 1px solid #9a9a9a; border-radius: 2px; font-size: 10px; line-height: 16px; text-align: center; color: #444; font-weight: 400; }
+.word .bs { position: absolute; left: 0; right: 0; top: 40px; bottom: 0; background: #fff; display: flex; z-index: 15; }
+.word .bs .bl { width: 250px; background: #185abd; color: #fff; padding-top: 14px; font-size: 17px; }
+.word .bs .bl div { padding: 11px 26px; }
+.word .bs .bl div.hl { background: rgba(255,255,255,.22); }
+.word .bs .bm { flex: 1; padding: 30px 40px; font-size: 16px; color: #1b1b1b; }
+.word .bs h3 { font-size: 34px; font-weight: 300; margin-bottom: 22px; }
+.word .bs .tile { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border: 1px solid #e1e1e1; border-radius: 4px; margin-bottom: 8px; width: 520px; }
+.word .bs .tile.hl { background: #dbe6f6; border-color: #8fb3e6; }
+.word .bs .tile i { font-style: normal; width: 44px; height: 44px; border-radius: 6px; background: #eef1f6; text-align: center; line-height: 44px; font-size: 24px; }
+.word .pane { position: absolute; right: 0; top: 196px; bottom: 26px; width: 380px; background: #fff; border-left: 1px solid #d4d4d4; padding: 16px 18px; font-size: 15px; z-index: 12; }
+.word .pane h4 { font-size: 19px; font-weight: 600; margin-bottom: 14px; }
+.word .pane .sec { font-weight: 600; margin: 12px 0 6px; }
+.word .pane .btn { display: inline-block; padding: 6px 14px; border: 1px solid #adadad; background: #fdfdfd; border-radius: 3px; }
+.word .pane .btn.hl { background: #dbe6f6; border-color: #185abd; }
+/* navigateur (leçon 2003) */
+.brw { position: absolute; left: 0; top: 0; width: 1600px; height: 838px; background: #fff; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,.3); font-size: 17px; color: #1b2330; }
+.brw .bt { height: 44px; background: #e8ebef; display: flex; align-items: flex-end; padding: 0 12px; gap: 6px; }
+.brw .tab { height: 36px; min-width: 260px; background: #fff; border-radius: 10px 10px 0 0; padding: 0 14px; display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.brw .bar { height: 54px; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid #e1e4ea; color: #555; font-size: 22px; }
+.brw .url { flex: 1; height: 38px; border-radius: 19px; background: #f1f3f6; padding: 0 20px; line-height: 38px; font-size: 18px; color: #1b2330; }
+.brw .url.hl { box-shadow: 0 0 0 3px #326fbf; background: #fff; }
+.brw .pg { position: absolute; left: 0; right: 0; top: 98px; bottom: 0; overflow: hidden; }
+.brw .dlbar { position: absolute; right: 16px; top: 104px; width: 420px; background: #fff; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.25); padding: 14px 18px; z-index: 5; }
+.brw .prog { height: 6px; background: #e1e4ea; border-radius: 3px; margin-top: 8px; overflow: hidden; } .brw .prog i { display: block; height: 100%; background: #326fbf; }
+.bigbtn { display: inline-block; background: #1e9e62; color: #fff; font-weight: 700; border-radius: 10px; padding: 16px 34px; font-size: 24px; }
+.bigbtn.hl { filter: brightness(1.15); box-shadow: 0 0 0 5px rgba(30,158,98,.3); }
+.wiz { position: absolute; left: 430px; top: 150px; width: 740px; height: 520px; background: #f3f3f3; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,.35); font-size: 17px; overflow: hidden; z-index: 6; }
+.wiz .wh { height: 40px; background: #fff; padding: 0 16px; line-height: 40px; font-size: 15px; border-bottom: 1px solid #ddd; }
+.wiz .wb { position: absolute; left: 0; right: 0; top: 40px; bottom: 64px; padding: 24px 30px; background: #fff; }
+.wiz .wf { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 0 20px; border-top: 1px solid #ddd; }
+.wiz .btn { display: inline-block; min-width: 110px; text-align: center; padding: 7px 14px; border: 1px solid #adadad; background: #fdfdfd; border-radius: 4px; }
+.wiz .btn.pri { border-color: #326fbf; box-shadow: 0 0 0 1px #326fbf inset; } .wiz .btn.hl { background: #dbe6f6; }
+.wiz .prog { height: 14px; background: #e1e4ea; border-radius: 7px; overflow: hidden; } .wiz .prog i { display: block; height: 100%; background: #1e9e62; }

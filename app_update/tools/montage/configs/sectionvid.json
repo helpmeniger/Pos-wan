@@ -1,0 +1,24 @@
+{
+ "source": "sectionvid.mp3",
+ "title": "Créer des sections et appliquer une numérotation différente sur chaque section.",
+ "sentences": [
+  "Créer des sections et appliquer une numérotation différente sur chaque section.",
+  "Insérer des sauts de section.",
+  "Placez le curseur à la fin de la page où vous voulez qu'une nouvelle section commence.",
+  "Allez dans « Mise en page », « Saut de page », « Section suivante ».",
+  "Cela crée une nouvelle section sur la page suivante.",
+  "Répétez pour chaque endroit où vous voulez une nouvelle section.",
+  "Modifiez les en-têtes et pieds de page pour chaque section.",
+  "Double-cliquez sur le pied de page ou l'en-tête de la nouvelle section.",
+  "Dans le menu qui s'affiche, désactivez « Lier au précédent » pour rompre le lien entre les sections.",
+  "Cela permet de personnaliser les numérotations indépendamment.",
+  "Appliquez des numérotations différentes.",
+  "Pour chaque section, allez dans « Insertion », « Numéro de page », « Format des numéros de page ».",
+  "Choisissez « Commencer à 1 » pour recommencer la numérotation ou sélectionnez un autre format de numérotation, chiffres romains, lettres, etc.",
+  "Cliquez sur « OK » pour appliquer.",
+  "Exemple concret.",
+  "Section 1 : page numérotée en chiffres romains.",
+  "Section 2 : page numérotée en chiffres arabes.",
+  "Section 3 : pas de numérotation."
+ ]
+}

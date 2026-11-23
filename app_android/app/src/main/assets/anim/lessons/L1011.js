@@ -3,7 +3,8 @@
   const T = window.T["1011"];
   HM.lesson({
     audio: T.audio, sentences: T.sentences, texts: T.texts, duration: T.duration,
-    steps: [[0, "La table des matières"], [1, "Préparer le document"], [5, "Insérer la table"], [10, "Mettre à jour la table"]],
+    steps: [[0, "La table des matières"], [1, "Préparer le document"], [5, "Insérer la table"], [10, "Mettre à jour la table"],
+            [17, "Protéger par mot de passe"], [24, "Restreindre les modifications"]],
     build(E) {
       const S = E.S, $ = E.$;
       const d = SC.deskSet(E, {});
@@ -45,7 +46,6 @@
       SC.typeText(E, blank, "", S(6, 0.5), S(6, 0.5));
       E.show(blank, -1, tIns, 0);
 
-      W.tabAt([[0, "Accueil"], [S(7, 0.45), "Références"]]);
       E.cls(W.tabs["Références"], "hl", S(7, 0.2), S(7, 0.5));
       E.cls(W.el.toc, "hl", S(8, 0.2), S(9, 0.6));
       E.cls(W.el.tocUpd, "hl", S(14, 0.4), S(14, 0.9));
@@ -98,7 +98,10 @@
       SC.screenCam(E, [[0, "room"], [S(0, 0.5), "room"], [S(1, 0.3), 800, 450, 1, 1.0],
         [S(2, 0.3), 950, 290, 1.6, 0.8], [S(4, 0.2), 950, 290, 1.6], [S(4, 0.8), 800, 420, 1.25, 0.8],
         [S(7, 0.1), 800, 420, 1.25], [S(7, 0.4), 480, 280, 1.7, 0.7], [S(9, 0.4), 480, 280, 1.7], [S(10, 0.1), 800, 420, 1.3, 0.7], [S(10, 0.9), 800, 420, 1.3], [S(11, 0.2), 800, Math.min(h4y - 60, 560), 1.3, 0.7], [S(11, 1), 800, Math.min(h4y - 60, 560), 1.3], [S(12, 0.3), 800, 420, 1.3, 0.6],
-        [S(13, 0.5), 800, 420, 1.3], [S(14, 0.1), 850, 400, 1.6, 0.6], [S(16, 0.9), 850, 400, 1.6], [S(16, 0.95) + 1.2, "room", 1.2]]);
+        [S(13, 0.5), 800, 420, 1.3], [S(14, 0.1), 850, 400, 1.6, 0.6], [S(16, 0.9), 850, 400, 1.6], [S(17, 0.3), "room", 1.0], [S(18, 0.3), 800, 450, 1, 0.9],
+        [S(19, 0.4), 560, 380, 1.4, 0.8], [S(20, 1), 560, 380, 1.4], [S(21, 0.1), 800, 420, 1.5, 0.6], [S(23, 0.5), 800, 420, 1.5], [S(23, 0.9), 400, 230, 2.0, 0.6], [S(24, 0.4), 400, 230, 2.0],
+        [S(25, 0.2), 1250, 200, 1.7, 0.8], [S(25, 1), 1250, 200, 1.7], [S(26, 0.2), 1250, 480, 1.5, 0.7], [S(27, 1), 1250, 480, 1.5], [S(28, 0.2), 800, 420, 1.5, 0.6], [S(28, 1), 800, 420, 1.5],
+        [S(29, 0.3), 800, 450, 1, 0.7], [S(29, 1) + 0.6, 800, 450, 1], [S(29, 1) + 1.8, "room", 1.2]]);
 
       // ---------------- cartes
       E.card(`Les styles de titre<div style="margin-top:16px;line-height:1.5"><div style="color:#2f5496;font-size:36px;font-weight:400">Titre 1</div>
@@ -106,6 +109,69 @@
       E.card(`Références<div style="margin-top:14px;font-size:26px;font-weight:600">› Table des matières</div><small>Placez d’abord le curseur au début du document.</small>`, S(5, 0), S(9, 0.4), { width: "420px" });
       E.card(`Mettre à jour<div style="margin-top:14px;font-size:24px;font-weight:600;line-height:1.5">◉ Numéros de page uniquement<br>◉ Toute la table</div>
         <small>La table ne se met pas à jour toute seule.</small>`, S(10, 0), S(16, 1) + 0.3, { left: "40px", right: "auto", width: "460px" });
+
+      // ================= partie 2 : protéger le document
+      const el = W.el;
+      E.only(cur, -1, S(17, 0));
+      const cur2 = $("div", "cursor", W.over); cur2.innerHTML = E.ARROW; E.only(cur2, S(17, 0), 1e9);
+      const tFile = S(19, 0.25), tInfo = S(19, 0.5), tProt = S(19, 0.8), tEnc = S(20, 0.5), tOk1 = S(21, 0.85), tOk2 = S(22, 0.85);
+      const B = SC.backstage(E, W, tFile, S(23, 0.3));
+      B.main.innerHTML = `<h3>Informations</h3><div class="tile prot"><i class="lk" style="background:#eef1f6">&#128274;</i><div><b>Protéger le document</b><br><small class="pm" style="color:#666">Contrôlez les modifications que les autres peuvent apporter à ce document.</small></div></div>
+        <div class="tile"><i>&#128269;</i><div><b>Inspecter le document</b><br><small style="color:#666">Propriétés, auteur, commentaires…</small></div></div>`;
+      E.only(B.main, tInfo, 1e9);
+      E.cls(B.item("Informations"), "hl", tInfo - 0.2, 1e9);
+      const prot = B.main.querySelector(".prot"), lk = B.main.querySelector(".lk"), pm = B.main.querySelector(".pm");
+      E.cls(prot, "hl", tProt - 0.3, tEnc + 0.2);
+      E.track(t => { const on = t >= tOk2; lk.style.background = on ? "#ffd54a" : "#eef1f6"; const v = on ? "Un mot de passe est nécessaire pour ouvrir ce document." : "Contrôlez les modifications que les autres peuvent apporter à ce document."; if (pm.textContent !== v) pm.textContent = v; });
+      const pd = $("div", "dd", W.layer, { zIndex: 20 });
+      const [px, py] = SC.corner(prot, W.root);
+      Object.assign(pd.style, { left: (px + 20) + "px", top: (py + 70) + "px", width: "400px" });
+      pd.innerHTML = `<div>&#128214; Toujours ouvrir en lecture seule</div><div class="enc">&#128274; Chiffrer avec mot de passe</div><div>&#128221; Restreindre la modification</div><div>&#9997; Ajouter une signature numérique</div><div>&#10004; Marquer comme final</div>`;
+      E.show(pd, tProt, tEnc + 0.1, 0.12);
+      E.cls(pd.querySelector(".enc"), "hl", tEnc - 0.4, tEnc + 0.1);
+      const mkDlg = (title, label, a, b, tType) => {
+        const g = $("div", "dlg", W.layer, { left: "600px", top: "300px", width: "420px", zIndex: 25 });
+        g.innerHTML = `<div class="dt">${title}</div><div class="dbd">${label}<div class="fld pw" style="display:block;margin:6px 0 10px;letter-spacing:3px"></div><small style="color:#a33">Attention : un mot de passe oublié ne peut pas être récupéré.</small>
+          <div style="text-align:right;margin-top:14px"><span class="btn pri ok">OK</span><span class="btn">Annuler</span></div></div>`;
+        E.show(g, a, b, 0.15);
+        const f = g.querySelector(".pw");
+        E.track(t => { const n = t < tType ? 0 : Math.min(8, Math.floor((t - tType) * 7)); const v = "●".repeat(n); if (f.textContent !== v) f.textContent = v; });
+        E.cls(g.querySelector(".ok"), "hl", b - 0.35, b);
+        return g;
+      };
+      const d1 = mkDlg("Chiffrer le document", "Chiffrer le contenu de ce fichier<br>Mot de passe :", tEnc + 0.1, tOk1, S(21, 0.2));
+      const d2 = mkDlg("Confirmer le mot de passe", "Entrez de nouveau le mot de passe :", tOk1 + 0.05, tOk2, S(22, 0.15));
+      E.cls(el.save, "hl", S(23, 0.5), S(23, 1));
+
+      // ---- Révision › Restreindre la modification
+      const tRev = S(25, 0.35), tRes = S(25, 0.75), tC1 = S(26, 0.45), tYes = S(27, 0.6), tOk3 = S(28, 0.85);
+      W.tabAt([[0, "Accueil"], [S(7, 0.45), "Références"], [S(17, 0.2), "Accueil"], [tRev, "Révision"]]);
+      E.cls(W.tabs["Révision"], "hl", tRev - 0.3, tRev);
+      E.cls(el.restrict, "hl", tRes - 0.3, tRes + 0.3);
+      const pane = $("div", "pane", W.root);
+      pane.innerHTML = `<h4>Restreindre la modification &#10005;</h4><div class="sec">1. Restrictions de mise en forme</div><span class="chk"><i></i>Limiter la mise en forme à une sélection de styles</span>
+        <div class="sec">2. Restrictions de modifications</div><span class="chk c1"><i></i>Autoriser uniquement ce type de modifications dans le document :</span>
+        <div class="fld" style="display:block;margin:8px 0">Aucune modification (Lecture seule) &#9662;</div><small style="color:#666">Autres possibilités : commentaires, remplissage de formulaires…</small>
+        <div class="sec">3. Activation de la protection</div><span class="btn yes" style="margin:4px 0 0">Oui, activer la protection</span>`;
+      E.show(pane, tRes, 1e9, 0.25);
+      E.cls(pane.querySelector(".c1"), "on", tC1, 1e9); E.cls(pane.querySelector(".c1"), "hl", tC1 - 0.2, tC1 + 0.4);
+      E.cls(pane.querySelector(".yes"), "hl", tYes - 0.3, tYes + 0.2);
+      const d3 = $("div", "dlg", W.layer, { left: "560px", top: "280px", width: "480px", zIndex: 25 });
+      d3.innerHTML = `<div class="dt">Commencer l’application de la protection</div><div class="dbd">Méthode de protection : ● Mot de passe (facultatif)<br><br>Entrez le nouveau mot de passe :<div class="fld p1" style="display:block;margin:4px 0 8px;letter-spacing:3px"></div>
+        Confirmez le mot de passe :<div class="fld p2" style="display:block;margin:4px 0 8px;letter-spacing:3px"></div><div style="text-align:right;margin-top:10px"><span class="btn pri ok">OK</span><span class="btn">Annuler</span></div></div>`;
+      E.show(d3, tYes + 0.1, tOk3, 0.15);
+      [[".p1", S(28, 0.15)], [".p2", S(28, 0.45)]].forEach(([q, a]) => { const f = d3.querySelector(q); E.track(t => { const n = t < a ? 0 : Math.min(6, Math.floor((t - a) * 8)); const v = "●".repeat(n); if (f.textContent !== v) f.textContent = v; }); });
+      E.cls(d3.querySelector(".ok"), "hl", tOk3 - 0.3, tOk3);
+
+      SC.tour(E, W.root, W.over, cur2, [[S(17, 0), [1100, 600], 0], [tFile - 0.05, W.tabs.Fichier, 0.9, 1], [tInfo - 0.05, B.item("Informations"), 0.4, 1], [tProt - 0.05, prot, 0.5, 1],
+        [tEnc - 0.05, pd.querySelector(".enc"), 0.5, 1], [S(21, 0.15), d1.querySelector(".pw"), 0.5, 1], [tOk1 - 0.05, d1.querySelector(".ok"), 0.5, 1], [tOk2 - 0.05, d2.querySelector(".ok"), 0.5, 1],
+        [S(23, 0.75), el.save, 0.9, 1], [tRev - 0.05, W.tabs["Révision"], 0.9, 1], [tRes - 0.05, el.restrict, 0.5, 1], [tC1 - 0.05, pane.querySelector(".c1 i"), 0.8, 1],
+        [tYes - 0.05, pane.querySelector(".yes"), 0.8, 1], [S(28, 0.1), d3.querySelector(".p1"), 0.5, 1], [tOk3 - 0.05, d3.querySelector(".ok"), 0.6, 1], [S(29, 0.6), el.save, 1.0, 1]]);
+      E.card(`Fichier › Informations<small>Protéger le document › Chiffrer avec mot de passe.</small>`, S(19, 0), S(20, 1) + 0.2, { left: "40px", right: "auto", top: "640px", width: "440px" });
+      E.card(`Le mot de passe<div style="font-size:40px;letter-spacing:6px;text-align:center;margin-top:10px">&#128274; ●●●●</div><small>Tapez-le deux fois. Notez-le bien : il ne peut pas être récupéré.</small>`, S(21, 0), S(22, 1) + 0.2, { left: "40px", right: "auto", top: "560px", width: "440px" });
+      SC.keysCard(E, "Enregistrer", ["Ctrl", "S"], S(23, 0), S(23, 1) + 0.3, { top: "640px", left: "40px", right: "auto", width: "360px" }, "La protection s’applique à l’enregistrement.");
+      E.card(`Révision › Restreindre<small>Lecture seule, commentaires uniquement ou remplissage de formulaires.</small>`, S(25, 0), S(27, 1) + 0.2, { left: "40px", right: "auto", top: "640px", width: "440px" });
+      SC.keysCard(E, "Enregistrer", ["Ctrl", "S"], S(29, 0), 999, { top: "640px", left: "40px", right: "auto", width: "360px" });
     }
   });
 })();

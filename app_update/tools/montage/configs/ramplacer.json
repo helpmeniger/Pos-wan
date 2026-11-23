@@ -1,0 +1,23 @@
+{
+ "source": "ramplacer.mp3",
+ "title": "Effectuez une recherche et remplacez dans Word et enregistrez un document.",
+ "sentences": [
+  "Effectuez une recherche et remplacez dans Word et enregistrez un document.",
+  "Recherchez et remplacez dans Word.",
+  "Ouvrez votre document Word.",
+  "Accédez à l'onglet « Accueil ».",
+  "Cliquez sur « Remplacer » dans le groupe « Édition » ou utilisez le raccourci clavier Contrôle plus H.",
+  "Dans la boîte de dialogue qui s'ouvre, dans le champ « Rechercher », tapez le texte que vous souhaitez trouver.",
+  "Dans le champ « Remplacer par », tapez le texte par lequel vous voulez remplacer celui trouvé.",
+  "Cliquez sur « Remplacer » pour remplacer un seul élément ou cliquez sur « Remplacer tout » pour remplacer toutes les occurrences du texte dans le document.",
+  "Cliquez sur « Fermer » une fois que vous avez terminé.",
+  "Enregistrez le document.",
+  "Pour enregistrer un document pour la première fois ou sous un nouveau nom, cliquez sur l'onglet « Fichier » en haut à gauche.",
+  "Sélectionnez « Enregistrer sous ».",
+  "Choisissez l'emplacement où vous voulez enregistrer le fichier.",
+  "Exemple : sur le bureau de votre ordinateur, et cetera.",
+  "Donnez un nom au fichier et sélectionnez le format souhaité, par exemple en doc ou en PDF.",
+  "Cliquez sur « Enregistrer ».",
+  "Pour enregistrer les modifications dans un fichier déjà existant, vous pouvez simplement cliquer sur l'icône de disquette en haut à gauche ou utiliser le raccourci Contrôle plus S."
+ ]
+}
