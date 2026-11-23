@@ -22,6 +22,23 @@ public class OldScreensTest {
             FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), new FirebaseOptions.Builder()
                 .setApplicationId("1:1:android:1").setApiKey("AIzaTEST").setProjectId("test").setDatabaseUrl("https://test.firebaseio.com").build());
     }
+    @Test public void menu() throws Exception {
+        Activity a = Robolectric.buildActivity(MainActivity.class, new Intent()).setup().get();
+        androidx.drawerlayout.widget.DrawerLayout d = findDrawer(a.getWindow().getDecorView());
+        org.junit.Assert.assertNotNull(d);
+        d.openDrawer(androidx.core.view.GravityCompat.START, false);
+        ScreensTest.shot(a, "o_menu", 0);
+    }
+
+    static androidx.drawerlayout.widget.DrawerLayout findDrawer(android.view.View v) {
+        if (v instanceof androidx.drawerlayout.widget.DrawerLayout) return (androidx.drawerlayout.widget.DrawerLayout) v;
+        if (v instanceof android.view.ViewGroup) {
+            android.view.ViewGroup g = (android.view.ViewGroup) v;
+            for (int i = 0; i < g.getChildCount(); i++) { androidx.drawerlayout.widget.DrawerLayout r = findDrawer(g.getChildAt(i)); if (r != null) return r; }
+        }
+        return null;
+    }
+
     void run(Class<? extends Activity> c, String name, Intent i) {
         try {
             Activity a = Robolectric.buildActivity(c, i).setup().get();

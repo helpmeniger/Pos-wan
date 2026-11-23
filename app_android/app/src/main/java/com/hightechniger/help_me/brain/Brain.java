@@ -65,6 +65,10 @@ public final class Brain {
         public String image;
         public int docId = -1;
         public String lessonCode;
+        /** Chapitre du manuel de la fiche (pour retrouver la leçon et ses images). */
+        public String chapter;
+        /** Thème de la fiche (word, excel, windows, internet...). */
+        public String topic;
         public double confidence;
         public String chipsTitle;
         public final List<Chip> chips = new ArrayList<>();
@@ -624,6 +628,9 @@ public final class Brain {
         r.kind = "smalltalk".equals(d.topic) ? Reply.Kind.SMALLTALK : Reply.Kind.ANSWER;
         r.docId = d.id;
         r.image = d.image;
+        r.chapter = d.chapter;
+        r.topic = d.topic;
+        r.lessonCode = d.code;
         String body = d.answer;
         if ("def".equals(d.flag)) {
             String term = d.title != null ? d.title : d.questions.length > 0 ? d.questions[0] : "";
@@ -640,6 +647,8 @@ public final class Brain {
                 r.lessonCode = d.code;
                 r.chips.add(new Chip("Ouvrir la leçon du manuel", Chip.LESSON, d.code));
             }
+            // une autre explication, plus détaillée (même chapitre ou fiche voisine)
+            r.chips.add(new Chip("Expliquer autrement", Chip.ASK, "explique mieux"));
             relatedChips(r, d);
         }
         return r;

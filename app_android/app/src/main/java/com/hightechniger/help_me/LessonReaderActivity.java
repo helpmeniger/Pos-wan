@@ -107,7 +107,7 @@ public class LessonReaderActivity extends AppCompatActivity {
 
         LinearLayout content = Ui.column(this);
         Blocks blocks = new Blocks(this, color);
-        blocks.render(lesson.blocks, content);
+        blocks.render(withIllustration(lesson), content);
         spoken = lesson.title + ".\n" + blocks.plainText();
         page.addView(content);
 
@@ -159,6 +159,32 @@ public class LessonReaderActivity extends AppCompatActivity {
         lp.setMarginEnd(Ui.dp(this, 6));
         t.setLayoutParams(lp);
         return t;
+    }
+
+    /**
+     * Leçon sans figure : on ajoute son illustration générée (res/drawable-nodpi/ill_<id>.webp),
+     * après les objectifs, pour expliquer en image plutôt qu'en texte seul.
+     */
+    private org.json.JSONArray withIllustration(Course.Lesson l) {
+        org.json.JSONArray src = l.blocks;
+        if (src == null) return null;
+        for (int i = 0; i < src.length(); i++) if ("fig".equals(src.optJSONObject(i) == null ? "" : src.optJSONObject(i).optString("t"))) return src;
+        String name = "ill_" + l.id.replace('-', '_');
+        if (getResources().getIdentifier(name, "drawable", getPackageName()) == 0) return src;
+        org.json.JSONArray out = new org.json.JSONArray();
+        boolean added = false;
+        try {
+            org.json.JSONObject fig = new org.json.JSONObject().put("t", "fig").put("img", name).put("cap", "Explication en image — touchez pour agrandir");
+            for (int i = 0; i < src.length(); i++) {
+                org.json.JSONObject b = src.optJSONObject(i);
+                if (!added && b != null && !"goals".equals(b.optString("t"))) { out.put(fig); added = true; }
+                out.put(b);
+            }
+            if (!added) out.put(fig);
+        } catch (org.json.JSONException e) {
+            return src;
+        }
+        return out;
     }
 
     // ---------------------------------------------------------------- leçon animée du code-barres

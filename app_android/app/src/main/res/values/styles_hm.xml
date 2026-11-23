@@ -90,4 +90,13 @@
         <item name="android:paddingTop">22dp</item>
         <item name="android:paddingBottom">22dp</item>
     </style>
+    <!-- Menu latéral -->
+    <style name="HM.NavItem" parent="">
+        <item name="android:textSize">15.5sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style name="HM.NavItemShape" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
 </resources>

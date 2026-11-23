@@ -1,86 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Menu latéral : icônes de la charte (ic_m_*), groupes séparés par un trait. -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:showIn = "navigation_view">
+    tools:showIn="navigation_view">
 
-
-    <group
-        android:checkableBehavior="single">
-
-
-        <item
-            android:id="@+id/nav_home"
-            android:icon="@drawable/nav_home"
-            android:title="Accueil"/>
-
-        <item
-            android:id="@+id/nav_scan"
-            android:icon="@drawable/nav_scan"
-            android:title="Scanner"/>
-        <item
-            android:id="@+id/anti_stress"
-            android:icon="@drawable/sourisicn"
-            android:title="Jeu antistress"/>
-        <item
-            android:id="@+id/nav_settings"
-            android:icon="@drawable/note"
-            android:title="Carnet de notes"/>
-
-        <item
-            android:id="@+id/nav_forum"
-            android:icon="@drawable/forum_24"
-            android:title="Forum"
+    <group android:id="@+id/grp_main" android:checkableBehavior="single">
+        <item android:id="@+id/nav_home" android:icon="@drawable/ic_m_home" android:title="Accueil" />
+        <item android:id="@+id/nav_scan" android:icon="@drawable/ic_m_scan" android:title="Scanner un code" />
+        <item android:id="@+id/nav_settings" android:icon="@drawable/ic_m_note" android:title="Carnet de notes" />
+        <item android:id="@+id/nav_forum" android:icon="@drawable/ic_m_forum" android:title="Forum"
             android:actionLayout="@layout/forum_badge" />
-
-        <item
-            android:id="@+id/assist"
-            android:icon="@drawable/nav_about"
-            android:title="Assistance rapide"/>
-        <item
-            android:id="@+id/nav_num"
-            android:icon="@drawable/ordinateur"
-            android:title="Champions Numériques"/>
-        <item
-            android:id="@+id/nav_cert"
-            android:icon="@drawable/certificat"
-            android:title="Certificat de fin de formation"/>
-
-
-
-
-
+        <item android:id="@+id/assist" android:icon="@drawable/ic_m_help" android:title="Assistance rapide" />
     </group>
 
+    <group android:id="@+id/grp_more" android:checkableBehavior="single">
+        <item android:id="@+id/anti_stress" android:icon="@drawable/ic_m_game" android:title="Jeu antistress" />
+        <item android:id="@+id/nav_num" android:icon="@drawable/ic_m_trophy" android:title="Champions numériques" />
+        <item android:id="@+id/nav_cert" android:icon="@drawable/ic_m_cert" android:title="Mon certificat" />
+    </group>
 
-<item
-    android:title="">
-    <menu>
-
-
-        <item
-            android:id="@+id/nav_propo"
-            android:icon="@drawable/nav_about"
-            android:title="À propos"/>
-        <item
-            android:id="@+id/nav_mise"
-            android:icon="@drawable/vec_update"
-            android:title="Mises à jour"/>
-    <item
-        android:id="@+id/nav_logout"
-        android:icon="@drawable/nav_lagout"
-        android:title="Se déconnecter"/>
-
+    <group android:id="@+id/grp_app">
+        <item android:id="@+id/nav_propo" android:icon="@drawable/ic_m_info" android:title="À propos" />
+        <item android:id="@+id/nav_mise" android:icon="@drawable/ic_m_update" android:title="Mises à jour" />
+        <item android:id="@+id/nav_logout" android:icon="@drawable/ic_m_logout" android:title="Se déconnecter" />
+    </group>
 </menu>
-
-
-
-    </item>
-
-
-
-
-
-
-</menu>
-
-

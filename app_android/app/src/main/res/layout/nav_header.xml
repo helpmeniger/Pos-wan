@@ -1,33 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<!-- En-tête du menu latéral : même dégradé et même typographie que l'accueil. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="176dp"
-    android:gravity="bottom"
-    android:padding="16dp"
-    android:background="@drawable/banground1"
-    android:theme="@style/ThemeOverlay.AppCompat.Dark">
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/hm_nav_header"
+    android:paddingStart="22dp"
+    android:paddingEnd="22dp"
+    android:paddingTop="34dp"
+    android:paddingBottom="22dp">
 
-
-    <ImageView
-        android:layout_width="100dp"
-        android:layout_height="70dp"
-        android:src="@drawable/pagelive" />
+    <FrameLayout
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:background="@drawable/hm_logo_ring">
+        <ImageView
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_gravity="center"
+            android:contentDescription="Logo HELP-ME"
+            android:src="@drawable/pagelive" />
+    </FrameLayout>
 
     <TextView
-        android:layout_width="325dp"
-        android:layout_height="-30dp"
-        android:text="Apprendre l'informatique de bureau"
-        android:textColor="@color/white"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="HELP-ME"
+        android:textColor="#FFFFFF"
+        android:textSize="22sp"
         android:textStyle="bold" />
+
     <TextView
-        android:layout_width="323dp"
-        android:layout_height="45dp"
-        android:textSize="10sp"
-        android:text="à votre rythme et quand vous voulez."
-        android:textColor="@color/white"
-        android:textStyle="italic" />
-
-
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="Apprendre l’informatique de bureau, à votre rythme"
+        android:textColor="#DDE9FA"
+        android:textSize="13.5sp" />
 </LinearLayout>

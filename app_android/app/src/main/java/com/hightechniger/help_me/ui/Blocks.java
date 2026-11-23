@@ -135,26 +135,42 @@ public final class Blocks {
         LinearLayout col = Ui.column(c);
         col.setLayoutParams(gap(10));
         if (items == null) return col;
-        for (int i = 0; i < items.length(); i++) {
+        int n = items.length();
+        for (int i = 0; i < n; i++) {
             String it = items.optString(i);
             say(it);
             LinearLayout r = Ui.row(c);
             r.setGravity(Gravity.TOP);
-            View mark;
             if (ordered) {
-                TextView n = Ui.text(c, String.valueOf(i + 1), 13, Color.WHITE, true);
-                n.setGravity(Gravity.CENTER);
-                n.setBackground(Ui.circle(accent));
-                mark = n;
-                r.addView(n, Ui.lpMargins(c, dp(24), dp(24), 0, 1, 12, 0));
+                // étape : pastille numérotée reliée à la suivante + carte de texte
+                LinearLayout rail = Ui.column(c);
+                rail.setGravity(Gravity.CENTER_HORIZONTAL);
+                TextView num = Ui.text(c, String.valueOf(i + 1), 14, Color.WHITE, true);
+                num.setGravity(Gravity.CENTER);
+                num.setBackground(Ui.circle(accent));
+                rail.addView(num, new LinearLayout.LayoutParams(dp(30), dp(30)));
+                if (i < n - 1) {
+                    View line = new View(c);
+                    line.setBackgroundColor(Ui.tint(accent, 0.6f));
+                    rail.addView(line, new LinearLayout.LayoutParams(dp(2), ViewGroup.LayoutParams.MATCH_PARENT));
+                }
+                r.addView(rail, new LinearLayout.LayoutParams(dp(30), ViewGroup.LayoutParams.MATCH_PARENT));
+                TextView t = body(it);
+                t.setTextSize(15.5f);
+                t.setBackground(Ui.outlined(c, Ui.SURFACE, Ui.BORDER, 12));
+                t.setPadding(dp(14), dp(10), dp(14), dp(10));
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+                lp.setMargins(dp(12), 0, 0, i < n - 1 ? dp(10) : 0);
+                r.addView(t, lp);
+                r.setLayoutParams(gap(0));
             } else {
-                mark = new View(c);
+                View mark = new View(c);
                 mark.setBackground(Ui.circle(accent));
                 r.addView(mark, Ui.lpMargins(c, dp(7), dp(7), 8, 9, 14, 0));
+                TextView t = body(it);
+                r.addView(t, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+                r.setLayoutParams(gap(i == 0 ? 0 : 10));
             }
-            TextView t = body(it);
-            r.addView(t, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-            r.setLayoutParams(gap(i == 0 ? 0 : 10));
             col.addView(r);
         }
         return col;
@@ -199,25 +215,28 @@ public final class Blocks {
     private View box(JSONObject b) {
         String k = b.optString("k");
         int color = "warn".equals(k) ? Ui.WARN : "retenir".equals(k) ? Ui.SUCCESS : accent;
-        int iconRes = "warn".equals(k) ? R.drawable.ic_m_warning : "retenir".equals(k) ? R.drawable.ic_m_star : R.drawable.ic_m_astuces;
+        // encadré sobre : barre de couleur à gauche, titre en petites capitales, sans pictogramme
+        LinearLayout outer = Ui.row(c);
+        outer.setGravity(Gravity.TOP);
+        outer.setBackground(Ui.rounded(c, Ui.tint(color, 0.93f), 12));
+        outer.setLayoutParams(gap(14));
+        View bar = new View(c);
+        bar.setBackground(Ui.rounded(c, color, 2));
+        outer.addView(bar, new LinearLayout.LayoutParams(dp(4), ViewGroup.LayoutParams.MATCH_PARENT));
         LinearLayout box = Ui.column(c);
-        box.setBackground(Ui.rounded(c, Ui.tint(color, 0.9f), 14));
         box.setPadding(dp(14), dp(12), dp(14), dp(14));
-        box.setLayoutParams(gap(14));
-        LinearLayout head = Ui.row(c);
-        head.addView(Ui.icon(c, iconRes, color, 18));
         String title = b.optString("title");
         if (title.isEmpty()) title = "warn".equals(k) ? "Attention" : "retenir".equals(k) ? "À retenir" : "Bon à savoir";
-        TextView t = Ui.text(c, title, 14, Ui.darker(color, 0.8f), true);
-        t.setPadding(dp(8), 0, 0, 0);
-        head.addView(t);
-        box.addView(head);
+        TextView t = Ui.text(c, title.toUpperCase(java.util.Locale.FRENCH), 12.5f, Ui.darker(color, 0.8f), true);
+        t.setLetterSpacing(0.06f);
+        box.addView(t);
         say(title + " : " + b.optString("x"));
         TextView x = body(b.optString("x"));
         x.setTextSize(15);
         x.setLayoutParams(gap(6));
         box.addView(x);
-        return box;
+        outer.addView(box, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        return outer;
     }
 
     private View goals(JSONArray items) {
@@ -246,9 +265,8 @@ public final class Blocks {
         box.setPadding(dp(16), dp(14), dp(16), dp(16));
         box.setLayoutParams(gap(16));
         LinearLayout head = Ui.row(c);
-        head.addView(Ui.badge(c, R.drawable.ic_m_quiz, accent, 30, false));
         TextView t = Ui.title(c, b.optString("title"), 16);
-        t.setPadding(dp(10), 0, dp(8), 0);
+        t.setPadding(0, 0, dp(8), 0);
         head.addView(t, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         String lvl = b.optString("lvl");
         if (!lvl.isEmpty()) {

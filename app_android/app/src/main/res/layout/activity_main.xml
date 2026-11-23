@@ -39,10 +39,22 @@
         android:layout_height="match_parent"
         android:id="@+id/nav_view"
         android:layout_gravity="start"
+        android:background="#FFFFFF"
         app:headerLayout="@layout/nav_header"
         app:menu="@menu/nav_menu"
-        app:itemIconTint="@color/lavender"
-        app:itemTextColor="@color/lavender"/>
+        app:itemIconTint="@color/nav_item"
+        app:itemTextColor="@color/nav_item"
+        app:itemTextAppearance="@style/HM.NavItem"
+        app:itemShapeFillColor="@color/nav_item_bg"
+        app:itemShapeAppearance="@style/HM.NavItemShape"
+        app:itemShapeInsetStart="12dp"
+        app:itemShapeInsetEnd="12dp"
+        app:itemHorizontalPadding="22dp"
+        app:itemIconPadding="18dp"
+        app:itemIconSize="22dp"
+        app:itemVerticalPadding="13dp"
+        app:dividerInsetStart="22dp"
+        app:dividerInsetEnd="22dp"/>
 
 
 

@@ -199,18 +199,7 @@ public class AIChatActivity extends AppCompatActivity {
 
     private void showReply(Brain.Reply r, boolean animate) {
         LinearLayout bubble = addAssistantText(r.text, r.note);
-        // illustration si l'application en possède une pour cette fiche
-        if (r.image != null) {
-            int id = getResources().getIdentifier(r.image, "drawable", getPackageName());
-            if (id != 0) {
-                ImageView iv = new ImageView(this);
-                iv.setImageResource(id);
-                iv.setAdjustViewBounds(true);
-                iv.setPadding(0, dp(10), 0, 0);
-                iv.setOnClickListener(v -> ImageLessonActivity.open(this, id));
-                bubble.addView(iv, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-            }
-        }
+        if (r.kind == Brain.Reply.Kind.ANSWER) ReplyVisuals.decorate(this, bubble, r);
         if (r.askFeedback && r.docId >= 0) bubble.addView(actionsRow(r));
         if (!r.chips.isEmpty()) addChips(r.chipsTitle, r.chips);
         scrollDown();

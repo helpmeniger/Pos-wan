@@ -1,3 +1,3 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Les images des leçons sont chargées par leur nom : empêcher leur suppression par shrinkResources -->
-<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@drawable/lecon_*,@drawable/fig_*,@drawable/ic_m_*,@drawable/contact,@drawable/ordinateur,@drawable/souris" />
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@drawable/ill_*,@drawable/lecon_*,@drawable/fig_*,@drawable/ic_m_*,@drawable/contact,@drawable/ordinateur,@drawable/souris" />
