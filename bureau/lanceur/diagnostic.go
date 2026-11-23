@@ -149,6 +149,11 @@ func (l *launcher) report() string {
 	if l.kioskOpen.Load() {
 		imp = "sans boîte de dialogue, imprimante par défaut de Windows"
 	}
+	perm := "permanent (reste en marche fenêtre fermée)"
+	if l.c.arretAuto > 0 {
+		perm = fmt.Sprintf("arrêt %d min après fermeture de la fenêtre", l.c.arretAuto)
+	}
+	fmt.Fprintf(&b, "Serveur       : %s ; mise en veille automatique du PC empêchée : %v\n", perm, l.c.empecherVeille)
 	fmt.Fprintf(&b, "Impression    : %s (réglage voulu : %v)\nBase relancée : %d fois depuis le démarrage\n", imp, l.wantKiosk(), l.dbRestarts.Load())
 	fmt.Fprintf(&b, "Prêt          : %v — dernier signe de vie d'une fenêtre il y a %d s\n", l.ready.Load(),
 		int((time.Since(l.t0)-time.Duration(l.lastBeat.Load()))/time.Second))

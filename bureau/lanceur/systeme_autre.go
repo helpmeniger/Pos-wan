@@ -72,3 +72,6 @@ func profileInUse(dir string) bool {
 	}
 	return syscall.Kill(pid, 0) == nil
 }
+
+// Linux (essais) : rien à faire.
+func preventSleep(done <-chan struct{}) { <-done }

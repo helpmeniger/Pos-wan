@@ -57,6 +57,8 @@ type config struct {
 	root, app, data, logs, php, phpIni, mysqld, installDB, client, admin string
 	portWeb, portBD, workers                                             int
 	reseau, kiosquePrint, fenetre                                        bool
+	arretAuto                                                            int  // minutes sans fenêtre avant arrêt ; 0 = jamais
+	empecherVeille                                                       bool // le PC ne se met pas en veille tout seul
 	navigateur                                                           string
 	node                                                                 string // node.exe livré (pont MARWA SECEF CONNECT)
 }
@@ -70,7 +72,7 @@ func exeExt() string {
 
 // Chemins par défaut (dossier du programme) ; variables POS_BUREAU_* pour les essais sous Linux.
 func loadConfig(root string) *config {
-	c := &config{root: root, portWeb: 8740, portBD: 3407, workers: 8, navigateur: "auto", fenetre: true}
+	c := &config{root: root, portWeb: 8740, portBD: 3407, workers: 8, navigateur: "auto", fenetre: true, empecherVeille: true}
 	c.app = filepath.Join(root, "app")
 	c.data = filepath.Join(root, "donnees")
 	c.logs = filepath.Join(c.data, "journaux")
@@ -112,6 +114,12 @@ func loadConfig(root string) *config {
 				c.reseau = v == "1" || strings.EqualFold(v, "oui")
 			case "IMPRESSION_DIRECTE":
 				c.kiosquePrint = v == "1" || strings.EqualFold(v, "oui")
+			case "ARRET_AUTO":
+				if n >= 0 && n <= 1440 {
+					c.arretAuto = n
+				}
+			case "EMPECHER_VEILLE":
+				c.empecherVeille = !(v == "0" || strings.EqualFold(v, "non"))
 			case "NAVIGATEUR":
 				c.navigateur = strings.ToLower(v)
 			}
@@ -1107,12 +1115,22 @@ func main() {
 	go l.selfCheck()
 	go l.pontWatch()
 	go waitSignal(func() { l.stop("signal du système") })
+	// Serveur et base restent en marche quand la fenêtre est fermée ou réduite : la rouvrir est immédiat et les autres
+	// postes du réseau ne perdent jamais la base. Arrêt : menu Démarrer → « Arrêter POS Marwa », ou à l'arrêt du PC.
+	// ARRET_AUTO=<minutes> dans pos-marwa.ini rétablit l'arrêt automatique après fermeture de la fenêtre.
 	if wait != nil {
-		idle := 3 * time.Minute
+		idle := time.Duration(c.arretAuto) * time.Minute
 		if n, err := strconv.Atoi(os.Getenv("POS_BUREAU_INACTIF")); err == nil && n >= 10 { // essais : délai en secondes
 			idle = time.Duration(n) * time.Second
 		}
-		go l.watchdog(idle)
+		if idle > 0 {
+			go l.watchdog(idle)
+		} else {
+			log.Printf("Serveur permanent : POS Marwa reste en marche fenêtre fermée (arrêt : « Arrêter POS Marwa »)")
+		}
+	}
+	if c.empecherVeille {
+		go preventSleep(l.done)
 	}
 	<-l.done
 }

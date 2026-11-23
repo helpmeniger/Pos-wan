@@ -3,10 +3,12 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"unsafe"
 )
@@ -114,4 +116,20 @@ func profileInUse(dir string) bool {
 		return false
 	}
 	return os.Remove(f) != nil
+}
+
+// Empêche la mise en veille AUTOMATIQUE du PC tant que POS Marwa tourne (l'écran peut toujours s'éteindre) : les
+// caisses et les autres postes gardent la base. Une mise en veille demandée (capot fermé, menu Démarrer) reste possible.
+func preventSleep(done <-chan struct{}) {
+	const esContinuous, esSystemRequired = 0x80000000, 0x00000001
+	set := kernel32.NewProc("SetThreadExecutionState")
+	runtime.LockOSThread() // l'état est attaché au fil d'exécution : il doit rester le même
+	defer runtime.UnlockOSThread()
+	if r, _, _ := set.Call(uintptr(esContinuous | esSystemRequired)); r == 0 {
+		log.Printf("Mise en veille automatique : impossible de l'empêcher")
+		return
+	}
+	log.Printf("Mise en veille automatique du PC empêchée tant que POS Marwa est en marche")
+	<-done
+	set.Call(uintptr(esContinuous))
 }

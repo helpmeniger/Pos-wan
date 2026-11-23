@@ -201,7 +201,7 @@ SectionEnd
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SecMain} "Le logiciel, sa base de données et son serveur, dans un seul dossier."
   !insertmacro MUI_DESCRIPTION_TEXT ${SecBureau} "Icône POS Marwa sur le bureau."
-  !insertmacro MUI_DESCRIPTION_TEXT ${SecAuto} "POS Marwa s'ouvre automatiquement à l'ouverture de la session Windows."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SecAuto} "POS Marwa démarre à l'ouverture de la session Windows. Son serveur et sa base restent ensuite en marche toute la journée, même fenêtre fermée (arrêt : menu Démarrer → Arrêter POS Marwa)."
   !insertmacro MUI_DESCRIPTION_TEXT ${SecReseau} "Les autres appareils du réseau local pourront ouvrir POS Marwa (adresse de ce PC, port 8740). Laissez décoché si POS Marwa n'est utilisé que sur ce PC (plus sûr)."
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 

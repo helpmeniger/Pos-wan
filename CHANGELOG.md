@@ -2,6 +2,13 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.16.2] — 2026-11-23
+
+### Édition Bureau : serveur permanent
+- **Le serveur et la base restent en marche** quand la fenêtre est fermée, réduite ou mise en veille par le navigateur : plus aucune coupure pour les caisses et les autres postes ; l'icône rouvre la fenêtre aussitôt. Arrêt : menu Démarrer → « Arrêter POS Marwa », ou arrêt du PC. L'ancien comportement reste possible (`ARRET_AUTO=<minutes>` dans pos-marwa.ini).
+- **Mise en veille automatique du PC empêchée** tant que POS Marwa tourne (l'écran peut s'éteindre) ; `EMPECHER_VEILLE=0` pour la permettre. Une mise en veille demandée (capot fermé) reste possible.
+- Démarrage à l'ouverture de Windows (option de l'installateur, cochée par défaut) : serveur et base prêts dès la session ouverte.
+
 ## [3.16.1] — 2026-11-23
 
 ### Corrigé — base de données locale pendant les ventes

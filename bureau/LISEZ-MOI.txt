@@ -16,8 +16,12 @@ AUCUN autre logiciel n'est nécessaire : ni WampServer, ni XAMPP, ni serveur à 
 La fenêtre utilise Microsoft Edge (présent sur Windows 10 et 11) ; à défaut Google Chrome.
 
 UTILISATION
-  - Fermer la fenêtre arrête POS Marwa et sa base de données (proprement), environ 3 minutes plus tard.
-  - « Arrêter POS Marwa » (menu Démarrer) arrête tout si une fenêtre est restée ouverte ailleurs.
+  - Serveur permanent : fermer ou réduire la fenêtre N'ARRÊTE PAS POS Marwa. Le serveur et la base restent en marche
+    toute la journée (aucune coupure pour les caisses et les autres postes) ; l'icône rouvre la fenêtre aussitôt.
+  - « Arrêter POS Marwa » (menu Démarrer) arrête tout proprement (serveur et base). L'arrêt du PC aussi.
+  - Le PC ne se met pas en veille tout seul tant que POS Marwa tourne (l'écran peut s'éteindre). Fermer le capot d'un
+    portable ou choisir « Veille » coupe quand même tout : réglez Windows pour que le PC de la caisse ne dorme jamais.
+  - Ancien comportement (arrêt après fermeture de la fenêtre) : ARRET_AUTO=3 dans pos-marwa.ini.
   - Menu de gestion en tuiles (bouton « Menu ») ; modifiable dans Configuration → Paramètres.
   - Réglages avancés : fichier pos-marwa.ini (ports, autres postes du réseau, impression directe).
 

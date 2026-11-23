@@ -110,6 +110,16 @@ if [ -n "$CHROME" ] && command -v Xvfb >/dev/null; then
   echo "== Fenêtre (signes de vie, fermeture)"
   Xvfb :93 -screen 0 1366x800x24 >/dev/null 2>&1 & XV=$!
   printf '#!/bin/sh\nnohup "%s" --no-sandbox "$@" >/dev/null 2>&1 &\nexit 0\n' "$CHROME" > "$T/faux-edge.sh"; chmod +x "$T/faux-edge.sh"
+  # Serveur permanent (réglage par défaut) : fenêtre fermée, serveur et base restent en marche
+  ( DISPLAY=:93 POS_BUREAU_NAVIGATEUR="$T/faux-edge.sh" "$T/lanceur" --dossier="$T" >> "$T/essai.log" 2>&1 & )
+  sleep 25
+  pkill -f "$T/donnees/fenetre" || true
+  sleep 35
+  verif "serveur permanent : fenêtre fermée depuis 35 s, serveur et base toujours en marche" "curl -s -m 3 http://127.0.0.1:8740/__bureau/sante | grep -q 'pret=true' && (exec 3<>/dev/tcp/127.0.0.1/3407) 2>/dev/null && grep -q 'Serveur permanent' '$T/donnees/journaux/lanceur.log'"
+  verif "icône relancée : fenêtre rouverte sur le serveur déjà en marche" "DISPLAY=:93 POS_BUREAU_NAVIGATEUR='$T/faux-edge.sh' '$T/lanceur' --dossier='$T' && sleep 8 && pgrep -f '$T/donnees/fenetre' >/dev/null"
+  pkill -f "$T/donnees/fenetre" || true
+  verif "arrêt demandé (« Arrêter POS Marwa »)" arreter
+  # Arrêt automatique rétabli (ARRET_AUTO, ici 20 s pour l'essai)
   ( DISPLAY=:93 POS_BUREAU_NAVIGATEUR="$T/faux-edge.sh" POS_BUREAU_INACTIF=20 "$T/lanceur" --dossier="$T" >> "$T/essai.log" 2>&1 & )
   sleep 45
   verif "fenêtre ouverte 45 s : toujours en marche, signes de vie reçus" "curl -s http://127.0.0.1:8740/__bureau/sante | grep -Eq 'pret=true inactif=([0-9]|1[0-9])s'"
