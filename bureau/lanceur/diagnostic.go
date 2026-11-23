@@ -145,6 +145,11 @@ func (l *launcher) report() string {
 		br = "(aucune fenêtre ouverte par ce démarrage, ou navigateur par défaut)"
 	}
 	fmt.Fprintf(&b, "Navigateur    : %s\nBase          : 127.0.0.1:%d\nPont e-SECeF  : %s\n", br, c.portBD, l.pontEtat())
+	imp := "boîte d'impression du navigateur"
+	if l.kioskOpen.Load() {
+		imp = "sans boîte de dialogue, imprimante par défaut de Windows"
+	}
+	fmt.Fprintf(&b, "Impression    : %s (réglage voulu : %v)\nBase relancée : %d fois depuis le démarrage\n", imp, l.wantKiosk(), l.dbRestarts.Load())
 	fmt.Fprintf(&b, "Prêt          : %v — dernier signe de vie d'une fenêtre il y a %d s\n", l.ready.Load(),
 		int((time.Since(l.t0)-time.Duration(l.lastBeat.Load()))/time.Second))
 	b.WriteString("Serveurs PHP  :")

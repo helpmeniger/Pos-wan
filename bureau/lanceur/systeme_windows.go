@@ -105,3 +105,13 @@ func waitSignal(f func()) {
 	<-ch
 	f()
 }
+
+// Profil du navigateur en cours d'utilisation (fenêtre encore ouverte) : Edge et Chrome gardent le fichier « lockfile »
+// du profil ouvert en exclusivité ; s'il peut être supprimé, c'est un reste d'une fenêtre fermée.
+func profileInUse(dir string) bool {
+	f := filepath.Join(dir, "lockfile")
+	if _, err := os.Stat(f); err != nil {
+		return false
+	}
+	return os.Remove(f) != nil
+}

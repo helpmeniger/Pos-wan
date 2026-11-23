@@ -10,6 +10,9 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"syscall"
 )
 
@@ -53,4 +56,19 @@ func waitSignal(f func()) {
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	<-ch
 	f()
+}
+
+// Profil du navigateur en cours d'utilisation (fenêtre encore ouverte) : Chromium tient « SingletonLock », lien
+// symbolique « machine-pid ».
+func profileInUse(dir string) bool {
+	t, err := os.Readlink(filepath.Join(dir, "SingletonLock"))
+	if err != nil {
+		return false
+	}
+	i := strings.LastIndex(t, "-")
+	pid, err := strconv.Atoi(t[i+1:])
+	if err != nil || pid <= 0 {
+		return false
+	}
+	return syscall.Kill(pid, 0) == nil
 }

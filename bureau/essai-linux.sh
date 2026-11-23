@@ -55,6 +55,17 @@ verif "MariaDB arrêtée proprement" "for i in \$(seq 1 20); do grep -q 'Shutdow
 printf 'DB_PASSWORD="ancien-mot-de-passe"\nAPP_KEY=ancienne\n' >> "$T/app/.env"   # .env d'une version précédente
 verif "second démarrage (base existante, mots de passe réutilisés)" demarrer
 verif "secrets d'une version précédente retirés d'app/.env, application toujours connectée à sa base" "! grep -Eq '^(APP_KEY|DB_PASSWORD)=' '$T/app/.env' && for i in \$(seq 1 30); do grep -q '^Tout fonctionne' '$T/donnees/journaux/diagnostic.txt' && break; sleep 1; done; grep -q '^Tout fonctionne' '$T/donnees/journaux/diagnostic.txt'"
+# Impression sans boîte de dialogue : réglage transmis par l'application (jeton de ce démarrage), gardé pour la fenêtre
+JET=$(tr '\0' '\n' < /proc/$(pgrep -f 'php.*-S 127.0.0.1:18800' | head -1)/environ | grep '^POS_BUREAU_JETON=' | cut -d= -f2)
+verif "impression : réglage refusé sans le jeton de l'application" "[ \"\$(curl -s -o /dev/null -w '%{http_code}' -X POST -d auto=0 http://127.0.0.1:8740/__bureau/impression)\" = 403 ]"
+verif "impression : désactivée puis réactivée par l'application, choix gardé pour la prochaine fenêtre" "curl -s -X POST -H 'X-Bureau-Jeton: $JET' -d auto=0 http://127.0.0.1:8740/__bureau/impression | grep -q '\"sans_fenetre\":false' && grep -qx 0 '$T/donnees/impression-auto.txt' && curl -s -X POST -H 'X-Bureau-Jeton: $JET' -d auto=1 http://127.0.0.1:8740/__bureau/impression | grep -q '\"sans_fenetre\":true' && grep -qx 1 '$T/donnees/impression-auto.txt'"
+verif "réglages de la base : attente de verrou courte, connexions suffisantes" "grep -q '^innodb_lock_wait_timeout=10' '$T/donnees/mariadb.ini' && grep -q '^max_connections=200' '$T/donnees/mariadb.ini'"
+# Arrêt brutal de MariaDB en pleine journée (manque de mémoire, antivirus…) : relancée seule, l'application continue
+PIDBD=$(cat "$T/donnees/mariadb.pid" 2>/dev/null || pgrep -f "mariadbd --defaults-file=$T/donnees/mariadb.ini" | head -1)
+kill -9 "$PIDBD"
+verif "MariaDB arrêtée brutalement : relancée automatiquement" "for i in \$(seq 1 60); do grep -q 'MariaDB redémarrée' '$T/donnees/journaux/lanceur.log' && break; sleep 1; done; grep -q 'MariaDB redémarrée' '$T/donnees/journaux/lanceur.log' && [ \"\$(cat '$T/donnees/mariadb.pid')\" != '$PIDBD' ]"
+verif "… et l'application répond de nouveau avec sa base" "page=\$(curl -s http://127.0.0.1:8740/install); [[ \"\$page\" == *'préparée automatiquement'* ]]"
+verif "… redémarrage inscrit au rapport de diagnostic" "curl -s http://127.0.0.1:8740/__bureau/diagnostic | grep -q 'Base relancée : 1 fois'"
 # Pont MARWA SECEF CONNECT : démarré par le lanceur dès que POS Marwa a créé son jeton, redémarré sur nouveau jeton
 if command -v node >/dev/null && [ -d "$T/app/addons/fiscal/pont-secef" ]; then
   J1=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n'); echo -n "$J1" > "$T/app/addons/fiscal/pont-secef/jeton.txt"

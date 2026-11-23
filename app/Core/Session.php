@@ -32,6 +32,17 @@ final class Session
         session_start();
     }
 
+    /**
+     * Libère le verrou de la session pour une opération longue (certification, export…) : les autres requêtes du
+     * même utilisateur (caisse, recherche d'articles) ne l'attendent plus. La session reste lisible, plus modifiable.
+     */
+    public static function release(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE && PHP_SAPI !== 'cli') {
+            session_write_close();
+        }
+    }
+
     public static function get(string $key, mixed $default = null): mixed
     {
         return $_SESSION[$key] ?? $default;

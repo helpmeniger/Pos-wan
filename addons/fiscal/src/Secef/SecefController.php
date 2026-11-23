@@ -354,6 +354,7 @@ final class SecefController extends Controller
     {
         $this->jsonAttempt(function () use ($id) {
             @set_time_limit(300);
+            \App\Core\Session::release(); // jusqu'à 3 min avec le portail : la caisse ne doit pas attendre ce verrou
             $cert = FiscalEngine::forSale($id);
             if (!$cert) {
                 throw new BusinessException('Cette vente n\'est pas soumise à certification.');

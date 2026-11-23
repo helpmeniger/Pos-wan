@@ -5247,6 +5247,57 @@ test('Module Archives : dépôt contrôlé, versions, intégrité, confidentiel,
     array_map('unlink', [$pdf, $pdf2, $php, $fake]);
 });
 
+test('Base locale sous charge : transaction rejouée après interblocage ou verrou, attente courte, reconnexion', function () use ($env) {
+    eq(6, (int) DB::value('SELECT @@SESSION.innodb_lock_wait_timeout'), 'attente de verrou limitée à 6 s (au lieu de 50)');
+    DB::run("DELETE FROM settings WHERE skey = 'essai_rejeu'");
+    // Interblocage simulé à la première tentative : tout est annulé puis rejoué une fois
+    $n = 0;
+    $r = DB::transaction(function () use (&$n) {
+        $n++;
+        DB::run("INSERT INTO settings (skey, svalue) VALUES ('essai_rejeu', ?) ON DUPLICATE KEY UPDATE svalue = CONCAT(svalue, '+', VALUES(svalue))", [(string) $n]);
+        if ($n === 1) {
+            $e = new PDOException('SQLSTATE[40001]: Serialization failure: 1213 Deadlock found when trying to get lock');
+            $e->errorInfo = ['40001', 1213, 'Deadlock found when trying to get lock'];
+            throw $e;
+        }
+        return 'enregistrée';
+    });
+    eq(['enregistrée', 2, '2'], [$r, $n, DB::value("SELECT svalue FROM settings WHERE skey = 'essai_rejeu'")], 'rejouée une fois ; la première tentative a été entièrement annulée');
+    // Erreur métier : jamais rejouée
+    $m = 0;
+    throws(function () use (&$m) { DB::transaction(function () use (&$m) { $m++; throw new BusinessException('Stock insuffisant'); }); }, 'Stock insuffisant');
+    eq(1, $m, 'erreur métier : une seule tentative');
+    // Vrai conflit de verrou entre deux connexions (deux caisses) : échec rapide, 3 tentatives, puis erreur claire
+    $c = $env;
+    $other = new PDO("mysql:host={$c['DB_HOST']};dbname={$c['DB_DATABASE']};charset=utf8mb4", $c['DB_USERNAME'], $c['DB_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $other->beginTransaction();
+    $other->exec("SELECT svalue FROM settings WHERE skey = 'essai_rejeu' FOR UPDATE");
+    DB::run('SET SESSION innodb_lock_wait_timeout = 1');
+    $k = 0; $code = 0; $t = microtime(true);
+    try {
+        DB::transaction(function () use (&$k) { $k++; DB::run("UPDATE settings SET svalue = 'x' WHERE skey = 'essai_rejeu'"); });
+    } catch (PDOException $e) {
+        $code = DB::errorCode($e);
+    }
+    $other->rollBack();
+    DB::run('SET SESSION innodb_lock_wait_timeout = 6');
+    eq([3, 1205], [$k, $code], 'verrou tenu par une autre caisse : 3 tentatives puis erreur 1205');
+    ok(microtime(true) - $t < 10, 'abandon rapide (pas 50 s d\'attente)');
+    DB::transaction(fn () => DB::run("UPDATE settings SET svalue = 'libre' WHERE skey = 'essai_rejeu'"));
+    eq('libre', DB::value("SELECT svalue FROM settings WHERE skey = 'essai_rejeu'"), 'verrou libéré : la transaction passe aussitôt');
+    // Connexion coupée par le serveur (redémarrage de MariaDB) : reconnexion automatique avant la transaction
+    $id = (int) DB::value('SELECT CONNECTION_ID()');
+    $killer = new PDO("mysql:host={$c['DB_HOST']};dbname={$c['DB_DATABASE']};charset=utf8mb4", $c['DB_USERNAME'], $c['DB_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $killer->exec("KILL $id");
+    usleep(200000);
+    DB::transaction(fn () => DB::run("UPDATE settings SET svalue = 'apres-coupure' WHERE skey = 'essai_rejeu'"));
+    ok((int) DB::value('SELECT CONNECTION_ID()') !== $id && DB::value("SELECT svalue FROM settings WHERE skey = 'essai_rejeu'") === 'apres-coupure', 'nouvelle connexion ouverte, transaction enregistrée');
+    DB::run("DELETE FROM settings WHERE skey = 'essai_rejeu'");
+    setting('__reset');
+    // Hors édition Bureau : aucun appel au lanceur
+    ok(!S\Bureau::active() && S\Bureau::impression(true) === null, 'impression sans fenêtre : sans effet hors édition Bureau');
+});
+
 test('Module Modèles de documents : mises en page, personnalisation, choix par document, sans toucher aux montants', function () use ($B, $riz) {
     actingAs('admin');
     eq(['0001_modeles'], App\Core\Addons::install('modeles', false), 'installation');

@@ -2,6 +2,18 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.16.1] — 2026-11-23
+
+### Corrigé — base de données locale pendant les ventes
+- **Ventes simultanées** : une vente bloquée par une autre (verrou du stock) échoue en 6 s au plus au lieu de 50, puis est **rejouée automatiquement** (3 essais, interblocage compris) ; la caisse n'abandonne plus avant le serveur (attente portée à 45 s, aucun doublon possible).
+- **Connexion à la base** : nouveaux essais pendant une douzaine de secondes quand la base redémarre ou est saturée ; connexion coupée par le serveur → reconnexion avant la transaction (l'avertissement PHP « server has gone away » empêchait auparavant toute reprise).
+- **Édition Bureau** : MariaDB **relancée automatiquement** si elle s'arrête (manque de mémoire, antivirus, plantage), avec délais croissants ; redémarrages comptés dans le rapport de diagnostic. Réglages : 200 connexions, attente de verrou 10 s, écriture sûre à chaque validation.
+- **Édition Bureau** : POS Marwa ne s'arrête plus en pleine journée quand la fenêtre ne donne plus signe de vie (page mise en veille par Edge, boîte d'impression ouverte, PC sorti de veille) : jamais tant que la fenêtre existe ou qu'une requête est en cours.
+- Certification e-SECeF (jusqu'à 3 min) : la session n'est plus verrouillée pendant l'attente ; la caisse reste utilisable.
+
+### Corrigé — impression automatique
+- **Édition Bureau** : le réglage « Impression automatique du ticket après vente » imprime désormais **sans boîte de dialogue**, sur l'imprimante par défaut de Windows. Auparavant, cela dépendait d'un réglage caché de pos-marwa.ini, désactivé par défaut. Après un changement du réglage, POS Marwa indique s'il faut rouvrir la fenêtre.
+
 ## [3.16.0] — 2026-11-21
 
 ### Ajouté — module « Modèles de documents » (tickets, factures, devis, bons de livraison)

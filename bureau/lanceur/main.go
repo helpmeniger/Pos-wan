@@ -151,7 +151,10 @@ func (c *config) writeMyIni() error {
 	fmt.Fprintf(&b, "port=%d\n", c.portBD)
 	b.WriteString("bind-address=127.0.0.1\n") // écoute locale seulement : la base n'est jamais joignable depuis le réseau
 	b.WriteString("character-set-server=utf8mb4\ncollation-server=utf8mb4_unicode_ci\n")
-	b.WriteString("innodb_buffer_pool_size=256M\ninnodb_log_file_size=64M\nmax_allowed_packet=256M\nmax_connections=100\n")
+	b.WriteString("innodb_buffer_pool_size=256M\ninnodb_log_file_size=64M\nmax_allowed_packet=256M\nmax_connections=200\n")
+	// Ventes simultanées : un verrou attendu trop longtemps échoue vite (l'application rejoue la vente) au lieu de
+	// laisser la caisse sans réponse ; écriture sûre à chaque validation (coupure de courant)
+	b.WriteString("innodb_lock_wait_timeout=10\ninnodb_flush_log_at_trx_commit=1\nthread_cache_size=32\nwait_timeout=28800\n")
 	fmt.Fprintf(&b, "log-error=%s\n", slash(filepath.Join(c.logs, "mariadb.err")))
 	if runtime.GOOS != "windows" && os.Geteuid() == 0 {
 		b.WriteString("user=root\n") // essais sous Linux en tant que root uniquement
@@ -206,26 +209,31 @@ func freePort(port int) bool {
 }
 
 type launcher struct {
-	c        *config
-	sec      secrets
-	mysqld   *exec.Cmd
-	ownDB    bool
-	workers  []*worker
-	jeton    string
-	t0       time.Time    // départ (horloge monotone : le temps de mise en veille du PC n'est pas compté)
-	lastBeat atomic.Int64 // dernier signe de vie d'une fenêtre (requête ou battement), en ns depuis t0
-	ready    atomic.Bool
-	stopping atomic.Bool
-	stopOnce sync.Once
-	done     chan struct{}
-	srv      *http.Server
-	browser  string
-	nReq     atomic.Int64
-	mu       sync.Mutex
-	recent   []string // dernières requêtes (diagnostic)
-	check    string   // résultat du contrôle de démarrage
-	essai    int64    // premier démarrage sur cet ordinateur (période d'essai)
-	pont     pontSecef
+	c            *config
+	sec          secrets
+	mysqld       *exec.Cmd
+	ownDB        bool
+	workers      []*worker
+	jeton        string
+	t0           time.Time    // départ (horloge monotone : le temps de mise en veille du PC n'est pas compté)
+	lastBeat     atomic.Int64 // dernier signe de vie d'une fenêtre (requête ou battement), en ns depuis t0
+	ready        atomic.Bool
+	stopping     atomic.Bool
+	stopOnce     sync.Once
+	done         chan struct{}
+	srv          *http.Server
+	browser      string
+	nReq         atomic.Int64
+	mu           sync.Mutex
+	recent       []string // dernières requêtes (diagnostic)
+	check        string   // résultat du contrôle de démarrage
+	essai        int64    // premier démarrage sur cet ordinateur (période d'essai)
+	pont         pontSecef
+	dbMu         sync.Mutex
+	dbAlive      atomic.Bool  // processus MariaDB lancé par ce lanceur encore en marche
+	dbRestarts   atomic.Int32 // redémarrages automatiques de MariaDB depuis le lancement
+	dbRestarting atomic.Bool
+	kioskOpen    atomic.Bool // fenêtre ouverte avec l'impression sans boîte de dialogue
 }
 
 // Empreinte de l'ordinateur (MachineGuid de Windows, /etc/machine-id sous Linux)
@@ -284,6 +292,7 @@ func (l *launcher) startDB() error {
 	if !first && portOpen(c.portBD) {
 		if _, err := c.sql("root", s.root, "SELECT 1"); err == nil {
 			log.Printf("MariaDB déjà démarrée sur le port %d : réutilisée", c.portBD)
+			go l.watchDBPort()
 			return nil
 		}
 		return fmt.Errorf("le port %d de la base de données est occupé par un autre programme : changez PORT_BD dans pos-marwa.ini", c.portBD)
@@ -302,33 +311,9 @@ func (l *launcher) startDB() error {
 			return fmt.Errorf("création de la base impossible : %v\n%s", err, tail(string(out), 1500))
 		}
 	}
-	cmd := exec.Command(c.mysqld, "--defaults-file="+c.myIni())
-	hide(cmd)
-	errLog, _ := os.OpenFile(filepath.Join(c.logs, "mariadb-console.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-	cmd.Stdout, cmd.Stderr = errLog, errLog
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("démarrage de MariaDB impossible : %w", err)
+	if err := l.spawnDB(); err != nil {
+		return err
 	}
-	l.mysqld, l.ownDB = cmd, true
-	exited := make(chan error, 1)
-	go func() { exited <- cmd.Wait() }()
-	deadline := time.Now().Add(90 * time.Second)
-	for !portOpen(c.portBD) {
-		select {
-		case err := <-exited:
-			return fmt.Errorf("MariaDB s'est arrêtée au démarrage (%v) : voir donnees\\journaux\\mariadb.err", err)
-		case <-time.After(300 * time.Millisecond):
-		}
-		if time.Now().After(deadline) {
-			return errors.New("MariaDB ne répond pas après 90 secondes : voir donnees\\journaux\\mariadb.err")
-		}
-	}
-	go func() {
-		err := <-exited
-		if !l.stopping.Load() {
-			log.Printf("MariaDB s'est arrêtée de façon inattendue : %v", err)
-		}
-	}()
 	if first {
 		rootPass := s.root
 		if runtime.GOOS != "windows" {
@@ -356,8 +341,109 @@ func (l *launcher) startDB() error {
 	return nil
 }
 
+// Lance mariadbd et attend qu'il réponde (90 s au plus) ; sa fin inattendue est signalée à la surveillance.
+func (l *launcher) spawnDB() error {
+	c := l.c
+	cmd := exec.Command(c.mysqld, "--defaults-file="+c.myIni())
+	hide(cmd)
+	errLog, _ := os.OpenFile(filepath.Join(c.logs, "mariadb-console.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	cmd.Stdout, cmd.Stderr = errLog, errLog
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("démarrage de MariaDB impossible : %w", err)
+	}
+	l.dbMu.Lock()
+	l.mysqld, l.ownDB = cmd, true
+	l.dbMu.Unlock()
+	l.dbAlive.Store(true)
+	exited := make(chan error, 1)
+	go func() {
+		err := cmd.Wait()
+		l.dbAlive.Store(false)
+		if errLog != nil {
+			errLog.Close()
+		}
+		exited <- err
+	}()
+	deadline := time.Now().Add(90 * time.Second)
+	for !portOpen(c.portBD) {
+		select {
+		case err := <-exited:
+			return fmt.Errorf("MariaDB s'est arrêtée au démarrage (%v) : voir donnees\\journaux\\mariadb.err", err)
+		case <-time.After(300 * time.Millisecond):
+		}
+		if time.Now().After(deadline) {
+			return errors.New("MariaDB ne répond pas après 90 secondes : voir donnees\\journaux\\mariadb.err")
+		}
+	}
+	go func() {
+		err := <-exited
+		if !l.stopping.Load() {
+			log.Printf("MariaDB s'est arrêtée de façon inattendue (%v) : redémarrage automatique", err)
+			l.restartDB()
+		}
+	}()
+	return nil
+}
+
+// Redémarre MariaDB après un arrêt inattendu (manque de mémoire, antivirus, plantage) : les ventes en cours attendent
+// la reconnexion (l'application réessaie pendant une douzaine de secondes) au lieu de perdre la base jusqu'au
+// prochain lancement de POS Marwa. Délais croissants ; la récupération InnoDB peut prendre un moment.
+func (l *launcher) restartDB() {
+	if !l.dbRestarting.CompareAndSwap(false, true) {
+		return // un redémarrage est déjà en cours
+	}
+	defer l.dbRestarting.Store(false)
+	if l.dbRestarts.Load() >= 20 {
+		log.Printf("MariaDB s'est arrêtée trop souvent (20 redémarrages) : plus de redémarrage automatique")
+		alert("La base de données de POS Marwa s'arrête sans cesse.\n\nFermez POS Marwa, redémarrez le PC, puis relancez-le. Rapport : donnees\\journaux\\diagnostic.txt")
+		return
+	}
+	for i, wait := range []time.Duration{time.Second, 3 * time.Second, 5 * time.Second, 10 * time.Second, 20 * time.Second, 30 * time.Second, time.Minute} {
+		time.Sleep(wait)
+		if l.stopping.Load() || l.dbAlive.Load() {
+			return
+		}
+		if portOpen(l.c.portBD) {
+			log.Printf("MariaDB répond de nouveau sur le port %d", l.c.portBD)
+			return
+		}
+		if err := l.spawnDB(); err != nil {
+			log.Printf("Redémarrage de MariaDB, essai %d : %v", i+1, err)
+			continue
+		}
+		log.Printf("MariaDB redémarrée (essai %d, %d redémarrage(s) depuis le lancement)", i+1, l.dbRestarts.Add(1))
+		return
+	}
+	log.Printf("MariaDB n'a pas pu redémarrer : voir donnees\\journaux\\mariadb.err ; fermez puis relancez POS Marwa")
+	alert("La base de données de POS Marwa s'est arrêtée et n'a pas pu redémarrer.\n\nFermez POS Marwa puis relancez-le. Rapport : donnees\\journaux\\diagnostic.txt")
+}
+
+// Base déjà en marche au lancement (lanceur précédent arrêté brutalement) : sans processus à attendre, on surveille
+// le port ; s'il ne répond plus deux fois de suite, MariaDB est relancée par ce lanceur.
+func (l *launcher) watchDBPort() {
+	miss := 0
+	for !l.stopping.Load() {
+		time.Sleep(3 * time.Second)
+		if l.ownDB || l.stopping.Load() {
+			return // un processus lancé par ce lanceur est surveillé directement
+		}
+		if portOpen(l.c.portBD) {
+			miss = 0
+			continue
+		}
+		if miss++; miss >= 2 {
+			log.Printf("MariaDB (déjà en marche au lancement) ne répond plus : redémarrage")
+			l.restartDB()
+			return
+		}
+	}
+}
+
 func (l *launcher) stopDB() {
-	if !l.ownDB || l.mysqld == nil || l.mysqld.Process == nil {
+	l.dbMu.Lock()
+	cmdDB := l.mysqld
+	l.dbMu.Unlock()
+	if !l.ownDB || cmdDB == nil || cmdDB.Process == nil {
 		return
 	}
 	cf, done, err := l.c.credFile("root", l.sec.root)
@@ -372,7 +458,7 @@ func (l *launcher) stopDB() {
 	}
 	if portOpen(l.c.portBD) {
 		log.Printf("MariaDB ne s'arrête pas : arrêt forcé")
-		_ = l.mysqld.Process.Kill()
+		_ = cmdDB.Process.Kill()
 	}
 }
 
@@ -614,6 +700,17 @@ func (l *launcher) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Cache-Control", "no-store")
 		json.NewEncoder(rw).Encode(listSupports(l.c.root))
 		return
+	case "/__bureau/impression":
+		// Réglage « impression automatique » modifié dans l'application (serveur PHP de ce PC, jeton de ce démarrage)
+		host, _, _ := net.SplitHostPort(r.RemoteAddr)
+		if r.Method != http.MethodPost || (host != "127.0.0.1" && host != "::1") || r.Header.Get("X-Bureau-Jeton") != l.jeton {
+			http.Error(rw, "refusé", http.StatusForbidden)
+			return
+		}
+		reopen := l.setImpression(r.FormValue("auto") == "1")
+		rw.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(rw).Encode(map[string]bool{"rouvrir": reopen, "sans_fenetre": l.wantKiosk()})
+		return
 	case "/__bureau/arret":
 		// Arrêt demandé par « POS Marwa.exe --arreter », seulement depuis ce PC et avec le jeton du fichier local
 		host, _, _ := net.SplitHostPort(r.RemoteAddr)
@@ -712,9 +809,11 @@ func (l *launcher) openWindow() (func(), error) {
 	}
 	args := []string{"--app=" + l.appURL(), "--user-data-dir=" + l.profileDir(), "--no-first-run", "--no-default-browser-check",
 		"--disable-features=Translate,msEdgeTranslate,msImplicitSignin", "--start-maximized", "--disable-background-mode"}
-	if l.c.kiosquePrint {
-		args = append(args, "--kiosk-printing") // tickets imprimés directement sur l'imprimante par défaut
+	kiosk := l.wantKiosk()
+	if kiosk {
+		args = append(args, "--kiosk-printing") // tickets imprimés directement sur l'imprimante par défaut, sans boîte de dialogue
 	}
+	l.kioskOpen.Store(kiosk)
 	l.browser = browser
 	cmd := exec.Command(browser, append(args, extraBrowserArgs()...)...)
 	if err := cmd.Start(); err != nil {
@@ -731,6 +830,51 @@ func (l *launcher) openWindow() (func(), error) {
 	// La fermeture n'est pas déduite du processus du navigateur (Edge peut se relancer ou confier la fenêtre à un
 	// autre de ses processus) : chaque page de POS Marwa envoie un signe de vie ; sans signe de vie, arrêt (watchdog).
 	return func() {}, nil
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Impression automatique sans boîte de dialogue
+//
+// Le réglage « Impression automatique du ticket après vente » de l'application décide : activé, la fenêtre s'ouvre
+// avec --kiosk-printing (le ticket part sur l'imprimante par défaut de Windows, sans fenêtre d'impression) ;
+// désactivé, la boîte d'impression normale. IMPRESSION_DIRECTE=1 dans pos-marwa.ini l'impose dans tous les cas.
+// La fenêtre s'ouvre avant le démarrage de la base : le dernier choix connu est gardé dans donnees\impression-auto.txt.
+
+func (l *launcher) impressionFile() string { return filepath.Join(l.c.data, "impression-auto.txt") }
+
+func (l *launcher) wantKiosk() bool {
+	if l.c.kiosquePrint {
+		return true
+	}
+	b, err := os.ReadFile(l.impressionFile())
+	if err != nil {
+		return true // réglage par défaut de l'application : impression automatique activée
+	}
+	return strings.TrimSpace(string(b)) != "0"
+}
+
+func (l *launcher) setImpression(auto bool) (reopen bool) {
+	v := "0"
+	if auto {
+		v = "1"
+	}
+	if err := os.WriteFile(l.impressionFile(), []byte(v+"\n"), 0o644); err != nil {
+		log.Printf("Impression automatique : choix non enregistré (%v)", err)
+	}
+	return l.browser != "" && (auto || l.c.kiosquePrint) != l.kioskOpen.Load()
+}
+
+// Lit le réglage dans la base au démarrage (il a pu changer depuis la dernière ouverture).
+func (l *launcher) syncImpression() {
+	out, err := l.c.sql("poswan", l.sec.app, "SELECT svalue FROM poswan.settings WHERE skey = 'pos_auto_print'")
+	if err != nil {
+		log.Printf("Impression automatique : réglage illisible (%v)", err)
+		return
+	}
+	auto := strings.TrimSpace(out) != "0"
+	if l.setImpression(auto) {
+		log.Printf("Impression automatique : réglage modifié depuis la dernière ouverture ; il s'appliquera à la prochaine ouverture de la fenêtre")
+	}
 }
 
 // Script ajouté aux pages : signe de vie toutes les 15 s (une fenêtre réduite en envoie au moins un par minute)
@@ -769,19 +913,51 @@ func injectBeat(resp *http.Response) error {
 func (l *launcher) beat() { l.lastBeat.Store(int64(time.Since(l.t0))) }
 
 // Arrêt automatique quand plus aucune fenêtre (de ce PC ou d'un autre poste) ne donne signe de vie depuis « idle ».
+// Jamais pendant une requête en cours (impression, certification, sauvegarde), ni tant que la fenêtre ouverte par
+// ce lanceur existe encore (navigateur qui met la page en veille, boîte d'impression ouverte), ni juste après une
+// mise en veille du PC : ces cas coupaient auparavant la base en pleine journée de ventes.
 func (l *launcher) watchdog(idle time.Duration) {
 	l.beat()
+	last := time.Now().Round(0) // heure murale : la durée d'une mise en veille y apparaît
+	held := false
 	for {
 		select {
 		case <-l.done:
 			return
 		case <-time.After(10 * time.Second):
 		}
-		if time.Since(l.t0)-time.Duration(l.lastBeat.Load()) > idle {
-			l.stop("plus aucune fenêtre ouverte depuis " + idle.String())
-			return
+		now := time.Now().Round(0)
+		if gap := now.Sub(last); gap > time.Minute {
+			log.Printf("Reprise après une pause de %s (mise en veille du PC ?) : délai de grâce", gap.Round(time.Second))
+			l.beat()
 		}
+		last = now
+		if time.Since(l.t0)-time.Duration(l.lastBeat.Load()) <= idle {
+			held = false
+			continue
+		}
+		if n := l.inFlight(); n > 0 {
+			continue
+		}
+		if l.browser != "" && profileInUse(l.profileDir()) {
+			if !held {
+				log.Printf("Aucun signe de vie depuis %s, mais la fenêtre POS Marwa est toujours ouverte : serveurs maintenus", idle)
+				held = true
+			}
+			continue
+		}
+		l.stop("plus aucune fenêtre ouverte depuis " + idle.String())
+		return
 	}
+}
+
+// Requêtes en cours de traitement par les serveurs PHP.
+func (l *launcher) inFlight() int64 {
+	var n int64
+	for _, w := range l.workers {
+		n += w.busy.Load()
+	}
+	return n
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -924,6 +1100,7 @@ func main() {
 		l.stop("erreur PHP")
 		fatal("POS Marwa ne peut pas démarrer.\n\n" + err.Error())
 	}
+	go l.syncImpression()
 	l.ready.Store(true)
 	log.Printf("Prêt : %s (%d serveurs PHP, base sur le port %d, réseau=%v)", l.appURL(), len(l.workers), c.portBD, c.reseau)
 

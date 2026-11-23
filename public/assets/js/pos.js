@@ -584,7 +584,7 @@
     if (!netUp()) d = { ok: false, offline: true };
     else {
       // Après une coupure récente, attente courte : le caissier ne reste pas bloqué devant le client
-      try { d = await api('/pos/checkout', { method: 'POST', body, timeout: online ? 20000 : 6000 }); } catch (e) { d = { ok: false, unknown: true, error: __('Connexion au serveur interrompue : la vente n\'est pas confirmée. Validez à nouveau (aucun doublon possible).') }; }
+      try { d = await api('/pos/checkout', { method: 'POST', body, timeout: online ? 45000 : 6000 }); } catch (e) { d = { ok: false, unknown: true, error: __('Connexion au serveur interrompue : la vente n\'est pas confirmée. Validez à nouveau (aucun doublon possible).') }; }
     }
     busy = false;
     $('#payConfirm').disabled = false;

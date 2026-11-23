@@ -40,7 +40,7 @@ final class SettingsController extends Controller
         'menu_style' => ['Présentation du menu de gestion', 'select', ['liste' => 'Liste (menu latéral)', 'tuiles' => 'Tuiles (écran « Menu de gestion » en icônes)']],
         'menu_position' => ['Position du menu de gestion (liste)', 'select', ['right' => 'À droite', 'left' => 'À gauche']],
         'support_contact' => ['Assistance affichée sur l\'écran de connexion (téléphones séparés par /)', 'text'],
-        'pos_auto_print' => ['Impression automatique du ticket après vente', 'bool'],
+        'pos_auto_print' => ['Impression automatique du ticket après vente (édition Bureau : directement sur l\'imprimante par défaut de Windows, sans fenêtre d\'impression ; sur un autre poste, sans fenêtre seulement avec une imprimante de caisse déclarée dans Imprimantes)', 'bool'],
         'restaurant_print_kitchen' => ['Restaurant : impression automatique des bons cuisine (navigateur)', 'bool'],
         'restaurant_default_station' => ['Restaurant : poste par défaut des catégories sans poste (« aucun » = servi sans ticket)', 'text'],
         'restaurant_send_on_pay' => ['Restaurant : envoyer en cuisine les articles non envoyés au moment de l\'encaissement', 'bool'],
@@ -117,6 +117,13 @@ final class SettingsController extends Controller
         }
         Audit::log('settings.update', null, null, $changes ?: null);
         flash('success', 'Paramètres enregistrés.');
+        if (isset($changes['pos_auto_print']) && ($b = \App\Services\Bureau::impression($changes['pos_auto_print'] === '1'))) {
+            if ($b['rouvrir']) {
+                flash('warning', $changes['pos_auto_print'] === '1'
+                    ? 'Impression sans fenêtre : fermez la fenêtre de POS Marwa puis rouvrez-la (icône du bureau) pour que les tickets partent directement sur l\'imprimante par défaut de Windows.'
+                    : 'Fermez la fenêtre de POS Marwa puis rouvrez-la : la boîte d\'impression s\'affichera de nouveau avant chaque ticket.');
+            }
+        }
         redirect('/settings');
     }
 
