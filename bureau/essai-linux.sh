@@ -113,6 +113,12 @@ if [ -n "$CHROME" ] && command -v Xvfb >/dev/null; then
   ( DISPLAY=:93 POS_BUREAU_NAVIGATEUR="$T/faux-edge.sh" POS_BUREAU_INACTIF=20 "$T/lanceur" --dossier="$T" >> "$T/essai.log" 2>&1 & )
   sleep 45
   verif "fenêtre ouverte 45 s : toujours en marche, signes de vie reçus" "curl -s http://127.0.0.1:8740/__bureau/sante | grep -Eq 'pret=true inactif=([0-9]|1[0-9])s'"
+  # Page figée (navigateur qui la met en veille, boîte d'impression ouverte) : plus aucun signe de vie, mais la fenêtre
+  # existe encore → POS Marwa doit rester en marche
+  pkill -STOP -f "$T/donnees/fenetre" || true
+  sleep 40
+  verif "page figée 40 s (aucun signe de vie) mais fenêtre ouverte : serveurs et base maintenus" "curl -s -m 3 http://127.0.0.1:8740/__bureau/sante | grep -q 'pret=true' && grep -q 'fenêtre POS Marwa est toujours ouverte' '$T/donnees/journaux/lanceur.log'"
+  pkill -CONT -f "$T/donnees/fenetre" || true
   pkill -f "$T/donnees/fenetre" || true
   verif "fenêtre fermée : arrêt automatique (délai d'essai 20 s)" "( for i in \$(seq 1 20); do curl -s -m 1 http://127.0.0.1:8740/__bureau/sante >/dev/null || exit 0; sleep 3; done; exit 1 )"
   kill $XV 2>/dev/null || true
