@@ -5271,7 +5271,7 @@ test('Base locale sous charge : transaction rejouée après interblocage ou verr
     $c = $env;
     $other = new PDO("mysql:host={$c['DB_HOST']};dbname={$c['DB_DATABASE']};charset=utf8mb4", $c['DB_USERNAME'], $c['DB_PASSWORD'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
     $other->beginTransaction();
-    $other->exec("SELECT svalue FROM settings WHERE skey = 'essai_rejeu' FOR UPDATE");
+    $other->query("SELECT svalue FROM settings WHERE skey = 'essai_rejeu' FOR UPDATE")->fetchAll();
     DB::run('SET SESSION innodb_lock_wait_timeout = 1');
     $k = 0; $code = 0; $t = microtime(true);
     try {
