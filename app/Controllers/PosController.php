@@ -20,15 +20,16 @@ final class PosController extends Controller
             flash('info', 'Mode Organisation : il n\'y a pas de caisse. Changez de mode dans Paramètres pour vendre.');
             redirect(\App\Services\BusinessMode::homeUrl() ?? '/menu');
         }
-        if (in_array($mode, ['clinique', 'pressing', 'ecole'], true)) {
-            redirect(\App\Services\BusinessMode::posUrl()); // caisse dédiée à l'activité
+        $BM = \App\Services\BusinessMode::class;
+        if (!$BM::is('commerce', 'pharmacie', 'clinique_pharmacie', 'hotel', 'restaurant')) {
+            redirect($BM::posUrl()); // caisse dédiée à l'activité (clinique, pressing, école)
         }
         if (!can('pos.sell')) {
             throw new \App\Core\HttpException(403);
         }
         $register = $u['register_id'] ? DB::one('SELECT r.*, s.name AS store_name, w.name AS warehouse_name FROM cash_registers r JOIN stores s ON s.id = r.store_id JOIN warehouses w ON w.id = r.warehouse_id WHERE r.id = ?', [$u['register_id']]) : null;
         $session = $register ? CashService::openSessionForRegister((int) $register['id']) : null;
-        $categories = DB::all("SELECT id, name, color, icon, image FROM categories WHERE active = 1 AND parent_id IS NULL AND sales_channel IN ('all','shop') ORDER BY sort_order, name");
+        $categories = DB::all("SELECT id, name, color, icon, image FROM categories WHERE active = 1 AND parent_id IS NULL AND sales_channel IN (" . self::shopChannels() . ") ORDER BY sort_order, name");
         $shortcuts = json_decode((string) setting('pos_shortcuts', ''), true);
         $config = [
             'csrf' => csrf_token(),
@@ -55,10 +56,10 @@ final class PosController extends Controller
             'serverPrinter' => \App\Services\PrintService::targets('receipt', $register ? (int) $register['id'] : null) !== [],
         ];
         $config['mode'] = $mode;
-        $alerts = in_array($mode, ['pharmacie', 'clinique_pharmacie'], true) && $register ? \App\Services\BusinessMode::pharmacyAlerts((int) $register['warehouse_id']) : null;
-        $clinicLink = $mode === 'clinique_pharmacie' && can('clinique.reception');
-        $rxQueue = $mode === 'clinique_pharmacie' && can('clinique.pharmacy') ? (int) DB::value("SELECT COUNT(*) FROM clinic_prescriptions WHERE status IN ('new','partial')") : null;
-        view('pos/index', ['u' => $u, 'register' => $register, 'session' => $session, 'categories' => $categories, 'config' => $config, 'mode' => $mode, 'alerts' => $alerts, 'clinicLink' => $clinicLink, 'rxQueue' => $rxQueue], null);
+        $alerts = $BM::is('pharmacie', 'clinique_pharmacie') && $register ? \App\Services\BusinessMode::pharmacyAlerts((int) $register['warehouse_id']) : null;
+        $clinicLink = $BM::is('clinique_pharmacie') && can('clinique.reception');
+        $rxQueue = $BM::is('clinique_pharmacie') && can('clinique.pharmacy') ? (int) DB::value("SELECT COUNT(*) FROM clinic_prescriptions WHERE status IN ('new','partial')") : null;
+        view('pos/index', ['u' => $u, 'register' => $register, 'session' => $session, 'categories' => $categories, 'config' => $config, 'mode' => $mode, 'restaurantLinks' => ($BM::is('restaurant') || feature('restaurant')) && can('restaurant.order'), 'alerts' => $alerts, 'clinicLink' => $clinicLink, 'rxQueue' => $rxQueue], null);
     }
 
     public static function defaultShortcuts(): array
@@ -120,15 +121,24 @@ final class PosController extends Controller
         json_response(['ok' => true, 'stock' => (object) $out, 'at' => date('H:i:s')]);
     }
 
+    /**
+     * Canaux vendus à la caisse de vente directe : boutique ; en mode restaurant seul (pas de boutique), aussi les
+     * articles « restaurant uniquement » (vente au comptoir, à emporter).
+     */
+    private static function shopChannels(): string
+    {
+        return \App\Services\BusinessMode::channelsSql('shop');
+    }
+
     /** @param string $channel 'shop' (caisse) ou 'restaurant' (prise de commande) */
     private function baseQuery(string $channel = 'shop'): string
     {
         $wh = $this->defaultWarehouseId();
-        $channel = $channel === 'restaurant' ? 'restaurant' : 'shop';
+        $channels = \App\Services\BusinessMode::channelsSql($channel === 'restaurant' ? 'restaurant' : 'shop');
         return "SELECT p.*, u.short_name AS unit_short, u.allow_decimal, c.color AS cat_color, " . self::stockSql($wh) . " AS stock
                 FROM products p LEFT JOIN units u ON u.id = p.unit_id LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN categories pc ON pc.id = c.parent_id
                 LEFT JOIN stock_levels sl ON sl.product_id = p.id AND sl.warehouse_id = " . (int) $wh . "
-                WHERE p.status = 'active' AND p.sellable = 1 AND " . \App\Services\ProductService::CHANNEL_SQL . " IN ('all', '$channel')";
+                WHERE p.status = 'active' AND p.sellable = 1 AND " . \App\Services\ProductService::CHANNEL_SQL . " IN ($channels)";
     }
 
     /** Articles proposés à la prise de commande restaurant (canal « restaurant »). */

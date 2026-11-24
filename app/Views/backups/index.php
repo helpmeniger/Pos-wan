@@ -23,6 +23,25 @@
       <div class="col-12"><button class="btn btn-danger w-100">Restaurer</button></div>
     </form>
   </div></div></div>
+  <?php $auto = App\Services\SupportExterne::autoSupport(); $last = json_decode((string) setting('backup_auto_last', ''), true); $bureau = App\Services\Bureau::active(); ?>
+  <div class="col-12"><form method="post" action="<?= e(url('/backups/automatique')) ?>" class="card border-success"><?= csrf_field() ?>
+    <div class="card-header bg-success-subtle"><i class="bi bi-arrow-repeat"></i> <b>Sauvegarde et copie automatiques</b></div>
+    <div class="card-body row g-2 align-items-end">
+      <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="auto" value="1" id="bAuto" <?= setting('backup_auto', '1') === '1' ? 'checked' : '' ?>><label class="form-check-label" for="bAuto">Sauvegarder automatiquement</label></div>
+        <div class="input-group input-group-sm mt-1"><span class="input-group-text">toutes les</span><select name="hours" class="form-select"><?php foreach ([1 => '1 heure', 4 => '4 heures', 8 => '8 heures', 12 => '12 heures', 24 => '24 heures', 48 => '48 heures'] as $h => $l): ?><option value="<?= $h ?>" <?= (int) setting('backup_auto_hours', '24') === $h ? 'selected' : '' ?>><?= $l ?></option><?php endforeach; ?></select></div></div>
+      <div class="col-md-5"><label class="form-label small mb-0" for="bSup">Copier automatiquement sur ce support dès qu'il est branché</label>
+        <select name="support" id="bSup" class="form-select form-select-sm"><option value="">Aucune copie automatique</option>
+          <?php $seen = false; foreach ($supports as $s): $sel = $auto && ($auto['nom'] !== '' ? $auto['nom'] === $s['nom'] : $auto['racine'] === $s['racine']); $seen = $seen || $sel; ?><option value="<?= e($s['racine']) ?>" <?= $sel ? 'selected' : '' ?>><?= e(($s['nom'] !== '' ? $s['nom'] . ' — ' : '') . $s['racine']) ?></option><?php endforeach; ?>
+          <?php if ($auto && !$seen): ?><option value="<?= e($auto['racine']) ?>" selected><?= e(($auto['nom'] !== '' ? $auto['nom'] . ' — ' : '') . $auto['racine']) ?> (non branché)</option><?php endif; ?>
+        </select></div>
+      <div class="col-md-3"><button class="btn btn-success btn-sm w-100"><i class="bi bi-check2"></i> Enregistrer et lancer</button></div>
+      <div class="col-12 small text-secondary">
+        <?php if ($bureau): ?>Vérification toutes les 15 minutes, même fenêtre fermée : sauvegarde quand elle est due, puis copie sur le support choisi de toutes les sauvegardes qui n'y sont pas encore (contrôlées). Support débranché : la copie se fait dès qu'il est rebranché (reconnu par son nom, même si la lettre du lecteur change).
+        <?php else: ?>Hébergement : la tâche s'exécute à chaque passage de la tâche planifiée (<code>php bin/backup.php</code>) ; la copie sur support ne concerne que le PC où POS Marwa est installé.<?php endif; ?>
+        <?php if ($last): ?><br><b>Dernière vérification</b> : <?= e(fdate((string) $last['date'])) ?> — <?= e(App\Controllers\BackupController::taskSummary($last) ?: 'rien à faire.') ?><?php endif; ?>
+      </div>
+    </div>
+  </form></div>
   <div class="col-12"><div class="card"><div class="card-header"><i class="bi bi-usb-drive"></i> Support externe (clé USB, disque externe)</div><div class="card-body">
     <p class="small mb-2">Branchez une clé USB ou un disque externe, puis actualisez la page. Les sauvegardes sont copiées dans le dossier « <?= e(App\Services\SupportExterne::DOSSIER) ?> » du support, puis contrôlées. Gardez le support en lieu sûr : il contient vos clients, ventes et comptes (données personnelles, loi n° 2017-28).</p>
     <?php if (!$supports): ?>

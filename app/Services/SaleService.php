@@ -130,7 +130,7 @@ final class SaleService
             if ((int) ($p['sellable'] ?? 1) === 0) {
                 throw new BusinessException(sprintf('« %s » est un ingrédient : il ne peut pas être vendu.', $p['name']));
             }
-            if (empty($options['restaurant_order_id']) && ProductService::channelOf($pid) === 'restaurant') {
+            if (empty($options['restaurant_order_id']) && BusinessMode::shopAndRestaurant() && ProductService::channelOf($pid) === 'restaurant') { // restaurant seul : vente au comptoir permise
                 throw new BusinessException(sprintf('« %s » est réservé au restaurant : saisissez-le dans une commande restaurant.', $p['name']));
             }
             $allowDecimal = (int) $p['sold_by_weight'] === 1 || (bool) DB::value('SELECT allow_decimal FROM units WHERE id = ?', [$p['unit_id']]);

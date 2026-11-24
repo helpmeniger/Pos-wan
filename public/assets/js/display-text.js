@@ -52,7 +52,8 @@
     const lines = parse(item.body);
     const hasImg = !!item.url;
     let layout = style.layout || 'auto';
-    if (!hasImg) layout = 'text';
+    if (layout === 'centre') layout = 'centre'; // texte centré en grand (« Bienvenue »), photo éventuelle en fond
+    else if (!hasImg) layout = 'text';
     else if (layout === 'auto' || layout === 'text') layout = lines.length > 6 ? 'split' : 'overlay';
     const root = el('div', `cdt cdt-lay-${layout}${lines.some((l) => l.t === 'item') ? ' cdt-menu' : ''}`);
     root.style.setProperty('--cdt-bg', c.bg);
@@ -63,7 +64,9 @@
     // Taille ajustée : plus il y a de lignes, plus le texte est petit (toujours lisible de loin)
     const n = Math.max(1, lines.length);
     root.style.setProperty('--cdt-line', Math.max(2.4, Math.min(5.2, 17 / (n + 2.2))) + 'vh');
-    root.style.setProperty('--cdt-title', Math.max(5, Math.min(11, 70 / Math.max(6, (item.title || '').length))) + 'vh');
+    root.style.setProperty('--cdt-title', layout === 'centre'
+      ? Math.max(7, Math.min(18, 110 / Math.max(6, (item.title || '').length))) + 'vh'
+      : Math.max(5, Math.min(11, 70 / Math.max(6, (item.title || '').length))) + 'vh');
     root.appendChild(el('div', 'cdt-blob cdt-b1'));
     root.appendChild(el('div', 'cdt-blob cdt-b2'));
     if (hasImg) {

@@ -24,6 +24,47 @@ final class BackupController extends Controller
             'supports' => $supports, 'found' => $found]);
     }
 
+    /** Sauvegarde automatique et copie automatique sur le support choisi (enregistrées puis lancées une fois). */
+    public function autoSettings(): void
+    {
+        @set_time_limit(900);
+        $hours = Request::int('hours', 24);
+        setting_set('backup_auto', Request::input('auto') === '1' ? '1' : '0');
+        setting_set('backup_auto_hours', (string) (in_array($hours, [1, 4, 8, 12, 24, 48], true) ? $hours : 24));
+        $this->attempt(fn() => \App\Services\SupportExterne::setAutoSupport(Request::str('support') ?: null), '/backups');
+        Audit::log('backup.auto_settings', null, null, ['auto' => setting('backup_auto'), 'heures' => setting('backup_auto_hours')]);
+        $r = \App\Services\SupportExterne::runTasks();
+        flash($r['erreur'] ? 'warning' : 'success', 'Réglages enregistrés. ' . self::taskSummary($r));
+        redirect('/backups');
+    }
+
+    public static function taskSummary(array $r): string
+    {
+        if ($r['erreur']) {
+            return 'Dernière tâche : ' . $r['erreur'];
+        }
+        $out = $r['sauvegarde'] ? 'Sauvegarde ' . $r['sauvegarde'] . ' créée. ' : '';
+        return $out . match ($r['support']) {
+            'copié' => $r['copies'] ? $r['copies'] . ' fichier(s) copié(s) et contrôlé(s) sur le support.' : 'Le support est à jour.',
+            'absent' => 'Support choisi non branché : la copie se fera dès son branchement.',
+            'occupé' => 'Une copie est déjà en cours.',
+            default => '',
+        };
+    }
+
+    /** Tâche périodique (POS Marwa.exe, toutes les 15 min) : sauvegarde due, puis copie sur le support s'il est branché. */
+    public function tasks(): void
+    {
+        $jeton = (string) getenv('POS_BUREAU_JETON');
+        $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+        if ($jeton === '' || !in_array($ip, ['127.0.0.1', '::1'], true) || !hash_equals($jeton, (string) ($_SERVER['HTTP_X_BUREAU_JETON'] ?? ''))) {
+            json_response(['ok' => false], 403);
+        }
+        @set_time_limit(900);
+        \App\Core\Session::release();
+        json_response(['ok' => true] + \App\Services\SupportExterne::runTasks());
+    }
+
     /** Copie de la dernière sauvegarde (ou de toutes) sur une clé USB ou un disque externe. */
     public function copyToSupport(): void
     {

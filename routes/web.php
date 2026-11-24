@@ -250,6 +250,7 @@ $router->post('/settings/display/media/{id}/delete', [C\CustomerDisplayControlle
 $router->post('/settings/display/text', [C\CustomerDisplayController::class, 'textSave'], 'settings.manage');
 $router->post('/settings/display/text/{id}', [C\CustomerDisplayController::class, 'textSave'], 'settings.manage');
 $router->get('/settings/display/text-preview', [C\CustomerDisplayController::class, 'textPreview'], 'settings.manage');
+$router->get('/settings/display/articles', [C\CustomerDisplayController::class, 'articles'], 'settings.manage');
 $router->post('/settings/display/vfd-test', [C\CustomerDisplayController::class, 'vfdTest'], 'settings.manage');
 // Accès direct aux écrans (téléviseur, écran connecté) : identifiant + mot de passe, appareil mémorisé
 foreach (array_keys(App\Services\Screens::catalog()) as $screenCode) {
@@ -283,6 +284,9 @@ $router->post('/backups/download', [C\BackupController::class, 'download'], 'bac
 $router->post('/backups/restore', [C\BackupController::class, 'restore'], 'backup.manage');
 $router->post('/backups/support/copier', [C\BackupController::class, 'copyToSupport'], 'backup.manage');
 $router->post('/backups/support/reprendre', [C\BackupController::class, 'importFromSupport'], 'backup.manage');
+$router->post('/backups/automatique', [C\BackupController::class, 'autoSettings'], 'backup.manage');
+// Tâche périodique demandée par POS Marwa.exe (édition Bureau) : jeton secret du démarrage, depuis ce PC seulement
+$router->webhook('/__taches/sauvegarde', [C\BackupController::class, 'tasks']);
 
 // --- Restaurant (module activé par le type d'activité « restaurant ») ---
 $router->get('/restaurant', [C\RestaurantController::class, 'floor'], 'restaurant.order');

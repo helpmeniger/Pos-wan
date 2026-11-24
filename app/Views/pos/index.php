@@ -31,8 +31,15 @@
         </button>
       <?php endforeach; ?>
     </div>
-    <?php if ($alerts || $clinicLink || $rxQueue !== null): ?>
+    <?php if ($alerts || $clinicLink || $rxQueue !== null || !empty($restaurantLinks)): ?>
     <div class="mode-bar">
+      <?php if (!empty($restaurantLinks)): ?>
+        <span class="mode-tag"><i class="bi bi-shop-window"></i> Restaurant</span>
+        <a class="mode-link resto" href="<?= e(url('/restaurant')) ?>"><i class="bi bi-grid-3x3-gap"></i> Tables</a>
+        <a class="mode-link resto" href="<?= e(url('/restaurant', ['nouveau' => 'takeaway'])) ?>"><i class="bi bi-bag"></i> À emporter</a>
+        <a class="mode-link resto" href="<?= e(url('/restaurant', ['nouveau' => 'delivery'])) ?>"><i class="bi bi-scooter"></i> Livraison</a>
+        <?php if (can('restaurant.kitchen')): ?><a class="mode-link resto" href="<?= e(url('/kitchen')) ?>"><i class="bi bi-fire"></i> Cuisine</a><?php endif; ?>
+      <?php endif; ?>
       <?php if ($mode === 'clinique_pharmacie'): ?><span class="mode-tag"><i class="bi bi-capsule"></i> Pharmacie</span><?php if ($clinicLink): ?><a class="mode-link" href="<?= e(url('/clinique/caisse')) ?>"><i class="bi bi-hospital"></i> Prestations médicales</a><?php endif; ?><?php endif; ?>
       <?php if ($rxQueue !== null): ?><a class="mode-link <?= $rxQueue ? 'warn' : '' ?>" href="<?= e(url('/clinique/pharmacie')) ?>"><i class="bi bi-file-medical"></i> Ordonnances à délivrer : <b><?= (int) $rxQueue ?></b></a><?php endif; ?>
       <?php if ($alerts): ?>

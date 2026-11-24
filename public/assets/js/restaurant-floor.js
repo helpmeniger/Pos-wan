@@ -70,4 +70,7 @@
   });
   render();
   setInterval(refresh, 10000);
+  // Arrivée depuis la caisse (« À emporter », « Livraison ») : la fenêtre de la nouvelle commande s'ouvre directement
+  const nouveau = new URLSearchParams(location.search).get('nouveau');
+  if (nouveau === 'takeaway' || nouveau === 'delivery') { history.replaceState(null, '', location.pathname); openModal(nouveau, null); }
 })();

@@ -48,3 +48,70 @@
   photo.addEventListener('pm-prepared', usePhoto);
   form.querySelector('[data-pub-replay]').addEventListener('click', () => { if (ready) frame.contentWindow.postMessage({ type: 'pm-text-preview', item: item() }, location.origin); });
 })();
+
+/* Saisie du menu : articles déjà créés proposés pendant la frappe ; un clic écrit « Nom prix » sur la ligne en cours. */
+(function () {
+  'use strict';
+  const ta = document.querySelector('[data-pub-body]');
+  const box = document.querySelector('[data-pub-suggest]');
+  if (!ta || !box) return;
+  let items = [], sel = -1, timer = null, seq = 0;
+  const lineAt = () => {
+    const v = ta.value, pos = ta.selectionStart;
+    const start = v.lastIndexOf('\n', pos - 1) + 1;
+    let end = v.indexOf('\n', pos);
+    if (end < 0) end = v.length;
+    return { start, end, text: v.slice(start, end) };
+  };
+  const close = () => { box.classList.add('d-none'); box.innerHTML = ''; items = []; sel = -1; };
+  const show = () => {
+    box.innerHTML = '';
+    items.forEach((it, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'list-group-item list-group-item-action d-flex justify-content-between gap-3 py-1' + (i === sel ? ' active' : '');
+      b.setAttribute('role', 'option');
+      const n = document.createElement('span'); n.textContent = it.name;
+      const p = document.createElement('b'); p.textContent = it.price_text;
+      b.append(n, p);
+      b.addEventListener('mousedown', (e) => { e.preventDefault(); pick(i); });
+      box.appendChild(b);
+    });
+    box.classList.toggle('d-none', items.length === 0);
+  };
+  function pick(i) {
+    const it = items[i];
+    if (!it) return;
+    const l = lineAt();
+    const bullet = (l.text.match(/^\s*[-•*·]\s+/) || [''])[0]; // une puce écrite avant le nom est gardée
+    const line = bullet + it.name + ' ' + it.price_text;
+    const v = ta.value;
+    const after = v.slice(l.end);
+    ta.value = v.slice(0, l.start) + line + (after.startsWith('\n') ? after : '\n' + after);
+    const caret = l.start + line.length + 1;
+    ta.setSelectionRange(caret, caret);
+    close();
+    ta.focus();
+    ta.dispatchEvent(new Event('input', { bubbles: true })); // aperçu mis à jour
+  }
+  function lookup() {
+    const l = lineAt();
+    const q = l.text.replace(/^\s*[-•*·]\s+/, '').trim();
+    // Rien à proposer : ligne vide ou trop courte, rubrique (#), ligne qui a déjà son prix
+    if (q.length < 2 || q.startsWith('#') || (window.PMTextSlide && window.PMTextSlide.parse(q)[0]?.t === 'item')) { close(); return; }
+    const n = ++seq;
+    fetch(ta.dataset.articlesUrl + '?q=' + encodeURIComponent(q), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((d) => { if (n !== seq) return; items = d.items || []; sel = items.length ? 0 : -1; show(); })
+      .catch(() => close());
+  }
+  ta.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(lookup, 200); });
+  ta.addEventListener('keydown', (e) => {
+    if (box.classList.contains('d-none')) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); sel = (sel + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length; show(); }
+    else if (e.key === 'Enter' || e.key === 'Tab') { if (sel >= 0) { e.preventDefault(); pick(sel); } }
+    else if (e.key === 'Escape') { close(); }
+  });
+  ta.addEventListener('blur', () => setTimeout(close, 150));
+  ta.addEventListener('click', close);
+})();

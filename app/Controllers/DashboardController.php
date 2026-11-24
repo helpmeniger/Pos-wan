@@ -14,7 +14,7 @@ final class DashboardController extends Controller
         // Accueil selon le mode de fonctionnement : le personnel de caisse arrive directement
         // sur la caisse de son activité (clinique, pressing), sans navigation supplémentaire.
         $mode = \App\Services\BusinessMode::current();
-        if ($mode === 'organisation') {
+        if (!\App\Services\BusinessMode::hasPos()) {
             redirect(\App\Services\BusinessMode::homeUrl() ?? '/menu'); // pas de caisse ni de tableau de bord commercial
         }
         if ($mode === 'clinique' || $mode === 'clinique_pharmacie') {

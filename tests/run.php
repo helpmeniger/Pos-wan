@@ -677,7 +677,9 @@ test('Transfert et fusion de tables', function () use (&$R) {
 });
 test('Commande à emporter / livraison', function () use (&$R) {
     actingAs('serveur');
-    throws(fn() => S\RestaurantService::open(null, 'delivery', 1, ['name' => 'Awa']), 'téléphone');
+    // Nom, téléphone, adresse : facultatifs (repris sur le ticket s'ils sont remplis)
+    $sans = S\RestaurantService::open(null, 'delivery', 1, []);
+    S\RestaurantService::cancelOrder($sans, 'essai sans coordonnées');
     $o = S\RestaurantService::open(null, 'delivery', 1, ['name' => 'Awa', 'phone' => '+227 96 11 22 33', 'address' => 'Plateau']);
     ok(count(S\RestaurantService::openWithoutTable()) >= 1);
     S\RestaurantService::cancelOrder($o, 'Client injoignable');
@@ -5245,6 +5247,111 @@ test('Module Archives : dépôt contrôlé, versions, intégrité, confidentiel,
     ok(str_contains(strtolower($a->req('GET', "$B/archives/fichiers/$vid?voir=1")['headers']), 'application/pdf'), 'affichage du PDF dans le navigateur');
     ok(DB::value("SELECT COUNT(*) FROM audit_logs WHERE action = 'archives.telecharge' AND entity_id = ?", [$keep]) >= 1, 'téléchargement inscrit au journal');
     array_map('unlink', [$pdf, $pdf2, $php, $fake]);
+});
+
+test('3.17 : plusieurs modes, caisse restaurant, reçu et historique du restaurant, menu de l\'écran client, sauvegarde automatique sur support', function () use ($B, &$R) {
+    actingAs('admin');
+    $M = S\BusinessMode::class;
+    $avant = [setting('business_mode'), setting('business_modes'), setting('require_cash_session', '1')];
+    setting_set('require_cash_session', '0');
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    try {
+        // --- Plusieurs modes cochés (formulaire des paramètres)
+        $r = $a->req('POST', "$B/settings/mode", http_build_query(['_csrf' => $a->token("$B/settings"), 'modes' => ['restaurant', 'commerce']]));
+        eq(302, $r['code']);
+        setting('__reset');
+        eq(['commerce', 'restaurant'], $M::actives(), 'deux modes cochés, gardés dans l\'ordre de la liste');
+        eq('Commerce général + Restaurant', $M::label());
+        ok($M::shopAndRestaurant() && $M::posUrl() === '/pos' && !$M::hides('/restaurant') && !$M::hides('/products') && $M::channelsSql('shop') === "'all','shop'", 'commerce + restaurant : caisse boutique, menus des deux activités, canaux distincts');
+        $pos = $a->req('GET', "$B/pos")['body'];
+        ok(str_contains($pos, 'nouveau=takeaway') && str_contains($pos, 'nouveau=delivery') && str_contains($pos, '/restaurant"'), 'caisse : boutons Tables, À emporter, Livraison');
+        $floor = $a->req('GET', "$B/restaurant")['body'];
+        ok(str_contains($floor, 'Caisse boutique'), 'plan de salle : bouton vers la caisse boutique');
+        $set = $a->req('GET', "$B/settings")['body'];
+        ok(substr_count($set, 'name="modes[]"') >= 5 && str_contains($set, 'value="restaurant" id="m_restaurant" checked'), 'paramètres : cases à cocher, modes actifs cochés');
+        ok(str_contains($a->req('GET', "$B/products/create")['body'], 'name="sales_channel"'), 'boutique + restaurant : choix « Vendu sur » proposé');
+        // --- Restaurant seul : plan de salle comme caisse, tout se vend partout
+        $M::set('restaurant');
+        ok($M::only('restaurant') && $M::posUrl() === '/restaurant' && !$M::shopAndRestaurant() && $M::channelsSql('shop') === "'all','shop','restaurant'", 'restaurant seul : la caisse est le plan de salle');
+        ok(str_contains($a->req('GET', "$B/dashboard")['body'], '/restaurant" class="btn btn-pos-launch"'), 'bouton « Ouvrir la caisse » → plan de salle');
+        ok(str_contains($a->req('GET', "$B/restaurant")['body'], 'Vente directe'), 'plan de salle : bouton « Vente directe »');
+        ok(!str_contains($a->req('GET', "$B/products/create")['body'], 'name="sales_channel"'), 'restaurant seul : « Vendu sur » non proposé');
+        DB::update('products', ['sales_channel' => 'restaurant'], 'id = ?', [$R['plat']]);
+        $direct = S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $R['plat'], 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 4500]]]);
+        ok($direct['sale_id'] > 0, 'restaurant seul : plat « restaurant uniquement » vendu en vente directe');
+        $M::set(['commerce', 'restaurant']);
+        throws(fn() => S\SaleService::create(['client_uuid' => uuid(), 'items' => [['product_id' => $R['plat'], 'quantity' => 1]], 'payments' => [['method' => 'cash', 'amount' => 4500]]]), 'réservé au restaurant');
+        DB::update('products', ['sales_channel' => 'all'], 'id = ?', [$R['plat']]);
+        throws(fn() => $M::set([]), 'au moins un');
+        setting_set('business_mode', 'pharmacie'); // ancien réglage modifié ailleurs : il prime
+        eq(['pharmacie'], $M::actives(), 'ancien réglage d\'un seul mode respecté');
+        $M::set(['commerce', 'restaurant']);
+        // --- Reçus du restaurant : à emporter avec nom, table avec couverts, serveur
+        actingAs('serveur');
+        $emp = S\RestaurantService::open(null, 'takeaway', 1, ['name' => 'Fati Emporter']);
+        S\RestaurantService::addItem($emp, $R['soda'], 2);
+        $area = (int) DB::value('SELECT area_id FROM restaurant_tables WHERE id = ?', [$R['t1']]);
+        $t9 = DB::insert('restaurant_tables', ['area_id' => $area, 'name' => 'T9']);
+        $sur = S\RestaurantService::open($t9, 'dine_in', 2);
+        S\RestaurantService::addItem($sur, $R['soda'], 1);
+        actingAs('admin');
+        $line = fn(int $o) => [(int) DB::value('SELECT id FROM restaurant_order_items WHERE order_id = ? ORDER BY id LIMIT 1', [$o]) => (float) DB::value('SELECT quantity FROM restaurant_order_items WHERE order_id = ? ORDER BY id LIMIT 1', [$o])];
+        $pe = S\RestaurantService::pay($emp, $line($emp), ['client_uuid' => uuid(), 'payments' => [['method' => 'cash', 'amount' => 1200]]]);
+        $ps = S\RestaurantService::pay($sur, $line($sur), ['client_uuid' => uuid(), 'payments' => [['method' => 'mobile_money', 'amount' => 600, 'reference' => 'MM317']]]);
+        $te = $a->req('GET', "$B/sales/{$pe['sale_id']}/ticket")['body'];
+        $waiter = (string) DB::value("SELECT full_name FROM users WHERE username = 'serveur'");
+        ok(str_contains($te, 'À emporter') && str_contains($te, 'Fati Emporter') && str_contains($te, e($waiter)) && str_contains($te, (string) DB::value('SELECT number FROM restaurant_orders WHERE id = ?', [$emp])), 'ticket à emporter : service, nom du client, serveur, n° de commande');
+        $ts = $a->req('GET', "$B/sales/{$ps['sale_id']}/ticket")['body'];
+        ok(str_contains($ts, 'T9') && str_contains($ts, '2 couvert(s)') && !str_contains($ts, 'Nom :'), 'ticket sur place : table et couverts, aucune ligne vide');
+        // --- Historique : filtres et regroupements
+        $h = $a->req('GET', "$B/sales?service=takeaway")['body'];
+        $ne = (string) DB::value('SELECT number FROM sales WHERE id = ?', [$pe['sale_id']]);
+        $ns = (string) DB::value('SELECT number FROM sales WHERE id = ?', [$ps['sale_id']]);
+        ok(str_contains($h, e($ne)) && !str_contains($h, e($ns)), 'filtre « À emporter »');
+        ok(str_contains($a->req('GET', "$B/sales?table=$t9")['body'], e($ns)), 'filtre par table');
+        foreach (['serveur' => $waiter, 'service' => 'À emporter', 'table' => 'T9', 'caissier' => '', 'paiement' => 'Mobile', 'client' => '', 'jour' => ''] as $g => $txt) {
+            $x = $a->req('GET', "$B/sales?group=$g&sort=montant");
+            ok($x['code'] === 200 && str_contains($x['body'], 'Totaux par') && ($txt === '' || str_contains($x['body'], e($txt))) && !preg_match('/Fatal error|Warning:|Une erreur interne/', $x['body']), "regroupement par $g");
+        }
+        // --- Écran client : articles proposés pendant la saisie du menu, texte centré
+        $j = json_decode($a->req('GET', "$B/settings/display/articles?q=" . rawurlencode('Soda tes'))['body'], true);
+        ok(($j['items'][0]['name'] ?? '') === 'Soda test' && str_contains($j['items'][0]['price_text'], '600'), 'menu : article proposé avec son prix');
+        eq([], json_decode($a->req('GET', "$B/settings/display/articles?q=S")['body'], true)['items'], 'une lettre : rien proposé');
+        $slide = S\CustomerDisplay::saveText(null, ['title' => 'Bienvenue chez nous', 'body' => 'Ouvert 7 j/7', 'layout' => 'centre', 'duration_s' => 8]);
+        eq('centre', S\CustomerDisplay::style(DB::one('SELECT * FROM display_media WHERE id = ?', [$slide]))['layout'], 'texte centré enregistré');
+        $d = $a->req('GET', "$B/settings/display")['body'];
+        ok(str_contains($d, 'Ajouter un texte centré') && str_contains($d, 'data-articles-url'), 'page écran client : texte centré et suggestions');
+        S\CustomerDisplay::deleteMedia($slide);
+        // --- Sauvegarde automatique et copie sur le support choisi
+        $X = S\SupportExterne::class;
+        $usb = sys_get_temp_dir() . '/usb-auto-' . bin2hex(random_bytes(3));
+        mkdir($usb);
+        $X::$forceList = [['racine' => $usb, 'type' => 'amovible', 'nom' => 'CLE-AUTO', 'libre' => 10 ** 10, 'total' => 10 ** 10]];
+        setting_set('backup_auto', '1');
+        setting_set('backup_auto_hours', '24');
+        $X::setAutoSupport($usb);
+        $r1 = $X::runTasks();
+        $n = count(glob($usb . '/' . $X::DOSSIER . '/*/poswan_*.sql.gz'));
+        ok($r1['erreur'] === null && $r1['support'] === 'copié' && $r1['copies'] >= 1 && $n === count(S\BackupService::list()), 'support branché : toutes les sauvegardes copiées et contrôlées');
+        $r2 = $X::runTasks();
+        ok($r2['copies'] === 0 && $r2['sauvegarde'] === null, 'support à jour, sauvegarde récente : rien à refaire');
+        $usb2 = $usb . '-lettre';
+        mkdir($usb2);
+        $X::$forceList = [['racine' => $usb2, 'type' => 'amovible', 'nom' => 'CLE-AUTO', 'libre' => 10 ** 10, 'total' => 10 ** 10]];
+        ok($X::runTasks()['copies'] >= 1, 'même clé branchée sous une autre lettre : reconnue par son nom');
+        $X::$forceList = [];
+        eq('absent', $X::runTasks()['support'], 'support débranché : signalé, sans erreur');
+        eq(403, (new Http())->req('POST', "$B/__taches/sauvegarde")['code'], 'tâche périodique refusée sans le jeton du lanceur');
+        ok(str_contains($a->req('GET', "$B/backups")['body'], 'Sauvegarde et copie automatiques'), 'page Sauvegardes : réglages de la copie automatique');
+    } finally {
+        S\SupportExterne::$forceList = null;
+        setting_set('backup_support_auto', '');
+        setting_set('business_mode', (string) $avant[0]);
+        setting_set('business_modes', (string) $avant[1]);
+        setting_set('require_cash_session', (string) $avant[2]);
+        setting('__reset');
+    }
 });
 
 test('Base locale sous charge : transaction rejouée après interblocage ou verrou, attente courte, reconnexion', function () use ($env) {

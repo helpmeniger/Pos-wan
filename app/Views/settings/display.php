@@ -64,8 +64,8 @@ $mb = fn($b) => round($b / 1048576) . ' Mo';
             <label class="form-label fw-semibold">Titre</label>
             <input name="title" class="form-control mb-2" maxlength="120" value="<?= e($edit['title'] ?? '') ?>" placeholder="ex. Menu du jour, Promo de la semaine">
             <label class="form-label fw-semibold">Texte <span class="small text-secondary">(une ligne par élément, 14 au plus)</span></label>
-            <textarea name="body" class="form-control font-monospace mb-1" rows="7" maxlength="1500" placeholder="# Plats&#10;Riz sauce arachide 1500 F&#10;Poulet braisé 3000 F&#10;- Livraison gratuite dès 10 000 F"><?= e($edit['body'] ?? '') ?></textarea>
-            <div class="form-text mb-2">Écrivez simplement : <code>Poulet braisé 3000 F</code> devient une ligne de menu avec son prix ; <code># Boissons</code> une rubrique ; <code>- texte</code> une puce ; le reste un paragraphe.</div>
+            <div class="position-relative"><textarea name="body" class="form-control font-monospace mb-1" rows="7" maxlength="1500" data-pub-body data-articles-url="<?= e(url('/settings/display/articles')) ?>" autocomplete="off" placeholder="# Plats&#10;Riz sauce arachide 1500 F&#10;Poulet braisé 3000 F&#10;- Livraison gratuite dès 10 000 F"><?= e($edit['body'] ?? '') ?></textarea><div class="list-group shadow pub-suggest d-none" data-pub-suggest role="listbox" aria-label="Articles proposés"></div></div>
+            <div class="form-text mb-2"><i class="bi bi-lightning-charge text-warning"></i> Commencez à écrire le nom d'un article déjà créé : la liste propose vos articles ; cliquez (ou <kbd>Entrée</kbd>) pour écrire son nom et son prix. Écrivez simplement : <code>Poulet braisé 3000 F</code> devient une ligne de menu avec son prix ; <code># Boissons</code> une rubrique ; <code>- texte</code> une puce ; le reste un paragraphe.</div>
             <label class="form-label fw-semibold">Photo <span class="small text-secondary">(facultative)</span></label>
             <input type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/webp" data-display-upload data-pub-photo data-php-max="<?= (int) $limits['php_bytes'] ?>" data-max-image="<?= (int) $limits['image'] ?>"><div class="form-text" data-upload-info></div>
             <?php if ($edit && $edit['path']): ?><div class="form-check mt-1"><input class="form-check-input" type="checkbox" name="remove_photo" value="1" id="pubNoPhoto" data-pub-nophoto><label class="form-check-label small" for="pubNoPhoto">Retirer la photo actuelle</label></div><span class="d-none" data-pub-current="<?= e(upload_url($edit['path'])) ?>"></span><?php endif; ?>
@@ -99,6 +99,15 @@ $mb = fn($b) => round($b / 1048576) . ' Mo';
         <div class="col-8"><input name="title" class="form-control" maxlength="150" placeholder="Titre (facultatif) : promotion, nouveauté…"></div>
         <div class="col-4"><button class="btn btn-success w-100"><i class="bi bi-upload"></i> Ajouter</button></div>
         <div class="col-12 form-text">Images JPG, PNG, WEBP, GIF (<?= e($mb($limits['image'])) ?> au plus ; les photos sont réduites à 1920 px <b>dans le navigateur avant l'envoi</b>, une photo de téléphone passe donc même avec une petite limite PHP) ; vidéos MP4 (H.264) ou WEBM (<?= e($mb($limits['video'])) ?> au plus). Limite de ce serveur PHP : <?= e($limits['php_upload']) ?> par fichier, <?= e($limits['php_post']) ?> par envoi.</div>
+      </form>
+      <form method="post" action="<?= e(url('/settings/display/text')) ?>" class="card-body row g-2 border-bottom bg-body-tertiary"><?= csrf_field() ?>
+        <div class="col-12 fw-semibold small"><i class="bi bi-fonts"></i> Ajouter un texte centré à la diffusion <span class="text-secondary fw-normal">(accueil, annonce, horaires…)</span></div>
+        <div class="col-12"><input name="title" class="form-control" maxlength="120" required placeholder="ex. Bienvenue chez <?= e((string) setting('company_name', 'nous')) ?>"></div>
+        <div class="col-12"><input name="body" class="form-control form-control-sm" maxlength="200" placeholder="Seconde ligne (facultative) : ouvert 7 j/7 de 8 h à 22 h"></div>
+        <div class="col-5"><select name="palette" class="form-select form-select-sm" aria-label="Couleurs"><?php foreach (CD::PALETTES as $k => $l): if ($k === 'perso') continue; ?><option value="<?= e($k) ?>"><?= e($l) ?></option><?php endforeach; ?></select></div>
+        <div class="col-3"><div class="input-group input-group-sm"><input type="number" name="duration_s" min="3" max="300" class="form-control" value="8" aria-label="Durée"><span class="input-group-text">s</span></div></div>
+        <input type="hidden" name="layout" value="centre">
+        <div class="col-4"><button class="btn btn-sm btn-success w-100"><i class="bi bi-plus-lg"></i> Ajouter</button></div>
       </form>
       <ul class="list-group list-group-flush">
       <?php foreach ($media as $i => $m): $url = (string) $m['path'] !== '' ? upload_url($m['path']) : ''; ?>

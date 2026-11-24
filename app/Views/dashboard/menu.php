@@ -1,8 +1,8 @@
 <div class="hub">
   <div class="d-flex justify-content-between align-items-center mb-2">
     <div class="fw-semibold"><i class="bi bi-grid-3x3-gap-fill text-warning"></i> <?= e(setting('company_name', 'POS Marwa')) ?></div>
-    <?php $toPos = can('pos.sell') && App\Services\BusinessMode::hasPos(); ?>
-    <?php if ($toPos): ?><a href="<?= e(url('/pos')) ?>" class="btn btn-sm btn-light"><i class="bi bi-cart3"></i> <?= menu_style() === 'tuiles' ? 'Caisse' : 'Fermer' ?></a>
+    <?php $toPos = App\Services\BusinessMode::userPosUrl(); ?>
+    <?php if ($toPos): ?><a href="<?= e(url($toPos)) ?>" class="btn btn-sm btn-light"><i class="bi bi-cart3"></i> <?= menu_style() === 'tuiles' ? 'Caisse' : 'Fermer' ?></a>
     <?php elseif (menu_style() !== 'tuiles'): ?><a href="<?= e(url('/')) ?>" class="btn btn-sm btn-light"><i class="bi bi-x-lg"></i> Fermer</a><?php endif; ?>
   </div>
   <?php foreach ($groups as $g => $items): ?>

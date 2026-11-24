@@ -283,7 +283,7 @@ final class CustomerDisplay
     }
 
     public const PALETTES = ['nuit' => 'Nuit et or', 'soleil' => 'Soleil', 'foret' => 'Forêt', 'bordeaux' => 'Bordeaux', 'ocean' => 'Océan', 'violet' => 'Violet', 'clair' => 'Clair', 'perso' => 'Couleurs personnalisées'];
-    public const LAYOUTS = ['auto' => 'Automatique', 'overlay' => 'Photo en fond, texte devant', 'split_left' => 'Photo à gauche, texte à droite', 'split_right' => 'Texte à gauche, photo à droite'];
+    public const LAYOUTS = ['auto' => 'Automatique', 'centre' => 'Texte centré (accueil, annonce)', 'overlay' => 'Photo en fond, texte devant', 'split_left' => 'Photo à gauche, texte à droite', 'split_right' => 'Texte à gauche, photo à droite'];
 
     public static function style(array $m): array
     {

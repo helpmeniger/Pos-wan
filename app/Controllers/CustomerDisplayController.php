@@ -64,6 +64,24 @@ final class CustomerDisplayController extends Controller
         view('display/text_preview', [], null);
     }
 
+    /**
+     * Articles proposés pendant la saisie d'un menu ou d'une promotion : nom et prix de vente actuels, prix écrit
+     * comme la ligne de menu l'attend (« Poulet braisé 3 000 F »).
+     */
+    public function articles(): void
+    {
+        $q = trim((string) Request::query('q', ''));
+        if (mb_strlen($q) < 2) {
+            json_response(['ok' => true, 'items' => []]);
+        }
+        $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
+        $rows = \App\Core\DB::all("SELECT id, name, sale_price FROM products WHERE status = 'active' AND sellable = 1 AND (name LIKE ? OR reference LIKE ? OR barcode = ?)
+            ORDER BY (name LIKE ?) DESC, name LIMIT 12", [$like, $like, $q, $q . '%']);
+        json_response(['ok' => true, 'items' => array_map(fn($p) => ['id' => (int) $p['id'], 'name' => $p['name'], 'price' => (float) $p['sale_price'],
+            // Montant puis symbole, toujours à la fin de la ligne : c'est ce que reconnaît la mise en forme du menu
+            'price_text' => money($p['sale_price'], false) . ' ' . currency()['symbol']], $rows)]);
+    }
+
     public function mediaUpdate(int $id): void
     {
         $this->attempt(function () use ($id) {

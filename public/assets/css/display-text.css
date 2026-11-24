@@ -42,5 +42,12 @@
 .cdt-lay-split_right .cdt-text { width: 48%; margin-right: 48%; }
 @keyframes cdtIn { to { opacity: 1; transform: none; } }
 .cdt-text .cdt-title:only-child { margin-bottom: 0; }
+/* Texte centré (accueil, annonce) : titre en grand au centre, lignes centrées, photo éventuelle en fond voilé */
+.cdt-lay-centre .cdt-text { align-items: center; text-align: center; width: min(90%, 1700px); }
+.cdt-lay-centre .cdt-bar { margin-left: auto; margin-right: auto; }
+.cdt-lay-centre .cdt-lines { align-items: center; }
+.cdt-lay-centre .cdt-item { justify-content: center; }
+.cdt-lay-centre .cdt-item .cdt-dots { flex: 0 0 2em; }
+.cdt-lay-centre .cdt-photo::after { content: ""; position: absolute; inset: 0; background: rgba(var(--cdt-bg-rgb), .72); }
 @media (prefers-reduced-motion: reduce) { .cdt *, .cdt { animation-duration: .01s !important; animation-delay: 0s !important; } }
 

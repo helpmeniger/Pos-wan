@@ -156,6 +156,7 @@ a.btn-validate:hover { color: #fff; }
 .mode-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 8px; align-items: center; }
 .mode-tag { font-weight: 700; font-size: .85rem; color: #0b7a75; }
 .mode-link { font-size: .8rem; padding: 2px 8px; border-radius: 12px; background: #eef2f7; color: #14213d; text-decoration: none; }
+.mode-link.resto { background: #fff4e0; color: #8a4b00; font-weight: 600; font-size: .85rem; padding: 3px 10px; }
 .mode-link.warn { background: #fff3cd; color: #7a5b00; } .mode-link.danger { background: #f8d7da; color: #842029; }
 [data-bs-theme="dark"] .mode-link { background: #2a3446; color: #e6ebf5; }
 

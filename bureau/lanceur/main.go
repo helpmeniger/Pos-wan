@@ -885,6 +885,61 @@ func (l *launcher) syncImpression() {
 	}
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Sauvegarde automatique : toutes les 15 minutes (2 minutes après le démarrage), l'application sauvegarde si c'est
+// l'heure et copie les sauvegardes sur le support choisi s'il est branché (Sauvegardes → copie automatique).
+// Appel direct d'un serveur PHP (pas par le répartiteur : ce n'est pas un signe de vie d'une fenêtre).
+
+func (l *launcher) backupLoop() {
+	wait := 2 * time.Minute
+	if n, err := strconv.Atoi(os.Getenv("POS_BUREAU_TACHES")); err == nil && n >= 5 { // essais : délai en secondes
+		wait = time.Duration(n) * time.Second
+	}
+	every := 15 * time.Minute
+	if wait < every && os.Getenv("POS_BUREAU_TACHES") != "" {
+		every = wait
+	}
+	for {
+		select {
+		case <-l.done:
+			return
+		case <-time.After(wait):
+		}
+		wait = every
+		w := l.pick()
+		if w == nil {
+			continue
+		}
+		req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("http://127.0.0.1:%d/__taches/sauvegarde", w.port), nil)
+		req.Header.Set("X-Bureau-Jeton", l.jeton)
+		req.Header.Set("Accept", "application/json")
+		w.busy.Add(1)
+		resp, err := (&http.Client{Timeout: 20 * time.Minute}).Do(req)
+		w.busy.Add(-1)
+		if err != nil {
+			log.Printf("Sauvegarde automatique : %v", err)
+			continue
+		}
+		var r struct {
+			Sauvegarde *string `json:"sauvegarde"`
+			Support    string  `json:"support"`
+			Copies     int     `json:"copies"`
+			Erreur     *string `json:"erreur"`
+		}
+		_ = json.NewDecoder(io.LimitReader(resp.Body, 1<<16)).Decode(&r)
+		resp.Body.Close()
+		if r.Erreur != nil {
+			log.Printf("Sauvegarde automatique : %s", *r.Erreur)
+		} else if r.Sauvegarde != nil || r.Copies > 0 {
+			name := ""
+			if r.Sauvegarde != nil {
+				name = *r.Sauvegarde
+			}
+			log.Printf("Sauvegarde automatique : %s ; support : %s (%d fichier(s) copié(s))", name, r.Support, r.Copies)
+		}
+	}
+}
+
 // Script ajouté aux pages : signe de vie toutes les 15 s (une fenêtre réduite en envoie au moins un par minute)
 const beatJS = `(function(){var u='/__bureau/battement';function b(){try{fetch(u,{cache:'no-store',keepalive:true}).catch(function(){});}catch(e){}}b();setInterval(b,15000);document.addEventListener('visibilitychange',b);})();`
 
@@ -1109,6 +1164,7 @@ func main() {
 		fatal("POS Marwa ne peut pas démarrer.\n\n" + err.Error())
 	}
 	go l.syncImpression()
+	go l.backupLoop()
 	l.ready.Store(true)
 	log.Printf("Prêt : %s (%d serveurs PHP, base sur le port %d, réseau=%v)", l.appURL(), len(l.workers), c.portBD, c.reseau)
 

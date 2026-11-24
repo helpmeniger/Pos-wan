@@ -3,7 +3,8 @@
     <button class="btn btn-dark active" data-area="0">Toutes les salles</button>
     <?php foreach ($areas as $a): ?><button class="btn btn-outline-dark" data-area="<?= (int) $a['id'] ?>"><?= e($a['name']) ?></button><?php endforeach; ?>
   </div>
-  <div class="ms-auto d-flex gap-2">
+  <div class="ms-auto d-flex flex-wrap gap-2">
+    <?php if (can('pos.sell')): ?><a class="btn btn-success" href="<?= e(url('/pos')) ?>" title="Vente au comptoir, sans table ni commande"><i class="bi bi-cart3"></i> <?= App\Services\BusinessMode::shopAndRestaurant() ? 'Caisse boutique' : 'Vente directe' ?></a><?php endif; ?>
     <button class="btn btn-warning" data-new="takeaway"><i class="bi bi-bag"></i> À emporter</button>
     <button class="btn btn-info text-white" data-new="delivery"><i class="bi bi-scooter"></i> Livraison</button>
     <?php if (can('restaurant.kitchen')): ?><a href="<?= e(url('/kitchen')) ?>" class="btn btn-outline-secondary"><i class="bi bi-fire"></i> Écran cuisine</a><?php endif; ?>
@@ -25,9 +26,10 @@
       <div class="d-flex flex-wrap gap-1 mb-2" id="coversKeys"><?php for ($i = 1; $i <= 8; $i++): ?><button type="button" class="btn btn-outline-primary cover-key" data-c="<?= $i ?>"><?= $i ?></button><?php endfor; ?></div>
       <input type="number" min="1" max="200" id="openCovers" class="form-control" value="2"></div>
     <div id="custBox" class="d-none">
-      <input class="form-control mb-1" id="openName" placeholder="Nom du client" maxlength="150">
-      <input class="form-control mb-1" id="openPhone" placeholder="Téléphone" maxlength="50">
-      <input class="form-control" id="openAddress" placeholder="Adresse de livraison" maxlength="255">
+      <div class="small text-secondary mb-1">Facultatif : repris sur le ticket s'il est rempli.</div>
+      <input class="form-control mb-1" id="openName" placeholder="Nom du client (facultatif)" maxlength="150">
+      <input class="form-control mb-1" id="openPhone" placeholder="Téléphone (facultatif)" maxlength="50">
+      <input class="form-control" id="openAddress" placeholder="Adresse de livraison (facultative)" maxlength="255">
     </div>
     <div class="alert alert-danger d-none mt-2 mb-0 py-2 small" id="openError"></div>
   </div>

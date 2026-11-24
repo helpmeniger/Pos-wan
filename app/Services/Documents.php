@@ -81,6 +81,40 @@ final class Documents
         return is_string($v) && $v !== '' ? $v : null;
     }
 
+    /**
+     * Commande de restaurant d'une vente : [libellé, valeur] à imprimer (table ou « À emporter » / « Livraison »,
+     * n° de commande, serveur, nom / téléphone / adresse du client seulement s'ils ont été saisis).
+     * @return array<int, array{0:string,1:string}>
+     */
+    public static function restaurantLines(array $s): array
+    {
+        if (empty($s['restaurant_order_id'])) {
+            return [];
+        }
+        $o = DB::one('SELECT o.number, o.type, o.covers, o.customer_name, o.customer_phone, o.delivery_address, t.name AS table_name, a.name AS area_name, w.full_name AS waiter
+            FROM restaurant_orders o LEFT JOIN restaurant_tables t ON t.id = o.table_id LEFT JOIN restaurant_areas a ON a.id = t.area_id LEFT JOIN users w ON w.id = o.waiter_id
+            WHERE o.id = ?', [(int) $s['restaurant_order_id']]);
+        if (!$o) {
+            return [];
+        }
+        $out = [];
+        if ($o['type'] === 'dine_in' && $o['table_name'] !== null) {
+            $out[] = [t('Table'), $o['table_name'] . ($o['area_name'] ? ' (' . $o['area_name'] . ')' : '') . ' · ' . (int) $o['covers'] . ' ' . t('couvert(s)')];
+        } else {
+            $out[] = [t('Service'), t(RestaurantService::TYPES[$o['type']] ?? $o['type'])];
+        }
+        $out[] = [t('Commande'), $o['number']];
+        if ($o['waiter']) {
+            $out[] = [t('Serveur'), $o['waiter']];
+        }
+        foreach ([[t('Nom'), $o['customer_name']], [t('Tél'), $o['customer_phone']], [t('Adresse'), $o['delivery_address']]] as [$k, $v]) {
+            if (trim((string) $v) !== '') {
+                $out[] = [$k, (string) $v];
+            }
+        }
+        return $out;
+    }
+
     /** Solde dû par le client de la vente (créance), pour les modèles qui l'affichent. */
     private static function customerBalance(array $s): ?float
     {
@@ -177,6 +211,8 @@ final class Documents
         if (!empty($s['customer_name'])) {
             $meta[] = [t('Client'), $s['customer_name']];
         }
+        $resto = self::restaurantLines($s);
+        array_push($meta, ...$resto);
         $doc = [
             'title' => t('Ticket'), 'number' => $s['number'], 'date' => fdate($s['created_at']), 'store' => $s['store_name'] ?? '', 'meta' => $meta, 'dup' => $dup,
             'banner' => $s['status'] === 'cancelled' ? t('VENTE ANNULÉE') : null,
@@ -224,7 +260,7 @@ final class Documents
             'number' => $isInvoice ? $s['number'] : 'BL-' . $s['number'], 'date' => $s['created_at'],
             'banner' => $s['status'] === 'cancelled' ? t('VENTE ANNULÉE') : null,
             'party' => self::customerParty($s, $isInvoice ? t('Client') : t('Livré à')),
-            'info' => array_values(array_filter([[t('Boutique'), $s['store_name']], [t('Vendeur'), $s['cashier']], [t('Caisse'), $s['register_name'] ?? ''], $isInvoice ? null : [t('Facture'), $s['number']]])),
+            'info' => array_values(array_filter([[t('Boutique'), $s['store_name']], [t('Vendeur'), $s['cashier']], [t('Caisse'), $s['register_name'] ?? ''], $isInvoice ? null : [t('Facture'), $s['number']], ...self::restaurantLines($s)])),
             'prices' => $withPrices,
             'lines' => array_map(fn($i) => ['ref' => $i['reference'] ?? '', 'name' => $i['product_name'], 'qty' => (float) $i['quantity'], 'unit' => $i['unit'] ?? '', 'price' => (float) $i['unit_price'], 'discount' => (float) $i['discount'], 'total' => (float) $i['line_total']], $items),
             'totals' => $totals,

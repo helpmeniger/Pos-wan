@@ -36,9 +36,9 @@ $notes = $u ? Notifications::get() : [];
       <img src="<?= e(asset('img/logo.svg')) ?>" alt="" width="34" height="34">
       <span>POS <b>Marwa</b></span>
     </a>
-    <?php $posUrl = App\Services\BusinessMode::posUrl(); $posPerm = ['/clinique/caisse' => 'clinique.reception', '/pressing/caisse' => 'pressing.deposit', '/ecole/caisse' => 'ecole.caisse'][$posUrl] ?? 'pos.sell'; ?>
-    <?php if ($posUrl !== '' && can($posPerm)): ?>
-    <a href="<?= e(url($posUrl)) ?>" class="btn btn-pos-launch"><i class="bi <?= $posUrl === '/pos' ? 'bi-cart3' : 'bi-cash-coin' ?>"></i> Ouvrir la caisse</a>
+    <?php $posUrl = App\Services\BusinessMode::userPosUrl(); ?>
+    <?php if ($posUrl !== null): ?>
+    <a href="<?= e(url($posUrl)) ?>" class="btn btn-pos-launch"><i class="bi <?= ['/pos' => 'bi-cart3', '/restaurant' => 'bi-shop-window'][$posUrl] ?? 'bi-cash-coin' ?>"></i> Ouvrir la caisse</a>
     <?php endif; ?>
     <?php
       // Catégories repliables : seule celle de la page affichée est ouverte (les autres en un clic)

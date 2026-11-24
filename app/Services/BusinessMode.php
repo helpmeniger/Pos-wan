@@ -9,9 +9,10 @@ use App\Core\BusinessException;
 use App\Core\DB;
 
 /**
- * Mode de fonctionnement choisi par l'administrateur (Paramètres → Mode de fonctionnement).
- * La caisse principale (/pos), l'écran d'accueil et les menus s'adaptent au mode ; changer de
- * mode ne supprime aucune donnée (les modules restent installés, leurs données conservées).
+ * Modes de fonctionnement choisis par l'administrateur (Paramètres → Mode de fonctionnement). Plusieurs modes
+ * peuvent être cochés ensemble (ex. commerce général + restaurant) : leurs menus et leurs caisses fonctionnent en
+ * même temps. La caisse principale, l'écran d'accueil et les menus s'adaptent ; changer de mode ne supprime aucune
+ * donnée (les modules restent installés, leurs données conservées).
  */
 final class BusinessMode
 {
@@ -56,13 +57,13 @@ final class BusinessMode
         'organisation' => [...self::COMMERCE, '/cash', '/registers', '/ecole', '/boutique', '/doublons', '/banques/versements', '/printers', '/settings/display', '/afficheur', '/ecran'],
     ];
 
-    public static function current(): string
+    /** Mode d'une installation antérieure (un seul mode, ou déduit du type d'activité). */
+    private static function legacy(): string
     {
         $m = (string) setting('business_mode', '');
         if (isset(self::MODES[$m])) {
             return $m;
         }
-        // Installations antérieures : mode déduit du type d'activité
         return match ((string) setting('business_type', '')) {
             'restaurant' => 'restaurant',
             'pharmacie' => 'pharmacie',
@@ -70,14 +71,63 @@ final class BusinessMode
         };
     }
 
+    /** Modes actifs, dans l'ordre de la liste des modes (au moins un). */
+    public static function actives(): array
+    {
+        $list = array_filter(array_map('trim', explode(',', (string) setting('business_modes', ''))), fn($m) => isset(self::MODES[$m]));
+        // Liste absente, ou mode principal changé ailleurs (ancien réglage seul) : ce mode seul
+        if (!$list || !in_array(self::legacy(), $list, true)) {
+            return [self::legacy()];
+        }
+        return array_values(array_intersect(array_keys(self::MODES), $list));
+    }
+
+    /** Mode principal : le premier des modes actifs (ex. commerce général pour « commerce + restaurant »). */
+    public static function current(): string
+    {
+        return self::actives()[0];
+    }
+
+    /** Au moins un de ces modes est-il actif ? */
     public static function is(string ...$modes): bool
     {
-        return in_array(self::current(), $modes, true);
+        return (bool) array_intersect($modes, self::actives());
+    }
+
+    /** Ce mode est-il le seul actif ? */
+    public static function only(string $mode): bool
+    {
+        return self::actives() === [$mode];
+    }
+
+    /**
+     * Boutique ET restaurant actifs : il faut alors dire si un article se vend en boutique, au restaurant ou aux deux.
+     * Restaurant seul : tout se vend au restaurant, la question n'est pas posée.
+     */
+    public static function shopAndRestaurant(): bool
+    {
+        // Restaurant : mode coché, ou fonction « restaurant » activée sur un commerce (installations antérieures)
+        return (self::is('restaurant') || feature('restaurant')) && self::is('commerce', 'pharmacie', 'clinique_pharmacie', 'hotel');
+    }
+
+    /**
+     * Canaux de vente vus par une caisse (liste SQL) : avec boutique ET restaurant, chacun voit les siens (+ « les
+     * deux ») ; sinon tout se vend partout (un réglage « boutique / restaurant » d'avant reste sans effet).
+     */
+    public static function channelsSql(string $till): string
+    {
+        if (!self::shopAndRestaurant()) {
+            return "'all','shop','restaurant'";
+        }
+        return $till === 'restaurant' ? "'all','restaurant'" : "'all','shop'";
     }
 
     public static function label(?string $mode = null): string
     {
-        return self::MODES[$mode ?? self::current()][0];
+        if ($mode !== null) {
+            return self::MODES[$mode][0];
+        }
+        return implode(' + ', array_map(fn($m) => self::MODES[$m][0], self::actives()));
     }
 
     /** Modules requis par un mode qui ne sont pas installés et actifs. */
@@ -90,39 +140,69 @@ final class BusinessMode
         return array_values(array_diff(self::MODES[$mode][2] ?? [], $active));
     }
 
-    public static function set(string $mode, bool $showAllMenus = false): void
+    /** @param string|string[] $modes un ou plusieurs modes cochés */
+    public static function set(string|array $modes, bool $showAllMenus = false): void
     {
-        if (!isset(self::MODES[$mode])) {
-            throw new BusinessException('Mode de fonctionnement inconnu.');
+        $modes = array_values(array_unique(array_filter(array_map('strval', (array) $modes))));
+        if (!$modes) {
+            throw new BusinessException('Cochez au moins un mode de fonctionnement.');
         }
-        if ($missing = self::missingAddons($mode)) {
-            throw new BusinessException('Le mode « ' . self::MODES[$mode][0] . ' » nécessite le module « ' . implode(', ', $missing) . ' » : installez-le ou activez-le d\'abord (Configuration → Modules complémentaires).');
+        foreach ($modes as $mode) {
+            if (!isset(self::MODES[$mode])) {
+                throw new BusinessException('Mode de fonctionnement inconnu.');
+            }
+            if ($missing = self::missingAddons($mode)) {
+                throw new BusinessException('Le mode « ' . self::MODES[$mode][0] . ' » nécessite le module « ' . implode(', ', $missing) . ' » : installez-le ou activez-le d\'abord (Configuration → Modules complémentaires).');
+            }
         }
-        $before = self::current();
-        setting_set('business_mode', $mode);
+        if (in_array('clinique_pharmacie', $modes, true)) {
+            $modes = array_values(array_diff($modes, ['clinique', 'pharmacie'])); // déjà compris dans « Clinique + Pharmacie »
+        }
+        $modes = array_values(array_intersect(array_keys(self::MODES), $modes));
+        $before = self::actives();
+        setting_set('business_modes', implode(',', $modes));
+        setting_set('business_mode', $modes[0]); // mode principal (compatibilité)
         setting_set('mode_show_all_menus', $showAllMenus ? '1' : '0');
-        // Fonctionnalités indispensables au mode (jamais désactivées ici : aucune perte de réglage)
-        $needs = match ($mode) {
-            'pharmacie', 'clinique_pharmacie' => ['pharmacy', 'lots'],
-            'restaurant' => ['restaurant'],
-            default => [],
-        };
-        foreach ($needs as $f) {
-            setting_set('feature_' . $f, '1');
+        // Fonctionnalités indispensables aux modes (jamais désactivées ici : aucune perte de réglage)
+        foreach ($modes as $mode) {
+            $needs = match ($mode) {
+                'pharmacie', 'clinique_pharmacie' => ['pharmacy', 'lots'],
+                'restaurant' => ['restaurant'],
+                default => [],
+            };
+            foreach ($needs as $f) {
+                setting_set('feature_' . $f, '1');
+            }
         }
-        Audit::log('settings.business_mode', null, null, ['from' => $before, 'to' => $mode]);
+        Audit::log('settings.business_mode', null, null, ['from' => $before, 'to' => $modes]);
     }
 
     /** Caisse principale du mode courant. */
     public static function posUrl(): string
     {
-        return match (self::current()) {
-            'clinique' => '/clinique/caisse',
-            'pressing' => '/pressing/caisse',
-            'ecole' => '/ecole/caisse',
-            'organisation' => '',
-            default => '/pos',
+        return match (true) {
+            self::is('commerce', 'pharmacie', 'clinique_pharmacie') => '/pos',
+            self::is('restaurant') => '/restaurant', // restaurant : plan de salle (tables, à emporter, livraison, vente directe)
+            self::is('hotel') => '/pos',
+            self::is('clinique') => '/clinique/caisse',
+            self::is('pressing') => '/pressing/caisse',
+            self::is('ecole') => '/ecole/caisse',
+            default => '',
         };
+    }
+
+    /**
+     * Caisse à ouvrir pour l'utilisateur connecté (bouton « Ouvrir la caisse », menu) : celle du mode, ou la caisse
+     * de vente directe pour un caissier sans droit sur le plan de salle. null : aucune caisse accessible.
+     */
+    public static function userPosUrl(): ?string
+    {
+        $url = self::posUrl();
+        $perm = ['/clinique/caisse' => 'clinique.reception', '/pressing/caisse' => 'pressing.deposit', '/ecole/caisse' => 'ecole.caisse', '/restaurant' => 'restaurant.order'][$url] ?? 'pos.sell';
+        if ($url !== '' && can($perm)) {
+            return $url;
+        }
+        return $url === '/restaurant' && can('pos.sell') ? '/pos' : null;
     }
 
     /** Le mode courant a-t-il une caisse ? (faux pour une organisation sans activité commerciale) */
@@ -152,8 +232,13 @@ final class BusinessMode
         if (setting('mode_show_all_menus', '0') === '1') {
             return false;
         }
-        $hidden = self::HIDDEN[self::current()] ?? [];
-        if (self::is('organisation')) {
+        // Plusieurs modes : un menu n'est masqué que si AUCUN des modes actifs ne l'utilise
+        $actives = self::actives();
+        $hidden = self::HIDDEN[$actives[0]] ?? [];
+        foreach (array_slice($actives, 1) as $m) {
+            $hidden = array_values(array_intersect($hidden, self::HIDDEN[$m] ?? []));
+        }
+        if ($actives === ['organisation']) {
             $active = Addons::active();
             if (isset($active['ong'])) {
                 // L'ONG a sa trésorerie et ses dépenses imputées au budget : pas de second circuit

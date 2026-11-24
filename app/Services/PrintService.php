@@ -172,6 +172,9 @@ final class PrintService
         if ($s['customer']) {
             $d->line(t('Client') . ' : ' . $s['customer']);
         }
+        foreach (Documents::restaurantLines($s) as [$k, $v]) {
+            $d->wrap($k . ' : ' . $v); // restaurant : table ou à emporter / livraison, commande, serveur, client
+        }
         $d->bold(false)->sep();
         foreach ($items as $i) {
             $d->bold($l['itemsBold'])->wrap($i['product_name'])->bold(false);

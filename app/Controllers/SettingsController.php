@@ -201,7 +201,9 @@ final class SettingsController extends Controller
 
     public function mode(): void
     {
-        $this->attempt(fn() => \App\Services\BusinessMode::set(Request::str('mode'), Request::input('show_all') === '1'), '/settings');
+        $modes = Request::input('modes');
+        $modes = is_array($modes) ? array_map('strval', $modes) : [Request::str('mode')]; // ancien formulaire : un seul mode
+        $this->attempt(fn() => \App\Services\BusinessMode::set($modes, Request::input('show_all') === '1'), '/settings');
         flash('success', 'Mode de fonctionnement : ' . \App\Services\BusinessMode::label() . '. La caisse et les menus sont adaptés.');
         redirect('/settings');
     }

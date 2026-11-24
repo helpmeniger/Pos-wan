@@ -174,4 +174,132 @@ final class SupportExterne
         Audit::log('backup.reprise_support', null, null, ['support' => $racine, 'fichier' => $name]);
         return $name;
     }
+
+    // ------------------------------------------------------------------ copie automatique
+
+    /** Support choisi pour la copie automatique : {racine, nom} ou null. */
+    public static function autoSupport(): ?array
+    {
+        $d = json_decode((string) setting('backup_support_auto', ''), true);
+        return is_array($d) && isset($d['racine']) ? ['racine' => (string) $d['racine'], 'nom' => (string) ($d['nom'] ?? '')] : null;
+    }
+
+    /** Choisit (parmi les supports branchés) le support de la copie automatique, ou l'arrête (null). */
+    public static function setAutoSupport(?string $racine): void
+    {
+        if ($racine === null || $racine === '') {
+            setting_set('backup_support_auto', '');
+            Audit::log('backup.support_auto', null, null, ['support' => null]);
+            return;
+        }
+        foreach (self::list() as $s) {
+            if ($s['racine'] === $racine) {
+                setting_set('backup_support_auto', json_encode(['racine' => $s['racine'], 'nom' => $s['nom']], JSON_UNESCAPED_UNICODE));
+                Audit::log('backup.support_auto', null, null, ['support' => $s['racine'], 'nom' => $s['nom']]);
+                return;
+            }
+        }
+        throw new BusinessException('Support introuvable : branchez la clé USB ou le disque, puis actualisez la page.');
+    }
+
+    /**
+     * Le support choisi est-il branché ? Reconnu par son nom de volume (la lettre de lecteur peut changer d'un
+     * branchement à l'autre), sinon par sa racine.
+     */
+    public static function autoSupportPresent(): ?array
+    {
+        $want = self::autoSupport();
+        if (!$want) {
+            return null;
+        }
+        foreach (self::list() as $s) {
+            if ($want['nom'] !== '' ? $s['nom'] === $want['nom'] : $s['racine'] === $want['racine']) {
+                return $s;
+            }
+        }
+        return null;
+    }
+
+    /** Copie sur le support les sauvegardes qui n'y sont pas encore (contrôlées). @return array{fichiers:int, octets:int, dossier:string} */
+    public static function copyMissing(string $racine): array
+    {
+        $root = self::root($racine);
+        $dest = self::target($root);
+        if (!is_dir($dest) && !@mkdir($dest, 0750, true)) {
+            throw new BusinessException('Impossible d\'écrire sur ce support (protégé en écriture ou plein ?).');
+        }
+        $files = 0;
+        $bytes = 0;
+        foreach (array_reverse(BackupService::list()) as $b) { // de la plus ancienne à la plus récente
+            foreach (array_filter([$b['name'], $b['zip']]) as $name) {
+                $src = BackupService::path($name);
+                $copy = $dest . DIRECTORY_SEPARATOR . $name;
+                if (is_file($copy) && filesize($copy) === filesize($src)) {
+                    continue; // déjà sur le support
+                }
+                $need = (int) filesize($src);
+                if (@disk_free_space($dest) !== false && disk_free_space($dest) < $need + 1048576) {
+                    throw new BusinessException('Espace insuffisant sur le support pour ' . $name . ' (' . round($need / 1048576, 1) . ' Mo).');
+                }
+                foreach ([$name, $name . '.sha256'] as $f) {
+                    if (is_file(dirname($src) . '/' . $f) && !@copy(dirname($src) . '/' . $f, $dest . DIRECTORY_SEPARATOR . $f)) {
+                        throw new BusinessException('Copie interrompue (' . $f . ') : le support a-t-il été retiré ?');
+                    }
+                }
+                if (!hash_equals(hash_file('sha256', $src), (string) @hash_file('sha256', $copy))) {
+                    @unlink($copy);
+                    throw new BusinessException('La copie de ' . $name . ' est abîmée (support défectueux ?) : elle a été retirée du support.');
+                }
+                $files++;
+                $bytes += $need;
+            }
+        }
+        return ['fichiers' => $files, 'octets' => $bytes, 'dossier' => $dest];
+    }
+
+    /**
+     * Tâche périodique (édition Bureau : toutes les 15 minutes, demandée par POS Marwa.exe) :
+     *  1. sauvegarde automatique si la dernière date de plus de « backup_auto_hours » heures ;
+     *  2. copie sur le support choisi, s'il est branché, de toutes les sauvegardes qui n'y sont pas encore.
+     * Une seule exécution à la fois ; le résultat est gardé pour la page Sauvegardes.
+     * @return array{sauvegarde:?string, support:string, copies:int, erreur:?string}
+     */
+    public static function runTasks(): array
+    {
+        $lock = @fopen(BackupService::dir() . '/.tache.lock', 'c');
+        if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) {
+            return ['sauvegarde' => null, 'support' => 'occupé', 'copies' => 0, 'erreur' => null];
+        }
+        $r = ['sauvegarde' => null, 'support' => 'aucun', 'copies' => 0, 'erreur' => null];
+        try {
+            if (setting('backup_auto', '1') === '1') {
+                $hours = max(1, min(168, (int) setting('backup_auto_hours', '24')));
+                $last = BackupService::list()[0] ?? null;
+                if (!$last || strtotime($last['date']) < time() - $hours * 3600) {
+                    $r['sauvegarde'] = BackupService::create('auto')['sql'];
+                }
+            }
+            if (self::autoSupport()) {
+                $s = self::autoSupportPresent();
+                if (!$s) {
+                    $r['support'] = 'absent';
+                } else {
+                    $c = self::copyMissing($s['racine']);
+                    $r['support'] = 'copié';
+                    $r['copies'] = $c['fichiers'];
+                    if ($c['fichiers'] > 0) {
+                        Audit::log('backup.copie_support_auto', null, null, ['support' => $s['racine'], 'fichiers' => $c['fichiers'], 'octets' => $c['octets']]);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            $r['erreur'] = $e instanceof BusinessException ? $e->getMessage() : 'Erreur : ' . $e->getMessage();
+            \App\Core\Logger::error('backup.tache', ['error' => $e->getMessage()]);
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+        setting_set('backup_auto_last', json_encode($r + ['date' => date('Y-m-d H:i:s')], JSON_UNESCAPED_UNICODE));
+        return $r;
+    }
 }

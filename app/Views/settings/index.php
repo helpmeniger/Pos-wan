@@ -56,13 +56,14 @@
     </div></div>
     <div class="card mb-3 border-primary"><div class="card-header"><i class="bi bi-diagram-3"></i> Mode de fonctionnement de la caisse</div><div class="card-body">
       <form method="post" action="<?= e(url('/settings/mode')) ?>"><?= csrf_field() ?>
-        <?php $curMode = App\Services\BusinessMode::current(); foreach (App\Services\BusinessMode::MODES as $k => [$l, $d, $req]): $miss = App\Services\BusinessMode::missingAddons($k); ?>
-        <div class="form-check mb-1"><input class="form-check-input" type="radio" name="mode" value="<?= e($k) ?>" id="m_<?= e($k) ?>" <?= $curMode === $k ? 'checked' : '' ?> <?= $miss ? 'disabled' : '' ?>>
+        <div class="small text-secondary mb-2">Cochez une ou plusieurs activités : elles fonctionnent en même temps (ex. <b>Commerce général + Restaurant</b> : caisse boutique et plan de salle).</div>
+        <?php $curModes = App\Services\BusinessMode::actives(); foreach (App\Services\BusinessMode::MODES as $k => [$l, $d, $req]): $miss = App\Services\BusinessMode::missingAddons($k); ?>
+        <div class="form-check mb-1"><input class="form-check-input" type="checkbox" name="modes[]" value="<?= e($k) ?>" id="m_<?= e($k) ?>" <?= in_array($k, $curModes, true) ? 'checked' : '' ?> <?= $miss ? 'disabled' : '' ?>>
           <label class="form-check-label" for="m_<?= e($k) ?>"><b><?= e($l) ?></b> <span class="small text-secondary">— <?= e($d) ?></span><?= $miss ? ' <span class="badge bg-secondary">module « ' . e(implode(', ', $miss)) . ' » à installer</span>' : '' ?></label></div>
         <?php endforeach; ?>
         <div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="show_all" value="1" id="m_all" <?= setting('mode_show_all_menus', '0') === '1' ? 'checked' : '' ?>><label class="form-check-label small" for="m_all">Afficher aussi les menus des autres activités</label></div>
-        <button class="btn btn-primary mt-2">Appliquer le mode</button>
-        <div class="small text-secondary mt-2">La caisse, l'accueil et les menus s'adaptent au mode. Changer de mode ne supprime aucune donnée.</div>
+        <button class="btn btn-primary mt-2">Appliquer</button>
+        <div class="small text-secondary mt-2">Actif : <b><?= e(App\Services\BusinessMode::label()) ?></b>. <b>Restaurant</b> seul : la caisse s'ouvre sur le plan de salle (tables, à emporter, livraison, vente directe). Avec une autre activité : chaque caisse a son bouton. Changer de mode ne supprime aucune donnée.</div>
       </form>
     </div></div>
     <div class="card mb-3"><div class="card-header"><i class="bi bi-shop"></i> Type d'activité et modules</div><div class="card-body">

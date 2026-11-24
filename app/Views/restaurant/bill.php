@@ -3,7 +3,8 @@
 <div class="ticket">
   <div class="c"><?php if ($logo = setting('company_logo')): ?><img class="logo" src="<?= e(upload_url($logo)) ?>" alt=""><br><?php endif; ?><div class="t-company"><?= e(setting('company_name')) ?></div><div><?= e(setting('company_address')) ?></div><?php if (setting('company_phone')): ?><div>Tél : <?= e(setting('company_phone')) ?></div><?php endif; ?></div>
   <hr><div class="c b">ADDITION — NE VAUT PAS TICKET DE CAISSE</div><hr>
-  <div><?= $o['table_name'] ? 'Table <b>' . e($o['table_name']) . '</b> · ' : '' ?><?= (int) $o['covers'] ?> couvert(s)</div>
+  <div><?php if ($o['table_name']): ?>Table <b><?= e($o['table_name']) ?></b> · <?= (int) $o['covers'] ?> couvert(s)<?php else: ?><b><?= e(App\Services\RestaurantService::TYPES[$o['type']] ?? '') ?></b><?php endif; ?></div>
+  <?php foreach (['Nom' => $o['customer_name'] ?? null, 'Tél' => $o['customer_phone'] ?? null, 'Adresse' => $o['delivery_address'] ?? null] as $k => $v): if (trim((string) $v) === '') continue; ?><div><?= e($k) ?> : <?= e($v) ?></div><?php endforeach; ?>
   <div>Commande <?= e($o['number']) ?> · <?= e(date('d/m/Y H:i')) ?></div><div>Serveur : <?= e($o['waiter']) ?></div>
   <hr><table><?php foreach ($lines as $l): ?><tr><td colspan="2"><?= e($l['name']) ?></td></tr><tr><td><?= qty($l['qty']) ?> x <?= money($l['price'], false) ?></td><td class="num"><?= money($l['qty'] * $l['price'], false) ?></td></tr><?php endforeach; ?></table>
   <hr><table><tr><td class="big">TOTAL</td><td class="num big"><?= money($o['total']) ?></td></tr>

@@ -27,6 +27,18 @@ final class SaleController extends Controller
         return $s;
     }
 
+    /** Regroupements proposés dans l'historique : clé => [libellé, expression SQL (code, jamais l'utilisateur)] */
+    private const GROUPS = [
+        'caissier' => ['Caissier / vendeur', 'u.full_name'],
+        'serveur' => ['Serveur', "COALESCE(w.full_name, '— Vente directe (sans serveur)')"],
+        'service' => ['Service (sur place, à emporter, livraison)', "CASE WHEN ro.id IS NULL THEN 'Vente directe' WHEN ro.type = 'takeaway' THEN 'À emporter' WHEN ro.type = 'delivery' THEN 'Livraison' ELSE 'Sur place' END"],
+        'table' => ['Table', "COALESCE(rt.name, CASE WHEN ro.type = 'takeaway' THEN '— À emporter' WHEN ro.type = 'delivery' THEN '— Livraison' ELSE '— Sans table' END)"],
+        'client' => ['Client', "COALESCE(c.name, '— Client comptoir')"],
+        'jour' => ['Jour', 'DATE(s.created_at)'],
+        'paiement' => ['Mode de paiement', ''],
+    ];
+    private const SORTS = ['recent' => 's.id DESC', 'ancien' => 's.id ASC', 'montant' => 's.total DESC, s.id DESC', 'caissier' => 'u.full_name, s.id DESC', 'serveur' => 'w.full_name IS NULL, w.full_name, s.id DESC', 'client' => 'c.name IS NULL, c.name, s.id DESC'];
+
     public function index(): void
     {
         [$from, $to] = date_range('today');
@@ -46,26 +58,74 @@ final class SaleController extends Controller
             }
         }
         if (($q = trim((string) Request::query('q', ''))) !== '') {
-            $where[] = '(s.number LIKE ? OR c.name LIKE ? OR c.phone LIKE ?)';
+            $where[] = '(s.number LIKE ? OR c.name LIKE ? OR c.phone LIKE ? OR ro.customer_name LIKE ? OR ro.customer_phone LIKE ? OR ro.number LIKE ?)';
             $like = '%' . $q . '%';
-            array_push($params, $like, $like, $like);
+            array_push($params, $like, $like, $like, $like, $like, $like);
         }
         if (Request::query('credit') === '1') {
             $where[] = 's.credit_amount > 0';
         }
-        $from_ = 'FROM sales s JOIN users u ON u.id = s.user_id LEFT JOIN customers c ON c.id = s.customer_id WHERE ' . implode(' AND ', $where);
+        // Restaurant : serveur, service, table
+        if ($wid = (int) Request::query('waiter', 0)) {
+            $where[] = 'ro.waiter_id = ?';
+            $params[] = $wid;
+        }
+        $service = (string) Request::query('service', '');
+        if ($service === 'direct') {
+            $where[] = 's.restaurant_order_id IS NULL';
+        } elseif (in_array($service, ['dine_in', 'takeaway', 'delivery'], true)) {
+            $where[] = 'ro.type = ?';
+            $params[] = $service;
+        }
+        if ($tid = (int) Request::query('table', 0)) {
+            $where[] = 'ro.table_id = ?';
+            $params[] = $tid;
+        }
+        $method = (string) Request::query('method', '');
+        if ($method !== '' && isset(payment_methods()[$method])) {
+            $where[] = 'EXISTS (SELECT 1 FROM sale_payments spm WHERE spm.sale_id = s.id AND spm.method = ?)';
+            $params[] = $method;
+        }
+        $from_ = 'FROM sales s JOIN users u ON u.id = s.user_id LEFT JOIN customers c ON c.id = s.customer_id
+            LEFT JOIN restaurant_orders ro ON ro.id = s.restaurant_order_id LEFT JOIN restaurant_tables rt ON rt.id = ro.table_id LEFT JOIN users w ON w.id = ro.waiter_id
+            WHERE ' . implode(' AND ', $where);
+        $order = self::SORTS[(string) Request::query('sort', 'recent')] ?? self::SORTS['recent'];
         if (\App\Core\Export::requested() && can('reports.export')) {
-            $rows = DB::all("SELECT s.number, s.created_at, u.full_name, c.name, s.subtotal, s.discount_total, s.tax_total, s.total, s.paid_total, s.credit_amount, s.status $from_ ORDER BY s.id", $params);
+            $rows = DB::all("SELECT s.number, s.created_at, u.full_name, w.full_name AS waiter, " . self::GROUPS['service'][1] . " AS service, rt.name AS table_name, COALESCE(c.name, ro.customer_name) AS customer, s.subtotal, s.discount_total, s.tax_total, s.total, s.paid_total, s.credit_amount, s.status $from_ ORDER BY $order", $params);
             $valid = array_filter($rows, fn($r) => $r['status'] !== 'cancelled');
-            \App\Core\Export::download("ventes_{$from}_{$to}.csv", 'Historique des ventes', ['N°', 'Date', 'Vendeur', 'Client', 'Sous-total', 'Remise', 'TVA incluse', 'Total', 'Payé', 'Crédit', 'Statut'], $rows, [
+            \App\Core\Export::download("ventes_{$from}_{$to}.csv", 'Historique des ventes', ['N°', 'Date', 'Vendeur', 'Serveur', 'Service', 'Table', 'Client', 'Sous-total', 'Remise', 'TVA incluse', 'Total', 'Payé', 'Crédit', 'Statut'], $rows, [
                 'subtitle' => \App\Core\Export::period($from, $to),
-                'footer' => ['TOTAL (hors annulées)', '', '', '', array_sum(array_column($valid, 'subtotal')), array_sum(array_column($valid, 'discount_total')), array_sum(array_column($valid, 'tax_total')), array_sum(array_column($valid, 'total')), array_sum(array_column($valid, 'paid_total')), array_sum(array_column($valid, 'credit_amount')), ''],
+                'footer' => ['TOTAL (hors annulées)', '', '', '', '', '', '', array_sum(array_column($valid, 'subtotal')), array_sum(array_column($valid, 'discount_total')), array_sum(array_column($valid, 'tax_total')), array_sum(array_column($valid, 'total')), array_sum(array_column($valid, 'paid_total')), array_sum(array_column($valid, 'credit_amount')), ''],
             ]);
         }
-        $p = paginate($from_, $params, 's.*, u.full_name AS cashier, c.name AS customer', 's.id DESC', 30);
+        $p = paginate($from_, $params, 's.*, u.full_name AS cashier, COALESCE(c.name, ro.customer_name) AS customer, w.full_name AS waiter, ro.type AS service_type, rt.name AS table_name, ro.number AS order_number', $order, 30);
         $tot = DB::one("SELECT COUNT(*) n, COALESCE(SUM(CASE WHEN s.status <> 'cancelled' THEN s.total END),0) t $from_", $params);
+        // Regroupement (totaux par caissier, serveur, table, service, client, jour ou mode de paiement)
+        $group = (string) Request::query('group', '');
+        $groups = null;
+        if (isset(self::GROUPS[$group])) {
+            if ($group === 'paiement') {
+                $groups = DB::all("SELECT sp.method AS label, COUNT(DISTINCT s.id) n, SUM(sp.amount) t, 0 credit
+                    FROM sale_payments sp JOIN sales s ON s.id = sp.sale_id JOIN users u ON u.id = s.user_id LEFT JOIN customers c ON c.id = s.customer_id
+                    LEFT JOIN restaurant_orders ro ON ro.id = s.restaurant_order_id LEFT JOIN restaurant_tables rt ON rt.id = ro.table_id LEFT JOIN users w ON w.id = ro.waiter_id
+                    WHERE " . implode(' AND ', $where) . " AND s.status <> 'cancelled' GROUP BY sp.method ORDER BY t DESC", $params);
+                foreach ($groups as &$g) {
+                    $g['label'] = t(method_label((string) $g['label']));
+                }
+                unset($g);
+            } else {
+                $expr = self::GROUPS[$group][1];
+                $groups = DB::all("SELECT $expr AS label, COUNT(*) n, COALESCE(SUM(s.total),0) t, COALESCE(SUM(s.credit_amount),0) credit
+                    $from_ AND s.status <> 'cancelled' GROUP BY label ORDER BY " . ($group === 'jour' ? 'label' : 't DESC'), $params);
+            }
+        }
         $users = can('sales.view_all') ? DB::all('SELECT id, full_name FROM users ORDER BY full_name') : [];
-        view('sales/index', ['title' => 'Historique des ventes', 'p' => $p, 'from' => $from, 'to' => $to, 'tot' => $tot, 'users' => $users]);
+        $resto = \App\Services\BusinessMode::is('restaurant') || feature('restaurant');
+        view('sales/index', ['title' => 'Historique des ventes', 'p' => $p, 'from' => $from, 'to' => $to, 'tot' => $tot, 'users' => $users,
+            'resto' => $resto, 'groups' => $groups, 'group' => $group, 'groupList' => array_filter(self::GROUPS, fn($k) => $resto || !in_array($k, ['serveur', 'service', 'table'], true), ARRAY_FILTER_USE_KEY),
+            'waiters' => $resto ? DB::all('SELECT DISTINCT w.id, w.full_name FROM restaurant_orders ro JOIN users w ON w.id = ro.waiter_id ORDER BY w.full_name') : [],
+            'tables' => $resto ? DB::all('SELECT t.id, t.name, a.name AS area FROM restaurant_tables t JOIN restaurant_areas a ON a.id = t.area_id WHERE t.active = 1 ORDER BY a.sort_order, t.sort_order, t.name') : [],
+            'sorts' => ['recent' => 'Plus récentes', 'ancien' => 'Plus anciennes', 'montant' => 'Montant', 'caissier' => 'Caissier', 'serveur' => 'Serveur', 'client' => 'Client']]);
     }
 
     public function show(int $id): void

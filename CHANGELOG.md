@@ -2,6 +2,28 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.17.0] — 2026-11-24
+
+### Modes de fonctionnement combinés
+- **Plusieurs activités cochées en même temps** (ex. Commerce général + Restaurant) : menus et caisses des activités cochées actifs ensemble (un menu n'est masqué que si aucune activité ne l'utilise).
+- **Restaurant seul** : « Ouvrir la caisse » mène au plan de salle (tables, À emporter, Livraison, Écran cuisine, **Vente directe**) ; tous les articles se vendent partout, le choix « Vendu sur : boutique / restaurant » n'est plus proposé.
+- **Boutique + restaurant** : la caisse boutique affiche les raccourcis Tables, À emporter, Livraison, Cuisine ; le plan de salle un bouton « Caisse boutique » ; « Vendu sur » reste proposé.
+
+### Restaurant : reçus et commandes
+- Ticket (navigateur et imprimante de caisse) et facture : table et couverts, ou « À emporter » / « Livraison », n° de commande, serveur, nom, téléphone et adresse **seulement s'ils ont été saisis** ; addition idem.
+- Nom, téléphone et adresse **facultatifs** pour les commandes à emporter et les livraisons.
+
+### Historique des ventes
+- Filtres : serveur, service (vente directe, sur place, à emporter, livraison), table, mode de paiement ; recherche par n° de commande et nom saisi au restaurant.
+- Tri (récentes, anciennes, montant, caissier, serveur, client) et **totaux regroupés** par caissier, serveur, service, table, client, jour ou mode de paiement (ventes, total, panier moyen, crédit, part) ; export enrichi (serveur, service, table).
+
+### Écran client
+- Saisie d'un menu ou d'une promotion : **les articles déjà créés sont proposés pendant la frappe** ; un clic (ou Entrée) écrit le nom et le prix de vente sur la ligne.
+- **Texte centré** (accueil, annonce, horaires) ajouté directement à la liste des images et vidéos diffusées ; nouvelle disposition « Texte centré » pour les publications.
+
+### Sauvegardes
+- **Sauvegarde automatique** (toutes les 1 à 48 h) et **copie automatique sur le support choisi** dès qu'il est branché (reconnu par son nom de volume, même si la lettre change), avec contrôle de chaque copie. Édition Bureau : vérification toutes les 15 minutes par POS Marwa.exe, même fenêtre fermée ; dernière vérification affichée.
+
 ## [3.16.2] — 2026-11-23
 
 ### Édition Bureau : serveur permanent

@@ -18,6 +18,11 @@ if ($closed) {
 }
 $r = App\Services\BackupService::create('auto');
 echo "Sauvegarde créée : {$r['sql']} ({$r['tables']} tables, {$r['rows']} lignes)\n";
+// Support choisi dans Sauvegardes → « Copier automatiquement » : copie s'il est branché
+if (App\Services\SupportExterne::autoSupport()) {
+    $t = App\Services\SupportExterne::runTasks();
+    echo 'Support : ' . App\Controllers\BackupController::taskSummary($t) . "\n";
+}
 if (!empty($o['copy-to'])) {
     $dest = rtrim($o['copy-to'], '/\\');
     if (!is_dir($dest) || !is_writable($dest)) {

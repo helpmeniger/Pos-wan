@@ -66,9 +66,7 @@ final class RestaurantService
         if ($type === 'dine_in' && !$tableId) {
             throw new BusinessException('Choisissez une table.');
         }
-        if ($type === 'delivery' && trim((string) ($customer['phone'] ?? '')) === '') {
-            throw new BusinessException('Le téléphone du client est obligatoire pour une livraison.');
-        }
+        // Nom, téléphone et adresse : facultatifs (à emporter comme livraison) ; repris sur le ticket s'ils sont remplis
         return DB::transaction(function () use ($tableId, $type, $covers, $customer) {
             $user = Auth::user();
             $storeId = (int) ($user['store_id'] ?: DB::value('SELECT id FROM stores ORDER BY id LIMIT 1'));
@@ -107,7 +105,7 @@ final class RestaurantService
             if (!$p) {
                 throw new BusinessException('Article introuvable ou non vendable.');
             }
-            if (ProductService::channelOf($productId) === 'shop') {
+            if (BusinessMode::shopAndRestaurant() && ProductService::channelOf($productId) === 'shop') { // restaurant seul : tout se vend
                 throw new BusinessException('« ' . $p['name'] . ' » est réservé à la caisse boutique.');
             }
             if ((int) $p['sold_by_weight'] !== 1 && (int) $p['allow_decimal'] !== 1 && abs($qty - round($qty)) > 0.0001) {
