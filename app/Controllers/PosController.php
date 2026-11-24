@@ -56,6 +56,12 @@ final class PosController extends Controller
             'serverPrinter' => \App\Services\PrintService::targets('receipt', $register ? (int) $register['id'] : null) !== [],
         ];
         $config['mode'] = $mode;
+        // Restaurant : à la validation, la caisse demande sur place (table) / à emporter / livraison
+        $config['restaurant'] = ($BM::is('restaurant') || feature('restaurant')) ? [
+            'ask' => $BM::shopAndRestaurant() ? 'kitchen' : 'all',
+            'tables' => array_map(fn($t) => ['id' => (int) $t['id'], 'name' => $t['name'], 'area' => $t['area']],
+                DB::all('SELECT t.id, t.name, a.name AS area FROM restaurant_tables t JOIN restaurant_areas a ON a.id = t.area_id WHERE t.active = 1 AND a.active = 1 ORDER BY a.sort_order, t.sort_order, t.name')),
+        ] : null;
         $alerts = $BM::is('pharmacie', 'clinique_pharmacie') && $register ? \App\Services\BusinessMode::pharmacyAlerts((int) $register['warehouse_id']) : null;
         $clinicLink = $BM::is('clinique_pharmacie') && can('clinique.reception');
         $rxQueue = $BM::is('clinique_pharmacie') && can('clinique.pharmacy') ? (int) DB::value("SELECT COUNT(*) FROM clinic_prescriptions WHERE status IN ('new','partial')") : null;
@@ -93,8 +99,27 @@ final class PosController extends Controller
             'color' => $p['cat_color'] ?? '#5d6d7e',
             'rx' => (int) $p['requires_prescription'] === 1 && feature('pharmacy'),
             'tax' => \App\Services\Tax::rate($p),
+            'resto' => self::isRestaurantItem($p),
             'packs' => $preloadedPacks ?? array_map(fn($k) => ['id' => (int) $k['id'], 'name' => $k['name'], 'factor' => (float) $k['factor'], 'price' => (float) $k['sale_price'], 'barcode' => $k['barcode']], $packs),
         ];
+    }
+
+    /**
+     * Article de restaurant (la vente demande sur place / à emporter / livraison et part en cuisine) : en restaurant
+     * seul, tous ; avec une boutique, ceux vendus au restaurant uniquement ou rangés dans une catégorie à poste de
+     * préparation (cuisine, grill, bar…).
+     */
+    private static function isRestaurantItem(array $p): bool
+    {
+        $BM = \App\Services\BusinessMode::class;
+        if (!$BM::is('restaurant') && !feature('restaurant')) {
+            return false;
+        }
+        if (!$BM::shopAndRestaurant()) {
+            return $BM::is('restaurant');
+        }
+        $st = (string) (($p['cat_station'] ?? '') ?: ($p['parent_station'] ?? ''));
+        return ($p['channel_eff'] ?? '') === 'restaurant' || ($st !== '' && $st !== \App\Services\RestaurantService::NO_STATION);
     }
 
     /**
@@ -135,7 +160,8 @@ final class PosController extends Controller
     {
         $wh = $this->defaultWarehouseId();
         $channels = \App\Services\BusinessMode::channelsSql($channel === 'restaurant' ? 'restaurant' : 'shop');
-        return "SELECT p.*, u.short_name AS unit_short, u.allow_decimal, c.color AS cat_color, " . self::stockSql($wh) . " AS stock
+        return "SELECT p.*, u.short_name AS unit_short, u.allow_decimal, c.color AS cat_color, c.kitchen_station AS cat_station, pc.kitchen_station AS parent_station,
+                " . \App\Services\ProductService::CHANNEL_SQL . " AS channel_eff, " . self::stockSql($wh) . " AS stock
                 FROM products p LEFT JOIN units u ON u.id = p.unit_id LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN categories pc ON pc.id = c.parent_id
                 LEFT JOIN stock_levels sl ON sl.product_id = p.id AND sl.warehouse_id = " . (int) $wh . "
                 WHERE p.status = 'active' AND p.sellable = 1 AND " . \App\Services\ProductService::CHANNEL_SQL . " IN ($channels)";
@@ -257,12 +283,40 @@ final class PosController extends Controller
     {
         $this->jsonAttempt(function () {
             $data = Request::json();
+            // Restaurant : service choisi à la validation (contrôlé avant d'enregistrer la vente)
+            $svc = null;
+            if (!empty($data['service']) && is_array($data['service'])) {
+                $svc = \App\Services\RestaurantService::validateService($data['service']);
+            } elseif (\App\Services\BusinessMode::is('restaurant') && !\App\Services\BusinessMode::shopAndRestaurant()) {
+                $svc = ['type' => 'takeaway']; // ancienne page de caisse ou vente hors connexion : à emporter par défaut
+            }
             $r = SaleService::create($data);
+            if ($svc && !$r['duplicate']) {
+                // La vente est enregistrée : un échec ici ne l'annule pas, il est signalé au caissier
+                try {
+                    $k = \App\Services\RestaurantService::fromDirectSale((int) $r['sale_id'], $svc);
+                    $r['kitchen_tickets'] = count($k['tickets']);
+                    foreach ($k['tickets'] as $t) {
+                        try {
+                            $station = (string) DB::value('SELECT station FROM kitchen_tickets WHERE id = ?', [$t]);
+                            if (\App\Services\PrintService::targets('kitchen:' . $station)) {
+                                \App\Services\PrintService::printKitchenTicket((int) $t); // bon papier sur l'imprimante de ce poste
+                            }
+                        } catch (\Throwable $e) {
+                            $r['print_errors'][] = 'Bon cuisine : ' . $e->getMessage(); // le bon reste sur l'écran cuisine
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    \App\Core\Logger::error('pos.kitchen', ['sale' => $r['sale_id'], 'error' => $e->getMessage()]);
+                    $r['kitchen_error'] = 'Vente enregistrée, mais l\'envoi en cuisine a échoué : ' . ($e instanceof BusinessException ? $e->getMessage() : 'erreur technique') . '. Prévenez la cuisine.';
+                }
+            }
             // Ticket sur l'imprimante de la caisse (si configurée et demandé) : la vente reste valide même si l'impression échoue
             $print = ['printed' => 0, 'errors' => []];
             if (!$r['duplicate'] && !empty($data['print_ticket'])) {
                 $print = \App\Services\PrintService::printReceipt($r['sale_id']);
             }
+            $r['print_errors'] = array_merge($print['errors'], $r['print_errors'] ?? []);
             return $r + ['ticket_url' => url('/sales/' . $r['sale_id'] . '/ticket', ['auto' => 1]), 'invoice_url' => url('/sales/' . $r['sale_id'] . '/invoice'),
                 'delivery_url' => url('/sales/' . $r['sale_id'] . '/delivery'), 'printed_server' => $print['printed'], 'print_errors' => $print['errors']];
         });

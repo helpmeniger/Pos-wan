@@ -180,7 +180,7 @@
       cart.lines.push({
         key, id: p.id, name: p.name + (pack ? ' (' + pack.name + ')' : ''), price: p.price, unitPrice: null, qty: q, discount: 0,
         packId: pack ? pack.id : null, packName: pack ? pack.name : null, packPrice: pack ? pack.price : null, factor: pack ? pack.factor : 1,
-        wholesale: p.wholesale, wholesaleMin: p.wholesaleMin, stock: p.stock, track: p.track, decimal: p.decimal, rx: p.rx,
+        wholesale: p.wholesale, wholesaleMin: p.wholesaleMin, stock: p.stock, track: p.track, decimal: p.decimal, rx: p.rx, resto: !!p.resto,
       });
       selected = cart.lines.length - 1;
     }
@@ -558,8 +558,47 @@
     if (quickMode) { toast(msg, 'danger'); beep(false); } else payError(msg);
   }
 
+  // ---- Restaurant : à la validation, sur place (table) / à emporter / livraison ; les plats partent en cuisine
+  function askService() {
+    return new Promise((resolve) => {
+      const R = CFG.restaurant;
+      const el = $('#serviceModal');
+      let type = localStorage.getItem('pw-service') || 'takeaway';
+      let done = false;
+      const sel = $('#svcTable');
+      if (!sel.dataset.filled) {
+        (R.tables || []).forEach((t) => { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name + (t.area ? ' · ' + t.area : ''); sel.appendChild(o); });
+        sel.dataset.filled = '1';
+      }
+      const show = () => {
+        $$('#serviceModal [data-svc]').forEach((b) => b.classList.toggle('active', b.dataset.svc === type));
+        $('#svcTableBox').classList.toggle('d-none', type !== 'dine_in');
+        $('#svcAddress').classList.toggle('d-none', type !== 'delivery');
+      };
+      ['#svcName', '#svcPhone', '#svcAddress'].forEach((k) => { $(k).value = ''; });
+      sel.value = ''; $('#svcCovers').value = '1';
+      el.querySelectorAll('[data-svc]').forEach((b) => { b.onclick = () => { type = b.dataset.svc; show(); }; });
+      const finish = (v) => { if (done) return; done = true; modal('serviceModal').hide(); resolve(v); };
+      $('#svcGo').onclick = () => {
+        localStorage.setItem('pw-service', type);
+        finish({ type, table_id: type === 'dine_in' && sel.value ? Number(sel.value) : null, covers: Number($('#svcCovers').value) || 1,
+          name: $('#svcName').value.trim(), phone: $('#svcPhone').value.trim(), address: type === 'delivery' ? $('#svcAddress').value.trim() : '' });
+      };
+      el.addEventListener('hidden.bs.modal', () => finish(null), { once: true });
+      show();
+      modal('serviceModal').show();
+      setTimeout(() => $('#svcGo').focus(), 300);
+    });
+  }
+
   async function submitSale() {
+    if (CFG.restaurant && !cart.service && (CFG.restaurant.ask === 'all' || cart.lines.some((l) => l.resto))) {
+      const svc = await askService();
+      if (!svc) return; // fenêtre fermée : rien n'est enregistré
+      cart.service = svc;
+    }
     const body = {
+      service: cart.service || null,
       _csrf: CFG.csrf,
       client_uuid: cart.uuid,
       items: cart.lines.map((l) => ({ product_id: l.id, packaging_id: l.packId, quantity: l.qty, unit_price: l.unitPrice, discount: l.discount || 0 })),
@@ -669,6 +708,8 @@
     if ($('#optTicket').checked && CFG.autoPrint && d.offline) printProvisional(d.entry);
     else if ($('#optTicket').checked && CFG.autoPrint && !d.duplicate && !(d.printed_server > 0) && !d.skip_print) printInFrame(d.ticket_url);
     if (d.print_errors && d.print_errors.length) toast(__('Imprimante de caisse') + ' : ' + d.print_errors.join(' '), 'warning');
+    if (d.kitchen_error) toast(d.kitchen_error, 'danger');
+    else if (d.kitchen_tickets > 0) toast(__('Envoyé en cuisine : {n} bon(s).', { n: d.kitchen_tickets }), 'success');
     if (d.fiscal_status && !['certified', 'handled', 'not_requested'].includes(d.fiscal_status)) toast(__('Facture NON CERTIFIÉE') + ' : ' + (d.fiscal_message || d.fiscal_status), 'warning');
     emit(d.offline ? 'pos.sale.offline' : 'pos.sale.saved', { total: d.total, change: d.change, duplicate: !!d.duplicate });
     if (d.print_errors && d.print_errors.length) emit('pos.print.failed', { errors: d.print_errors });

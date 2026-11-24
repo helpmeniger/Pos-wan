@@ -178,6 +178,28 @@
 </div>
 
 <!-- ============ MODALE PAIEMENT ============ -->
+<?php if (!empty($config['restaurant'])): ?>
+<!-- ============ RESTAURANT : SERVICE DE LA VENTE ============ -->
+<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true" aria-labelledby="svcTitle"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header"><h5 class="modal-title" id="svcTitle"><i class="bi bi-shop-window"></i> Service de la commande</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button></div>
+  <div class="modal-body">
+    <div class="row g-2 mb-3 svc-choices">
+      <div class="col-4"><button type="button" class="btn btn-outline-success w-100 py-3" data-svc="dine_in"><i class="bi bi-cup-hot fs-3 d-block"></i>Sur place</button></div>
+      <div class="col-4"><button type="button" class="btn btn-outline-warning w-100 py-3" data-svc="takeaway"><i class="bi bi-bag fs-3 d-block"></i>À emporter</button></div>
+      <div class="col-4"><button type="button" class="btn btn-outline-info w-100 py-3" data-svc="delivery"><i class="bi bi-scooter fs-3 d-block"></i>Livraison</button></div>
+    </div>
+    <div class="row g-2 mb-2" id="svcTableBox">
+      <div class="col-8"><label class="form-label small mb-0" for="svcTable">Table</label><select id="svcTable" class="form-select"><option value="">Sans table (comptoir)</option></select></div>
+      <div class="col-4"><label class="form-label small mb-0" for="svcCovers">Couverts</label><input type="number" id="svcCovers" min="1" max="200" value="1" class="form-control"></div>
+    </div>
+    <div class="small text-secondary mb-1">Facultatif : repris sur le ticket et le bon cuisine s'il est rempli.</div>
+    <input id="svcName" class="form-control mb-1" maxlength="150" placeholder="Nom du client ou n° d'appel (facultatif)" autocomplete="off">
+    <input id="svcPhone" class="form-control mb-1" maxlength="50" placeholder="Téléphone (facultatif)" autocomplete="off" inputmode="tel">
+    <input id="svcAddress" class="form-control" maxlength="255" placeholder="Adresse de livraison (facultative)" autocomplete="off">
+  </div>
+  <div class="modal-footer"><button type="button" class="btn btn-success btn-lg w-100" id="svcGo"><i class="bi bi-check2-circle"></i> Valider la vente</button></div>
+</div></div></div>
+<?php endif; ?>
 <div class="modal fade" id="payModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content pay-modal">

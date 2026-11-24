@@ -5354,6 +5354,72 @@ test('3.17 : plusieurs modes, caisse restaurant, reçu et historique du restaura
     }
 });
 
+test('3.17.1 : vente directe du restaurant — service demandé, plats envoyés en cuisine, ticket et historique', function () use ($B, &$R) {
+    actingAs('admin');
+    $M = S\BusinessMode::class;
+    $avant = [setting('business_mode'), setting('business_modes'), setting('require_cash_session', '1')];
+    setting_set('require_cash_session', '0');
+    $a = new Http();
+    $a->login($B, 'admin', 'Essai-Niamey-2026');
+    preg_match('/name="csrf-token" content="([^"]+)"/', $a->req('GET', "$B/pos")['body'], $m);
+    $buy = fn(array $extra, array $items) => json_decode($a->req('POST', "$B/pos/checkout", json_encode(['client_uuid' => $extra['uuid'] ?? uuid(), 'items' => $items,
+        'payments' => [['method' => 'cash', 'amount' => 20000]]] + array_diff_key($extra, ['uuid' => 1])), ['Content-Type: application/json', 'Accept: application/json', 'X-CSRF-Token: ' . $m[1]])['body'], true);
+    $plat = ['product_id' => $R['plat'], 'quantity' => 2];
+    $soda = ['product_id' => $R['soda'], 'quantity' => 1];
+    try {
+        $M::set('restaurant');
+        $pos = $a->req('GET', "$B/pos")['body'];
+        ok(str_contains($pos, 'id="serviceModal"') && str_contains($pos, 'data-svc="dine_in"') && str_contains($pos, '"ask":"all"'), 'caisse : fenêtre « Sur place / À emporter / Livraison »');
+        // Livraison avec nom : commande payée, plat en cuisine, boisson servie directement
+        $uuid = uuid();
+        $d = $buy(['uuid' => $uuid, 'service' => ['type' => 'delivery', 'name' => 'Moussa Livraison', 'phone' => '+227 90 12 34 56', 'address' => 'Plateau']], [$plat, $soda]);
+        ok($d['ok'] && $d['kitchen_tickets'] === 1 && empty($d['kitchen_error']), 'vente enregistrée, un bon cuisine (la boisson « aucun poste » n\'y va pas)');
+        $o = DB::one('SELECT o.* FROM restaurant_orders o JOIN sales s ON s.restaurant_order_id = o.id WHERE s.id = ?', [$d['sale_id']]);
+        ok($o && $o['type'] === 'delivery' && $o['status'] === 'paid' && $o['customer_name'] === 'Moussa Livraison' && $o['delivery_address'] === 'Plateau', 'commande de livraison payée, coordonnées gardées');
+        $kt = DB::one('SELECT * FROM kitchen_tickets WHERE order_id = ?', [$o['id']]);
+        eq(['cuisine', 'pending'], [$kt['station'], $kt['status']], 'bon cuisine en attente de préparation');
+        eq(['sent', 'served'], array_column(DB::all('SELECT status FROM restaurant_order_items WHERE order_id = ? ORDER BY id', [$o['id']]), 'status'), 'plat envoyé, boisson servie');
+        $feed = S\RestaurantService::kitchenFeed('cuisine');
+        ok(in_array((int) $kt['id'], array_map('intval', array_column($feed, 'id')), true), 'visible sur l\'écran cuisine');
+        $t = $a->req('GET', "$B/sales/{$d['sale_id']}/ticket")['body'];
+        ok(str_contains($t, 'Livraison') && str_contains($t, 'Moussa Livraison') && str_contains($t, 'Plateau'), 'ticket : livraison, nom, adresse');
+        // Validation rejouée (coupure réseau) : aucun second envoi en cuisine
+        $d2 = $buy(['uuid' => $uuid, 'service' => ['type' => 'delivery']], [$plat, $soda]);
+        ok($d2['duplicate'] && empty($d2['kitchen_tickets']) && (int) DB::value('SELECT COUNT(*) FROM kitchen_tickets WHERE order_id = ?', [$o['id']]) === 1, 'vente rejouée : ni doublon ni second bon');
+        // Sur place à une table déjà occupée par une commande ouverte : accepté (la vente est payée)
+        actingAs('serveur');
+        $area = (int) DB::value('SELECT area_id FROM restaurant_tables WHERE id = ?', [$R['t1']]);
+        $t10 = DB::insert('restaurant_tables', ['area_id' => $area, 'name' => 'T10']);
+        $ouverte = S\RestaurantService::open($t10, 'dine_in', 2);
+        actingAs('admin');
+        $d3 = $buy(['service' => ['type' => 'dine_in', 'table_id' => $t10, 'covers' => 3]], [$plat]);
+        ok($d3['ok'] && $d3['kitchen_tickets'] === 1, 'sur place, table T10 : plat en cuisine');
+        ok(str_contains($a->req('GET', "$B/sales/{$d3['sale_id']}/ticket")['body'], 'T10'), 'ticket : table');
+        S\RestaurantService::cancelOrder($ouverte, 'essai');
+        // Service invalide : rien n'est enregistré
+        $avantVentes = (int) DB::value('SELECT COUNT(*) FROM sales');
+        $bad = $buy(['service' => ['type' => 'terrasse']], [$plat]);
+        ok(!$bad['ok'] && (int) DB::value('SELECT COUNT(*) FROM sales') === $avantVentes, 'service inconnu : refusé avant toute vente');
+        // Ancienne page de caisse (sans choix) en restaurant seul : à emporter, plat en cuisine
+        $d4 = $buy([], [$plat]);
+        eq('takeaway', DB::value('SELECT o.type FROM restaurant_orders o JOIN sales s ON s.restaurant_order_id = o.id WHERE s.id = ?', [$d4['sale_id']]), 'sans choix : à emporter par défaut');
+        // Historique : la vente directe apparaît avec son service
+        ok(str_contains($a->req('GET', "$B/sales?service=delivery")['body'], e((string) DB::value('SELECT number FROM sales WHERE id = ?', [$d['sale_id']]))), 'historique : filtre « Livraison »');
+        // Boutique + restaurant : seuls les articles de restaurant déclenchent la question
+        $M::set(['commerce', 'restaurant']);
+        $items = json_decode($a->req('GET', "$B/pos/products?q=" . rawurlencode('Poulet braisé'))['body'], true)['items'] ?? [];
+        $shop = json_decode($a->req('GET', "$B/pos/products?q=Savon")['body'], true)['items'] ?? [];
+        ok(($items[0]['resto'] ?? null) === true && ($shop[0]['resto'] ?? null) === false, 'boutique + restaurant : plat « restaurant », savon « boutique »');
+        $d5 = $buy([], [['product_id' => (int) DB::value("SELECT id FROM products WHERE name LIKE 'Savon%'"), 'quantity' => 1]]);
+        ok($d5['ok'] && !DB::value('SELECT restaurant_order_id FROM sales WHERE id = ?', [$d5['sale_id']]), 'vente boutique : aucune commande restaurant');
+    } finally {
+        setting_set('business_mode', (string) $avant[0]);
+        setting_set('business_modes', (string) $avant[1]);
+        setting_set('require_cash_session', (string) $avant[2]);
+        setting('__reset');
+    }
+});
+
 test('Base locale sous charge : transaction rejouée après interblocage ou verrou, attente courte, reconnexion', function () use ($env) {
     eq(6, (int) DB::value('SELECT @@SESSION.innodb_lock_wait_timeout'), 'attente de verrou limitée à 6 s (au lieu de 50)');
     DB::run("DELETE FROM settings WHERE skey = 'essai_rejeu'");

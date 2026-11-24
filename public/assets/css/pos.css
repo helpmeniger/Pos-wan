@@ -168,3 +168,7 @@ a.btn-validate:hover { color: #fff; }
 
 /* Écran / afficheur client : bouton vert quand l'afficheur est connecté */
 [data-cd-vfd].cd-on { color: #2ecc71; }
+
+/* Restaurant : choix du service à la validation */
+.svc-choices .btn.active { color: #fff; }
+.svc-choices .btn-outline-success.active { background: #198754; } .svc-choices .btn-outline-warning.active { background: #e0a800; } .svc-choices .btn-outline-info.active { background: #0aa2c0; }

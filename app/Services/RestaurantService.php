@@ -169,26 +169,98 @@ final class RestaurantService
             if (!$items) {
                 throw new BusinessException('Aucune nouvelle ligne à envoyer.');
             }
-            $byStation = [];
-            foreach ($items as $it) {
-                $byStation[$it['station'] ?: ''][] = $it;
-            }
-            $tickets = [];
-            $now = date('Y-m-d H:i:s');
-            foreach ($byStation as $station => $list) {
-                if ($station === '') {
-                    DB::run("UPDATE restaurant_order_items SET status = 'served', sent_at = ? WHERE id IN (" . implode(',', array_map('intval', array_column($list, 'id'))) . ')', [$now]);
-                    continue;
-                }
-                $tid = DB::insert('kitchen_tickets', ['number' => Sequence::next('kitchen_ticket'), 'order_id' => $orderId, 'station' => $station, 'user_id' => Auth::id()]);
-                DB::run("UPDATE restaurant_order_items SET status = 'sent', sent_at = ?, kitchen_ticket_id = ? WHERE id IN (" . implode(',', array_map('intval', array_column($list, 'id'))) . ')', [$now, $tid]);
-                $tickets[] = $tid;
-            }
+            $tickets = self::dispatch($orderId, $items);
             if ($o['status'] === 'billed') {
                 DB::run("UPDATE restaurant_orders SET status = 'open' WHERE id = ?", [$orderId]);
             }
             Audit::log('restaurant.send', 'restaurant_order', $orderId, ['tickets' => $tickets, 'lines' => count($items)]);
             return $tickets;
+        });
+    }
+
+    /**
+     * Répartit des lignes par poste : un bon par poste de préparation (cuisine, grill, bar…) ; les lignes sans poste
+     * (boissons servies directement) passent à « servi ». @return int[] bons créés
+     */
+    private static function dispatch(int $orderId, array $items): array
+    {
+        $byStation = [];
+        foreach ($items as $it) {
+            $byStation[$it['station'] ?: ''][] = $it;
+        }
+        $tickets = [];
+        $now = date('Y-m-d H:i:s');
+        foreach ($byStation as $station => $list) {
+            $ids = implode(',', array_map('intval', array_column($list, 'id')));
+            if ($station === '') {
+                DB::run("UPDATE restaurant_order_items SET status = 'served', sent_at = ? WHERE id IN ($ids)", [$now]);
+                continue;
+            }
+            $tid = DB::insert('kitchen_tickets', ['number' => Sequence::next('kitchen_ticket'), 'order_id' => $orderId, 'station' => $station, 'user_id' => Auth::id()]);
+            DB::run("UPDATE restaurant_order_items SET status = 'sent', sent_at = ?, kitchen_ticket_id = ? WHERE id IN ($ids)", [$now, $tid]);
+            $tickets[] = $tid;
+        }
+        return $tickets;
+    }
+
+    /**
+     * Service choisi à la validation d'une vente directe : sur place (table facultative), à emporter ou livraison ;
+     * nom, téléphone, adresse facultatifs. @return array{type:string, table_id:?int, covers:int, name:string, phone:string, address:string}
+     */
+    public static function validateService(array $svc): array
+    {
+        $type = (string) ($svc['type'] ?? '');
+        if (!isset(self::TYPES[$type])) {
+            throw new BusinessException('Choisissez le service : sur place, à emporter ou livraison.');
+        }
+        $tableId = $type === 'dine_in' && !empty($svc['table_id']) ? (int) $svc['table_id'] : null;
+        if ($tableId && !DB::value('SELECT id FROM restaurant_tables WHERE id = ? AND active = 1', [$tableId])) {
+            throw new BusinessException('Table introuvable.');
+        }
+        $txt = fn(string $k, int $max) => mb_substr(trim((string) ($svc[$k] ?? '')), 0, $max);
+        return ['type' => $type, 'table_id' => $tableId, 'covers' => max(1, min(200, (int) ($svc['covers'] ?? 1))),
+            'name' => $txt('name', 150), 'phone' => $txt('phone', 50), 'address' => $type === 'delivery' ? $txt('address', 255) : ''];
+    }
+
+    /**
+     * Vente directe d'un restaurant : la vente (déjà payée) devient une commande « payée » du service choisi, et
+     * les plats à préparer partent aussitôt en cuisine (bons par poste, écran cuisine, imprimante de cuisine).
+     * Une seule fois par vente (validation rejouée : rien de plus). @return array{order_id:int, tickets:int[]}
+     */
+    public static function fromDirectSale(int $saleId, array $svc): array
+    {
+        $svc = self::validateService($svc);
+        return DB::transaction(function () use ($saleId, $svc) {
+            $sale = DB::one('SELECT * FROM sales WHERE id = ? FOR UPDATE', [$saleId]);
+            if (!$sale) {
+                throw new BusinessException('Vente introuvable.');
+            }
+            if ($sale['restaurant_order_id']) {
+                return ['order_id' => (int) $sale['restaurant_order_id'], 'tickets' => []];
+            }
+            $now = date('Y-m-d H:i:s');
+            // Commande déjà payée : elle n'occupe pas la table (une autre commande peut y être ouverte)
+            $orderId = DB::insert('restaurant_orders', [
+                'number' => Sequence::next('restaurant_order'), 'store_id' => (int) $sale['store_id'], 'table_id' => $svc['table_id'], 'type' => $svc['type'],
+                'covers' => $svc['covers'], 'waiter_id' => (int) $sale['user_id'], 'customer_id' => $sale['customer_id'] ?: null,
+                'customer_name' => $svc['name'] ?: null, 'customer_phone' => $svc['phone'] ?: null, 'delivery_address' => $svc['address'] ?: null,
+                'note' => 'Vente directe ' . $sale['number'], 'status' => 'paid', 'closed_at' => $now,
+            ]);
+            $items = [];
+            foreach (DB::all('SELECT si.*, c.kitchen_station, pc.kitchen_station AS parent_station FROM sale_items si LEFT JOIN products p ON p.id = si.product_id
+                    LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN categories pc ON pc.id = c.parent_id WHERE si.sale_id = ? ORDER BY si.id', [$saleId]) as $l) {
+                $station = self::stationFor($l['kitchen_station'] ?: ($l['parent_station'] ?: null));
+                $id = DB::insert('restaurant_order_items', [
+                    'order_id' => $orderId, 'product_id' => (int) $l['product_id'], 'name' => mb_substr((string) $l['product_name'], 0, 200), 'quantity' => (float) $l['quantity'],
+                    'unit_price' => (float) $l['unit_price'], 'paid_qty' => (float) $l['quantity'], 'course' => $station === 'bar' || $station === null ? 0 : 2,
+                    'station' => $station, 'created_by' => (int) $sale['user_id'],
+                ]);
+                $items[] = ['id' => $id, 'station' => $station];
+            }
+            $tickets = $items ? self::dispatch($orderId, $items) : [];
+            DB::update('sales', ['restaurant_order_id' => $orderId], 'id = ?', [$saleId]);
+            Audit::log('restaurant.direct_sale', 'restaurant_order', $orderId, ['sale' => $sale['number'], 'type' => $svc['type'], 'tickets' => $tickets]);
+            return ['order_id' => $orderId, 'tickets' => $tickets];
         });
     }
 

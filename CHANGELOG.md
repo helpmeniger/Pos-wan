@@ -2,6 +2,15 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) — versions [SemVer](https://semver.org/lang/fr/).
 
+## [3.17.1] — 2026-11-24
+
+### Restaurant : vente directe
+- À la validation, la caisse demande **Sur place** (table et couverts, ou comptoir), **À emporter** ou **Livraison**, avec nom (ou n° d'appel), téléphone et adresse facultatifs. Fermer la fenêtre n'enregistre rien.
+- La vente devient une commande restaurant **déjà payée** : les **plats à préparer partent aussitôt en cuisine** (bon par poste sur l'écran cuisine, et sur l'imprimante de cuisine si elle est déclarée) ; les articles d'une catégorie « aucun poste » (boissons servies directement) n'y vont pas.
+- Ticket, historique (filtres et regroupements) et écran cuisine affichent le service, la table, le nom saisi.
+- Restaurant seul : la question est posée à chaque vente ; boutique + restaurant : seulement si le panier contient un article de restaurant (vendu au restaurant ou rangé dans une catégorie à poste de préparation).
+- Validation rejouée après une coupure : ni doublon de vente ni second bon ; service inconnu : refusé avant toute vente ; échec de l'envoi en cuisine : vente conservée et caissier prévenu.
+
 ## [3.17.0] — 2026-11-24
 
 ### Modes de fonctionnement combinés
