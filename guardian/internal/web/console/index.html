@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MARWA GUARDIAN</title>
+<link rel="icon" href="icone.svg">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><img src="icone.svg" alt="" width="34" height="34"><div><b>MARWA GUARDIAN</b><small>Votre caisse protégée, vos données en sécurité.</small></div></div>
+  <div class="top-right"><span id="poste"></span><button type="button" id="logout" class="btn ghost hidden">Se déconnecter</button></div>
+</header>
+
+<main id="auth" class="auth hidden">
+  <form id="authForm" class="card narrow">
+    <h1 id="authTitle">Connexion</h1>
+    <p id="authHelp" class="muted"></p>
+    <label for="pw">Mot de passe administrateur</label>
+    <input id="pw" type="password" autocomplete="current-password" required minlength="8">
+    <div id="pw2Box" class="hidden"><label for="pw2">Confirmer le mot de passe</label><input id="pw2" type="password" autocomplete="new-password" minlength="8"></div>
+    <p id="authErr" class="err hidden" role="alert"></p>
+    <button class="btn primary" id="authBtn">Se connecter</button>
+  </form>
+</main>
+
+<div id="app" class="layout hidden">
+  <nav class="side" aria-label="Menu">
+    <a href="#tableau" data-page="tableau">Tableau de bord</a>
+    <a href="#incidents" data-page="incidents">Historique des incidents</a>
+    <a href="#journal" data-page="journal">Journal et intégrité</a>
+    <a href="#configuration" data-page="configuration">Configuration</a>
+  </nav>
+  <main class="content">
+    <section id="p-tableau" class="page">
+      <div id="health" class="health"></div>
+      <div id="cards" class="cards"></div>
+      <h2>Alertes non résolues</h2>
+      <div id="openList"></div>
+    </section>
+    <section id="p-incidents" class="page hidden">
+      <div class="bar"><h2>Historique des incidents</h2>
+        <select id="filter" aria-label="Filtre"><option value="">Tous</option><option value="open">Non résolus</option><option value="resolved">Résolus</option></select></div>
+      <div id="incList"></div>
+    </section>
+    <section id="p-journal" class="page hidden">
+      <h2>Journal des actions</h2>
+      <div id="integrity"></div>
+      <table class="tbl"><thead><tr><th>Date</th><th>Action</th><th>Par</th><th>Détail</th></tr></thead><tbody id="journalBody"></tbody></table>
+    </section>
+    <section id="p-configuration" class="page hidden">
+      <h2>Configuration et transparence</h2>
+      <div id="cfg"></div>
+    </section>
+  </main>
+</div>
+
+<dialog id="detail" aria-labelledby="dTitle">
+  <form method="dialog" class="dlg">
+    <h3 id="dTitle"></h3>
+    <div id="dBody"></div>
+    <label for="dNote" class="mt">Note (facultative)</label>
+    <input id="dNote" maxlength="300" placeholder="ex. Disque nettoyé, onduleur installé…">
+    <div class="dlg-actions"><button value="cancel" class="btn ghost">Fermer</button><button type="button" id="dResolve" class="btn primary">Marquer comme résolu</button></div>
+  </form>
+</dialog>
+<script src="app.js"></script>
+</body>
+</html>
