@@ -201,3 +201,67 @@ func TestPasswordHash(t *testing.T) {
 		t.Fatal("sel aléatoire attendu")
 	}
 }
+
+func TestBackupEndpoints(t *testing.T) {
+	c, s, srv := setup(t)
+	_ = SetPassword(s, "Caisse-Securisee-2026")
+	_, d := c.do("POST", "/api/connexion", `{"mot_de_passe":"Caisse-Securisee-2026"}`, nil)
+	c.csrf = d["csrf"].(string)
+	usb := t.TempDir()
+	fix := t.TempDir()
+	_ = os.WriteFile(fix+"/volumes.json", []byte(`[{"root": "`+usb+`", "label": "CLE-CAISSE", "removable": true}]`), 0o644)
+	t.Setenv("GUARDIAN_FIXTURES", fix)
+	if code, d := c.do("GET", "/api/sauvegardes", "", nil); code != 200 || len(d["volumes"].([]any)) != 1 {
+		t.Fatalf("supports branchés listés : %d %v", code, d)
+	}
+	if code, d := c.do("POST", "/api/sauvegardes/tester", "", nil); code != http.StatusConflict || !strings.Contains(d["erreur"].(string), "aucune sauvegarde vérifiée") {
+		t.Fatalf("test sans sauvegarde : %d %v", code, d)
+	}
+	cases := []struct{ body, want string }{
+		{`{"kind":"support","label":"CLE-INCONNUE"}`, "branchez-le"},
+		{`{"kind":"dossier","path":"relatif"}`, "dossier complet"},
+		{`{"kind":"dossier","path":"/n/existe/pas"}`, "introuvable"},
+		{`{"kind":"dossier","path":"` + srv.A.Dir + `"}`, "données de MARWA GUARDIAN"},
+		{`{"kind":"dossier","path":"` + usb + `","keep":0}`, ""},
+		{`{"kind":"autre"}`, "inconnu"},
+	}
+	for _, cc := range cases {
+		code, d := c.do("POST", "/api/destinations", cc.body, nil)
+		if cc.want == "" {
+			if code != 200 {
+				t.Fatalf("%s : accepté attendu, %d %v", cc.body, code, d)
+			}
+			continue
+		}
+		if code != 400 || !strings.Contains(d["erreur"].(string), cc.want) {
+			t.Fatalf("%s : refus « %s » attendu, %d %v", cc.body, cc.want, code, d)
+		}
+	}
+	if code, _ := c.do("POST", "/api/destinations", `{"kind":"support","label":"cle-caisse","keep":10}`, nil); code != 200 {
+		t.Fatalf("support branché accepté (nom sans tenir compte des majuscules) : %d", code)
+	}
+	if code, d := c.do("POST", "/api/destinations", `{"kind":"dossier","path":"`+usb+`"}`, nil); code != 400 || !strings.Contains(d["erreur"].(string), "existe déjà") {
+		t.Fatalf("doublon refusé : %d %v", code, d)
+	}
+	dests := srv.A.Config().Destinations
+	if len(dests) != 2 || dests[0].Keep != 30 {
+		t.Fatalf("destinations enregistrées (30 gardées par défaut) : %+v", dests)
+	}
+	if b, _ := os.ReadFile(srv.A.Dir + "/guardian.json"); !strings.Contains(string(b), "CLE-CAISSE") && !strings.Contains(string(b), "cle-caisse") {
+		t.Fatal("destinations écrites dans guardian.json")
+	}
+	if code, _ := c.do("POST", "/api/destinations/"+dests[0].ID+"/retirer", "", nil); code != 200 || len(srv.A.Config().Destinations) != 1 {
+		t.Fatal("destination retirée")
+	}
+	if code, d := c.do("POST", "/api/sauvegardes/reglages", `{"backup_warn_hours":48,"backup_crit_hours":24,"restore_test_days":7}`, nil); code != 400 || !strings.Contains(d["erreur"].(string), "hors limites") {
+		t.Fatalf("seuil critique inférieur à l'alerte refusé : %d %v", code, d)
+	}
+	if code, _ := c.do("POST", "/api/sauvegardes/reglages", `{"backup_warn_hours":30,"backup_crit_hours":96,"restore_test_days":14}`, nil); code != 200 || srv.A.Config().BackupCritHours != 96 {
+		t.Fatal("réglages enregistrés")
+	}
+	// Sans jeton anti-falsification : refusé
+	c.csrf = ""
+	if code, _ := c.do("POST", "/api/destinations", `{"kind":"dossier","path":"`+usb+`"}`, nil); code != http.StatusForbidden {
+		t.Fatal("action sans jeton refusée")
+	}
+}

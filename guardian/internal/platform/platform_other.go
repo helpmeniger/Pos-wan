@@ -12,6 +12,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -148,3 +149,29 @@ func DataDir() string {
 	}
 	return "/var/lib/marwa-guardian"
 }
+
+// Volumes : essais — volumes.json des exemples ([{"root": "/chemin", "label": "NOM", "removable": true}]).
+func Volumes() []Volume {
+	var out []Volume
+	b, err := os.ReadFile(filepath.Join(fixtures(), "volumes.json"))
+	if err == nil {
+		_ = json.Unmarshal(b, &out)
+	}
+	return out
+}
+
+func FreeSpace(path string) (uint64, error) {
+	var st syscall.Statfs_t
+	if err := syscall.Statfs(path, &st); err != nil {
+		return 0, err
+	}
+	return st.Bavail * uint64(st.Bsize), nil
+}
+
+// LowPriority : processus détaché (essais sous Linux).
+func LowPriority(cmd *exec.Cmd) *exec.Cmd {
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	return cmd
+}
+
+func ExeName(n string) string { return n }

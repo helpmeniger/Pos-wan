@@ -110,3 +110,10 @@ func EventQuery(ids []int, since time.Time) string {
 	}
 	return q + "]]"
 }
+
+// Volume : lecteur avec son nom (une clé USB est reconnue par son nom, même si sa lettre change).
+type Volume struct {
+	Root      string `json:"root"`
+	Label     string `json:"label"`
+	Removable bool   `json:"removable"`
+}

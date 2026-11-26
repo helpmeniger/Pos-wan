@@ -4,66 +4,117 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MARWA GUARDIAN</title>
-<link rel="icon" href="icone.svg">
+<link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
-<header class="top">
-  <div class="brand"><img src="icone.svg" alt="" width="34" height="34"><div><b>MARWA GUARDIAN</b><small>Votre caisse protégée, vos données en sécurité.</small></div></div>
-  <div class="top-right"><span id="poste"></span><button type="button" id="logout" class="btn ghost hidden">Se déconnecter</button></div>
-</header>
 
-<main id="auth" class="auth hidden">
-  <form id="authForm" class="card narrow">
-    <h1 id="authTitle">Connexion</h1>
-    <p id="authHelp" class="muted"></p>
-    <label for="pw">Mot de passe administrateur</label>
-    <input id="pw" type="password" autocomplete="current-password" required minlength="8">
-    <div id="pw2Box" class="hidden"><label for="pw2">Confirmer le mot de passe</label><input id="pw2" type="password" autocomplete="new-password" minlength="8"></div>
-    <p id="authErr" class="err hidden" role="alert"></p>
-    <button class="btn primary" id="authBtn">Se connecter</button>
+<!-- ============ CONNEXION (comme l'écran de connexion de POS Marwa) ============ -->
+<div id="auth" class="login-body d-none">
+  <form id="authForm" class="login-card">
+    <div class="login-head">
+      <h1>MARWA <span>GUARDIAN</span></h1>
+      <small>Votre caisse protégée, vos données en sécurité.</small>
+    </div>
+    <div class="p-4 pt-2">
+      <p id="authHelp" class="small text-center mb-3"></p>
+      <label class="form-label" for="pw">Mot de passe administrateur</label>
+      <input id="pw" type="password" class="form-control mb-2" autocomplete="current-password" required minlength="8">
+      <div id="pw2Box" class="d-none"><label class="form-label" for="pw2">Confirmer le mot de passe</label><input id="pw2" type="password" class="form-control mb-2" autocomplete="new-password" minlength="8"></div>
+      <div id="authErr" class="alert alert-danger py-2 small d-none" role="alert"></div>
+      <button class="btn btn-warning w-100 fw-semibold mt-2" id="authBtn">Se connecter</button>
+    </div>
   </form>
-</main>
-
-<div id="app" class="layout hidden">
-  <nav class="side" aria-label="Menu">
-    <a href="#tableau" data-page="tableau">Tableau de bord</a>
-    <a href="#incidents" data-page="incidents">Historique des incidents</a>
-    <a href="#journal" data-page="journal">Journal et intégrité</a>
-    <a href="#configuration" data-page="configuration">Configuration</a>
-  </nav>
-  <main class="content">
-    <section id="p-tableau" class="page">
-      <div id="health" class="health"></div>
-      <div id="cards" class="cards"></div>
-      <h2>Alertes non résolues</h2>
-      <div id="openList"></div>
-    </section>
-    <section id="p-incidents" class="page hidden">
-      <div class="bar"><h2>Historique des incidents</h2>
-        <select id="filter" aria-label="Filtre"><option value="">Tous</option><option value="open">Non résolus</option><option value="resolved">Résolus</option></select></div>
-      <div id="incList"></div>
-    </section>
-    <section id="p-journal" class="page hidden">
-      <h2>Journal des actions</h2>
-      <div id="integrity"></div>
-      <table class="tbl"><thead><tr><th>Date</th><th>Action</th><th>Par</th><th>Détail</th></tr></thead><tbody id="journalBody"></tbody></table>
-    </section>
-    <section id="p-configuration" class="page hidden">
-      <h2>Configuration et transparence</h2>
-      <div id="cfg"></div>
-    </section>
-  </main>
 </div>
 
-<dialog id="detail" aria-labelledby="dTitle">
-  <form method="dialog" class="dlg">
-    <h3 id="dTitle"></h3>
-    <div id="dBody"></div>
-    <label for="dNote" class="mt">Note (facultative)</label>
-    <input id="dNote" maxlength="300" placeholder="ex. Disque nettoyé, onduleur installé…">
-    <div class="dlg-actions"><button value="cancel" class="btn ghost">Fermer</button><button type="button" id="dResolve" class="btn primary">Marquer comme résolu</button></div>
-  </form>
+<!-- ============ CONSOLE ============ -->
+<div id="app" class="app-shell d-none">
+  <aside class="sidebar">
+    <a class="brand" href="#tableau">MARWA <b>GUARDIAN</b></a>
+    <nav class="side-nav" aria-label="Menu">
+      <div class="side-group">Surveillance</div>
+      <a class="side-link" href="#tableau" data-page="tableau"><i class="bi bi-speedometer2"></i> Tableau de bord</a>
+      <a class="side-link" href="#incidents" data-page="incidents"><i class="bi bi-exclamation-triangle"></i> Alertes et incidents <span class="side-count" id="navCount"></span></a>
+      <div class="side-group">Protection des données</div>
+      <a class="side-link" href="#sauvegardes" data-page="sauvegardes"><i class="bi bi-hdd-stack"></i> Sauvegardes</a>
+      <div class="side-group">Administration</div>
+      <a class="side-link" href="#journal" data-page="journal"><i class="bi bi-journal-check"></i> Journal et intégrité</a>
+      <a class="side-link" href="#configuration" data-page="configuration"><i class="bi bi-gear"></i> Configuration</a>
+    </nav>
+    <div class="side-footer"><span id="sideVersion">MARWA GUARDIAN</span><br>Votre caisse protégée, vos données en sécurité.</div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <h1 class="page-title" id="pageTitle">Tableau de bord</h1>
+      <span class="ms-auto small text-secondary d-none d-md-inline" id="poste"></span>
+      <button type="button" id="logout" class="btn btn-sm btn-outline-secondary"><i class="bi bi-box-arrow-right"></i> Se déconnecter</button>
+    </header>
+    <main class="content">
+      <section id="p-tableau" class="page">
+        <div class="row g-3 mb-3" id="kpis"></div>
+        <div class="row g-3">
+          <div class="col-lg-7"><div class="card h-100"><div class="card-header d-flex align-items-center"><span><i class="bi bi-exclamation-triangle text-danger"></i> Alertes non résolues</span><a class="ms-auto small" href="#incidents">Tout voir</a></div><div id="openList"></div></div></div>
+          <div class="col-lg-5"><div class="card h-100"><div class="card-header"><i class="bi bi-pc-display"></i> Ce poste</div><div class="card-body" id="machine"></div></div></div>
+        </div>
+      </section>
+
+      <section id="p-incidents" class="page d-none">
+        <div class="card"><div class="card-header d-flex flex-wrap gap-2 align-items-center"><span>Historique des incidents</span>
+          <select id="filter" class="form-select form-select-sm ms-auto w-auto-200" aria-label="Filtre"><option value="">Tous</option><option value="open">Non résolus</option><option value="resolved">Résolus</option></select></div>
+          <div id="incList"></div></div>
+      </section>
+
+      <section id="p-sauvegardes" class="page d-none">
+        <div class="row g-3 mb-3" id="bkKpis"></div>
+        <div id="bkNote"></div>
+        <div class="row g-3">
+          <div class="col-xl-7">
+            <div class="card mb-3"><div class="card-header d-flex align-items-center"><span><i class="bi bi-list-check"></i> Sauvegardes de POS Marwa</span><span class="ms-auto small text-secondary" id="bkDir"></span></div>
+              <div class="table-responsive"><table class="table table-hover table-sm mb-0 align-middle"><thead><tr><th>Date</th><th>Motif</th><th class="num">Taille</th><th>Vérification</th></tr></thead><tbody id="bkList"></tbody></table></div></div>
+          </div>
+          <div class="col-xl-5">
+            <div class="card mb-3"><div class="card-header"><i class="bi bi-arrow-counterclockwise"></i> Test de restauration</div><div class="card-body" id="bkRestore"></div></div>
+            <div class="card mb-3"><div class="card-header d-flex align-items-center"><span><i class="bi bi-copy"></i> Copies hors de ce poste</span><button type="button" class="btn btn-sm btn-outline-primary ms-auto" id="copyNow"><i class="bi bi-arrow-repeat"></i> Copier maintenant</button></div>
+              <div id="bkCopies"></div>
+              <form id="destForm" class="card-body border-top">
+                <div class="fw-semibold small mb-2">Ajouter une destination</div>
+                <div class="btn-group btn-group-sm mb-2" role="group" aria-label="Type">
+                  <input type="radio" class="btn-check" name="dkind" id="dk1" value="support" checked><label class="btn btn-outline-secondary" for="dk1"><i class="bi bi-usb-drive"></i> Clé USB / disque externe</label>
+                  <input type="radio" class="btn-check" name="dkind" id="dk2" value="dossier"><label class="btn btn-outline-secondary" for="dk2"><i class="bi bi-folder"></i> Dossier (autre disque, réseau)</label>
+                </div>
+                <div id="dSupport"><select id="dLabel" class="form-select form-select-sm" aria-label="Support"></select><div class="form-text">Le support est reconnu par son nom, même si sa lettre change.</div></div>
+                <div id="dFolder" class="d-none"><input id="dPath" class="form-control form-control-sm" placeholder="ex. D:\Sauvegardes ou \\serveur\partage" aria-label="Dossier"><div class="form-text">Partage réseau : l'ordinateur doit pouvoir y écrire (droits du partage).</div></div>
+                <div class="d-flex gap-2 align-items-center mt-2"><label class="small text-nowrap" for="dKeep">Garder</label><input id="dKeep" type="number" min="1" max="365" value="30" class="form-control form-control-sm w-auto-90"><span class="small">sauvegardes</span>
+                  <button class="btn btn-sm btn-primary ms-auto"><i class="bi bi-plus-lg"></i> Ajouter</button></div>
+                <div id="destErr" class="alert alert-danger py-1 px-2 small mt-2 mb-0 d-none"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="p-journal" class="page d-none">
+        <div id="integrity"></div>
+        <div class="card"><div class="card-header">Journal des actions</div>
+          <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Date</th><th>Action</th><th>Par</th><th>Détail</th></tr></thead><tbody id="journalBody"></tbody></table></div></div>
+      </section>
+
+      <section id="p-configuration" class="page d-none"><div id="cfg"></div></section>
+    </main>
+  </div>
+</div>
+
+<dialog id="detail" class="dlg" aria-labelledby="dTitle">
+  <div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="dTitle"></h5><button type="button" class="btn-close" data-close aria-label="Fermer"></button></div>
+    <div class="modal-body" id="dBody"></div>
+    <div class="modal-footer" id="dFoot">
+      <input id="dNote" class="form-control form-control-sm" maxlength="300" placeholder="Note (facultative) : ex. disque nettoyé, onduleur installé…" aria-label="Note">
+      <button type="button" class="btn btn-light" data-close>Fermer</button>
+      <button type="button" id="dResolve" class="btn btn-success"><i class="bi bi-check2"></i> Marquer comme résolu</button>
+    </div>
+  </div>
 </dialog>
 <script src="app.js"></script>
 </body>

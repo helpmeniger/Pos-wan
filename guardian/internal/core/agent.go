@@ -34,7 +34,29 @@ type Agent struct {
 	mu      sync.Mutex
 	status  Status
 	cpuHist []float64
+	cfgMu   sync.RWMutex
+	busy    sync.Map // tâches longues en cours (test de restauration, copies)
 }
+
+// cfg : réglages courants (modifiables depuis la console pendant que l'agent tourne).
+func (a *Agent) cfg() Config {
+	a.cfgMu.RLock()
+	defer a.cfgMu.RUnlock()
+	return a.Cfg
+}
+
+// SetConfig : nouveaux réglages, enregistrés puis appliqués.
+func (a *Agent) SetConfig(c Config) error {
+	if err := SaveConfig(a.Dir, c); err != nil {
+		return err
+	}
+	a.cfgMu.Lock()
+	a.Cfg = c
+	a.cfgMu.Unlock()
+	return nil
+}
+
+func (a *Agent) Config() Config { return a.cfg() }
 
 // Status : état courant affiché par la console (dernières valeurs mesurées, jamais inventées).
 type Status struct {
@@ -47,6 +69,7 @@ type Status struct {
 	Services    []platform.Service `json:"services"`
 	Shutdowns30 int                `json:"shutdowns_30d"`
 	LogIntact   *bool              `json:"log_intact"`
+	Backups     BackupStatus       `json:"backups"`
 	Errors      map[string]string  `json:"errors"` // contrôle → erreur de lecture (honnêteté : « non vérifié »)
 }
 
@@ -129,6 +152,9 @@ func (a *Agent) Run(ctx context.Context) {
 		{name: "erreurs disque", every: 15 * time.Minute, fn: a.CheckDiskErrors},
 		{name: "services Windows", every: 5 * time.Minute, fn: a.CheckServices},
 		{name: "redémarrages", every: 30 * time.Minute, fn: a.CheckReboots},
+		{name: "sauvegardes", every: 30 * time.Minute, fn: a.CheckBackups},
+		{name: "copies des sauvegardes", every: 30 * time.Minute, fn: a.CheckCopies},
+		{name: "test de restauration", every: 6 * time.Hour, fn: a.CheckRestoreSchedule},
 		{name: "nettoyage", every: 24 * time.Hour, fn: func() { _ = a.S.PruneMetrics(a.Now()) }},
 	}
 	for {
@@ -204,9 +230,9 @@ func (a *Agent) CheckSystem() {
 			_ = a.S.Metric("disque_libre:"+d.Mount, p, now)
 			sev := 0
 			switch {
-			case p < a.Cfg.DiskCritPercent || d.Free < a.Cfg.DiskCritBytes:
+			case p < a.cfg().DiskCritPercent || d.Free < a.cfg().DiskCritBytes:
 				sev = store.Critical
-			case p < a.Cfg.DiskWarnPercent:
+			case p < a.cfg().DiskWarnPercent:
 				sev = store.Warning
 			}
 			if sev == 0 {
@@ -225,7 +251,7 @@ func (a *Agent) CheckSystem() {
 				Details: map[string]string{"Libre": gb(d.Free), "Total": gb(d.Total)}, Confidence: "certain"})
 		}
 	}
-	if !a.Cfg.MonitorPerformance {
+	if !a.cfg().MonitorPerformance {
 		return
 	}
 	// Mémoire
@@ -239,9 +265,9 @@ func (a *Agent) CheckSystem() {
 		_ = a.S.Metric("memoire_libre", p, now)
 		sev := 0
 		switch {
-		case p < a.Cfg.MemCritPercent:
+		case p < a.cfg().MemCritPercent:
 			sev = store.Critical
-		case p < a.Cfg.MemWarnPercent:
+		case p < a.cfg().MemWarnPercent:
 			sev = store.Warning
 		}
 		if sev == 0 {
@@ -279,7 +305,7 @@ func (a *Agent) CheckSystem() {
 		avg += v
 	}
 	avg /= float64(len(hist))
-	if avg < a.Cfg.CPUWarnPercent {
+	if avg < a.cfg().CPUWarnPercent {
 		a.clear("processeur_sature", "", fmt.Sprintf("%.0f %% en moyenne", avg))
 		return
 	}
@@ -442,7 +468,7 @@ func (a *Agent) CheckReboots() {
 			n++
 		}
 	}
-	if n <= a.Cfg.RebootsPerDayWarn {
+	if n <= a.cfg().RebootsPerDayWarn {
 		return
 	}
 	a.raise(store.Incident{Code: "redemarrages", Key: a.Now().Format("2006-01-02"), Severity: store.Warning, Title: "Redémarrages inhabituels",
@@ -500,7 +526,7 @@ func orDash(s string) string {
 
 // posInfo : installation de POS Marwa, vérifiée (jamais supposée).
 func (a *Agent) posInfo() PosStatus {
-	dir := a.Cfg.PosDir
+	dir := a.cfg().PosDir
 	if dir == "" {
 		dir = platform.RegString(`SOFTWARE\POSMarwaBureau`, "Dossier")
 	}

@@ -1,43 +1,91 @@
-:root { --bleu: #1d3f8f; --bleu-clair: #e8eefb; --rouge: #d62839; --gris: #5f6b7a; --gris-clair: #f2f4f7; --bord: #d9dee6; --vert: #1e8e4e; --orange: #c77700; --texte: #1c2430; }
-* { box-sizing: border-box; }
-body { margin: 0; font: 15px/1.45 "Segoe UI", system-ui, Arial, sans-serif; color: var(--texte); background: var(--gris-clair); }
-.hidden { display: none !important; }
-.top { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px; background: #fff; border-bottom: 3px solid var(--rouge); }
-.brand { display: flex; gap: 10px; align-items: center; } .brand b { color: var(--bleu); font-size: 17px; letter-spacing: .04em; } .brand small { display: block; color: var(--gris); font-size: 12px; }
-.top-right { display: flex; gap: 12px; align-items: center; color: var(--gris); font-size: 13px; }
-.btn { border: 0; border-radius: 8px; padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; }
-.btn.primary { background: var(--bleu); color: #fff; } .btn.primary:hover { background: #16326f; }
-.btn.ghost { background: transparent; color: var(--bleu); border: 1px solid var(--bord); }
-.auth { display: flex; justify-content: center; padding: 60px 16px; }
-.card { background: #fff; border: 1px solid var(--bord); border-radius: 12px; padding: 18px; }
-.narrow { width: min(420px, 100%); } .narrow h1 { margin: 0 0 6px; color: var(--bleu); font-size: 22px; }
-label { display: block; font-weight: 600; margin: 12px 0 4px; } .mt { margin-top: 14px; }
-input, select { width: 100%; padding: 9px 10px; border: 1px solid var(--bord); border-radius: 8px; font: inherit; }
-.narrow .btn { margin-top: 16px; width: 100%; }
-.muted { color: var(--gris); font-size: 14px; } .err { color: var(--rouge); font-weight: 600; }
-.layout { display: grid; grid-template-columns: 230px 1fr; min-height: calc(100vh - 60px); }
-.side { background: var(--bleu); padding: 14px 0; } .side a { display: block; color: #dbe5ff; text-decoration: none; padding: 11px 20px; border-left: 4px solid transparent; }
-.side a.active, .side a:hover { background: rgba(255,255,255,.08); color: #fff; border-left-color: var(--rouge); }
-.content { padding: 20px 24px; max-width: 1200px; }
-h2 { color: var(--bleu); font-size: 18px; margin: 22px 0 10px; }
-.health { display: flex; gap: 16px; align-items: center; padding: 18px 20px; border-radius: 12px; color: #fff; }
-.health .big { font-size: 26px; font-weight: 800; } .health small { display: block; opacity: .9; }
-.h-bon { background: var(--vert); } .h-surveiller { background: var(--orange); } .h-critique, .h-urgence { background: var(--rouge); }
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 14px; }
-.kpi { background: #fff; border: 1px solid var(--bord); border-radius: 12px; padding: 14px; } .kpi .t { color: var(--gris); font-size: 13px; } .kpi .v { font-size: 19px; font-weight: 700; margin-top: 2px; } .kpi .s { color: var(--gris); font-size: 13px; }
-.ok { color: var(--vert); } .warn { color: var(--orange); } .bad { color: var(--rouge); } .na { color: var(--gris); }
-.inc { display: flex; gap: 12px; background: #fff; border: 1px solid var(--bord); border-left: 6px solid var(--gris); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
-.inc:hover { border-color: var(--bleu); } .inc .ti { font-weight: 700; } .inc .me { color: var(--gris); font-size: 13px; }
-.sev-1 { border-left-color: var(--bleu); } .sev-2 { border-left-color: var(--orange); } .sev-3, .sev-4 { border-left-color: var(--rouge); }
-.badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--gris-clair); color: var(--gris); margin-right: 6px; }
-.b-1 { background: var(--bleu-clair); color: var(--bleu); } .b-2 { background: #fff1d6; color: #8a5300; } .b-3, .b-4 { background: #fde3e6; color: #a1162a; } .b-res { background: #dff3e7; color: var(--vert); }
-.bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; } .bar select { width: 200px; }
-.tbl { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--bord); border-radius: 10px; overflow: hidden; }
-.tbl th, .tbl td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--bord); font-size: 14px; vertical-align: top; } .tbl th { background: var(--gris-clair); color: var(--gris); }
-dialog { border: 0; border-radius: 14px; padding: 0; width: min(720px, 94vw); } dialog::backdrop { background: rgba(10,20,40,.45); }
-.dlg { padding: 18px 20px; } .dlg h3 { margin: 0 0 8px; color: var(--bleu); }
-.cfgdl, .dlg dl { display: grid; grid-template-columns: 170px 1fr; gap: 6px 12px; } .cfgdl dt, .dlg dt { color: var(--gris); font-weight: 600; overflow-wrap: anywhere; } .cfgdl dd, .dlg dd { margin: 0; word-break: break-word; }
-.dlg ul { margin: 4px 0 0 18px; padding: 0; } .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
-.note { background: var(--bleu-clair); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
-.empty { background: #fff; border: 1px dashed var(--bord); border-radius: 10px; padding: 18px; color: var(--gris); text-align: center; }
-@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .side { display: flex; overflow-x: auto; padding: 0; } .side a { white-space: nowrap; border-left: 0; border-bottom: 3px solid transparent; } .side a.active { border-bottom-color: var(--rouge); } .dlg dl { grid-template-columns: 1fr; } }
+/* MARWA GUARDIAN — console : reprend l'apparence de POS Marwa (bleu nuit, orange, cartes et tuiles). */
+:root {
+  --wan-navy: #14213d;
+  --wan-orange: #f39c12;
+  --wan-green: #27ae60;
+  --wan-bg: #f3f5f9;
+  --wan-card: #ffffff;
+  --wan-border: #e3e8ef;
+  --sidebar-w: 250px;
+}
+html, body { height: 100%; }
+body { background: var(--wan-bg); font-size: .95rem; }
+.w-auto-200 { max-width: 200px; } .w-auto-90 { max-width: 90px; }
+
+/* Connexion */
+.login-body { min-height: 100vh; background: radial-gradient(circle at 20% 20%, #23395d 0, #14213d 45%, #0b1426 100%); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.login-card { width: 100%; max-width: 440px; background: #1b2838; color: #e8edf5; border-radius: 1rem; box-shadow: 0 25px 60px rgba(0,0,0,.45); border: 1px solid #2c3e57; overflow: hidden; }
+.login-head { text-align: center; padding: 1.6rem 1rem .4rem; }
+.login-head h1 { color: #fff; font-family: Georgia, 'Times New Roman', serif; font-weight: 700; letter-spacing: .05em; font-size: 1.9rem; margin: 0; }
+.login-head h1 span { color: var(--wan-orange); }
+.login-head small { color: #8fa3c0; }
+.login-card .form-label { color: #c5d2e6; }
+.login-card .form-control { background: #22344f; border-color: #35507a; color: #fff; font-size: 1.05rem; padding: .6rem .8rem; }
+.login-card .form-control:focus { background: #273c5c; color: #fff; border-color: var(--wan-orange); box-shadow: 0 0 0 .2rem rgba(243,156,18,.25); }
+#authHelp { color: #a9b8cf; }
+
+/* Coque : menu latéral et barre du haut (comme POS Marwa) */
+.app-shell { display: flex; min-height: 100vh; }
+.sidebar { width: var(--sidebar-w); flex: 0 0 var(--sidebar-w); background: var(--wan-navy); color: #c9d3e6; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.sidebar .brand { display: block; padding: 1.1rem 1.2rem; color: #fff; text-decoration: none; font-size: 1.2rem; font-weight: 600; letter-spacing: .04em; border-bottom: 1px solid rgba(255,255,255,.06); }
+.sidebar .brand b { color: var(--wan-orange); }
+.side-nav { flex: 1; padding-bottom: 1rem; }
+.side-group { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: #7f8db0; padding: .9rem 1.2rem .3rem; }
+.side-link { display: flex; align-items: center; gap: .7rem; color: #c9d3e6; text-decoration: none; padding: .5rem 1.2rem; border-left: 3px solid transparent; font-size: .9rem; }
+.side-link i { font-size: 1.05rem; width: 1.2rem; text-align: center; color: var(--wan-orange); }
+.side-link:hover { background: rgba(255,255,255,.05); color: #fff; }
+.side-link.active { background: rgba(243,156,18,.12); color: #fff; border-left-color: var(--wan-orange); }
+.side-count { margin-left: auto; background: #e74c3c; color: #fff; border-radius: 1rem; font-size: .7rem; font-weight: 700; padding: 0 .45rem; }
+.side-count:empty { display: none; }
+.side-footer { font-size: .72rem; color: #6c7a99; padding: .8rem 1.2rem; border-top: 1px solid rgba(255,255,255,.06); }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.topbar { display: flex; align-items: center; gap: .75rem; padding: .6rem 1.2rem; background: var(--wan-card); border-bottom: 1px solid var(--wan-border); position: sticky; top: 0; z-index: 10; }
+.page-title { font-size: 1.15rem; margin: 0; font-weight: 600; }
+.content { padding: 1.2rem; }
+
+/* Cartes, tableaux, tuiles (comme le tableau de bord de POS Marwa) */
+.card { background: var(--wan-card); border-color: var(--wan-border); border-radius: .8rem; }
+.card-header { background: transparent; font-weight: 600; }
+.table thead th { font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; color: var(--bs-secondary-color); background: var(--bs-tertiary-bg); white-space: nowrap; }
+.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.kpi { border-radius: .9rem; color: #fff; padding: 1rem 1.1rem; position: relative; overflow: hidden; height: 100%; }
+.kpi .kpi-label { padding-right: 2.6rem; font-size: .78rem; opacity: .92; text-transform: uppercase; letter-spacing: .04em; }
+.kpi .kpi-value { font-size: 1.45rem; font-weight: 700; line-height: 1.2; }
+.kpi .kpi-sub { font-size: .82rem; opacity: .9; }
+.kpi i.kpi-icon { position: absolute; right: .8rem; top: .6rem; font-size: 2.2rem; opacity: .25; }
+.bg-g1 { background: linear-gradient(135deg, #27ae60, #1e8449); }
+.bg-g2 { background: linear-gradient(135deg, #2e86c1, #1b4f72); }
+.bg-g3 { background: linear-gradient(135deg, #f39c12, #d35400); }
+.bg-g5 { background: linear-gradient(135deg, #e74c3c, #943126); }
+.bg-g7 { background: linear-gradient(135deg, #5d6d7e, #2c3e50); }
+
+/* Alertes */
+.inc-row { display: flex; gap: .75rem; padding: .7rem 1rem; border-bottom: 1px solid var(--wan-border); cursor: pointer; }
+.inc-row:last-child { border-bottom: 0; }
+.inc-row:hover, .inc-row:focus { background: #f8fafc; outline: none; }
+.inc-dot { width: .7rem; height: .7rem; border-radius: 50%; margin-top: .45rem; flex: none; }
+.dot-1 { background: #2e86c1; } .dot-2 { background: #f39c12; } .dot-3, .dot-4 { background: #e74c3c; } .dot-res { background: #27ae60; }
+.inc-title { font-weight: 600; }
+.inc-meta { font-size: .8rem; color: var(--bs-secondary-color); }
+.empty-row { padding: 1.4rem; text-align: center; color: var(--bs-secondary-color); }
+.facts { display: grid; grid-template-columns: 190px 1fr; gap: .35rem 1rem; margin: 0; }
+.facts dt { color: var(--bs-secondary-color); font-weight: 500; overflow-wrap: anywhere; }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+
+/* Fenêtre de détail (élément <dialog> habillé comme une fenêtre de POS Marwa) */
+dialog.dlg { border: 0; padding: 0; border-radius: .8rem; width: min(760px, 94vw); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+dialog.dlg::backdrop { background: rgba(10,20,40,.5); }
+dialog.dlg .modal-content { border: 0; }
+#dFoot { flex-wrap: nowrap; gap: .5rem; }
+
+@media (max-width: 860px) {
+  .app-shell { flex-direction: column; }
+  .sidebar { width: 100%; flex: none; height: auto; position: static; }
+  .side-nav { display: flex; flex-wrap: wrap; padding: 0; } .side-group { display: none; }
+  .side-link { border-left: 0; border-bottom: 3px solid transparent; } .side-link.active { border-bottom-color: var(--wan-orange); }
+  .side-footer { display: none; }
+  .facts { grid-template-columns: 1fr; }
+  #dFoot { flex-wrap: wrap; }
+}
+
+#bkDir { max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }

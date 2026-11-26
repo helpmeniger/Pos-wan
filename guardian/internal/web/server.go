@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"net"
 	"net/http"
@@ -26,6 +27,7 @@ import (
 	"golang.org/x/crypto/argon2"
 
 	"marwa/guardian/internal/core"
+	"marwa/guardian/internal/platform"
 	"marwa/guardian/internal/store"
 )
 
@@ -92,6 +94,12 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/journal", s.auth(s.journal))
 	mux.HandleFunc("GET /api/mesures", s.auth(s.metrics))
 	mux.HandleFunc("GET /api/notificateur/alertes", s.notifier)
+	mux.HandleFunc("GET /api/sauvegardes", s.auth(s.backups))
+	mux.HandleFunc("POST /api/sauvegardes/tester", s.auth(s.restoreTest))
+	mux.HandleFunc("POST /api/sauvegardes/copier", s.auth(s.copyNow))
+	mux.HandleFunc("POST /api/sauvegardes/reglages", s.auth(s.backupSettings))
+	mux.HandleFunc("POST /api/destinations", s.auth(s.addDestination))
+	mux.HandleFunc("POST /api/destinations/{id}/retirer", s.auth(s.removeDestination))
 	return s.guard(mux)
 }
 
@@ -423,4 +431,170 @@ func (s *Server) notifier(w http.ResponseWriter, r *http.Request) {
 		_ = s.A.S.MarkNotified(in.ID)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "alertes": out, "console": "http://127.0.0.1:" + strconv.Itoa(s.Port) + "/"})
+}
+
+// ------------------------------------------------------------------------------------------ sauvegardes (phase 3)
+
+func (s *Server) backups(w http.ResponseWriter, r *http.Request) {
+	c := s.A.Config()
+	vols := []map[string]any{}
+	for _, v := range platform.Volumes() {
+		if v.Label != "" {
+			vols = append(vols, map[string]any{"root": v.Root, "label": v.Label, "removable": v.Removable})
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "etat": s.A.Status().Backups, "destinations": c.Destinations, "volumes": vols,
+		"reglages": map[string]any{"backup_warn_hours": c.BackupWarnHours, "backup_crit_hours": c.BackupCritHours, "restore_test_days": c.RestoreTestDays,
+			"pos_app_dir": c.PosAppDir, "mariadb_bin": c.MariaDBBin}})
+}
+
+func (s *Server) restoreTest(w http.ResponseWriter, r *http.Request) {
+	if err := s.A.StartRestoreTest(); err != nil {
+		fail(w, http.StatusConflict, err.Error())
+		return
+	}
+	_ = s.A.S.AddJournal("test de restauration demandé", "administrateur", "", time.Now())
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+func (s *Server) copyNow(w http.ResponseWriter, r *http.Request) {
+	if len(s.A.Config().Destinations) == 0 {
+		fail(w, http.StatusBadRequest, "ajoutez d'abord une destination")
+		return
+	}
+	s.A.CheckCopies()
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+// backupSettings : seuils d'alerte, fréquence du test, dossiers (vérifiés avant d'être enregistrés).
+func (s *Server) backupSettings(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Warn    int    `json:"backup_warn_hours"`
+		Crit    int    `json:"backup_crit_hours"`
+		Days    int    `json:"restore_test_days"`
+		AppDir  string `json:"pos_app_dir"`
+		MariaDB string `json:"mariadb_bin"`
+	}
+	if err := readBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, "requête invalide")
+		return
+	}
+	if in.Warn < 1 || in.Warn > 24*30 || in.Crit < in.Warn || in.Crit > 24*60 || in.Days < 0 || in.Days > 90 {
+		fail(w, http.StatusBadRequest, "valeurs hors limites (alerte : 1 h à 30 jours ; critique : au moins l'alerte ; test : 0 à 90 jours)")
+		return
+	}
+	for _, d := range []string{in.AppDir, in.MariaDB} {
+		if d == "" {
+			continue
+		}
+		if st, err := os.Stat(d); err != nil || !st.IsDir() {
+			fail(w, http.StatusBadRequest, "dossier introuvable : "+d)
+			return
+		}
+	}
+	c := s.A.Config()
+	c.BackupWarnHours, c.BackupCritHours, c.RestoreTestDays, c.PosAppDir, c.MariaDBBin = in.Warn, in.Crit, in.Days, strings.TrimSpace(in.AppDir), strings.TrimSpace(in.MariaDB)
+	if err := s.A.SetConfig(c); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	_ = s.A.S.AddJournal("réglages des sauvegardes", "administrateur", fmt.Sprintf("alerte %d h, critique %d h, test tous les %d j", in.Warn, in.Crit, in.Days), time.Now())
+	go s.A.CheckBackups()
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+func (s *Server) addDestination(w http.ResponseWriter, r *http.Request) {
+	var in core.Destination
+	if err := readBody(r, &in); err != nil {
+		fail(w, http.StatusBadRequest, "requête invalide")
+		return
+	}
+	in.Path, in.Label = strings.TrimSpace(in.Path), strings.TrimSpace(in.Label)
+	if in.Keep == 0 {
+		in.Keep = 30
+	}
+	if in.Keep < 1 || in.Keep > 365 {
+		fail(w, http.StatusBadRequest, "nombre de sauvegardes gardées : 1 à 365")
+		return
+	}
+	switch in.Kind {
+	case "support":
+		found := false
+		for _, v := range platform.Volumes() {
+			if v.Label != "" && strings.EqualFold(v.Label, in.Label) {
+				found = true
+			}
+		}
+		if !found {
+			fail(w, http.StatusBadRequest, "support introuvable : branchez-le, puis choisissez-le dans la liste")
+			return
+		}
+		in.Path = ""
+	case "dossier":
+		if in.Path == "" || len(in.Path) > 240 || !filepath.IsAbs(in.Path) {
+			fail(w, http.StatusBadRequest, "indiquez un dossier complet (ex. D:\\Sauvegardes ou \\\\serveur\\partage)")
+			return
+		}
+		if st, err := os.Stat(in.Path); err != nil || !st.IsDir() {
+			fail(w, http.StatusBadRequest, "dossier introuvable ou inaccessible : "+in.Path)
+			return
+		}
+		clean := strings.ToLower(filepath.Clean(in.Path))
+		for _, forbidden := range []string{s.A.Status().Backups.Dir, s.A.Dir} {
+			f := strings.ToLower(filepath.Clean(forbidden))
+			if forbidden != "" && (clean == f || strings.HasPrefix(clean, f+string(filepath.Separator)) || strings.HasPrefix(f, clean+string(filepath.Separator))) {
+				fail(w, http.StatusBadRequest, "ce dossier contient ou se trouve dans les sauvegardes d'origine ou les données de MARWA GUARDIAN : choisissez un autre endroit")
+				return
+			}
+		}
+		in.Label = ""
+	default:
+		fail(w, http.StatusBadRequest, "type de destination inconnu")
+		return
+	}
+	c := s.A.Config()
+	for _, d := range c.Destinations {
+		if d.Kind == in.Kind && strings.EqualFold(d.Path, in.Path) && strings.EqualFold(d.Label, in.Label) {
+			fail(w, http.StatusBadRequest, "cette destination existe déjà")
+			return
+		}
+	}
+	if len(c.Destinations) >= 5 {
+		fail(w, http.StatusBadRequest, "5 destinations au plus")
+		return
+	}
+	in.ID = randHex(6)
+	c.Destinations = append(c.Destinations, in)
+	if err := s.A.SetConfig(c); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	_ = s.A.S.AddJournal("destination de copie ajoutée", "administrateur", in.Name(), time.Now())
+	s.A.CheckCopies()
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "id": in.ID})
+}
+
+func (s *Server) removeDestination(w http.ResponseWriter, r *http.Request) {
+	c := s.A.Config()
+	id := r.PathValue("id")
+	var kept []core.Destination
+	name := ""
+	for _, d := range c.Destinations {
+		if d.ID == id {
+			name = d.Name()
+			continue
+		}
+		kept = append(kept, d)
+	}
+	if name == "" {
+		fail(w, http.StatusNotFound, "destination introuvable")
+		return
+	}
+	c.Destinations = kept
+	if err := s.A.SetConfig(c); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	_ = s.A.S.AddJournal("destination de copie retirée", "administrateur", name+" (copies déjà faites conservées)", time.Now())
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }

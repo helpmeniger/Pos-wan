@@ -113,7 +113,7 @@ réelles et l'architecture proposée, à valider avant la phase 2.
 |---|---|---|---|
 | 1 | Audit, architecture (ce document) | — | — |
 | 2 | Service (installation, démarrage auto, arrêt propre), SQLite, incidents, système (CPU, RAM, disques, services), **arrêts anormaux**, POS Marwa (base, application), notificateur, console tableau de bord | Moteur, règles, analyse d'événements (exemples au format Windows), console, API | Service, journaux réels, notifications : **à la phase 7** |
-| 3 | Sauvegardes : contrôle (fraîcheur, empreintes), test de restauration, copie distante (option), alertes | ✅ avec MariaDB | Chemins Windows |
+| 3 | Sauvegardes : contrôle (fraîcheur, empreintes), test de restauration, copie distante (option), alertes — **fait (0.3.0), voir RAPPORT_PHASE3.md** | ✅ avec MariaDB | Chemins Windows |
 | 4 | Intégrité des fichiers (SHA-256, liste blanche des mises à jour), accès et USB, réseau, Defender, rançongiciels | Moteur, empreintes, scénarios simulés | Audit Windows, USB, pare-feu |
 | 5 | Assistant IA local (questions en français, faits et hypothèses séparés, niveau de confiance) | ✅ | — |
 | 6 | Intégration POS Marwa (API, état dans le diagnostic), gestion des postes (appairage, remontée chiffrée) | ✅ | Réseau réel |

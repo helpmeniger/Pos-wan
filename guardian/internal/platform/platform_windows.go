@@ -218,3 +218,52 @@ func DataDir() string {
 	}
 	return pd + `\MarwaGuardian`
 }
+
+// Volumes : lecteurs présents (fixes, amovibles, réseau connectés), avec leur nom de volume.
+func Volumes() []Volume {
+	mask, err := windows.GetLogicalDrives()
+	if err != nil {
+		return nil
+	}
+	var out []Volume
+	for i := 0; i < 26; i++ {
+		if mask&(1<<uint(i)) == 0 {
+			continue
+		}
+		root := string(rune('A'+i)) + `:\`
+		p, _ := windows.UTF16PtrFromString(root)
+		t := windows.GetDriveType(p)
+		if t != windows.DRIVE_FIXED && t != windows.DRIVE_REMOVABLE && t != windows.DRIVE_REMOTE {
+			continue
+		}
+		name := make([]uint16, 261)
+		if err := windows.GetVolumeInformation(p, &name[0], uint32(len(name)), nil, nil, nil, nil, 0); err != nil {
+			continue // lecteur sans support (lecteur de carte vide)
+		}
+		out = append(out, Volume{Root: root, Label: windows.UTF16ToString(name), Removable: t == windows.DRIVE_REMOVABLE})
+	}
+	return out
+}
+
+// FreeSpace : octets disponibles sur le volume d'un dossier (disque local, clé USB, partage réseau).
+func FreeSpace(path string) (uint64, error) {
+	p, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return 0, err
+	}
+	var free, total, totalFree uint64
+	if r, _, e := procGetDiskFreeSpaceEx.Call(uintptr(unsafe.Pointer(p)), uintptr(unsafe.Pointer(&free)), uintptr(unsafe.Pointer(&total)), uintptr(unsafe.Pointer(&totalFree))); r == 0 {
+		return 0, e
+	}
+	return free, nil
+}
+
+// LowPriority : processus en priorité « inférieure à la normale », sans fenêtre (la caisse reste prioritaire).
+func LowPriority(cmd *exec.Cmd) *exec.Cmd {
+	hidden(cmd)
+	cmd.SysProcAttr.CreationFlags |= 0x00004000 // BELOW_NORMAL_PRIORITY_CLASS
+	return cmd
+}
+
+// ExeName : nom d'un exécutable sous Windows.
+func ExeName(n string) string { return n + ".exe" }

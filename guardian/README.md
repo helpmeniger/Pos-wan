@@ -3,7 +3,7 @@
 Agent de surveillance et de protection des données pour POS Marwa — « Votre caisse protégée, vos données en sécurité. »
 
 - Architecture et décisions : `documentation/marwa-guardian/ARCHITECTURE.md`
-- Avancement : `documentation/marwa-guardian/RAPPORT_PHASE2.md`
+- Avancement : `documentation/marwa-guardian/RAPPORT_PHASE2.md`, `RAPPORT_PHASE3.md` (sauvegardes)
 
 ## Construire
     guardian/construire.sh <dossier de sortie> <version>     # tests, puis MarwaGuardian.exe et MarwaGuardian-Notificateur.exe
