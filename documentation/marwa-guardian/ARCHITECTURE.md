@@ -137,3 +137,14 @@ Chaque phase se termine par : code, tests automatiques, rapport de ce qui a rée
    qu'il surveille, et l'administrateur pourra désactiver la surveillance non essentielle.
 6. **Essais sur Windows** : prévoir un PC Windows 10 ou 11 de test (ou le PC de la boutique, hors heures d'ouverture)
    pour la phase 7.
+
+---
+
+## 6. Décisions (26/11/2026)
+
+| Point | Décision |
+|---|---|
+| Langage et interface | Go + console web locale (option recommandée retenue, sans préférence exprimée) |
+| Distribution | Option de l'installateur POS Marwa Bureau **et** installateur séparé (option recommandée retenue, sans préférence exprimée) |
+| Audit des accès et journal du pare-feu | Proposés par l'installateur, **cochés par défaut**, désactivables ; information du personnel rappelée |
+| Essais Windows (phase 7) | Sur un **PC de test** Windows 10/11 sans données réelles |
