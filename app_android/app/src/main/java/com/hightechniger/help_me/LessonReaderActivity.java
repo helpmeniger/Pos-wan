@@ -189,8 +189,7 @@ public class LessonReaderActivity extends AppCompatActivity {
 
     // ---------------------------------------------------------------- leçon animée du code-barres
     private View videoCard(int color) {
-        String code = null;
-        for (String c : lesson.codes) if (AnimLessonActivity.exists(this, c)) { code = c; break; }
+        String code = AnimLessonActivity.codeFor(this, lesson);
         if (code == null) return null;
         final String animCode = code;
         LinearLayout card = new LinearLayout(this);

@@ -52,7 +52,16 @@ public class MainActivity8 extends AppCompatActivity {
         String code = result.getContents().replace("*", "").trim();
         // le code ouvre directement la leçon complète du manuel ; sinon la fiche du code
         com.hightechniger.help_me.ui.Course.Lesson lesson = com.hightechniger.help_me.ui.Course.get(this).byCode(code);
-        if (lesson != null) {
+        if (AnimLessonActivity.exists(this, code)) {
+            // le code a une explication animée : elle démarre tout de suite ; « retour » ramène à la leçon
+            Intent anim = new Intent(this, AnimLessonActivity.class).putExtra(AnimLessonActivity.EXTRA_CODE, code);
+            if (lesson != null) {
+                Intent reader = new Intent(this, LessonReaderActivity.class).putExtra(LessonReaderActivity.EXTRA_LESSON, lesson.id);
+                startActivities(new Intent[]{reader, anim});
+            } else {
+                startActivity(anim);
+            }
+        } else if (lesson != null) {
             LessonReaderActivity.open(this, lesson.id);
         } else {
             Intent i = new Intent(this, LessonActivity.class);

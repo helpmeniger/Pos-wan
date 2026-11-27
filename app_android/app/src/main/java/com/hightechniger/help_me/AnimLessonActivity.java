@@ -29,13 +29,29 @@ public class AnimLessonActivity extends AppCompatActivity {
 
     /** Vrai si une leçon animée existe pour ce code-barres. */
     public static boolean exists(Context c, String code) {
-        if (code == null) return false;
+        if (code == null || !code.matches("[A-Z0-9]+")) return false;
         try {
             c.getAssets().open("anim/lessons/L" + code + ".js").close();
             return true;
         } catch (IOException e) {
             return false;
         }
+    }
+
+    /** Leçons sans code-barres (PowerPoint) reliées à une leçon animée. */
+    private static final java.util.Map<String, String> BY_LESSON = new java.util.HashMap<>();
+    static {
+        BY_LESSON.put("powerpoint-x002", "P001");
+        BY_LESSON.put("powerpoint-x001", "P002");
+        BY_LESSON.put("powerpoint-x006", "P003");
+    }
+
+    /** Code de la leçon animée d'une leçon : ses codes-barres d'abord, puis la table ci-dessus ; null sinon. */
+    public static String codeFor(Context c, com.hightechniger.help_me.ui.Course.Lesson lesson) {
+        if (lesson == null) return null;
+        for (String code : lesson.codes) if (exists(c, code)) return code;
+        String m = BY_LESSON.get(lesson.id);
+        return m != null && exists(c, m) ? m : null;
     }
 
     public static void open(Context c, String code) {
@@ -51,7 +67,7 @@ public class AnimLessonActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         String code = getIntent().getStringExtra(EXTRA_CODE);
-        if (code == null || !code.matches("\\d+") || !exists(this, code)) { finish(); return; }
+        if (code == null || !code.matches("[A-Z0-9]+") || !exists(this, code)) { finish(); return; }
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getWindow().setStatusBarColor(Color.BLACK);

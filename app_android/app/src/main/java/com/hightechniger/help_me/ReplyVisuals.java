@@ -48,8 +48,7 @@ final class ReplyVisuals {
         List<Pic> pics = pictures(c, r, lesson);
         if (!pics.isEmpty()) { bubble.addView(gallery(c, pics), at++); }
         if (lesson != null) {
-            String anim = null;
-            for (String code : lesson.codes) if (AnimLessonActivity.exists(c, code)) { anim = code; break; }
+            String anim = AnimLessonActivity.codeFor(c, lesson);
             if (anim != null) {
                 final String code = anim;
                 TextView b = Ui.text(c, "▶  Voir l’explication animée, pas à pas", 14, Color.WHITE, true);

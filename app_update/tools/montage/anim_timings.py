@@ -19,7 +19,8 @@ ROOT = HERE.parents[2]
 ANIM = ROOT / "app_android" / "app" / "src" / "main" / "assets" / "anim"
 LESSONS = {"2019": "vid1", "2018": "vid2", "2001": "vid3", "2002": "vid4", "2025": "vid5",
            "2016": "vid6", "1000": "vid7", "1001": "vid8", "1011": "tabetmotpassevid",
-           "1006": "ramplacer", "1010": "sectionvid", "1013": "saisirdonnee", "2003": "telecharvid9", "2014": "tableauexcel"}
+           "1006": "ramplacer", "1010": "sectionvid", "1013": "saisirdonnee", "2003": "telecharvid9", "2014": "tableauexcel",
+           "1003": "puce", "1007": "pagegarde", "1018": "protectionetmotsexcel", "P001": "pointpresentation", "P002": "pointdiapositiv", "P003": "pointfinal"}
 
 
 def align_dp(sentences, segs):

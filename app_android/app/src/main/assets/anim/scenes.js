@@ -190,6 +190,7 @@ window.SC = (function () {
    * Parcours du curseur : [[t, cible, durée, clics]] ; la cible est un élément de root ou [x, y].
    * Le curseur arrive sur la cible à l'instant t (déplacement de « durée » secondes) ; clics = 0, 1 ou 2.
    */
+  function tourFn(E, root, over, cur, list) { return tour(E, root, over, cur, list); }
   function tour(E, root, over, cur, list) {
     const keys = [];
     list.forEach(([t, target, dur, n]) => {
@@ -234,7 +235,7 @@ window.SC = (function () {
       <span class="b strike" style="text-decoration:line-through">ab</span><span class="b">x<sub>2</sub></span><span class="b">x<sup>2</sup></span>
       <span class="b high" style="flex-direction:column;line-height:14px">&#9998;<i style="display:block;width:20px;height:5px;background:#ffeb00"></i></span>
       <span class="b color" style="flex-direction:column;line-height:16px;font-weight:700">A<i style="display:block;width:20px;height:5px;background:#e00000"></i></span></div>`, true);
-    const gpa = grp(rb, "Paragraphe", `<div style="display:flex;gap:1px;width:250px"><span class="b bul">&#8226;&#8801;</span><span class="b num">1&#8801;</span><span class="b indl">&#8676;</span><span class="b indr">&#8677;</span><span class="b">&#182;</span></div>
+    const gpa = grp(rb, "Paragraphe", `<div style="display:flex;gap:1px;width:250px"><span class="b bul">&#8226;&#8801;</span><span class="b num">1&#8801;</span><span class="b mlt">&#8942;&#8801;</span><span class="b indl">&#8676;</span><span class="b indr">&#8677;</span><span class="b">&#182;</span></div>
       <div style="display:flex;gap:1px"><span class="b al">&#8676;&#8801;</span><span class="b ac">&#8801;</span><span class="b ar">&#8801;&#8677;</span><span class="b aj">&#9776;</span><span class="b sp">&#8693;&#8801;</span></div>`, true);
     const gs = grp(rb, "Styles", `<div class="sty"><div><span style="font-size:15px">AaBbCc</span><br>Normal</div><div><span style="font-size:15px">AaBbCc</span><br>Sans interligne</div><div class="t1"><b>AaBbCc</b>Titre 1</div><div class="t2"><b style="font-size:15px">AaBbCcD</b>Titre 2</div><div><b style="font-size:21px">AaB</b>Titre</div></div>`);
     const ge = grp(rb, "Édition", `<div style="display:flex;flex-direction:column;gap:2px"><span class="b" style="font-size:14px">&#128269; Rechercher &#9662;</span><span class="b repl" style="font-size:14px">&#8644; Remplacer</span><span class="b" style="font-size:14px">&#8689; Sélectionner &#9662;</span></div>`);
@@ -242,7 +243,7 @@ window.SC = (function () {
     Object.assign(W.el, {
       font: gp.querySelector(".font"), size: gp.querySelector(".size"), bold: gp.querySelector(".bold"), italic: gp.querySelector(".italic"), under: gp.querySelector(".under"),
       strike: gp.querySelector(".strike"), high: gp.querySelector(".high"), color: gp.querySelector(".color"), launchFont: gp.launch, launchPara: gpa.launch,
-      bul: gpa.querySelector(".bul"), indl: gpa.querySelector(".indl"), indr: gpa.querySelector(".indr"),
+      bul: gpa.querySelector(".bul"), num: gpa.querySelector(".num"), mlt: gpa.querySelector(".mlt"), indl: gpa.querySelector(".indl"), indr: gpa.querySelector(".indr"),
       al: gpa.querySelector(".al"), ac: gpa.querySelector(".ac"), ar: gpa.querySelector(".ar"), aj: gpa.querySelector(".aj"), sp: gpa.querySelector(".sp"),
       t1: gs.querySelector(".t1"), t2: gs.querySelector(".t2"), grpFont: gp, grpPara: gpa, grpStyles: gs
     });
@@ -420,5 +421,118 @@ window.SC = (function () {
     return X;
   }
 
-  return { backstage, excel, CROSS, deskSet, laptopSet, mouseCard, touchCard, mouseSVG, pos, corner, screenCam, IBEAM, cursorModes, typeText, keysCard, word, words, selectRange, tour };
+  // ------------------------------------------------------------------ PowerPoint
+  /** Fenêtre PowerPoint (1600 x 900) : onglets et rubans, miniatures, diapositive, commentaires, diaporama. */
+  function ppt(E, host, w, h, title) {
+    const $ = E.$;
+    const root = $("div", "win word ppt");
+    const P = { root, el: {} };
+    const t = $("div", "wt", root);
+    t.innerHTML = `<span class="logo">P</span><span style="color:#555">Enregistrement automatique</span><span class="q sv">&#128190;</span><span class="q">&#8630;</span><span class="q">&#8631;</span><span class="ttl" style="margin-left:60px">${title || "Présentation1"} - PowerPoint</span><span class="search">&#128269;&nbsp; Rechercher</span>`;
+    P.el.save = t.querySelector(".sv");
+    const tabs = $("div", "tabs", root); P.tabs = {};
+    ["Fichier", "Accueil", "Insertion", "Création", "Transitions", "Animations", "Diaporama", "Révision", "Affichage"].forEach(n => { P.tabs[n] = $("span", "", tabs); P.tabs[n].textContent = n; });
+    const ribbon = $("div", "ribbon", root); P.rb = {};
+    const mk = (tab, groups) => { const rb = P.rb[tab] = $("div", "rb", ribbon); groups.forEach(([l, h]) => { const g = $("div", "grp", rb); $("div", "gc", g).innerHTML = h; $("div", "gl", g).textContent = l; }); return rb; };
+    const big = (txt, c, ic) => `<span class="b big"><i style="background:${c}">${ic}</i>${txt}</span>`;
+    const gal = items => `<div class="sty" style="gap:6px">${items.map(n => `<div style="width:84px;height:70px;text-align:center;padding-top:8px"><b style="font-size:22px;color:#c43e1c">&#9654;</b>${n}</div>`).join("")}</div>`;
+    mk("Accueil", [["Presse-papiers", big("Coller", "#c9a227", "&#128203;")], ["Diapositives", big("Nouvelle diapositive", "#c43e1c", "+") + `<div style="display:flex;flex-direction:column;gap:2px"><span class="b" style="font-size:14px">Disposition &#9662;</span><span class="b" style="font-size:14px">Réinitialiser</span><span class="b" style="font-size:14px">Section &#9662;</span></div>`],
+      ["Police", `<div style="display:flex;gap:4px"><span class="combo" style="width:150px">Calibri Light</span><span class="combo" style="width:56px">44</span></div><div style="display:flex;gap:1px"><span class="b" style="font-weight:800">G</span><span class="b" style="font-style:italic">I</span><span class="b" style="text-decoration:underline">S</span><span class="b" style="color:#c00000;font-weight:700">A</span></div>`],
+      ["Paragraphe", `<div style="display:flex;gap:1px"><span class="b">&#8226;&#8801;</span><span class="b">1&#8801;</span><span class="b">&#8676;&#8801;</span><span class="b">&#8801;</span></div>`], ["Dessin", big("Formes", "#7a5cd6", "&#9650;")]]);
+    mk("Insertion", [["Diapositives", big("Nouvelle diapositive", "#c43e1c", "+")], ["Tableaux", big("Tableau", "#1d6f42", "&#9638;")], ["Images", big("Image", "#3aa0f5", "&#128444;")], ["Illustrations", big("Formes", "#7a5cd6", "&#9650;") + big("Graphique", "#21a366", "&#9636;")], ["Texte", big("Zone de texte", "#5a6b80", "A")], ["Média", big("Vidéo", "#c43e1c", "&#9654;") + big("Audio", "#7a5cd6", "&#9835;")]]);
+    mk("Création", [["Thèmes", `<div class="sty th6" style="gap:6px">${["#fff", "#1f3864", "#c43e1c", "#21a366", "#f4b83a", "#7a5cd6"].map(c => `<div style="width:92px;height:70px;background:${c};border:1px solid #ccc"><b style="color:${c === "#fff" ? "#333" : "#fff"};font-size:20px">Aa</b></div>`).join("")}</div>`], ["Variantes", `<div class="sty" style="gap:6px">${["#2b7cd3", "#21a366", "#c43e1c"].map(c => `<div style="width:56px;height:70px;background:${c}"></div>`).join("")}</div>`], ["Personnaliser", big("Taille des diapositives", "#5a6b80", "&#9645;") + big("Format de l’arrière-plan", "#5a6b80", "&#9641;")]]);
+    mk("Transitions", [["Aperçu", big("Aperçu", "#c43e1c", "&#9654;")], ["Transition vers cette diapositive", gal(["Aucune", "Fondu", "Balayer", "Pousser", "Cube", "Révéler"])], ["Minutage", `<div style="font-size:14px;line-height:2">Durée : 01,00 s<br>&#10003; Manuellement</div>` + big("Appliquer partout", "#5a6b80", "&#8801;")]]);
+    mk("Animations", [["Aperçu", big("Aperçu", "#c43e1c", "&#9654;")], ["Animation", gal(["Aucune", "Apparaître", "Estompé", "Entrée brusque", "Zoom"])], ["Animation avancée", big("Volet Animation", "#5a6b80", "&#9776;") + big("Ajouter une animation", "#5a6b80", "+")], ["Minutage", `<div style="font-size:14px;line-height:2">Démarrer : Au clic &#9662;<br>Durée : 00,50</div>`]]);
+    mk("Diaporama", [["Démarrage du diaporama", big("À partir du début", "#c43e1c", "&#9654;") + big("À partir de la diapositive actuelle", "#c43e1c", "&#9654;")], ["Configuration", big("Configurer le diaporama", "#5a6b80", "&#9881;") + big("Masquer la diapositive", "#5a6b80", "&#9645;") + big("Répéter les minutages", "#5a6b80", "&#9201;")]]);
+    mk("Révision", [["Vérification", big("Orthographe", "#5a6b80", "&#10003;")], ["Commentaires", big("Nouveau commentaire", "#5a6b80", "&#128172;")]]);
+    mk("Affichage", [["Modes Présentation", big("Normal", "#c43e1c", "&#9645;") + big("Trieuse de diapositives", "#5a6b80", "&#9638;") + big("Page de commentaires", "#5a6b80", "&#128221;")], ["Modes Masques", big("Masque des diapositives", "#5a6b80", "&#9636;")]]);
+    const th = $("div", "thumbs", root); P.thumbs = [];
+    for (let i = 0; i < 6; i++) { const d = $("div", "th", th); d.innerHTML = `<i>${i + 1}</i>`; P.thumbs.push(d); }
+    const st = $("div", "stage2", root); P.slide = $("div", "slide", st);
+    P.notes = $("div", "notes", root); P.notes.textContent = "Cliquez pour ajouter des commentaires";
+    $("div", "status", root).innerHTML = `<span>Diapositive 1 de 1</span><span>Français (France)</span><span style="margin-left:auto">Commentaires &nbsp; &#9645; &#9638; <b class="slsh">&#9654; Diaporama</b> &nbsp; ─────●──── 70 %</span>`;
+    P.el.showBtn = root.querySelector(".slsh");
+    P.showLayer = $("div", "show", root); P.showLayer.style.display = "none";
+    P.layer = $("div", "abs", root, { inset: "0" });
+    P.over = $("div", "abs", root, { inset: "0" });
+    P.cursor = $("div", "cursor", P.over); P.cursor.innerHTML = E.ARROW;
+    root.style.transform = `scale(${w / 1600}, ${h / 900})`;
+    host.appendChild(root);
+    P._tabs = [[0, "Accueil"]];
+    P.tabAt = list => { P._tabs = list; };
+    E.track(tt => { let n = "Accueil"; for (const [a, v] of P._tabs) if (tt >= a) n = v; if (P._tab === n) return; P._tab = n; for (const k in P.tabs) P.tabs[k].classList.toggle("on", k === n); for (const k in P.rb) P.rb[k].classList.toggle("on", k === n); });
+    for (const k in P.rb) P.rb[k].classList.toggle("on", k === "Accueil");
+    P.pos = (el, dx, dy) => pos(el, root, dx, dy);
+    return P;
+  }
+
+  // ------------------------------------------------------------------ leçon écrite « étape par étape »
+  const nrm = s => (s || "").replace(/\s+/g, " ").trim().toLowerCase();
+  /** Élément le plus précis contenant le texte, dans le ruban de l'onglet donné puis dans le reste de la fenêtre. */
+  function findIn(app, text, tab) {
+    const t = nrm(text);
+    const scan = (scope, skipRb) => { let best = null, bl = 1e9; scope.querySelectorAll("*").forEach(el => { if (skipRb && el.closest(".rb")) return; if (el.offsetWidth === 0 && el.offsetHeight === 0) return; const s = nrm(el.textContent); if (s.includes(t) && s.length < bl) { best = el; bl = s.length; } }); return best; };
+    return (tab && app.rb && app.rb[tab] && scan(app.rb[tab])) || scan(app.root, true) || (app.tabs && app.tabs[text]) || null;
+  }
+  /**
+   * Déroule une leçon à partir d'une liste d'étapes liées aux phrases de la voix :
+   * { s, f, tab, go (texte, élément ou [x, y]), clicks, menu, dialog, cam ([x, y, zoom] | "room" | "near"), card, keys, run(t, app) }.
+   */
+  function beats(E, app, list, opts) {
+    opts = opts || {};
+    const S = E.S, $ = E.$;
+    const tabs = [[0, opts.tab || "Accueil"]], tour = [[0, opts.start || [1150, 650], 0]], cam = [[0, "room"], [S(0, 0.6), "room"], [S(1, 0), 800, 450, 1, 1.0]];
+    let curTab = opts.tab || "Accueil";
+    list.forEach((b, i) => {
+      const t = S(b.s, b.f == null ? 0.3 : b.f);
+      if (b.tab) { tabs.push([t - 0.05, b.tab]); curTab = b.tab; }
+      let target = null;
+      if (b.go != null) {
+        target = typeof b.go === "function" ? b.go(app) : Array.isArray(b.go) ? b.go : findIn(app, b.go, b.tab || curTab);
+        if (!target) console.error("cible introuvable : " + b.go);
+        else tour.push([t, target, b.dur == null ? 0.8 : b.dur, b.clicks == null ? 1 : b.clicks]);
+      }
+      const until = b.until != null ? S(b.until, b.uf == null ? 0.1 : b.uf) : S(b.s, 1) + 0.3;
+      if (b.menu) {
+        const m = $("div", "dd", app.layer, { zIndex: 30, width: (b.menu.w || 320) + "px" });
+        m.innerHTML = b.menu.items.map((it, k) => it === "-" ? `<div style="border-top:1px solid #ddd;padding:0;margin:4px 0"></div>` : `<div class="mi${k}">${it}</div>`).join("");
+        const anchor = b.menu.at ? (typeof b.menu.at === "string" ? findIn(app, b.menu.at, b.tab || curTab) : b.menu.at(app)) : target;
+        let x = b.menu.x, y = b.menu.y;
+        if (Array.isArray(anchor) && x == null) { x = anchor[0] + 6; y = anchor[1] + 16; }
+        else if (anchor && x == null) { const [ax, ay] = corner(anchor, app.root); x = ax + (b.menu.dx || 0); y = ay + anchor.offsetHeight + 4 + (b.menu.dy || 0); }
+        Object.assign(m.style, { left: x + "px", top: y + "px" });
+        E.show(m, t + 0.15, until, 0.12);
+        if (b.menu.hl != null) { const it = m.querySelector(".mi" + b.menu.hl); E.cls(it, "hl", b.menu.hlAt != null ? S(b.menu.hlAt, b.menu.hlF || 0.3) - 0.2 : t + 0.5, until); if (b.menu.pick) tour.push([b.menu.hlAt != null ? S(b.menu.hlAt, b.menu.hlF || 0.3) : t + 0.8, it, 0.5, 1]); }
+        b._menu = m;
+      }
+      if (b.dialog) {
+        const d = $("div", "dlg", app.layer, { left: (b.dialog.x || 540) + "px", top: (b.dialog.y || 230) + "px", width: (b.dialog.w || 520) + "px", zIndex: 35 });
+        d.innerHTML = `<div class="dt">${b.dialog.title}</div><div class="dbd">${b.dialog.html}${b.dialog.buttons === false ? "" : `<div style="text-align:right;margin-top:14px"><span class="btn pri ok">${b.dialog.ok || "OK"}</span><span class="btn">Annuler</span></div>`}</div>`;
+        E.show(d, t + 0.1, until, 0.2);
+        const ok = d.querySelector(".ok");
+        if (ok && b.dialog.okAt != null) { const to = S(b.dialog.okAt, b.dialog.okF || 0.8); E.cls(ok, "hl", to - 0.3, to + 0.1); tour.push([to, ok, 0.6, 1]); }
+        b._dialog = d;
+      }
+      if (b.cam) {
+        if (b.cam === "room") cam.push([t, "room", 1.0]);
+        else if (b.cam === "near" && target) { const p = Array.isArray(target) ? target : pos(target, app.root); cam.push([t - 0.1, p[0], p[1] + 60, b.z || 1.7, 0.8]); }
+        else if (Array.isArray(b.cam)) cam.push([t - 0.1, b.cam[0], b.cam[1], b.cam[2], b.cam[3] || 0.8]);
+      }
+      if (b.card) E.card(b.card.html, t, b.card.until != null ? S(b.card.until, 1) + 0.2 : until, b.card.pos || { left: "40px", right: "auto", top: "640px", width: "460px" });
+      if (b.keys) keysCard(E, b.keys[0], b.keys.slice(1), t, until, { left: "40px", right: "auto", top: "640px", width: "400px" });
+      if (b.run) b.run(t, app, b);
+    });
+    // la caméra garde chaque cadrage jusqu'au suivant
+    const camKeys = [];
+    cam.forEach((k, i) => { if (i && camKeys.length) { const prev = camKeys[camKeys.length - 1]; camKeys.push(prev[1] === "room" ? [k[0] - (k[4] || 0.8), "room"] : [k[0] - (k[4] || 0.8), prev[1], prev[2], prev[3]]); } camKeys.push(k); });
+    camKeys.push([E.S(opts.last || 0, 1) + 0.6, ...(camKeys[camKeys.length - 1].slice(1, 4))]);
+    camKeys.push([E.S(opts.last || 0, 1) + 1.8, "room", 1.2]);
+    screenCam(E, camKeys.filter(k => k[0] >= 0).sort((a, b) => a[0] - b[0]));
+    app.tabAt(tabs);
+    tour.sort((a, b) => a[0] - b[0]);
+    tourFn(E, app.root, app.over, app.cursor, tour);
+    return list;
+  }
+
+  return { ppt, beats, findIn, backstage, excel, CROSS, deskSet, laptopSet, mouseCard, touchCard, mouseSVG, pos, corner, screenCam, IBEAM, cursorModes, typeText, keysCard, word, words, selectRange, tour };
 })();

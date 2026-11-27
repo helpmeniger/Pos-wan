@@ -1476,5 +1476,1073 @@ window.T = {
   ],
   "duration": 53.5,
   "audio": "audio/2014.m4a"
+ },
+ "1003": {
+  "texts": [
+   "Insérer des puces ou des numéros dans Word.",
+   "Insertion de puces.",
+   "Sélectionnez le texte que vous voulez transformer en liste à puces ou placez le curseur là où vous voulez créer une nouvelle liste.",
+   "Cliquez sur l'icône « Puces » dans le groupe « Paragraphe ».",
+   "Une liste à puces est automatiquement créée.",
+   "Vous pouvez cliquer sur la flèche à côté de l'icône pour choisir différents styles de puces.",
+   "Insertion de numéros.",
+   "Suivez les mêmes étapes que pour les puces, mais cette fois, cliquez sur l'icône « Numérotation » : un, deux, trois, dans le groupe « Paragraphe ».",
+   "Une liste numérotée se crée automatiquement.",
+   "Utilisez la flèche à côté de l'icône pour modifier le format des numéros, par exemple :",
+   "I, II, III ou A, B, C.",
+   "Ajouter un nouveau point.",
+   "Appuyez sur « Entrée » après chaque point pour en ajouter un autre.",
+   "Arrêtez la liste, appuyez deux fois sur « Entrée » ou désactivez l'option « Puces » ou « Numérotation ».",
+   "Modifier le style des puces.",
+   "Cliquez sur la flèche à côté de l'icône « Puces ».",
+   "Sélectionnez « Définir une puce » en bas du menu déroulant.",
+   "Une fenêtre s'ouvre avec plusieurs options.",
+   "Symbole : choisissez un caractère spécial.",
+   "Image : insérez une image ou une icône personnalisée comme puce.",
+   "Police : changez la taille, le style ou la couleur des puces.",
+   "Modifier le style des numéros.",
+   "Cliquez sur la flèche à côté de l'icône « Numérotation ».",
+   "Sélectionnez « Définir un nouveau format de numérotation ».",
+   "Vous pouvez : modifier le style des numéros, par exemple : un, zéro un, I, II, A, etc.",
+   "Ajouter un texte personnalisé avant ou après les numéros.",
+   "Exemple : chapitre un.",
+   "Créer des listes hiérarchisées, multiniveaux.",
+   "Cliquez sur la flèche à côté de l'icône « Liste multiniveaux », à droite de l'icône « Numérotation ».",
+   "Choisissez un modèle prédéfini ou cliquez sur « Définir une nouvelle liste multiniveaux ».",
+   "Dans la fenêtre, vous pouvez : personnaliser chaque niveau avec des puces, des numéros ou des lettres.",
+   "Ajuster l'indentation et l'espacement pour chaque niveau.",
+   "Pour passer d'un niveau à un autre dans votre liste, appuyez sur « Tabulation » pour descendre d'un niveau.",
+   "Appuyez sur « Majuscule » plus « Tabulation » pour remonter d'un niveau.",
+   "Ajuster la mise en forme des listes.",
+   "Alignement : faites un clic droit sur une puce ou un numéro et sélectionnez « Ajuster la liste » pour régler l'alignement par rapport au texte.",
+   "Redémarrer ou continuer la numérotation.",
+   "Redémarrer à un : faites un clic droit sur un numéro et sélectionnez « Recommencer à un ».",
+   "Continuer une liste précédente : faites un clic droit et choisissez « Continuer la numérotation » si une interruption s'est produite."
+  ],
+  "sentences": [
+   [
+    0.0,
+    2.49
+   ],
+   [
+    3.0,
+    4.24
+   ],
+   [
+    4.72,
+    10.72
+   ],
+   [
+    11.26,
+    14.14
+   ],
+   [
+    15.19,
+    17.45
+   ],
+   [
+    18.01,
+    22.27
+   ],
+   [
+    22.77,
+    24.14
+   ],
+   [
+    24.63,
+    32.56
+   ],
+   [
+    33.44,
+    36.03
+   ],
+   [
+    36.55,
+    42.36
+   ],
+   [
+    42.73,
+    44.29
+   ],
+   [
+    45.1,
+    46.42
+   ],
+   [
+    46.88,
+    49.93
+   ],
+   [
+    50.47,
+    55.88
+   ],
+   [
+    56.69,
+    58.33
+   ],
+   [
+    58.82,
+    61.34
+   ],
+   [
+    61.73,
+    64.86
+   ],
+   [
+    65.37,
+    67.65
+   ],
+   [
+    68.16,
+    71.06
+   ],
+   [
+    71.06,
+    75.47
+   ],
+   [
+    75.96,
+    79.41
+   ],
+   [
+    79.9,
+    81.61
+   ],
+   [
+    82.14,
+    85.23
+   ],
+   [
+    85.62,
+    90.65
+   ],
+   [
+    91.18,
+    97.61
+   ],
+   [
+    98.41,
+    102.06
+   ],
+   [
+    102.06,
+    103.63
+   ],
+   [
+    104.38,
+    106.92
+   ],
+   [
+    107.89,
+    113.05
+   ],
+   [
+    113.95,
+    118.65
+   ],
+   [
+    119.63,
+    125.47
+   ],
+   [
+    126.05,
+    128.95
+   ],
+   [
+    129.47,
+    135.52
+   ],
+   [
+    135.52,
+    139.31
+   ],
+   [
+    139.85,
+    141.76
+   ],
+   [
+    142.33,
+    149.37
+   ],
+   [
+    149.75,
+    152.4
+   ],
+   [
+    152.9,
+    158.19
+   ],
+   [
+    159.05,
+    165.81
+   ]
+  ],
+  "duration": 166.8,
+  "audio": "audio/1003.m4a"
+ },
+ "1007": {
+  "texts": [
+   "Ajouter une page de garde et un tableau dans Word.",
+   "Ouvrir Word et placez-vous au début du document.",
+   "Allez dans l'onglet « Insertion » en haut.",
+   "Dans le groupe « Page », cliquez sur « Page de garde ».",
+   "Vous verrez plusieurs modèles de pages de garde.",
+   "Choisissez celui qui vous convient en cliquant dessus.",
+   "La page de garde sera automatiquement ajoutée au début de votre document.",
+   "Ajouter un tableau.",
+   "Placez le curseur à l'endroit où vous souhaitez insérer le tableau.",
+   "Allez dans l'onglet « Insertion ».",
+   "Cliquez sur « Tableau » dans le groupe « Tableau ».",
+   "Vous pouvez soit sélectionner la taille du tableau en faisant glisser votre souris pour définir le nombre de colonnes et de lignes.",
+   "Cliquez sur « Insérer un tableau » pour spécifier le nombre de colonnes et de lignes manuellement.",
+   "Le tableau sera ajouté à votre document à l'endroit où le curseur est placé.",
+   "Ajouter des lignes et des colonnes.",
+   "Ajouter une ligne.",
+   "Placez votre curseur dans la dernière cellule de la dernière ligne ou dans une cellule d'une ligne où vous souhaitez ajouter une nouvelle ligne.",
+   "Faites un clic droit et sélectionnez « Insérer ».",
+   "Choisissez « Insérer une ligne au-dessus » ou « Insérer une ligne en dessous » selon l'endroit où vous voulez ajouter la nouvelle ligne.",
+   "Ajouter une colonne.",
+   "Placez le curseur dans la cellule de la colonne où vous souhaitez ajouter une nouvelle colonne.",
+   "Faites un clic droit et sélectionnez « Insérer ».",
+   "Choisissez « Insérer une colonne à gauche » ou « Insérer une colonne à droite ».",
+   "Supprimer une ligne.",
+   "Cliquez dans une cellule de la ligne que vous souhaitez supprimer.",
+   "Faites un clic droit et choisissez « Supprimer », puis « Supprimer la ligne ».",
+   "Supprimer une colonne.",
+   "Cliquez dans une cellule de la colonne à supprimer.",
+   "Faites un clic droit et choisissez « Supprimer », puis « Supprimer la colonne »."
+  ],
+  "sentences": [
+   [
+    0.0,
+    2.79
+   ],
+   [
+    3.28,
+    5.77
+   ],
+   [
+    6.3,
+    8.43
+   ],
+   [
+    8.93,
+    11.94
+   ],
+   [
+    12.88,
+    15.2
+   ],
+   [
+    15.7,
+    18.43
+   ],
+   [
+    18.93,
+    23.03
+   ],
+   [
+    23.53,
+    24.62
+   ],
+   [
+    25.14,
+    28.38
+   ],
+   [
+    28.92,
+    30.64
+   ],
+   [
+    31.8,
+    34.1
+   ],
+   [
+    35.2,
+    41.96
+   ],
+   [
+    42.3,
+    47.19
+   ],
+   [
+    47.56,
+    51.67
+   ],
+   [
+    52.21,
+    53.9
+   ],
+   [
+    54.4,
+    55.44
+   ],
+   [
+    55.94,
+    62.84
+   ],
+   [
+    62.84,
+    65.06
+   ],
+   [
+    66.16,
+    72.52
+   ],
+   [
+    72.92,
+    74.2
+   ],
+   [
+    74.72,
+    79.05
+   ],
+   [
+    79.56,
+    81.99
+   ],
+   [
+    82.71,
+    87.08
+   ],
+   [
+    87.96,
+    89.12
+   ],
+   [
+    89.63,
+    92.55
+   ],
+   [
+    93.1,
+    96.87
+   ],
+   [
+    97.49,
+    98.79
+   ],
+   [
+    99.28,
+    101.93
+   ],
+   [
+    101.93,
+    105.99
+   ]
+  ],
+  "duration": 107.4,
+  "audio": "audio/1007.m4a"
+ },
+ "1018": {
+  "texts": [
+   "Imprimer un document dans Excel.",
+   "Préparez la feuille pour l'impression.",
+   "Avant d'imprimer, assurez-vous que votre feuille est prête.",
+   "Sélectionnez les cellules ou la zone que vous voulez imprimer, ou si vous souhaitez imprimer toute la feuille, vous n'avez rien à sélectionner.",
+   "Allez dans l'onglet « Fichier » en haut à gauche.",
+   "Sélectionnez « Imprimer » pour ouvrir la vue d'aperçu avant impression.",
+   "Dans la section des paramètres d'impression, vous pouvez ajuster plusieurs options.",
+   "Sélectionnez l'imprimante.",
+   "Choisissez l'imprimante que vous souhaitez utiliser.",
+   "Plage de pages.",
+   "Si vous ne voulez imprimer qu'une partie de la feuille, choisissez « Sélection » pour imprimer uniquement les cellules sélectionnées ou « Plage de pages » pour spécifier les pages.",
+   "Orientation de la page.",
+   "Sélectionnez l'orientation portrait ou paysage selon la disposition de vos données.",
+   "Taille de la page.",
+   "Vous pouvez aussi ajuster la taille du papier en fonction de votre imprimante, A4, lettre, etc.",
+   "Ajustez l'échelle.",
+   "Si votre document dépasse une seule page, vous pouvez ajuster l'échelle pour qu'il tienne correctement.",
+   "Cliquez sur « Mise en page », puis « Ajuster » et spécifiez un pourcentage, par exemple 100 % ou ajuster à une seule page.",
+   "Vérification.",
+   "Vérifiez l'aperçu avant impression pour vous assurer que tout est bien disposé sur la page, par exemple s'il y a des coupures ou des ajustements à faire.",
+   "Mettre un mot de passe à un classeur ou restreindre la modification dans un fichier Excel.",
+   "Ouvrez le classeur Excel auquel vous souhaitez ajouter un mot de passe.",
+   "Cliquez sur l'onglet « Fichier » en haut à gauche.",
+   "Sélectionnez « Information ».",
+   "Cliquez sur « Protéger le classeur », puis choisissez « Chiffrer avec un mot de passe ».",
+   "Dans la fenêtre qui s'ouvre, entrez un mot de passe dans le champ prévu et cliquez sur « OK ».",
+   "Confirmez le mot de passe en le retapant, puis cliquez sur « OK ».",
+   "Enregistrez votre fichier.",
+   "Lorsqu'un utilisateur tentera d'ouvrir ce fichier, il sera invité à entrer le mot de passe.",
+   "Restreindre la modification d'un classeur ou d'une feuille.",
+   "Ouvrez le fichier Excel.",
+   "Allez dans l'onglet « Révision » dans le ruban.",
+   "Cliquez sur « Protéger la feuille » ou « Protéger le classeur ».",
+   "Si vous choisissez « Protéger la feuille », vous pouvez définir des restrictions spécifiques, comme empêcher la modification de certaines cellules ou l'ajout de contenu.",
+   "Vous pouvez également ajouter un mot de passe pour protéger cette action.",
+   "Si vous souhaitez ajouter un mot de passe, entrez-le dans la case « Mot de passe » et cliquez sur « OK ».",
+   "Si vous voulez autoriser certains utilisateurs à modifier certaines cellules ou éléments, vous pouvez préalablement sélectionner ces cellules, puis les formater en sélectionnant « Format de cellule », « Protection » et décochez « Verrouillé ».",
+   "Après avoir configuré les restrictions, cliquez sur « OK » pour appliquer les protections."
+  ],
+  "sentences": [
+   [
+    0.0,
+    2.22
+   ],
+   [
+    2.78,
+    4.62
+   ],
+   [
+    5.19,
+    8.3
+   ],
+   [
+    8.89,
+    15.44
+   ],
+   [
+    15.76,
+    18.42
+   ],
+   [
+    18.81,
+    22.55
+   ],
+   [
+    23.12,
+    27.32
+   ],
+   [
+    27.89,
+    29.3
+   ],
+   [
+    29.72,
+    32.1
+   ],
+   [
+    32.68,
+    33.47
+   ],
+   [
+    33.79,
+    41.69
+   ],
+   [
+    42.22,
+    43.53
+   ],
+   [
+    43.89,
+    48.57
+   ],
+   [
+    49.13,
+    49.98
+   ],
+   [
+    50.31,
+    55.85
+   ],
+   [
+    56.74,
+    57.85
+   ],
+   [
+    58.43,
+    63.44
+   ],
+   [
+    63.99,
+    70.87
+   ],
+   [
+    71.37,
+    73.01
+   ],
+   [
+    73.37,
+    81.06
+   ],
+   [
+    83.68,
+    88.25
+   ],
+   [
+    88.8,
+    92.18
+   ],
+   [
+    92.73,
+    95.26
+   ],
+   [
+    96.11,
+    97.81
+   ],
+   [
+    98.38,
+    102.33
+   ],
+   [
+    102.87,
+    107.41
+   ],
+   [
+    107.85,
+    111.28
+   ],
+   [
+    111.84,
+    113.36
+   ],
+   [
+    113.95,
+    119.1
+   ],
+   [
+    119.62,
+    122.69
+   ],
+   [
+    123.28,
+    124.79
+   ],
+   [
+    125.36,
+    127.59
+   ],
+   [
+    128.13,
+    131.08
+   ],
+   [
+    131.71,
+    139.84
+   ],
+   [
+    140.39,
+    143.75
+   ],
+   [
+    144.3,
+    148.8
+   ],
+   [
+    149.35,
+    160.29
+   ],
+   [
+    160.87,
+    167.97
+   ]
+  ],
+  "duration": 169.7,
+  "audio": "audio/1018.m4a"
+ },
+ "P001": {
+  "texts": [
+   "Faire une présentation dans PowerPoint.",
+   "Ouvrez PowerPoint et choisissez un modèle prédéfini ou une présentation vierge.",
+   "Créez une diapositive titre.",
+   "Ajoutez un titre accrocheur pour votre présentation dans la première diapositive.",
+   "Insérez aussi votre nom ou celui de votre organisation.",
+   "Ajoutez des diapositives.",
+   "Cliquez sur « Nouvelle diapositive » dans l'onglet « Accueil » pour ajouter des diapositives.",
+   "Sélectionnez une disposition adaptée : texte, image, graphique, et cetera.",
+   "Structurez le contenu.",
+   "Introduction : présentez les objectifs ou le sujet.",
+   "Corps : détaillez les idées principales.",
+   "Divisez-les en plusieurs diapositives pour éviter de surcharger.",
+   "Conclusion : résumez les points clés et ajoutez un appel à l'action si nécessaire.",
+   "Ajoutez du texte et des images.",
+   "Tapez votre texte dans les zones prévues.",
+   "Insérez des images via l'onglet « Insertion », « Image » pour illustrer vos idées.",
+   "Utilisez les animations et transitions.",
+   "Appliquez des animations aux objets, onglet « Animations », pour les faire apparaître de manière dynamique.",
+   "Ajoutez des transitions, onglet « Transitions », entre les diapositives pour rendre la présentation fluide.",
+   "Personnalisez le design.",
+   "Utilisez l'onglet « Création » pour choisir un thème ou personnaliser les couleurs et polices.",
+   "Vérifiez l'orthographe et la grammaire.",
+   "Assurez-vous que les diapositives sont lisibles et claires.",
+   "Sauvegardez et préparez la présentation.",
+   "Enregistrez le fichier avec Ctrl+S.",
+   "Lancez le mode diaporama, touche F5, pour tester et pratiquer."
+  ],
+  "sentences": [
+   [
+    0.0,
+    2.65
+   ],
+   [
+    2.65,
+    7.55
+   ],
+   [
+    8.06,
+    9.76
+   ],
+   [
+    10.25,
+    14.7
+   ],
+   [
+    15.24,
+    18.37
+   ],
+   [
+    18.94,
+    20.6
+   ],
+   [
+    21.16,
+    25.78
+   ],
+   [
+    26.13,
+    31.33
+   ],
+   [
+    32.22,
+    33.56
+   ],
+   [
+    34.14,
+    37.24
+   ],
+   [
+    37.79,
+    40.27
+   ],
+   [
+    40.84,
+    44.29
+   ],
+   [
+    44.86,
+    49.74
+   ],
+   [
+    49.74,
+    51.64
+   ],
+   [
+    52.22,
+    54.32
+   ],
+   [
+    54.89,
+    58.91
+   ],
+   [
+    59.48,
+    61.72
+   ],
+   [
+    62.26,
+    67.56
+   ],
+   [
+    68.32,
+    74.12
+   ],
+   [
+    74.66,
+    76.22
+   ],
+   [
+    76.77,
+    81.18
+   ],
+   [
+    81.74,
+    83.75
+   ],
+   [
+    84.42,
+    87.25
+   ],
+   [
+    87.77,
+    90.49
+   ],
+   [
+    90.93,
+    93.65
+   ],
+   [
+    94.21,
+    98.38
+   ]
+  ],
+  "duration": 102.1,
+  "audio": "audio/P001.m4a"
+ },
+ "P002": {
+  "texts": [
+   "La manipulation des diapositives dans PowerPoint permet de créer, organiser et personnaliser une présentation.",
+   "Créer une nouvelle diapositive.",
+   "Allez dans l'onglet « Accueil ».",
+   "Cliquez sur « Nouvelle diapositive ».",
+   "Une nouvelle diapositive est ajoutée après celle sélectionnée.",
+   "Utilisez la flèche sous « Nouvelle diapositive » pour choisir un modèle de mise en page, titre, contenu, vide, etc.",
+   "Raccourci clavier.",
+   "Appuyez sur Ctrl+M pour insérer une nouvelle diapositive.",
+   "Modifier la mise en page d'une diapositive.",
+   "Sélectionnez une diapositive dans le volet de gauche.",
+   "Allez dans l'onglet « Accueil », « Disposition ».",
+   "Choisissez une mise en page adaptée, exemple, titre et contenu, comparaison, etc.",
+   "Dupliquer une diapositive.",
+   "Depuis le volet des diapositives, à gauche, faites un clic droit sur la diapositive à dupliquer.",
+   "Sélectionnez « Dupliquer la diapositive ».",
+   "Raccourci clavier.",
+   "Sélectionnez une diapositive et appuyez sur Ctrl+D.",
+   "Supprimer une diapositive.",
+   "Depuis le volet des diapositives, cliquez droit sur la diapositive à supprimer.",
+   "Sélectionnez « Supprimer la diapositive ».",
+   "Raccourci clavier.",
+   "Sélectionnez une diapositive et appuyez sur « Suppr ».",
+   "Réorganiser les diapositives.",
+   "Glisser-déposer.",
+   "Cliquez sur une diapositive dans le volet de gauche.",
+   "Maintenez le bouton de la souris et glissez-la vers la position souhaitée.",
+   "Mode trieuse de diapositives.",
+   "Allez dans l'onglet « Affichage », « Trieuse de diapositives ».",
+   "Faites glisser les diapositives pour les réorganiser.",
+   "Copier et coller une diapositive.",
+   "Depuis le volet des diapositives, sélectionnez une diapositive, puis appuyez sur Ctrl+C pour copier.",
+   "Placez-vous à l'endroit où vous voulez insérer et appuyez sur Ctrl+V.",
+   "Masquer une diapositive.",
+   "Parfois, vous pouvez vouloir masquer une diapositive sans la supprimer.",
+   "Cliquez droit sur une diapositive dans le volet gauche et sélectionnez « Masquer la diapositive ».",
+   "Pendant la présentation, cette diapositive ne s'affichera pas, mais elle reste disponible dans l'éditeur.",
+   "Exporter ou imprimer les diapositives.",
+   "Exporter.",
+   "Allez dans l'onglet « Fichier », « Exporter ».",
+   "Vous pouvez enregistrer sous forme de fichier PDF, vidéo ou image, JPEG, PNG."
+  ],
+  "sentences": [
+   [
+    0.0,
+    6.81
+   ],
+   [
+    7.36,
+    9.22
+   ],
+   [
+    9.56,
+    11.21
+   ],
+   [
+    11.81,
+    13.98
+   ],
+   [
+    14.35,
+    17.7
+   ],
+   [
+    18.29,
+    25.41
+   ],
+   [
+    26.31,
+    27.44
+   ],
+   [
+    28.05,
+    31.8
+   ],
+   [
+    32.14,
+    34.87
+   ],
+   [
+    35.4,
+    38.37
+   ],
+   [
+    38.93,
+    41.22
+   ],
+   [
+    41.78,
+    47.35
+   ],
+   [
+    48.22,
+    49.98
+   ],
+   [
+    50.54,
+    57.02
+   ],
+   [
+    57.61,
+    59.95
+   ],
+   [
+    60.47,
+    61.6
+   ],
+   [
+    62.18,
+    65.53
+   ],
+   [
+    66.1,
+    67.85
+   ],
+   [
+    68.39,
+    73.44
+   ],
+   [
+    74.03,
+    76.39
+   ],
+   [
+    76.96,
+    78.23
+   ],
+   [
+    78.68,
+    81.56
+   ],
+   [
+    82.11,
+    84.1
+   ],
+   [
+    84.66,
+    85.73
+   ],
+   [
+    86.29,
+    89.03
+   ],
+   [
+    89.59,
+    93.15
+   ],
+   [
+    93.75,
+    95.92
+   ],
+   [
+    96.23,
+    99.44
+   ],
+   [
+    99.99,
+    102.89
+   ],
+   [
+    103.47,
+    105.57
+   ],
+   [
+    106.11,
+    113.26
+   ],
+   [
+    113.83,
+    119.89
+   ],
+   [
+    120.42,
+    120.91
+   ],
+   [
+    121.21,
+    124.28
+   ],
+   [
+    124.84,
+    129.53
+   ],
+   [
+    130.08,
+    136.19
+   ],
+   [
+    136.6,
+    139.05
+   ],
+   [
+    139.62,
+    140.35
+   ],
+   [
+    140.79,
+    143.07
+   ],
+   [
+    143.65,
+    149.03
+   ]
+  ],
+  "duration": 154.3,
+  "audio": "audio/P002.m4a"
+ },
+ "P003": {
+  "texts": [
+   "Finalisation et présentation d'un diaporama PowerPoint.",
+   "Relecture et vérification.",
+   "Allez dans l'onglet « Révision », « Orthographe et grammaire ».",
+   "Corrigez les erreurs détectées dans le texte.",
+   "Uniformité du design.",
+   "Vérifiez que les couleurs, polices et alignements sont cohérents sur toutes les diapositives.",
+   "Utilisez l'onglet « Création » pour appliquer un thème uniforme.",
+   "Vérification du contenu multimédia.",
+   "Assurez-vous que les images, vidéos et sons sont correctement intégrés.",
+   "Testez tous les liens hypertextes pour vérifier qu'ils fonctionnent.",
+   "Ajoutez des transitions et animations.",
+   "Allez dans l'onglet « Transition » pour ajouter des effets entre les diapositives.",
+   "Exemples : fondu, balayage, cube, etc.",
+   "Dans l'onglet « Animation », appliquez des animations aux objets, textes, images, graphiques.",
+   "Utilisez le volet « Animation » pour ajuster l'ordre et le minutage.",
+   "Attention, les transitions et animations doivent être subtiles et professionnelles.",
+   "Trop d'effets peuvent distraire votre public.",
+   "Paramètres du diaporama.",
+   "Allez dans l'onglet « Diaporama », « Configurer le diaporama ».",
+   "Présenter par un orateur en direct pour une présentation en personne.",
+   "Boucle continue pour des kiosques ou des présentations autonomes.",
+   "Ajoutez des notes du présentateur.",
+   "Dans le volet des notes, en bas, ajoutez des points clés pour vous aider pendant la présentation.",
+   "Pendant le diaporama, en mode présentateur, vous verrez ces notes sur votre écran, mais elles resteront invisibles pour le public.",
+   "Testez la présentation.",
+   "Cliquez sur « Diaporama » dans la barre d'état ou appuyez sur F5 pour lancer la présentation.",
+   "Parcourez chaque diapositive pour vérifier les animations, les transitions et les minutages.",
+   "Réglage des minutages.",
+   "Si vous voulez une présentation automatique, utilisez « Diaporama », « Répéter les minutages » pour définir la durée de chaque diapositive.",
+   "Créer une vidéo.",
+   "Allez dans « Exporter », « Créer une vidéo » pour enregistrer votre diaporama sous forme de fichier vidéo.",
+   "Idéal pour une présentation à distance ou pour des plateformes comme YouTube."
+  ],
+  "sentences": [
+   [
+    0.0,
+    3.9
+   ],
+   [
+    4.3,
+    6.08
+   ],
+   [
+    6.67,
+    9.43
+   ],
+   [
+    10.06,
+    12.38
+   ],
+   [
+    13.01,
+    14.61
+   ],
+   [
+    15.18,
+    20.35
+   ],
+   [
+    20.74,
+    23.95
+   ],
+   [
+    24.52,
+    26.9
+   ],
+   [
+    27.5,
+    31.55
+   ],
+   [
+    32.11,
+    35.25
+   ],
+   [
+    35.83,
+    37.91
+   ],
+   [
+    38.48,
+    42.5
+   ],
+   [
+    43.06,
+    45.48
+   ],
+   [
+    45.78,
+    52.9
+   ],
+   [
+    53.85,
+    57.43
+   ],
+   [
+    58.0,
+    62.3
+   ],
+   [
+    62.85,
+    64.85
+   ],
+   [
+    65.6,
+    67.14
+   ],
+   [
+    67.71,
+    70.87
+   ],
+   [
+    71.42,
+    75.8
+   ],
+   [
+    76.2,
+    79.94
+   ],
+   [
+    80.51,
+    82.57
+   ],
+   [
+    83.23,
+    88.11
+   ],
+   [
+    88.66,
+    95.4
+   ],
+   [
+    96.01,
+    97.39
+   ],
+   [
+    97.96,
+    102.86
+   ],
+   [
+    103.35,
+    108.63
+   ],
+   [
+    109.17,
+    110.59
+   ],
+   [
+    111.16,
+    118.37
+   ],
+   [
+    118.9,
+    119.93
+   ],
+   [
+    120.41,
+    125.6
+   ],
+   [
+    126.18,
+    130.12
+   ]
+  ],
+  "duration": 132.0,
+  "audio": "audio/P003.m4a"
  }
 };
