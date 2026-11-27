@@ -33,6 +33,9 @@ type Config struct {
 	BackupCritHours int           `json:"backup_crit_hours"` // … critique
 	RestoreTestDays int           `json:"restore_test_days"` // test de restauration au moins tous les N jours (0 = jamais automatiquement)
 	Destinations    []Destination `json:"destinations"`      // copies des sauvegardes vérifiées
+
+	// Console : position du menu, comme dans POS Marwa (« droite » par défaut, ou « gauche »)
+	MenuPosition string `json:"menu_position"`
 }
 
 // Destination : endroit où MARWA GUARDIAN recopie les sauvegardes vérifiées (et la configuration de POS Marwa).

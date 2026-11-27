@@ -78,14 +78,38 @@ dialog.dlg::backdrop { background: rgba(10,20,40,.5); }
 dialog.dlg .modal-content { border: 0; }
 #dFoot { flex-wrap: nowrap; gap: .5rem; }
 
-@media (max-width: 860px) {
-  .app-shell { flex-direction: column; }
-  .sidebar { width: 100%; flex: none; height: auto; position: static; }
-  .side-nav { display: flex; flex-wrap: wrap; padding: 0; } .side-group { display: none; }
-  .side-link { border-left: 0; border-bottom: 3px solid transparent; } .side-link.active { border-bottom-color: var(--wan-orange); }
-  .side-footer { display: none; }
+/* Menu à droite (réglage par défaut de POS Marwa) ou à gauche */
+.menu-right .app-shell { flex-direction: row-reverse; }
+.menu-right .side-link { border-left: 0; border-right: 3px solid transparent; }
+.menu-right .side-link.active { border-right-color: var(--wan-orange); }
+.side-backdrop { display: none; }
+
+/* Petits écrans : menu escamotable, ouvert par le bouton ☰ (comme POS Marwa) */
+@media (max-width: 991.98px) {
+  .sidebar { position: fixed; z-index: 1040; top: 0; bottom: 0; height: 100vh; left: calc(-1 * var(--sidebar-w)); transition: left .2s; }
+  .sidebar.open { left: 0; box-shadow: 0 0 40px rgba(0,0,0,.5); }
+  .menu-right .sidebar { left: auto; right: calc(-1 * var(--sidebar-w)); transition: right .2s; }
+  .menu-right .sidebar.open { right: 0; }
+  .sidebar.open ~ .main .side-backdrop { display: block; position: fixed; inset: 0; background: rgba(10,20,40,.4); z-index: 1030; }
   .facts { grid-template-columns: 1fr; }
   #dFoot { flex-wrap: wrap; }
+}
+
+/* Votre protection */
+.prot-row { display: flex; align-items: center; gap: .8rem; padding: .65rem 1rem; border-bottom: 1px solid var(--wan-border); }
+.prot-row:last-child { border-bottom: 0; }
+.prot-row > i { font-size: 1.25rem; flex: none; }
+.prot-row .prot-txt { flex: 1; min-width: 0; }
+.prot-row .prot-txt small { display: block; color: var(--bs-secondary-color); }
+.prot-score { font-weight: 700; border-radius: 1rem; padding: .1rem .7rem; color: #fff; }
+.usb-hint { border-left: 4px solid var(--wan-orange); }
+
+/* Bilan imprimé */
+@media print {
+  .sidebar, .topbar, .btn, #usbHint, #bkUsbHint, .side-backdrop, dialog { display: none !important; }
+  body { background: #fff; } .content { padding: 0; } .card { break-inside: avoid; }
+  .kpi { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-head h2 { font-family: Georgia, serif; font-size: 1.3rem; } .print-head h2 .or { color: var(--wan-orange); } .card-header a { display: none; }
 }
 
 #bkDir { max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }

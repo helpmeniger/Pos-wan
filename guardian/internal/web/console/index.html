@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
 <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="menu-right">
 
 <!-- ============ CONNEXION (comme l'écran de connexion de POS Marwa) ============ -->
 <div id="auth" class="login-body d-none">
@@ -30,7 +30,7 @@
 
 <!-- ============ CONSOLE ============ -->
 <div id="app" class="app-shell d-none">
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <a class="brand" href="#tableau">MARWA <b>GUARDIAN</b></a>
     <nav class="side-nav" aria-label="Menu">
       <div class="side-group">Surveillance</div>
@@ -46,13 +46,19 @@
   </aside>
   <div class="main">
     <header class="topbar">
+      <button type="button" class="btn btn-sm btn-outline-secondary d-lg-none" id="menuToggle" aria-label="Menu" aria-controls="sidebar"><i class="bi bi-list"></i></button>
       <h1 class="page-title" id="pageTitle">Tableau de bord</h1>
       <span class="ms-auto small text-secondary d-none d-md-inline" id="poste"></span>
+      <button type="button" id="printBtn" class="btn btn-sm btn-outline-primary"><i class="bi bi-printer"></i> <span class="d-none d-sm-inline">Imprimer le bilan</span></button>
       <button type="button" id="logout" class="btn btn-sm btn-outline-secondary"><i class="bi bi-box-arrow-right"></i> Se déconnecter</button>
     </header>
+    <div class="side-backdrop" id="sideBackdrop"></div>
     <main class="content">
+      <div class="print-head d-none d-print-block"><h2>MARWA <span class="or">GUARDIAN</span> — bilan du poste <span id="prHost"></span></h2><p id="prDate"></p></div>
       <section id="p-tableau" class="page">
+        <div id="usbHint"></div>
         <div class="row g-3 mb-3" id="kpis"></div>
+        <div class="card mb-3" id="protectCard"><div class="card-header d-flex align-items-center"><span><i class="bi bi-shield-check"></i> Votre protection</span><span class="ms-auto" id="protectScore"></span></div><div id="protect"></div></div>
         <div class="row g-3">
           <div class="col-lg-7"><div class="card h-100"><div class="card-header d-flex align-items-center"><span><i class="bi bi-exclamation-triangle text-danger"></i> Alertes non résolues</span><a class="ms-auto small" href="#incidents">Tout voir</a></div><div id="openList"></div></div></div>
           <div class="col-lg-5"><div class="card h-100"><div class="card-header"><i class="bi bi-pc-display"></i> Ce poste</div><div class="card-body" id="machine"></div></div></div>
@@ -66,6 +72,7 @@
       </section>
 
       <section id="p-sauvegardes" class="page d-none">
+        <div id="bkUsbHint"></div>
         <div class="row g-3 mb-3" id="bkKpis"></div>
         <div id="bkNote"></div>
         <div class="row g-3">

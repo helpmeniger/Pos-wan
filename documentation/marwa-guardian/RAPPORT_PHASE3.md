@@ -46,3 +46,15 @@
 - Les copies ne sont pas chiffrées par Guardian : une clé USB perdue expose les données de vente qu'elle contient. Données personnelles
   (clients) : à protéger conformément à la loi n° 2017-28 — rangez le support en lieu sûr.
 - Aucune donnée n'est envoyée hors de l'ordinateur ; Guardian ne supprime que ses propres anciennes copies dans son dossier.
+
+## 5. Version 0.3.1 — facilités ajoutées
+
+| Fonction | État |
+|---|---|
+| **Menu à droite** par défaut, comme POS Marwa ; « à gauche » au choix dans Configuration → Affichage (réglage enregistré par l'agent) | ✅ testé (Chromium) |
+| Petits écrans : menu escamotable ouvert par le bouton ☰, fermé en touchant à côté | ✅ testé (écran de téléphone simulé) |
+| **« Votre protection »** sur le tableau de bord : 7 points contrôlés (sauvegarde récente, sauvegarde qui se recharge, copie hors du PC, disque, arrêts anormaux, services de sécurité, historique), note « x / y » ; chaque point en défaut a son bouton d'action (« Tester maintenant », « Copier maintenant », « Ajouter »). Un point non vérifiable est affiché « non vérifié » et n'est pas compté comme bon | ✅ testé |
+| **Clé USB branchée → proposée en un clic** : « Oui, copier dessus » l'ajoute comme destination et lance la copie contrôlée ; « Pas cette clé » ne la propose plus sur ce navigateur | ✅ testé (support simulé « DISQUE-EXT » : copie faite et contrôlée) |
+| **Imprimer le bilan** : tableau de bord mis en page pour l'imprimante (date, nom du poste), pour le technicien ou le dossier | ✅ testé (PDF produit par Chromium) |
+
+Bootstrap 5.3.3 et Bootstrap Icons 1.11.3 : mêmes versions que POS Marwa, gardées pour l'uniformité.

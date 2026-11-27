@@ -100,6 +100,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/sauvegardes/reglages", s.auth(s.backupSettings))
 	mux.HandleFunc("POST /api/destinations", s.auth(s.addDestination))
 	mux.HandleFunc("POST /api/destinations/{id}/retirer", s.auth(s.removeDestination))
+	mux.HandleFunc("POST /api/affichage", s.auth(s.display))
 	return s.guard(mux)
 }
 
@@ -224,6 +225,7 @@ func (s *Server) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	out := map[string]any{"ok": true, "connecte": ss != nil, "mot_de_passe_defini": s.A.S.Get1("admin_mdp") != "", "version": core.Version}
 	if ss != nil {
 		out["csrf"] = ss.csrf
+		out["menu"] = menuPosition(s.A.Config().MenuPosition)
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -440,7 +442,11 @@ func (s *Server) backups(w http.ResponseWriter, r *http.Request) {
 	vols := []map[string]any{}
 	for _, v := range platform.Volumes() {
 		if v.Label != "" {
-			vols = append(vols, map[string]any{"root": v.Root, "label": v.Label, "removable": v.Removable})
+			used := false
+			for _, d := range c.Destinations {
+				used = used || (d.Kind == "support" && strings.EqualFold(d.Label, v.Label))
+			}
+			vols = append(vols, map[string]any{"root": v.Root, "label": v.Label, "removable": v.Removable, "used": used})
 		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "etat": s.A.Status().Backups, "destinations": c.Destinations, "volumes": vols,
@@ -597,4 +603,29 @@ func (s *Server) removeDestination(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = s.A.S.AddJournal("destination de copie retirée", "administrateur", name+" (copies déjà faites conservées)", time.Now())
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+func menuPosition(v string) string {
+	if v == "gauche" {
+		return "gauche"
+	}
+	return "droite"
+}
+
+// display : position du menu de la console (comme le réglage « Position du menu » de POS Marwa).
+func (s *Server) display(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Menu string `json:"menu"`
+	}
+	if err := readBody(r, &in); err != nil || (in.Menu != "droite" && in.Menu != "gauche") {
+		fail(w, http.StatusBadRequest, "position du menu : « droite » ou « gauche »")
+		return
+	}
+	c := s.A.Config()
+	c.MenuPosition = in.Menu
+	if err := s.A.SetConfig(c); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "menu": in.Menu})
 }

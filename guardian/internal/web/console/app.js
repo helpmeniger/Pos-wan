@@ -57,7 +57,81 @@
     showApp();
   });
   $('#logout').addEventListener('click', async () => { await api('/api/deconnexion', { method: 'POST' }); csrf = ''; showAuth(false); });
-  function showApp() { $('#auth').classList.add('d-none'); $('#app').classList.remove('d-none'); route(); }
+  function showApp() {
+    $('#auth').classList.add('d-none'); $('#app').classList.remove('d-none'); route();
+    api('/api/session').then((x) => applyMenu(x.menu)).catch(() => {});
+  }
+
+  // ------------------------------------------------------------------ menu (à droite par défaut, comme POS Marwa)
+  function applyMenu(m) { document.body.classList.toggle('menu-right', m !== 'gauche'); document.body.classList.toggle('menu-left', m === 'gauche'); }
+  const closeMenu = () => $('#sidebar').classList.remove('open');
+  $('#menuToggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+  $('#sideBackdrop').addEventListener('click', closeMenu);
+  document.querySelectorAll('.side-link').forEach((a) => a.addEventListener('click', closeMenu));
+
+  // ------------------------------------------------------------------ bilan imprimé (toujours le tableau de bord)
+  $('#printBtn').addEventListener('click', async () => {
+    if ((location.hash || '#tableau') !== '#tableau') { history.replaceState(null, '', '#tableau'); route(); }
+    await dashboard().catch(() => {});
+    $('#prHost').textContent = $('#poste').textContent; $('#prDate').textContent = 'Établi le ' + new Date().toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' });
+    window.print();
+  });
+
+  // ------------------------------------------------------------------ clé USB branchée : la proposer en un clic
+  const IGN = 'guardian-usb-ignorees';
+  const ignored = () => { try { return JSON.parse(localStorage.getItem(IGN) || '[]'); } catch (e) { return []; } };
+  function usbHint(b, box, after) {
+    const vols = (b.volumes || []).filter((v) => v.removable && !v.used && !ignored().includes(v.label));
+    box.innerHTML = vols.slice(0, 1).map((v) => `<div class="alert alert-light border usb-hint d-flex flex-wrap align-items-center gap-2">
+      <i class="bi bi-usb-drive fs-4 text-warning"></i><div class="flex-grow-1"><b>Clé ou disque « ${esc(v.label)} » branché.</b><br><span class="small">Voulez-vous y garder une copie de vos sauvegardes ? En cas de panne ou de vol du PC, vos ventes seront sauvées.</span></div>
+      <button type="button" class="btn btn-sm btn-success" data-usb-use="${esc(v.label)}"><i class="bi bi-check2"></i> Oui, copier dessus</button>
+      <button type="button" class="btn btn-sm btn-light" data-usb-ignore="${esc(v.label)}">Pas cette clé</button></div>`).join('');
+    box.querySelectorAll('[data-usb-use]').forEach((x) => x.addEventListener('click', async () => {
+      x.disabled = true;
+      const d = await api('/api/destinations', { method: 'POST', body: { kind: 'support', label: x.dataset.usbUse, keep: 30 } });
+      if (!d.ok) { alert(d.erreur); x.disabled = false; return; }
+      await api('/api/sauvegardes/copier', { method: 'POST' });
+      box.innerHTML = `<div class="alert alert-success small"><i class="bi bi-hourglass-split"></i> « ${esc(x.dataset.usbUse)} » ajoutée : la copie contrôlée est en cours. Laissez la clé branchée quelques minutes.</div>`;
+      setTimeout(() => after().catch(() => {}), 4000);
+    }));
+    box.querySelectorAll('[data-usb-ignore]').forEach((x) => x.addEventListener('click', () => {
+      try { localStorage.setItem(IGN, JSON.stringify(ignored().concat(x.dataset.usbIgnore))); } catch (e) { /* mémoire du navigateur indisponible */ }
+      box.innerHTML = '';
+    }));
+  }
+
+  // ------------------------------------------------------------------ « Votre protection » : chaque point vérifié, avec son action
+  function protection(d, b) {
+    const st = d.systeme || {}; const bk = b.etat || {}; const g = b.reglages || {}; const items = [];
+    const H = (t) => (Date.now() - new Date(t).getTime()) / 3600000;
+    const add = (state, title, detail, action) => items.push({ state, title, detail, action });
+    const lv = bk.last_verified;
+    if (lv) add(H(lv.date) <= g.backup_warn_hours ? 'ok' : 'ko', 'Sauvegarde récente et vérifiée', 'Dernière : ' + fmtDate(lv.date), H(lv.date) <= g.backup_warn_hours ? '' : '<a class="btn btn-sm btn-outline-primary" href="#sauvegardes">Voir</a>');
+    else add('ko', 'Sauvegarde récente et vérifiée', bk.note || 'Aucune sauvegarde vérifiée : faites une sauvegarde dans POS Marwa (Paramètres → Sauvegardes).', '');
+    const r = bk.restore; const days = g.restore_test_days || 30;
+    const rOk = r && r.ok && H(r.at) <= days * 24 + 12;
+    add(bk.restore_busy ? 'wait' : (rOk ? 'ok' : 'ko'), 'Sauvegarde qui se recharge vraiment', bk.restore_busy ? 'Test en cours…' : (r ? (r.ok ? 'Test réussi le ' : 'Dernier test en échec le ') + fmtDate(r.at) : 'Jamais testée'),
+      rOk || bk.restore_busy || !lv ? '' : '<button type="button" class="btn btn-sm btn-primary" data-act="tester"><i class="bi bi-play-circle"></i> Tester maintenant</button>');
+    const copies = bk.copies || []; const fresh = copies.filter((c) => c.last_ok && H(c.last_ok) <= 7 * 24);
+    add(fresh.length ? 'ok' : 'ko', 'Copie hors de ce PC', fresh.length ? fresh.map((c) => c.name + ' : ' + fmtDate(c.last_ok)).join(' · ') : (copies.length ? 'Aucune copie depuis 7 jours : branchez votre support.' : 'Aucune destination : ajoutez une clé USB ou un disque externe.'),
+      fresh.length ? '' : (copies.length ? '<button type="button" class="btn btn-sm btn-outline-primary" data-act="copier">Copier maintenant</button>' : '<a class="btn btn-sm btn-primary" href="#sauvegardes"><i class="bi bi-usb-drive"></i> Ajouter</a>'));
+    const sys = (st.disks || []).find((x) => x.system) || (st.disks || [])[0];
+    if (sys) { const p = 100 * sys.free / sys.total; add(p >= 15 ? 'ok' : 'ko', 'Espace disque suffisant', size(sys.free) + ' libres (' + Math.round(p) + ' %)', ''); } else add('na', 'Espace disque suffisant', 'Non vérifié pour le moment', '');
+    if (st.shutdowns_30d != null) add(st.shutdowns_30d ? 'ko' : 'ok', 'Aucun arrêt anormal du PC (30 jours)', st.shutdowns_30d ? st.shutdowns_30d + ' arrêt(s) anormal(aux) : voir les alertes ; un onduleur protège des coupures de courant.' : 'Aucun', st.shutdowns_30d ? '<a class="btn btn-sm btn-outline-primary" href="#incidents">Voir</a>' : '');
+    const svc = st.services || []; const down = svc.filter((x) => x.exists && !x.running);
+    add(!svc.length ? 'na' : (down.length ? 'ko' : 'ok'), 'Services de sécurité Windows en marche', !svc.length ? 'Non vérifiés' : (down.length ? 'Arrêté(s) : ' + down.map((x) => x.label || x.name).join(', ') : 'Pare-feu, Defender, journal des événements…'), '');
+    add(st.log_intact == null ? 'na' : (st.log_intact ? 'ok' : 'ko'), 'Historique de Guardian intact', st.log_intact == null ? 'Non vérifié' : (st.log_intact ? 'Aucune modification' : 'Modifié en dehors de Guardian'), st.log_intact === false ? '<a class="btn btn-sm btn-outline-danger" href="#journal">Voir</a>' : '');
+    const checked = items.filter((i) => i.state === 'ok' || i.state === 'ko'); const ok = checked.filter((i) => i.state === 'ok').length;
+    const ICON = { ok: 'bi-check-circle-fill text-success', ko: 'bi-exclamation-circle-fill text-warning', wait: 'bi-hourglass-split text-primary', na: 'bi-dash-circle text-secondary' };
+    $('#protectScore').innerHTML = checked.length ? `<span class="prot-score ${ok === checked.length ? 'bg-g1' : (ok >= checked.length - 1 ? 'bg-g3' : 'bg-g5')}">${ok} / ${checked.length}</span>` : '';
+    $('#protect').innerHTML = items.map((i) => `<div class="prot-row"><i class="bi ${ICON[i.state]}"></i><div class="prot-txt"><b>${esc(i.title)}</b><small>${esc(i.detail)}</small></div>${i.action}</div>`).join('');
+    $('#protect').querySelectorAll('[data-act]').forEach((x) => x.addEventListener('click', async () => {
+      x.disabled = true;
+      const res = await api(x.dataset.act === 'tester' ? '/api/sauvegardes/tester' : '/api/sauvegardes/copier', { method: 'POST' });
+      if (!res.ok) alert(res.erreur);
+      setTimeout(() => dashboard().catch(() => {}), 2500);
+    }));
+  }
 
   // ------------------------------------------------------------------ navigation
   const pages = { tableau: dashboard, incidents: incidents, sauvegardes: backups, journal: journal, configuration: configuration };
@@ -105,6 +179,7 @@
     if (sys) { const p = 100 * sys.free / sys.total; k.push(kpi(p < 5 ? 'bg-g5' : (p < 15 ? 'bg-g3' : 'bg-g2'), 'bi-device-hdd', 'Disque ' + sys.mount, size(sys.free) + ' libres', Math.round(p) + ' % de ' + size(sys.total))); }
     else k.push(kpi('bg-g7', 'bi-device-hdd', 'Disque système', 'Non vérifié', ''));
     $('#kpis').innerHTML = k.join('');
+    protection(d, b); usbHint(b, $('#usbHint'), dashboard);
     const errs = Object.entries(st.errors || {});
     const list = await api('/api/incidents?statut=open');
     $('#openList').innerHTML = (errs.length ? `<div class="alert alert-secondary small m-2">Non vérifié pour le moment : ${errs.map(([n, v]) => esc(n) + ' (' + esc(v) + ')').join(' ; ')}. Rien n'est supposé.</div>` : '') + incRows((list.incidents || []).slice(0, 8), 'Aucune alerte : tout va bien.');
@@ -168,6 +243,7 @@
     k.push(kpi(!r ? 'bg-g7' : (r.ok ? 'bg-g1' : 'bg-g5'), 'bi-arrow-counterclockwise', 'Test de restauration', s.restore_busy ? 'En cours…' : (!r ? 'Jamais fait' : (r.ok ? 'Réussi' : 'Échec')), r ? fmtDate(r.at) : ''));
     k.push(kpi('bg-g7', 'bi-folder2-open', 'Sauvegardes sur ce poste', String(s.count || 0), size(s.total_size || 0) + ' au total'));
     $('#bkKpis').innerHTML = k.join('');
+    usbHint(b, $('#bkUsbHint'), backups);
     $('#bkDir').textContent = s.dir || '';
     $('#bkNote').innerHTML = (s.note ? `<div class="alert alert-warning small">${esc(s.note)}</div>` : '') + (s.auto_failure ? `<div class="alert alert-danger small"><i class="bi bi-exclamation-octagon"></i> ${esc(s.auto_failure)}</div>` : '');
     $('#bkList').innerHTML = (s.recent || []).map((x) => {
@@ -250,6 +326,12 @@
         <div class="col-12"><label class="form-label" for="s4">Dossier de l'application POS Marwa (WampServer seulement)</label><input id="s4" class="form-control form-control-sm" value="${esc(g.pos_app_dir)}" placeholder="ex. C:\\wamp64\\www\\pos"></div>
         <div class="col-12"><label class="form-label" for="s5">Dossier des programmes MariaDB/MySQL (vide = celui de POS Marwa Bureau)</label><input id="s5" class="form-control form-control-sm" value="${esc(g.mariadb_bin)}" placeholder="ex. C:\\wamp64\\bin\\mariadb\\mariadb11.4\\bin"></div>
         <div class="col-12"><div id="setMsg" class="small"></div><button class="btn btn-sm btn-primary mt-1"><i class="bi bi-check2"></i> Enregistrer</button></div></div></form></div>
+      <div class="col-12"><div class="card"><div class="card-header"><i class="bi bi-layout-sidebar-reverse"></i> Affichage</div><div class="card-body d-flex flex-wrap align-items-center gap-3">
+        <span class="small">Position du menu</span>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Position du menu">
+          <input type="radio" class="btn-check" name="menuPos" id="mp1" value="droite" ${document.body.classList.contains('menu-left') ? '' : 'checked'}><label class="btn btn-outline-secondary" for="mp1"><i class="bi bi-layout-sidebar-reverse"></i> À droite (comme POS Marwa)</label>
+          <input type="radio" class="btn-check" name="menuPos" id="mp2" value="gauche" ${document.body.classList.contains('menu-left') ? 'checked' : ''}><label class="btn btn-outline-secondary" for="mp2"><i class="bi bi-layout-sidebar"></i> À gauche</label>
+        </div><span id="menuMsg" class="small"></span></div></div></div>
       <div class="col-12"><div class="card"><div class="card-header"><i class="bi bi-eye"></i> Ce que MARWA GUARDIAN surveille sur ce poste</div><div class="card-body small">
         <ul class="mb-2">
           <li>Espace des disques, mémoire et processeur (valeurs mesurées, gardées 7 jours).</li>
@@ -259,6 +341,11 @@
           <li>Sauvegardes de POS Marwa : empreinte et lecture complète de chaque sauvegarde, ancienneté, échecs de la sauvegarde automatique ; test de restauration dans une base séparée ; copies vers les destinations choisies (avec la configuration de POS Marwa).</li>
         </ul>
         <p class="text-secondary mb-0">MARWA GUARDIAN ne lit ni le contenu des ventes ni les mots de passe, n'envoie rien sur Internet, ne modifie ni ne supprime les sauvegardes de POS Marwa et n'arrête aucun programme. Les seuls fichiers qu'il supprime sont ses propres copies anciennes (rotation), dans son dossier « MARWA GUARDIAN » sur chaque destination. La protection des fichiers, des accès, du réseau et de l'antivirus arrive aux phases suivantes.</p></div></div></div></div>`;
+    document.querySelectorAll('input[name=menuPos]').forEach((x) => x.addEventListener('change', async () => {
+      const r = await api('/api/affichage', { method: 'POST', body: { menu: x.value } });
+      if (r.ok) applyMenu(r.menu);
+      $('#menuMsg').className = 'small ' + (r.ok ? 'text-success' : 'text-danger'); $('#menuMsg').textContent = r.ok ? 'Enregistré.' : r.erreur;
+    }));
     $('#bkSet').addEventListener('submit', async (e) => {
       e.preventDefault();
       const r = await api('/api/sauvegardes/reglages', { method: 'POST', body: { backup_warn_hours: Number($('#s1').value), backup_crit_hours: Number($('#s2').value), restore_test_days: Number($('#s3').value), pos_app_dir: $('#s4').value, mariadb_bin: $('#s5').value } });

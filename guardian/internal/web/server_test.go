@@ -214,6 +214,22 @@ func TestBackupEndpoints(t *testing.T) {
 	if code, d := c.do("GET", "/api/sauvegardes", "", nil); code != 200 || len(d["volumes"].([]any)) != 1 {
 		t.Fatalf("supports branchés listés : %d %v", code, d)
 	}
+	if _, d := c.do("GET", "/api/sauvegardes", "", nil); d["volumes"].([]any)[0].(map[string]any)["used"] != false {
+		t.Fatalf("support pas encore utilisé : %v", d["volumes"])
+	}
+	// Position du menu : à droite par défaut (comme POS Marwa), modifiable, valeur contrôlée
+	if _, d := c.do("GET", "/api/session", "", nil); d["menu"] != "droite" {
+		t.Fatalf("menu à droite par défaut : %v", d)
+	}
+	if code, _ := c.do("POST", "/api/affichage", `{"menu":"milieu"}`, nil); code != 400 {
+		t.Fatalf("position inconnue refusée : %d", code)
+	}
+	if code, _ := c.do("POST", "/api/affichage", `{"menu":"gauche"}`, nil); code != 200 {
+		t.Fatalf("menu à gauche : %d", code)
+	}
+	if _, d := c.do("GET", "/api/session", "", nil); d["menu"] != "gauche" {
+		t.Fatalf("menu à gauche enregistré : %v", d)
+	}
 	if code, d := c.do("POST", "/api/sauvegardes/tester", "", nil); code != http.StatusConflict || !strings.Contains(d["erreur"].(string), "aucune sauvegarde vérifiée") {
 		t.Fatalf("test sans sauvegarde : %d %v", code, d)
 	}
@@ -239,6 +255,9 @@ func TestBackupEndpoints(t *testing.T) {
 	}
 	if code, _ := c.do("POST", "/api/destinations", `{"kind":"support","label":"cle-caisse","keep":10}`, nil); code != 200 {
 		t.Fatalf("support branché accepté (nom sans tenir compte des majuscules) : %d", code)
+	}
+	if _, d := c.do("GET", "/api/sauvegardes", "", nil); d["volumes"].([]any)[0].(map[string]any)["used"] != true {
+		t.Fatalf("support marqué comme utilisé : %v", d["volumes"])
 	}
 	if code, d := c.do("POST", "/api/destinations", `{"kind":"dossier","path":"`+usb+`"}`, nil); code != 400 || !strings.Contains(d["erreur"].(string), "existe déjà") {
 		t.Fatalf("doublon refusé : %d %v", code, d)
